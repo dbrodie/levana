@@ -8,5 +8,6 @@ data class HebrewDay(
     val year: Int,
     val hebrewFormatted: String,
     val transliterated: String,
+    val hebrewDayOfMonthFormatted: String,
     val gregorianDate: LocalDate
 )
