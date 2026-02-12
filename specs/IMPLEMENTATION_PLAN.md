@@ -178,7 +178,7 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 5: Location Management
+### Increment 5: Location Management -- DONE
 
 **Branch:** `increment-05-location`
 **Depends on:** Increment 4
@@ -199,15 +199,15 @@ These decisions apply across all increments:
 - Onboarding screen shown only when no location is saved
 
 **Acceptance criteria:**
-- [ ] First launch shows location onboarding (not the calendar)
-- [ ] City search filters the list as user types
-- [ ] Selecting a city saves it and proceeds to calendar
-- [ ] GPS button requests location permission and detects location
-- [ ] Manual entry accepts lat/lon and saves
-- [ ] Location persists across app restarts (kill and reopen)
-- [ ] Calendar/date calculations update to reflect selected location's timezone
-- [ ] Location name shown in app bar
-- [ ] `./gradlew build` passes
+- [x] First launch shows location onboarding (not the calendar)
+- [x] City search filters the list as user types
+- [x] Selecting a city saves it and proceeds to calendar
+- [x] GPS button requests location permission and detects location
+- [x] Manual entry accepts lat/lon and saves
+- [x] Location persists across app restarts (kill and reopen)
+- [x] Calendar/date calculations update to reflect selected location's timezone
+- [x] Location name shown in app bar
+- [x] `./gradlew build` passes
 
 ---
 
