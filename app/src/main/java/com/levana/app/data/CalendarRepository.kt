@@ -5,6 +5,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.GregorianCalendar
 
 class CalendarRepository {
@@ -18,17 +19,39 @@ class CalendarRepository {
     }
 
     fun getHebrewDay(date: LocalDate): HebrewDay {
+        val jewishCalendar = createJewishCalendar(date)
+
+        return toHebrewDay(jewishCalendar, date)
+    }
+
+    fun getMonthDays(yearMonth: YearMonth): List<HebrewDay> {
+        return (1..yearMonth.lengthOfMonth()).map { dayOfMonth ->
+            val date = yearMonth.atDay(dayOfMonth)
+            getHebrewDay(date)
+        }
+    }
+
+    fun getHebrewMonthName(date: LocalDate): String {
+        val jewishCalendar = createJewishCalendar(date)
+        return translitFormatter.formatMonth(jewishCalendar)
+    }
+
+    fun getHebrewMonthNameHebrew(date: LocalDate): String {
+        val jewishCalendar = createJewishCalendar(date)
+        return hebrewFormatter.formatMonth(jewishCalendar)
+    }
+
+    private fun createJewishCalendar(date: LocalDate): JewishCalendar {
         // GregorianCalendar months are 0-based
         val gregorianCalendar = GregorianCalendar(
             date.year,
             date.monthValue - 1,
             date.dayOfMonth
         )
-        val jewishCalendar = JewishCalendar(gregorianCalendar)
+        return JewishCalendar(gregorianCalendar)
+    }
 
-        val hebrewFormatted = hebrewFormatter.format(jewishCalendar)
-        val transliterated = translitFormatter.format(jewishCalendar)
-
+    private fun toHebrewDay(jewishCalendar: JewishCalendar, date: LocalDate): HebrewDay {
         return HebrewDay(
             day = jewishCalendar.jewishDayOfMonth,
             month = HebrewMonth.from(
@@ -36,8 +59,11 @@ class CalendarRepository {
                 jewishCalendar.isJewishLeapYear
             ),
             year = jewishCalendar.jewishYear,
-            hebrewFormatted = hebrewFormatted,
-            transliterated = transliterated,
+            hebrewFormatted = hebrewFormatter.format(jewishCalendar),
+            transliterated = translitFormatter.format(jewishCalendar),
+            hebrewDayOfMonthFormatted = hebrewFormatter.formatHebrewNumber(
+                jewishCalendar.jewishDayOfMonth
+            ),
             gregorianDate = date
         )
     }
