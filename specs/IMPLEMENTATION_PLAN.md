@@ -57,9 +57,9 @@ These decisions apply across all increments:
 
 ## Increments
 
-### Increment 1: Project Skeleton & Hello World
+### ~~Increment 1: Project Skeleton & Hello World~~ DONE
 
-**Branch:** `increment-01-project-skeleton`
+**Branch:** `increment-01-project-skeleton` (merged)
 **Depends on:** Nothing
 
 **What to build:**
@@ -87,9 +87,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 2: KosherJava Integration & Hebrew Date Display
+### ~~Increment 2: KosherJava Integration & Hebrew Date Display~~ DONE
 
-**Branch:** `increment-02-hebrew-date`
+**Branch:** `increment-02-hebrew-date` (merged)
 **Depends on:** Increment 1
 
 **What to build:**
