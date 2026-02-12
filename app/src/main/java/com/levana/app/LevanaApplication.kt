@@ -1,15 +1,11 @@
 package com.levana.app
 
 import android.app.Application
+import com.levana.app.di.allModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
-import org.koin.dsl.module
-
-val appModule = module {
-    // Future DI declarations will go here
-}
 
 class LevanaApplication : Application() {
     override fun onCreate() {
@@ -17,7 +13,7 @@ class LevanaApplication : Application() {
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@LevanaApplication)
-            modules(appModule)
+            modules(allModules)
         }
     }
 }
