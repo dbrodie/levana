@@ -1,6 +1,7 @@
 package com.levana.app.ui.calendar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,12 +47,17 @@ private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
 
 @Composable
-fun CalendarScreen(modifier: Modifier = Modifier, viewModel: CalendarViewModel = koinViewModel()) {
+fun CalendarScreen(
+    onDayClick: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: CalendarViewModel = koinViewModel()
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     CalendarContent(
         state = state,
         onIntent = viewModel::onIntent,
+        onDayClick = onDayClick,
         modifier = modifier
     )
 }
@@ -60,6 +66,7 @@ fun CalendarScreen(modifier: Modifier = Modifier, viewModel: CalendarViewModel =
 fun CalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
+    onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(
@@ -119,7 +126,8 @@ fun CalendarContent(
                     MonthGrid(
                         monthDays = state.monthDays,
                         currentMonth = state.currentMonth,
-                        today = state.today
+                        today = state.today,
+                        onDayClick = onDayClick
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize())
@@ -200,7 +208,12 @@ private fun DayOfWeekHeader() {
 }
 
 @Composable
-private fun MonthGrid(monthDays: List<HebrewDay>, currentMonth: YearMonth, today: LocalDate) {
+private fun MonthGrid(
+    monthDays: List<HebrewDay>,
+    currentMonth: YearMonth,
+    today: LocalDate,
+    onDayClick: (LocalDate) -> Unit
+) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
     // Sunday = 0 offset for our grid (DayOfWeek.SUNDAY.value is 7)
     val leadingEmptyCells = firstDayOfWeek.value % 7
@@ -219,14 +232,15 @@ private fun MonthGrid(monthDays: List<HebrewDay>, currentMonth: YearMonth, today
         items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
             DayCell(
                 day = day,
-                isToday = day.gregorianDate == today
+                isToday = day.gregorianDate == today,
+                onClick = { onDayClick(day.gregorianDate) }
             )
         }
     }
 }
 
 @Composable
-private fun DayCell(day: HebrewDay, isToday: Boolean) {
+private fun DayCell(day: HebrewDay, isToday: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isToday) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
@@ -238,7 +252,8 @@ private fun DayCell(day: HebrewDay, isToday: Boolean) {
             .aspectRatio(1f)
             .padding(1.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(backgroundColor),
+            .background(backgroundColor)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

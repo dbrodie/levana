@@ -2,6 +2,7 @@ package com.levana.app.data
 
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
 import java.time.LocalDate
@@ -20,7 +21,6 @@ class CalendarRepository {
 
     fun getHebrewDay(date: LocalDate): HebrewDay {
         val jewishCalendar = createJewishCalendar(date)
-
         return toHebrewDay(jewishCalendar, date)
     }
 
@@ -31,14 +31,41 @@ class CalendarRepository {
         }
     }
 
-    fun getHebrewMonthName(date: LocalDate): String {
+    fun getDayInfo(date: LocalDate): DayInfo {
         val jewishCalendar = createJewishCalendar(date)
-        return translitFormatter.formatMonth(jewishCalendar)
-    }
+        val hebrewDay = toHebrewDay(jewishCalendar, date)
 
-    fun getHebrewMonthNameHebrew(date: LocalDate): String {
-        val jewishCalendar = createJewishCalendar(date)
-        return hebrewFormatter.formatMonth(jewishCalendar)
+        val holidays = buildList {
+            val yomTovIndex = jewishCalendar.yomTovIndex
+            if (yomTovIndex >= 0) {
+                HolidayMapper.mapHoliday(yomTovIndex)?.let { add(it) }
+            }
+            if (jewishCalendar.isRoshChodesh &&
+                yomTovIndex != JewishCalendar.ROSH_CHODESH
+            ) {
+                HolidayMapper.mapHoliday(JewishCalendar.ROSH_CHODESH)?.let { add(it) }
+            }
+        }
+
+        val parshaEnum = jewishCalendar.parshah
+        val parsha = if (parshaEnum != null &&
+            parshaEnum != JewishCalendar.Parsha.NONE
+        ) {
+            translitFormatter.formatParsha(jewishCalendar)
+        } else {
+            null
+        }
+
+        val omerDay = jewishCalendar.dayOfOmer.let { if (it == -1) null else it }
+
+        return DayInfo(
+            hebrewDay = hebrewDay,
+            dayOfWeek = date.dayOfWeek,
+            gregorianDate = date,
+            holidays = holidays,
+            parsha = parsha,
+            omerDay = omerDay
+        )
     }
 
     private fun createJewishCalendar(date: LocalDate): JewishCalendar {
