@@ -146,7 +146,7 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 4: Daily Detail View
+### Increment 4: Daily Detail View -- DONE
 
 **Branch:** `increment-04-daily-detail`
 **Depends on:** Increment 3
@@ -167,14 +167,14 @@ These decisions apply across all increments:
 - Omer from `JewishCalendar.getDayOfOmer()`
 
 **Acceptance criteria:**
-- [ ] Tapping a day in the grid opens the detail screen
-- [ ] Detail shows full Hebrew date, Gregorian date, and day of week
-- [ ] A regular weekday shows no holiday or parsha
-- [ ] A Shabbat shows the parsha name
-- [ ] A holiday (e.g., navigate to next Pesach) shows the holiday name and category
-- [ ] During Omer period, count displays as "Day 15, which is 2 weeks and 1 day"
-- [ ] Back navigation returns to calendar grid
-- [ ] `./gradlew build` passes
+- [x] Tapping a day in the grid opens the detail screen
+- [x] Detail shows full Hebrew date, Gregorian date, and day of week
+- [x] A regular weekday shows no holiday or parsha
+- [x] A Shabbat shows the parsha name
+- [x] A holiday (e.g., navigate to next Pesach) shows the holiday name and category
+- [x] During Omer period, count displays as "Day 15, which is 2 weeks and 1 day"
+- [x] Back navigation returns to calendar grid
+- [x] `./gradlew build` passes
 
 ---
 
