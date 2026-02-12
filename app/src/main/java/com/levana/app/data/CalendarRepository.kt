@@ -5,6 +5,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
 import java.time.LocalDate
+import java.util.GregorianCalendar
 
 class CalendarRepository {
 
@@ -17,11 +18,13 @@ class CalendarRepository {
     }
 
     fun getHebrewDay(date: LocalDate): HebrewDay {
-        val jewishCalendar = JewishCalendar(
+        // GregorianCalendar months are 0-based
+        val gregorianCalendar = GregorianCalendar(
             date.year,
-            date.monthValue,
+            date.monthValue - 1,
             date.dayOfMonth
         )
+        val jewishCalendar = JewishCalendar(gregorianCalendar)
 
         val hebrewFormatted = hebrewFormatter.format(jewishCalendar)
         val transliterated = translitFormatter.format(jewishCalendar)
