@@ -9,5 +9,6 @@ data class CalendarState(
     val monthDays: List<HebrewDay> = emptyList(),
     val today: LocalDate = LocalDate.now(),
     val hebrewMonthHeader: String = "",
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val locationName: String = ""
 )

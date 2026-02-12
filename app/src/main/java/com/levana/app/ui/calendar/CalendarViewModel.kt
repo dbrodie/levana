@@ -3,6 +3,7 @@ package com.levana.app.ui.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
+import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.HebrewDay
 import java.time.LocalDate
 import java.time.YearMonth
@@ -12,13 +13,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class CalendarViewModel(
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val preferencesRepository: PreferencesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CalendarState())
     val state: StateFlow<CalendarState> = _state.asStateFlow()
 
     init {
+        observePreferences()
         onIntent(CalendarIntent.LoadToday)
     }
 
@@ -26,8 +29,21 @@ class CalendarViewModel(
         when (intent) {
             is CalendarIntent.LoadToday -> loadMonth(YearMonth.now())
             is CalendarIntent.LoadMonth -> loadMonth(intent.yearMonth)
-            is CalendarIntent.NextMonth -> loadMonth(_state.value.currentMonth.plusMonths(1))
-            is CalendarIntent.PreviousMonth -> loadMonth(_state.value.currentMonth.minusMonths(1))
+            is CalendarIntent.NextMonth ->
+                loadMonth(_state.value.currentMonth.plusMonths(1))
+            is CalendarIntent.PreviousMonth ->
+                loadMonth(_state.value.currentMonth.minusMonths(1))
+        }
+    }
+
+    private fun observePreferences() {
+        viewModelScope.launch {
+            preferencesRepository.preferences.collect { prefs ->
+                _state.value = _state.value.copy(
+                    locationName = prefs.location?.name ?: ""
+                )
+                loadMonth(_state.value.currentMonth)
+            }
         }
     }
 
@@ -66,9 +82,9 @@ class CalendarViewModel(
                 .replace("_", " ")
             val lastYear = lastDay.year
             if (firstYear == lastYear) {
-                "$firstMonthName–$lastMonthName $firstYear"
+                "$firstMonthName\u2013$lastMonthName $firstYear"
             } else {
-                "$firstMonthName $firstYear – $lastMonthName $lastYear"
+                "$firstMonthName $firstYear \u2013 $lastMonthName $lastYear"
             }
         }
     }
