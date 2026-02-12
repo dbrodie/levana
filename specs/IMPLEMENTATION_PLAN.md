@@ -114,9 +114,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 3: Monthly Calendar Grid
+### ~~Increment 3: Monthly Calendar Grid~~ DONE
 
-**Branch:** `increment-03-monthly-grid`
+**Branch:** `increment-03-monthly-grid` (merged)
 **Depends on:** Increment 2
 
 **What to build:**
