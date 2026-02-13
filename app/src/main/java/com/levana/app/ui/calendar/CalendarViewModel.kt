@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.UserPreferences
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,28 +28,53 @@ class CalendarViewModel(
 
     init {
         observePreferences()
-        onIntent(CalendarIntent.LoadToday)
     }
 
     fun onIntent(intent: CalendarIntent) {
         when (intent) {
-            is CalendarIntent.LoadToday -> loadMonth(YearMonth.now())
+            is CalendarIntent.LoadToday -> {
+                if (currentPrefs.hebrewPrimary) {
+                    loadHebrewMonth(HebrewYearMonth.now())
+                } else {
+                    loadMonth(YearMonth.now())
+                }
+            }
             is CalendarIntent.LoadMonth -> loadMonth(intent.yearMonth)
             is CalendarIntent.NextMonth ->
                 loadMonth(_state.value.currentMonth.plusMonths(1))
             is CalendarIntent.PreviousMonth ->
                 loadMonth(_state.value.currentMonth.minusMonths(1))
+            is CalendarIntent.LoadHebrewMonth ->
+                loadHebrewMonth(intent.hebrewYearMonth)
+            is CalendarIntent.NextHebrewMonth -> {
+                val current = _state.value.hebrewYearMonth
+                    ?: HebrewYearMonth.now()
+                loadHebrewMonth(current.next())
+            }
+            is CalendarIntent.PreviousHebrewMonth -> {
+                val current = _state.value.hebrewYearMonth
+                    ?: HebrewYearMonth.now()
+                loadHebrewMonth(current.previous())
+            }
         }
     }
 
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
+                val modeChanged = currentPrefs.hebrewPrimary != prefs.hebrewPrimary
                 currentPrefs = prefs
                 _state.value = _state.value.copy(
-                    locationName = prefs.location?.name ?: ""
+                    locationName = prefs.location?.name ?: "",
+                    hebrewPrimary = prefs.hebrewPrimary
                 )
-                loadMonth(_state.value.currentMonth)
+                if (modeChanged || _state.value.monthDays.isEmpty()) {
+                    onIntent(CalendarIntent.LoadToday)
+                } else if (prefs.hebrewPrimary) {
+                    _state.value.hebrewYearMonth?.let { loadHebrewMonth(it) }
+                } else {
+                    loadMonth(_state.value.currentMonth)
+                }
             }
         }
     }
@@ -68,6 +96,42 @@ class CalendarViewModel(
                 hebrewMonthHeader = hebrewMonthHeader,
                 isLoading = false
             )
+        }
+    }
+
+    private fun loadHebrewMonth(hym: HebrewYearMonth) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+
+            val monthDays = calendarRepository.getHebrewMonthDays(
+                hym,
+                currentPrefs.isInIsrael
+            )
+            val hebrewMonthName =
+                calendarRepository.getHebrewMonthName(hym)
+            val hebrewHeader = "$hebrewMonthName ${hym.year}"
+            val gregHeader = buildGregorianRange(monthDays)
+
+            _state.value = _state.value.copy(
+                hebrewYearMonth = hym,
+                monthDays = monthDays,
+                today = LocalDate.now(),
+                hebrewMonthHeader = hebrewHeader,
+                gregorianHeader = gregHeader,
+                isLoading = false
+            )
+        }
+    }
+
+    private fun buildGregorianRange(days: List<HebrewDay>): String {
+        if (days.isEmpty()) return ""
+        val first = days.first().gregorianDate
+        val last = days.last().gregorianDate
+        val fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        return if (first.month == last.month && first.year == last.year) {
+            first.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+        } else {
+            "${first.format(fmt)} \u2013 ${last.format(fmt)}"
         }
     }
 

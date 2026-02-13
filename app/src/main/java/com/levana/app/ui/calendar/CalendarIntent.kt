@@ -1,5 +1,6 @@
 package com.levana.app.ui.calendar
 
+import com.levana.app.domain.model.HebrewYearMonth
 import java.time.YearMonth
 
 sealed interface CalendarIntent {
@@ -7,4 +8,7 @@ sealed interface CalendarIntent {
     data class LoadMonth(val yearMonth: YearMonth) : CalendarIntent
     data object NextMonth : CalendarIntent
     data object PreviousMonth : CalendarIntent
+    data class LoadHebrewMonth(val hebrewYearMonth: HebrewYearMonth) : CalendarIntent
+    data object NextHebrewMonth : CalendarIntent
+    data object PreviousHebrewMonth : CalendarIntent
 }

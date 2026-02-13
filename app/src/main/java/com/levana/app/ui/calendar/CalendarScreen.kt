@@ -25,14 +25,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.HebrewDay
@@ -54,16 +57,29 @@ fun CalendarScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    CalendarContent(
-        state = state,
-        onIntent = viewModel::onIntent,
-        onDayClick = onDayClick,
-        modifier = modifier
-    )
+    if (state.hebrewPrimary) {
+        CompositionLocalProvider(
+            LocalLayoutDirection provides LayoutDirection.Rtl
+        ) {
+            HebrewCalendarContent(
+                state = state,
+                onIntent = viewModel::onIntent,
+                onDayClick = onDayClick,
+                modifier = modifier
+            )
+        }
+    } else {
+        GregorianCalendarContent(
+            state = state,
+            onIntent = viewModel::onIntent,
+            onDayClick = onDayClick,
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
-fun CalendarContent(
+private fun GregorianCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
     onDayClick: (LocalDate) -> Unit,
@@ -76,7 +92,6 @@ fun CalendarContent(
 
     val baseMonth = YearMonth.now()
 
-    // Load month when pager settles on a new page
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
             val offset = page - PAGER_INITIAL_PAGE
@@ -87,7 +102,6 @@ fun CalendarContent(
         }
     }
 
-    // Sync pager when navigating via arrows
     val expectedPage = PAGER_INITIAL_PAGE +
         ((state.currentMonth.year - baseMonth.year) * 12) +
         (state.currentMonth.monthValue - baseMonth.monthValue)
@@ -99,13 +113,13 @@ fun CalendarContent(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        MonthHeader(
+        GregorianMonthHeader(
             state = state,
             onPrevious = { onIntent(CalendarIntent.PreviousMonth) },
             onNext = { onIntent(CalendarIntent.NextMonth) }
         )
 
-        DayOfWeekHeader()
+        DayOfWeekHeader(rtl = false)
 
         if (state.isLoading && state.monthDays.isEmpty()) {
             Box(
@@ -123,7 +137,7 @@ fun CalendarContent(
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
 
                 if (pageMonth == state.currentMonth) {
-                    MonthGrid(
+                    GregorianMonthGrid(
                         monthDays = state.monthDays,
                         currentMonth = state.currentMonth,
                         today = state.today,
@@ -138,7 +152,41 @@ fun CalendarContent(
 }
 
 @Composable
-private fun MonthHeader(state: CalendarState, onPrevious: () -> Unit, onNext: () -> Unit) {
+private fun HebrewCalendarContent(
+    state: CalendarState,
+    onIntent: (CalendarIntent) -> Unit,
+    onDayClick: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        HebrewMonthHeader(
+            hebrewHeader = state.hebrewMonthHeader,
+            gregorianHeader = state.gregorianHeader,
+            onPrevious = { onIntent(CalendarIntent.PreviousHebrewMonth) },
+            onNext = { onIntent(CalendarIntent.NextHebrewMonth) }
+        )
+
+        DayOfWeekHeader(rtl = true)
+
+        if (state.isLoading && state.monthDays.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            HebrewMonthGrid(
+                monthDays = state.monthDays,
+                today = state.today,
+                onDayClick = onDayClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun GregorianMonthHeader(state: CalendarState, onPrevious: () -> Unit, onNext: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -179,16 +227,75 @@ private fun MonthHeader(state: CalendarState, onPrevious: () -> Unit, onNext: ()
 }
 
 @Composable
-private fun DayOfWeekHeader() {
-    val daysOfWeek = listOf(
-        DayOfWeek.SUNDAY,
-        DayOfWeek.MONDAY,
-        DayOfWeek.TUESDAY,
-        DayOfWeek.WEDNESDAY,
-        DayOfWeek.THURSDAY,
-        DayOfWeek.FRIDAY,
-        DayOfWeek.SATURDAY
-    )
+private fun HebrewMonthHeader(
+    hebrewHeader: String,
+    gregorianHeader: String,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onNext) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Next month"
+            )
+        }
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = hebrewHeader,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Ltr
+            ) {
+                Text(
+                    text = gregorianHeader,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        IconButton(onClick = onPrevious) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Previous month"
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayOfWeekHeader(rtl: Boolean) {
+    val daysOfWeek = if (rtl) {
+        listOf(
+            DayOfWeek.SATURDAY,
+            DayOfWeek.FRIDAY,
+            DayOfWeek.THURSDAY,
+            DayOfWeek.WEDNESDAY,
+            DayOfWeek.TUESDAY,
+            DayOfWeek.MONDAY,
+            DayOfWeek.SUNDAY
+        )
+    } else {
+        listOf(
+            DayOfWeek.SUNDAY,
+            DayOfWeek.MONDAY,
+            DayOfWeek.TUESDAY,
+            DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY,
+            DayOfWeek.FRIDAY,
+            DayOfWeek.SATURDAY
+        )
+    }
 
     Row(
         modifier = Modifier
@@ -208,14 +315,13 @@ private fun DayOfWeekHeader() {
 }
 
 @Composable
-private fun MonthGrid(
+private fun GregorianMonthGrid(
     monthDays: List<HebrewDay>,
     currentMonth: YearMonth,
     today: LocalDate,
     onDayClick: (LocalDate) -> Unit
 ) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
-    // Sunday = 0 offset for our grid (DayOfWeek.SUNDAY.value is 7)
     val leadingEmptyCells = firstDayOfWeek.value % 7
 
     LazyVerticalGrid(
@@ -233,6 +339,7 @@ private fun MonthGrid(
             DayCell(
                 day = day,
                 isToday = day.gregorianDate == today,
+                hebrewPrimary = false,
                 onClick = { onDayClick(day.gregorianDate) }
             )
         }
@@ -240,7 +347,43 @@ private fun MonthGrid(
 }
 
 @Composable
-private fun DayCell(day: HebrewDay, isToday: Boolean, onClick: () -> Unit) {
+private fun HebrewMonthGrid(
+    monthDays: List<HebrewDay>,
+    today: LocalDate,
+    onDayClick: (LocalDate) -> Unit
+) {
+    if (monthDays.isEmpty()) return
+    val firstDate = monthDays.first().gregorianDate
+    // For RTL grid: Shabbat (Saturday) is column 0
+    // DayOfWeek.SATURDAY.value = 6, we want offset from Saturday
+    val dayVal = firstDate.dayOfWeek.value // Mon=1..Sun=7
+    // Map to Sat=0, Sun=1, Mon=2, ..., Fri=6
+    val leadingEmptyCells = (dayVal % 7 + 1) % 7
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(7),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        userScrollEnabled = false
+    ) {
+        items(leadingEmptyCells) {
+            Box(modifier = Modifier.aspectRatio(1f))
+        }
+
+        items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
+            DayCell(
+                day = day,
+                isToday = day.gregorianDate == today,
+                hebrewPrimary = true,
+                onClick = { onDayClick(day.gregorianDate) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isToday) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
@@ -273,15 +416,31 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, onClick: () -> Unit) {
                     MaterialTheme.colorScheme.onSurface
                 }
             )
-            Text(
-                text = day.gregorianDate.dayOfMonth.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isToday) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
+            if (hebrewPrimary) {
+                Text(
+                    text = "${day.gregorianDate.dayOfMonth}/${day.gregorianDate.monthValue}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isToday) {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = 0.7f
+                        )
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            } else {
+                Text(
+                    text = day.gregorianDate.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isToday) {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                            alpha = 0.7f
+                        )
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         }
     }
 }

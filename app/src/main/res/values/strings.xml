@@ -2,4 +2,52 @@
 <resources>
     <string name="app_name">Levana</string>
     <string name="welcome_message">Hebrew Calendar</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_zmanim">Zmanim</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Calendar -->
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="show_zmanim">Show Zmanim</string>
+
+    <!-- Day detail -->
+    <string name="holidays">Holidays</string>
+    <string name="parsha">Parsha</string>
+    <string name="sefirat_haomer">Sefirat HaOmer</string>
+    <string name="candle_lighting">Candle Lighting</string>
+    <string name="candle_lighting_hebrew">הדלקת נרות</string>
+    <string name="havdalah">Havdalah</string>
+    <string name="havdalah_hebrew">הבדלה</string>
+
+    <!-- Settings -->
+    <string name="settings_location">Location</string>
+    <string name="settings_change">Change</string>
+    <string name="settings_minhag">Minhag</string>
+    <string name="settings_minhag_desc">Affects prayer customs and some holiday observances</string>
+    <string name="settings_israel_diaspora">Israel / Diaspora</string>
+    <string name="settings_israel_desc">Affects second day Yom Tov and parsha readings</string>
+    <string name="settings_in_israel">In Israel</string>
+    <string name="settings_modern_israeli">Modern Israeli Holidays</string>
+    <string name="settings_modern_israeli_desc">Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim</string>
+    <string name="settings_show_on_calendar">Show on calendar</string>
+    <string name="settings_hebrew_primary">Hebrew-Primary Mode</string>
+    <string name="settings_hebrew_primary_desc">Calendar organized by Hebrew months</string>
+    <string name="settings_enable_hebrew">Enable Hebrew-primary</string>
+    <string name="settings_candle_lighting">Candle Lighting</string>
+    <string name="settings_candle_lighting_desc">Minutes before sunset</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Welcome to Levana</string>
+    <string name="welcome_subtitle">Choose your location to get started</string>
+    <string name="pick_city">Pick a City</string>
+    <string name="use_gps">Use GPS</string>
+    <string name="enter_manually">Enter Manually</string>
+
+    <!-- General -->
+    <string name="back">Back</string>
+    <string name="change_location">Change location</string>
+    <string name="not_set">Not set</string>
 </resources>

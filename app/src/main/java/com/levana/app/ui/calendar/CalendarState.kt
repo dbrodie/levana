@@ -1,6 +1,7 @@
 package com.levana.app.ui.calendar
 
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.HebrewYearMonth
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -9,6 +10,9 @@ data class CalendarState(
     val monthDays: List<HebrewDay> = emptyList(),
     val today: LocalDate = LocalDate.now(),
     val hebrewMonthHeader: String = "",
+    val gregorianHeader: String = "",
     val isLoading: Boolean = true,
-    val locationName: String = ""
+    val locationName: String = "",
+    val hebrewPrimary: Boolean = false,
+    val hebrewYearMonth: HebrewYearMonth? = null
 )

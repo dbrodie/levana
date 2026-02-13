@@ -96,7 +96,7 @@ fun SettingsContent(
 
         ToggleSection(
             title = "Hebrew-Primary Mode",
-            description = "Calendar organized by Hebrew months (coming soon)",
+            description = "Calendar organized by Hebrew months",
             label = "Enable Hebrew-primary",
             checked = state.hebrewPrimary,
             onCheckedChange = {

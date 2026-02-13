@@ -2,9 +2,11 @@ package com.levana.app.data
 
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
+import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.HolidayCategory
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -31,6 +33,37 @@ class CalendarRepository {
             val date = yearMonth.atDay(dayOfMonth)
             getHebrewDay(date, inIsrael)
         }
+    }
+
+    fun getHebrewMonthDays(
+        hebrewYearMonth: HebrewYearMonth,
+        inIsrael: Boolean = false
+    ): List<HebrewDay> {
+        val daysInMonth = hebrewYearMonth.daysInMonth()
+        return (1..daysInMonth).map { day ->
+            val jc = JewishCalendar(
+                hebrewYearMonth.year,
+                hebrewYearMonth.jewishDateMonth,
+                day
+            )
+            jc.setInIsrael(inIsrael)
+            val gc = jc.gregorianCalendar
+            val date = LocalDate.of(
+                gc.get(GregorianCalendar.YEAR),
+                gc.get(GregorianCalendar.MONTH) + 1,
+                gc.get(GregorianCalendar.DAY_OF_MONTH)
+            )
+            toHebrewDay(jc, date)
+        }
+    }
+
+    fun getHebrewMonthName(hebrewYearMonth: HebrewYearMonth): String {
+        val jd = JewishDate(
+            hebrewYearMonth.year,
+            hebrewYearMonth.jewishDateMonth,
+            1
+        )
+        return hebrewFormatter.formatMonth(jd)
     }
 
     fun getDayInfo(

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">לבנה</string>
+    <string name="welcome_message">לוח שנה עברי</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_calendar">לוח שנה</string>
+    <string name="nav_zmanim">זמנים</string>
+    <string name="nav_settings">הגדרות</string>
+
+    <!-- Calendar -->
+    <string name="previous_month">חודש קודם</string>
+    <string name="next_month">חודש הבא</string>
+    <string name="show_zmanim">הצג זמנים</string>
+
+    <!-- Day detail -->
+    <string name="holidays">חגים</string>
+    <string name="parsha">פרשה</string>
+    <string name="sefirat_haomer">ספירת העומר</string>
+    <string name="candle_lighting">הדלקת נרות</string>
+    <string name="candle_lighting_hebrew">הדלקת נרות</string>
+    <string name="havdalah">הבדלה</string>
+    <string name="havdalah_hebrew">הבדלה</string>
+
+    <!-- Settings -->
+    <string name="settings_location">מיקום</string>
+    <string name="settings_change">שנה</string>
+    <string name="settings_minhag">מנהג</string>
+    <string name="settings_minhag_desc">משפיע על מנהגי תפילה ושמירת חגים</string>
+    <string name="settings_israel_diaspora">ארץ ישראל / חו״ל</string>
+    <string name="settings_israel_desc">משפיע על יום טוב שני ופרשיות</string>
+    <string name="settings_in_israel">בארץ ישראל</string>
+    <string name="settings_modern_israeli">חגים ישראליים מודרניים</string>
+    <string name="settings_modern_israeli_desc">יום השואה, יום הזיכרון, יום העצמאות, יום ירושלים</string>
+    <string name="settings_show_on_calendar">הצג בלוח השנה</string>
+    <string name="settings_hebrew_primary">מצב עברי ראשי</string>
+    <string name="settings_hebrew_primary_desc">לוח שנה מאורגן לפי חודשים עבריים</string>
+    <string name="settings_enable_hebrew">הפעל מצב עברי</string>
+    <string name="settings_candle_lighting">הדלקת נרות</string>
+    <string name="settings_candle_lighting_desc">דקות לפני השקיעה</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">ברוכים הבאים ללבנה</string>
+    <string name="welcome_subtitle">בחרו מיקום כדי להתחיל</string>
+    <string name="pick_city">בחר עיר</string>
+    <string name="use_gps">השתמש ב-GPS</string>
+    <string name="enter_manually">הכנס ידנית</string>
+
+    <!-- General -->
+    <string name="back">חזרה</string>
+    <string name="change_location">שנה מיקום</string>
+    <string name="not_set">לא נקבע</string>
+</resources>
