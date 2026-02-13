@@ -276,9 +276,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 8: Settings Screen
+### Increment 8: Settings Screen -- DONE
 
-**Branch:** `increment-08-settings`
+**Branch:** `increment-08-settings` (merged)
 **Depends on:** Increment 7
 
 **What to build:**
@@ -299,13 +299,13 @@ These decisions apply across all increments:
 - MVI triad: `SettingsState`, `SettingsIntent`, `SettingsViewModel`
 
 **Acceptance criteria:**
-- [ ] Settings screen accessible via bottom navigation
-- [ ] Minhag selection persists and updates relevant calculations
-- [ ] Israel/Diaspora toggle changes Yom Tov day count (navigate to a Yom Tov to verify)
-- [ ] Modern Israeli Holidays toggle shows/hides them on calendar
-- [ ] Candle lighting offset change updates candle lighting times immediately
-- [ ] All settings persist across app restarts
-- [ ] `./gradlew build` passes
+- [x] Settings screen accessible via bottom navigation
+- [x] Minhag selection persists and updates relevant calculations
+- [x] Israel/Diaspora toggle changes Yom Tov day count (navigate to a Yom Tov to verify)
+- [x] Modern Israeli Holidays toggle shows/hides them on calendar
+- [x] Candle lighting offset change updates candle lighting times immediately
+- [x] All settings persist across app restarts
+- [x] `./gradlew build` passes
 
 ---
 
