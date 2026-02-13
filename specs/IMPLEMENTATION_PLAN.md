@@ -244,9 +244,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 7: Shabbat & Candle Lighting
+### Increment 7: Shabbat & Candle Lighting -- DONE
 
-**Branch:** `increment-07-candle-lighting`
+**Branch:** `increment-07-candle-lighting` (merged)
 **Depends on:** Increment 6
 
 **What to build:**
@@ -265,14 +265,14 @@ These decisions apply across all increments:
 - Halachically critical — times must be verified against published luach
 
 **Acceptance criteria:**
-- [ ] Friday cells in calendar grid show candle lighting indicator
-- [ ] Day detail for Friday shows candle lighting time
-- [ ] Day detail for Saturday shows Havdalah time
-- [ ] Default offset is 18 minutes before sunset
-- [ ] Candle lighting times appear in zmanim list on Friday
-- [ ] Yom Tov eve shows candle lighting time
-- [ ] Times match a published source (e.g., chabad.org for the same city/date)
-- [ ] `./gradlew build` passes
+- [x] Friday cells in calendar grid show candle lighting indicator
+- [x] Day detail for Friday shows candle lighting time
+- [x] Day detail for Saturday shows Havdalah time
+- [x] Default offset is 18 minutes before sunset
+- [x] Candle lighting times appear in zmanim list on Friday
+- [x] Yom Tov eve shows candle lighting time
+- [x] Times match a published source (e.g., chabad.org for the same city/date)
+- [x] `./gradlew build` passes
 
 ---
 
