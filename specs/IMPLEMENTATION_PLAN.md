@@ -309,9 +309,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 9: Hebrew-Primary Calendar & RTL
+### Increment 9: Hebrew-Primary Calendar & RTL -- DONE
 
-**Branch:** `increment-09-hebrew-primary`
+**Branch:** `increment-09-hebrew-primary` (merged)
 **Depends on:** Increment 8
 
 **What to build:**
@@ -330,14 +330,14 @@ These decisions apply across all increments:
 - `HebrewDateFormatter` handles all Hebrew text rendering
 
 **Acceptance criteria:**
-- [ ] Toggling "Hebrew-primary" in settings switches to Hebrew month grid
-- [ ] Hebrew month grid shows correct number of days (29 or 30)
-- [ ] Leap year shows both Adar I and Adar II as separate months
-- [ ] Gregorian dates appear as secondary text in Hebrew-primary cells
-- [ ] Language picker offers Hebrew and System options
-- [ ] Selecting Hebrew triggers RTL layout throughout the app
-- [ ] Mixed Hebrew/English text displays correctly
-- [ ] `./gradlew build` passes
+- [x] Toggling "Hebrew-primary" in settings switches to Hebrew month grid
+- [x] Hebrew month grid shows correct number of days (29 or 30)
+- [x] Leap year shows both Adar I and Adar II as separate months
+- [x] Gregorian dates appear as secondary text in Hebrew-primary cells
+- [ ] Language picker offers Hebrew and System options (deferred — RTL tied to Hebrew-primary toggle)
+- [x] Selecting Hebrew triggers RTL layout throughout the app
+- [x] Mixed Hebrew/English text displays correctly
+- [x] `./gradlew build` passes
 
 ---
 
