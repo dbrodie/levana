@@ -9,25 +9,36 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -44,8 +55,12 @@ import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
+import com.levana.app.ui.navigation.SettingsPlaceholderRoute
+import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
 import com.levana.app.ui.theme.LevanaTheme
+import com.levana.app.ui.zmanim.ZmanimScreen
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -60,6 +75,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+private data class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: Any
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,17 +98,32 @@ fun LevanaApp() {
     val hasLocation = prefs?.location != null
     val locationName = prefs?.location?.name ?: ""
 
-    // Wait until prefs are loaded
     if (prefs == null) return
 
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
+
+    val bottomNavItems = listOf(
+        BottomNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
+        BottomNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
+        BottomNavItem(
+            "Settings",
+            Icons.Filled.Settings,
+            SettingsPlaceholderRoute
+        )
+    )
+
+    val showBottomBar = hasLocation && backStackEntry?.destination?.let { dest ->
+        bottomNavItems.any { item ->
+            dest.hasRoute(item.route::class)
+        }
+    } == true
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 navigationIcon = {
-                    if (canGoBack) {
+                    if (canGoBack && !showBottomBar) {
                         IconButton(
                             onClick = { navController.popBackStack() }
                         ) {
@@ -125,6 +161,37 @@ fun LevanaApp() {
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { item ->
+                        val selected =
+                            backStackEntry?.destination?.hasRoute(
+                                item.route::class
+                            ) == true
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(
+                                        navController.graph
+                                            .findStartDestination().id
+                                    ) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = {
+                                Icon(item.icon, contentDescription = null)
+                            },
+                            label = { Text(item.label) }
+                        )
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -175,7 +242,39 @@ fun LevanaApp() {
 
             composable<DayDetailRoute> { backStack ->
                 val route = backStack.toRoute<DayDetailRoute>()
-                DayDetailScreen(dateEpochDay = route.dateEpochDay)
+                DayDetailScreen(
+                    dateEpochDay = route.dateEpochDay,
+                    onShowZmanim = { date ->
+                        navController.navigate(
+                            ZmanimRoute(date.toEpochDay())
+                        )
+                    }
+                )
+            }
+
+            composable<ZmanimRoute> { backStack ->
+                val route = backStack.toRoute<ZmanimRoute>()
+                val initialDate = if (route.dateEpochDay != 0L) {
+                    LocalDate.ofEpochDay(route.dateEpochDay)
+                } else {
+                    null
+                }
+                ZmanimScreen(initialDate = initialDate)
+            }
+
+            composable<SettingsPlaceholderRoute> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Settings coming soon",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

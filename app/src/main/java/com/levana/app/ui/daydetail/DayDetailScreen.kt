@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,20 +40,31 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun DayDetailScreen(
     dateEpochDay: Long,
+    onShowZmanim: (LocalDate) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DayDetailViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(dateEpochDay) {
-        viewModel.onIntent(DayDetailIntent.LoadDay(LocalDate.ofEpochDay(dateEpochDay)))
+        viewModel.onIntent(
+            DayDetailIntent.LoadDay(LocalDate.ofEpochDay(dateEpochDay))
+        )
     }
 
-    DayDetailContent(state = state, modifier = modifier)
+    DayDetailContent(
+        state = state,
+        onShowZmanim = onShowZmanim,
+        modifier = modifier
+    )
 }
 
 @Composable
-fun DayDetailContent(state: DayDetailState, modifier: Modifier = Modifier) {
+fun DayDetailContent(
+    state: DayDetailState,
+    onShowZmanim: (LocalDate) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
@@ -88,6 +100,16 @@ fun DayDetailContent(state: DayDetailState, modifier: Modifier = Modifier) {
                     if (dayInfo.omerFormatted != null) {
                         Spacer(modifier = Modifier.height(16.dp))
                         OmerSection(dayInfo.omerFormatted!!)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = {
+                            onShowZmanim(dayInfo.gregorianDate)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Show Zmanim")
                     }
                 }
             }
