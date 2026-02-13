@@ -9,8 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -55,9 +52,10 @@ import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
-import com.levana.app.ui.navigation.SettingsPlaceholderRoute
+import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
+import com.levana.app.ui.settings.SettingsScreen
 import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
@@ -108,7 +106,7 @@ fun LevanaApp() {
         BottomNavItem(
             "Settings",
             Icons.Filled.Settings,
-            SettingsPlaceholderRoute
+            SettingsRoute
         )
     )
 
@@ -262,19 +260,12 @@ fun LevanaApp() {
                 ZmanimScreen(initialDate = initialDate)
             }
 
-            composable<SettingsPlaceholderRoute> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Settings coming soon",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            composable<SettingsRoute> {
+                SettingsScreen(
+                    onChangeLocation = {
+                        navController.navigate(CityPickerRoute)
+                    }
+                )
             }
         }
     }

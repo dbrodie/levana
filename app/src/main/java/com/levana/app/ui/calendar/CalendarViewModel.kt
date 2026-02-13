@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.UserPreferences
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,8 @@ class CalendarViewModel(
 
     private val _state = MutableStateFlow(CalendarState())
     val state: StateFlow<CalendarState> = _state.asStateFlow()
+
+    private var currentPrefs = UserPreferences()
 
     init {
         observePreferences()
@@ -39,6 +42,7 @@ class CalendarViewModel(
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
+                currentPrefs = prefs
                 _state.value = _state.value.copy(
                     locationName = prefs.location?.name ?: ""
                 )
@@ -51,7 +55,10 @@ class CalendarViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
 
-            val monthDays = calendarRepository.getMonthDays(yearMonth)
+            val monthDays = calendarRepository.getMonthDays(
+                yearMonth,
+                currentPrefs.isInIsrael
+            )
             val hebrewMonthHeader = buildHebrewMonthHeader(monthDays)
 
             _state.value = _state.value.copy(

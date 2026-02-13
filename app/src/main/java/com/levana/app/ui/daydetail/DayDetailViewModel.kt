@@ -33,7 +33,11 @@ class DayDetailViewModel(
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
             val location = prefs.location ?: Location.JERUSALEM
-            val dayInfo = calendarRepository.getDayInfo(date)
+            val dayInfo = calendarRepository.getDayInfo(
+                date,
+                prefs.isInIsrael,
+                prefs.showModernIsraeliHolidays
+            )
             val shabbatInfo = zmanimRepository.getShabbatInfo(
                 date,
                 location,

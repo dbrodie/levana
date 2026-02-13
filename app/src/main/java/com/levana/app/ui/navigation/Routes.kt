@@ -21,4 +21,4 @@ data object ManualLocationRoute
 data class ZmanimRoute(val dateEpochDay: Long = 0L)
 
 @Serializable
-data object SettingsPlaceholderRoute
+data object SettingsRoute

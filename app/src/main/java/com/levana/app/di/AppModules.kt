@@ -8,6 +8,7 @@ import com.levana.app.data.ZmanimRepository
 import com.levana.app.ui.calendar.CalendarViewModel
 import com.levana.app.ui.daydetail.DayDetailViewModel
 import com.levana.app.ui.location.CityPickerViewModel
+import com.levana.app.ui.settings.SettingsViewModel
 import com.levana.app.ui.zmanim.ZmanimViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -25,6 +26,7 @@ val viewModelModule = module {
     viewModel { DayDetailViewModel(get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
+    viewModel { SettingsViewModel(get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

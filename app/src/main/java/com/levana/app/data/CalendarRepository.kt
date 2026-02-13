@@ -5,6 +5,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
+import com.levana.app.domain.model.HolidayCategory
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -20,20 +21,24 @@ class CalendarRepository {
         isHebrewFormat = false
     }
 
-    fun getHebrewDay(date: LocalDate): HebrewDay {
-        val jewishCalendar = createJewishCalendar(date)
+    fun getHebrewDay(date: LocalDate, inIsrael: Boolean = false): HebrewDay {
+        val jewishCalendar = createJewishCalendar(date, inIsrael)
         return toHebrewDay(jewishCalendar, date)
     }
 
-    fun getMonthDays(yearMonth: YearMonth): List<HebrewDay> {
+    fun getMonthDays(yearMonth: YearMonth, inIsrael: Boolean = false): List<HebrewDay> {
         return (1..yearMonth.lengthOfMonth()).map { dayOfMonth ->
             val date = yearMonth.atDay(dayOfMonth)
-            getHebrewDay(date)
+            getHebrewDay(date, inIsrael)
         }
     }
 
-    fun getDayInfo(date: LocalDate): DayInfo {
-        val jewishCalendar = createJewishCalendar(date)
+    fun getDayInfo(
+        date: LocalDate,
+        inIsrael: Boolean = false,
+        showModernIsraeli: Boolean = true
+    ): DayInfo {
+        val jewishCalendar = createJewishCalendar(date, inIsrael)
         val hebrewDay = toHebrewDay(jewishCalendar, date)
 
         val holidays = buildList {
@@ -45,6 +50,12 @@ class CalendarRepository {
                 yomTovIndex != JewishCalendar.ROSH_CHODESH
             ) {
                 HolidayMapper.mapHoliday(JewishCalendar.ROSH_CHODESH)?.let { add(it) }
+            }
+        }.let { list ->
+            if (showModernIsraeli) {
+                list
+            } else {
+                list.filter { it.category != HolidayCategory.MODERN_ISRAELI }
             }
         }
 
@@ -69,14 +80,16 @@ class CalendarRepository {
         )
     }
 
-    private fun createJewishCalendar(date: LocalDate): JewishCalendar {
+    private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false): JewishCalendar {
         // GregorianCalendar months are 0-based
         val gregorianCalendar = GregorianCalendar(
             date.year,
             date.monthValue - 1,
             date.dayOfMonth
         )
-        return JewishCalendar(gregorianCalendar)
+        return JewishCalendar(gregorianCalendar).apply {
+            setInIsrael(inIsrael)
+        }
     }
 
     private fun toHebrewDay(jewishCalendar: JewishCalendar, date: LocalDate): HebrewDay {
