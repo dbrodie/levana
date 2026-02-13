@@ -9,7 +9,8 @@ data class DayInfo(
     val gregorianDate: LocalDate,
     val holidays: List<Holiday>,
     val parsha: String?,
-    val omerDay: Int?
+    val omerDay: Int?,
+    val shabbatInfo: ShabbatInfo? = null
 ) {
     val omerFormatted: String?
         get() {

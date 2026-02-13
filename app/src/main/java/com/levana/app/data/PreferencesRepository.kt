@@ -25,6 +25,8 @@ class PreferencesRepository(private val context: Context) {
         val LOCATION_LON = doublePreferencesKey("location_lon")
         val LOCATION_ELEV = doublePreferencesKey("location_elev")
         val LOCATION_TZ = stringPreferencesKey("location_tz")
+        val CANDLE_LIGHTING_OFFSET =
+            doublePreferencesKey("candle_lighting_offset")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -41,7 +43,8 @@ class PreferencesRepository(private val context: Context) {
         } else {
             null
         }
-        UserPreferences(location = location)
+        val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
+        UserPreferences(location = location, candleLightingOffset = candleOffset)
     }
 
     suspend fun saveLocation(location: Location) {

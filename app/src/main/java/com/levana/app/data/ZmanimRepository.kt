@@ -1,11 +1,15 @@
 package com.levana.app.data
 
 import com.kosherjava.zmanim.ComplexZmanimCalendar
+import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.util.GeoLocation
 import com.levana.app.domain.model.Location
+import com.levana.app.domain.model.ShabbatInfo
 import com.levana.app.domain.model.ZmanCategory
 import com.levana.app.domain.model.ZmanTime
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Date
 import java.util.GregorianCalendar
@@ -13,8 +17,61 @@ import java.util.TimeZone
 
 class ZmanimRepository {
 
-    fun getZmanim(date: LocalDate, location: Location): List<ZmanTime> {
+    fun getShabbatInfo(
+        date: LocalDate,
+        location: Location,
+        candleLightingOffset: Double = 18.0
+    ): ShabbatInfo {
+        val jc = createJewishCalendar(date)
+        val isErevShabbat = date.dayOfWeek == DayOfWeek.FRIDAY
+        val isShabbat = date.dayOfWeek == DayOfWeek.SATURDAY
+        val isErevYomTov = jc.isErevYomTov ||
+            jc.isErevYomTovSheni
+        val isYomTov = jc.isYomTov && !isErevYomTov
+
+        val candleLightingTime = if (isErevShabbat || isErevYomTov) {
+            val czc = createCalendar(date, location)
+            czc.candleLightingOffset = candleLightingOffset
+            toLocalTime(czc.candleLighting, location)
+        } else {
+            null
+        }
+
+        val havdalahTime = if (isShabbat || isYomTov) {
+            val czc = createCalendar(date, location)
+            toLocalTime(czc.tzais, location)
+        } else {
+            null
+        }
+
+        return ShabbatInfo(
+            candleLightingTime = candleLightingTime,
+            havdalahTime = havdalahTime,
+            isErevShabbat = isErevShabbat,
+            isShabbat = isShabbat,
+            isErevYomTov = isErevYomTov,
+            isYomTov = isYomTov
+        )
+    }
+
+    fun hasCandles(date: LocalDate): Boolean {
+        val jc = createJewishCalendar(date)
+        return date.dayOfWeek == DayOfWeek.FRIDAY ||
+            jc.isErevYomTov ||
+            jc.isErevYomTovSheni
+    }
+
+    fun getZmanim(
+        date: LocalDate,
+        location: Location,
+        candleLightingOffset: Double = 18.0
+    ): List<ZmanTime> {
         val czc = createCalendar(date, location)
+        val shabbatInfo = getShabbatInfo(
+            date,
+            location,
+            candleLightingOffset
+        )
         return buildList {
             add(
                 zman(
@@ -90,11 +147,44 @@ class ZmanimRepository {
                     location
                 )
             )
+            if (shabbatInfo.showCandleLighting) {
+                add(
+                    ZmanTime(
+                        "Candle Lighting",
+                        "הדלקת נרות",
+                        shabbatInfo.candleLightingTime,
+                        ZmanCategory.EVENING
+                    )
+                )
+            }
             add(zman("Sunset", "שקיעה", czc.sunset, ZmanCategory.EVENING, location))
             add(zman("Nightfall", "צאת הכוכבים", czc.tzais, ZmanCategory.EVENING, location))
+            if (shabbatInfo.showHavdalah) {
+                add(
+                    ZmanTime(
+                        "Havdalah",
+                        "הבדלה",
+                        shabbatInfo.havdalahTime,
+                        ZmanCategory.EVENING
+                    )
+                )
+            }
             add(midnight(czc, location))
         }
     }
+
+    private fun createJewishCalendar(date: LocalDate): JewishCalendar {
+        val gc = GregorianCalendar(
+            date.year,
+            date.monthValue - 1,
+            date.dayOfMonth
+        )
+        return JewishCalendar(gc)
+    }
+
+    private fun toLocalTime(date: Date?, location: Location): LocalTime? = date?.toInstant()
+        ?.atZone(ZoneId.of(location.timezoneId))
+        ?.toLocalTime()
 
     private fun createCalendar(date: LocalDate, location: Location): ComplexZmanimCalendar {
         val tz = TimeZone.getTimeZone(location.timezoneId)

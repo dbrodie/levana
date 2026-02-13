@@ -5,6 +5,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewMonth
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.GregorianCalendar
@@ -79,6 +80,9 @@ class CalendarRepository {
     }
 
     private fun toHebrewDay(jewishCalendar: JewishCalendar, date: LocalDate): HebrewDay {
+        val hasCandles = date.dayOfWeek == DayOfWeek.FRIDAY ||
+            jewishCalendar.isErevYomTov ||
+            jewishCalendar.isErevYomTovSheni
         return HebrewDay(
             day = jewishCalendar.jewishDayOfMonth,
             month = HebrewMonth.from(
@@ -91,7 +95,8 @@ class CalendarRepository {
             hebrewDayOfMonthFormatted = hebrewFormatter.formatHebrewNumber(
                 jewishCalendar.jewishDayOfMonth
             ),
-            gregorianDate = date
+            gregorianDate = date,
+            hasCandles = hasCandles
         )
     }
 }

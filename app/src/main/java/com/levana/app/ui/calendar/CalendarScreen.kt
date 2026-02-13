@@ -257,6 +257,12 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (day.hasCandles) {
+                Text(
+                    text = "\uD83D\uDD6F",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
             Text(
                 text = day.hebrewDayOfMonthFormatted,
                 style = MaterialTheme.typography.bodyMedium,

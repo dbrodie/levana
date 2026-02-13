@@ -1,5 +1,6 @@
 package com.levana.app.ui.daydetail
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,11 +32,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
+
+private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
+private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
 fun DayDetailScreen(
@@ -90,6 +95,25 @@ fun DayDetailContent(
                     if (dayInfo.holidays.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         HolidaySection(dayInfo.holidays)
+                    }
+
+                    dayInfo.shabbatInfo?.let { info ->
+                        if (info.showCandleLighting) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ShabbatTimeCard(
+                                "Candle Lighting",
+                                "הדלקת נרות",
+                                info.candleLightingTime
+                            )
+                        }
+                        if (info.showHavdalah) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ShabbatTimeCard(
+                                "Havdalah",
+                                "הבדלה",
+                                info.havdalahTime
+                            )
+                        }
                     }
 
                     if (dayInfo.parsha != null) {
@@ -219,6 +243,39 @@ private fun ParshaSection(parsha: String) {
             Text(
                 text = parsha,
                 style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShabbatTimeCard(title: String, hebrewTitle: String, time: LocalTime?) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
+    val formatter = if (is24Hour) TIME_24H else TIME_12H
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = hebrewTitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = time?.format(formatter) ?: "--:--",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
         }
     }

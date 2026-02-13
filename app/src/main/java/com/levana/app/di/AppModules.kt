@@ -22,7 +22,7 @@ val dataModule = module {
 
 val viewModelModule = module {
     viewModel { CalendarViewModel(get(), get()) }
-    viewModel { DayDetailViewModel(get()) }
+    viewModel { DayDetailViewModel(get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
 }

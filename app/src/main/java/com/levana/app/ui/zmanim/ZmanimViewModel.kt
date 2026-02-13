@@ -36,7 +36,11 @@ class ZmanimViewModel(
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
             val location = prefs.location ?: Location.JERUSALEM
-            val zmanim = zmanimRepository.getZmanim(date, location)
+            val zmanim = zmanimRepository.getZmanim(
+                date,
+                location,
+                prefs.candleLightingOffset
+            )
             _state.value = _state.value.copy(
                 date = date,
                 zmanim = zmanim,
