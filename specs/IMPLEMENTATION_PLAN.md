@@ -211,7 +211,7 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 6: Zmanim Display
+### Increment 6: Zmanim Display -- DONE
 
 **Branch:** `increment-06-zmanim`
 **Depends on:** Increment 5
@@ -234,13 +234,13 @@ These decisions apply across all increments:
 - Date picker on zmanim screen to view times for other dates
 
 **Acceptance criteria:**
-- [ ] Bottom navigation shows Calendar, Zmanim, Settings tabs
-- [ ] Zmanim screen lists all 14 times grouped by category
-- [ ] Times are formatted in 12-hour or 24-hour based on system setting
-- [ ] Sunrise and sunset times are reasonable for the saved location
-- [ ] Tapping "Show Zmanim" on day detail navigates to zmanim for that day
-- [ ] Changing the date on zmanim screen updates all times
-- [ ] `./gradlew build` passes
+- [x] Bottom navigation shows Calendar, Zmanim, Settings tabs
+- [x] Zmanim screen lists all 13 times grouped by category
+- [x] Times are formatted in 12-hour or 24-hour based on system setting
+- [x] Sunrise and sunset times are reasonable for the saved location
+- [x] Tapping "Show Zmanim" on day detail navigates to zmanim for that day
+- [x] Changing the date on zmanim screen updates all times
+- [x] `./gradlew build` passes
 
 ---
 
