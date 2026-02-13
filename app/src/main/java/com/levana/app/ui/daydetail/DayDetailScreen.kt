@@ -118,7 +118,16 @@ fun DayDetailContent(
 
                     if (dayInfo.parsha != null) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        ParshaSection(dayInfo.parsha)
+                        ParshaSection(
+                            dayInfo.parsha,
+                            dayInfo.parshaHebrew,
+                            dayInfo.specialShabbat
+                        )
+                    }
+
+                    if (dayInfo.molad != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        MoladSection(dayInfo.molad)
                     }
 
                     if (dayInfo.omerFormatted != null) {
@@ -226,7 +235,7 @@ private fun HolidaySection(holidays: List<Holiday>) {
 }
 
 @Composable
-private fun ParshaSection(parsha: String) {
+private fun ParshaSection(parsha: String, parshaHebrew: String?, specialShabbat: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -242,6 +251,46 @@ private fun ParshaSection(parsha: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = parsha,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (parshaHebrew != null) {
+                Text(
+                    text = parshaHebrew,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme
+                        .onTertiaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            if (specialShabbat != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = specialShabbat,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoladSection(molad: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Shabbat Mevarchim",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = molad,
                 style = MaterialTheme.typography.bodyLarge
             )
         }

@@ -11,6 +11,7 @@ import com.levana.app.domain.model.HolidayCategory
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.util.GregorianCalendar
 
 class CalendarRepository {
@@ -101,7 +102,25 @@ class CalendarRepository {
             null
         }
 
-        val omerDay = jewishCalendar.dayOfOmer.let { if (it == -1) null else it }
+        val parshaHebrew = if (parshaEnum != null &&
+            parshaEnum != JewishCalendar.Parsha.NONE
+        ) {
+            hebrewFormatter.formatParsha(jewishCalendar)
+        } else {
+            null
+        }
+
+        val specialShabbat = getSpecialShabbat(jewishCalendar)
+
+        val molad = if (jewishCalendar.isShabbosMevorchim) {
+            formatMolad(jewishCalendar)
+        } else {
+            null
+        }
+
+        val omerDay = jewishCalendar.dayOfOmer.let {
+            if (it == -1) null else it
+        }
 
         return DayInfo(
             hebrewDay = hebrewDay,
@@ -109,12 +128,47 @@ class CalendarRepository {
             gregorianDate = date,
             holidays = holidays,
             parsha = parsha,
+            parshaHebrew = parshaHebrew,
+            specialShabbat = specialShabbat,
+            molad = molad,
             omerDay = omerDay
         )
     }
 
+    private fun getSpecialShabbat(jc: JewishCalendar): String? {
+        val special = jc.specialShabbos
+        if (special == null || special == JewishCalendar.Parsha.NONE) {
+            return null
+        }
+        return when (special) {
+            JewishCalendar.Parsha.SHKALIM -> "Shabbat Shekalim"
+            JewishCalendar.Parsha.ZACHOR -> "Shabbat Zachor"
+            JewishCalendar.Parsha.PARA -> "Shabbat Parah"
+            JewishCalendar.Parsha.HACHODESH -> "Shabbat HaChodesh"
+            JewishCalendar.Parsha.HAGADOL -> "Shabbat HaGadol"
+            JewishCalendar.Parsha.CHAZON -> "Shabbat Chazon"
+            JewishCalendar.Parsha.NACHAMU -> "Shabbat Nachamu"
+            JewishCalendar.Parsha.SHUVA -> "Shabbat Shuva"
+            JewishCalendar.Parsha.SHIRA -> "Shabbat Shirah"
+            else -> null
+        }
+    }
+
+    private fun formatMolad(jc: JewishCalendar): String {
+        val moladDate = jc.moladAsDate ?: return ""
+        val moladLocal = moladDate.toInstant()
+            .atZone(ZoneId.of("Asia/Jerusalem"))
+        val dayOfWeek = moladLocal.dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.FULL,
+            java.util.Locale.getDefault()
+        )
+        val time = moladLocal.toLocalTime()
+            .format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
+        val chalakim = jc.moladChalakim
+        return "Molad: $dayOfWeek $time, $chalakim chalakim"
+    }
+
     private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false): JewishCalendar {
-        // GregorianCalendar months are 0-based
         val gregorianCalendar = GregorianCalendar(
             date.year,
             date.monthValue - 1,
@@ -129,6 +183,12 @@ class CalendarRepository {
         val hasCandles = date.dayOfWeek == DayOfWeek.FRIDAY ||
             jewishCalendar.isErevYomTov ||
             jewishCalendar.isErevYomTovSheni
+        val yomTovIndex = jewishCalendar.yomTovIndex
+        val holidayCategory = if (yomTovIndex >= 0) {
+            HolidayMapper.mapHoliday(yomTovIndex)?.category
+        } else {
+            null
+        }
         return HebrewDay(
             day = jewishCalendar.jewishDayOfMonth,
             month = HebrewMonth.from(
@@ -142,7 +202,8 @@ class CalendarRepository {
                 jewishCalendar.jewishDayOfMonth
             ),
             gregorianDate = date,
-            hasCandles = hasCandles
+            hasCandles = hasCandles,
+            holidayCategory = holidayCategory
         )
     }
 }

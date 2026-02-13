@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -32,6 +34,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +42,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.HolidayCategory
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -400,11 +404,24 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, on
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (day.hasCandles) {
-                Text(
-                    text = "\uD83D\uDD6F",
-                    style = MaterialTheme.typography.labelSmall
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (day.hasCandles) {
+                    Text(
+                        text = "\uD83D\uDD6F",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+                day.holidayCategory?.let { category ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(holidayCategoryColor(category))
+                    )
+                }
             }
             Text(
                 text = day.hebrewDayOfMonthFormatted,
@@ -443,4 +460,12 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, on
             }
         }
     }
+}
+
+private fun holidayCategoryColor(category: HolidayCategory): Color = when (category) {
+    HolidayCategory.TORAH -> Color(0xFFD32F2F)
+    HolidayCategory.RABBINIC -> Color(0xFF1976D2)
+    HolidayCategory.FAST -> Color(0xFF757575)
+    HolidayCategory.MINOR -> Color(0xFF388E3C)
+    HolidayCategory.MODERN_ISRAELI -> Color(0xFFE65100)
 }
