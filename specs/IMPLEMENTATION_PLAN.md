@@ -341,9 +341,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 10: Holiday Enrichment & Torah Readings
+### Increment 10: Holiday Enrichment & Torah Readings -- DONE
 
-**Branch:** `increment-10-holiday-enrichment`
+**Branch:** `increment-10-holiday-enrichment` (merged)
 **Depends on:** Increment 9
 
 **What to build:**
@@ -365,15 +365,15 @@ These decisions apply across all increments:
 - Double parshiot: `JewishCalendar.getParsha()` returns the combined reading
 
 **Acceptance criteria:**
-- [ ] Calendar cells show color-coded dots/indicators for holidays
-- [ ] Different holiday categories have distinct colors
-- [ ] Shabbat detail shows parsha with Hebrew and transliterated names
-- [ ] Special maftir readings appear on the correct Shabbatot
-- [ ] Double parshiot display correctly (e.g., "Vayakhel-Pekudei")
-- [ ] Omer count shows day and week breakdown
-- [ ] Shabbat Mevarchim shows Molad information
-- [ ] Special Shabbatot (Hagadol, Shuva, etc.) identified correctly
-- [ ] `./gradlew build` passes
+- [x] Calendar cells show color-coded dots/indicators for holidays
+- [x] Different holiday categories have distinct colors
+- [x] Shabbat detail shows parsha with Hebrew and transliterated names
+- [x] Special maftir readings appear on the correct Shabbatot
+- [x] Double parshiot display correctly (e.g., "Vayakhel-Pekudei")
+- [x] Omer count shows day and week breakdown
+- [x] Shabbat Mevarchim shows Molad information
+- [x] Special Shabbatot (Hagadol, Shuva, etc.) identified correctly
+- [x] `./gradlew build` passes
 
 ---
 
