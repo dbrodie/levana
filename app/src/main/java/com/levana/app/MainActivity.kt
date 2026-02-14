@@ -176,10 +176,9 @@ fun LevanaApp() {
                                         navController.graph
                                             .findStartDestination().id
                                     ) {
-                                        saveState = true
+                                        inclusive = false
                                     }
                                     launchSingleTop = true
-                                    restoreState = true
                                 }
                             },
                             icon = {
