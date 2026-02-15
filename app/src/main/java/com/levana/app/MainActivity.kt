@@ -60,6 +60,7 @@ import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
 import com.levana.app.ui.settings.SettingsScreen
+import com.levana.app.ui.theme.HolidayTheme
 import com.levana.app.ui.theme.HolidayThemeResolver
 import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
@@ -76,8 +77,17 @@ class MainActivity : ComponentActivity() {
             val prefs by preferencesRepository.preferences.collectAsState(
                 initial = null
             )
-            val holidayTheme = if (prefs?.dynamicHolidayTheme == true) {
-                HolidayThemeResolver.resolve()
+            val forceThemeName = prefs?.devForceHolidayTheme
+            val forceTheme = forceThemeName?.let {
+                try {
+                    HolidayTheme.valueOf(it)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+            val holidayTheme = forceTheme ?: if (prefs?.dynamicHolidayTheme == true) {
+                val themeDate = prefs?.devDateOverride ?: LocalDate.now()
+                HolidayThemeResolver.resolve(themeDate)
             } else {
                 null
             }

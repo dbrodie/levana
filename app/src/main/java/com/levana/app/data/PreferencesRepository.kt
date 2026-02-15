@@ -6,11 +6,13 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.levana.app.domain.model.Location
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.UserPreferences
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -38,6 +40,12 @@ class PreferencesRepository(private val context: Context) {
         val HEBREW_PRIMARY = booleanPreferencesKey("hebrew_primary")
         val DYNAMIC_HOLIDAY_THEME =
             booleanPreferencesKey("dynamic_holiday_theme")
+        val SHOW_DEVELOPER_SETTINGS =
+            booleanPreferencesKey("show_developer_settings")
+        val DEV_DATE_OVERRIDE =
+            longPreferencesKey("dev_date_override")
+        val DEV_FORCE_HOLIDAY_THEME =
+            stringPreferencesKey("dev_force_holiday_theme")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -79,7 +87,12 @@ class PreferencesRepository(private val context: Context) {
             isInIsrael = isInIsrael,
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
             hebrewPrimary = prefs[Keys.HEBREW_PRIMARY] ?: false,
-            dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true
+            dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true,
+            showDeveloperSettings = prefs[Keys.SHOW_DEVELOPER_SETTINGS] ?: true,
+            devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let {
+                LocalDate.ofEpochDay(it)
+            },
+            devForceHolidayTheme = prefs[Keys.DEV_FORCE_HOLIDAY_THEME]
         )
     }
 
@@ -128,6 +141,32 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveDynamicHolidayTheme(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.DYNAMIC_HOLIDAY_THEME] = enabled
+        }
+    }
+
+    suspend fun saveShowDeveloperSettings(show: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.SHOW_DEVELOPER_SETTINGS] = show
+        }
+    }
+
+    suspend fun saveDevDateOverride(date: LocalDate?) {
+        context.dataStore.edit { prefs ->
+            if (date != null) {
+                prefs[Keys.DEV_DATE_OVERRIDE] = date.toEpochDay()
+            } else {
+                prefs.remove(Keys.DEV_DATE_OVERRIDE)
+            }
+        }
+    }
+
+    suspend fun saveDevForceHolidayTheme(theme: String?) {
+        context.dataStore.edit { prefs ->
+            if (theme != null) {
+                prefs[Keys.DEV_FORCE_HOLIDAY_THEME] = theme
+            } else {
+                prefs.remove(Keys.DEV_FORCE_HOLIDAY_THEME)
+            }
         }
     }
 }

@@ -34,6 +34,10 @@ class SettingsViewModel(
                     preferencesRepository.saveCandleLightingOffset(intent.offset)
                 is SettingsIntent.SetDynamicHolidayTheme ->
                     preferencesRepository.saveDynamicHolidayTheme(intent.enabled)
+                is SettingsIntent.SetDevDateOverride ->
+                    preferencesRepository.saveDevDateOverride(intent.date)
+                is SettingsIntent.SetDevForceHolidayTheme ->
+                    preferencesRepository.saveDevForceHolidayTheme(intent.theme)
             }
         }
     }
@@ -48,7 +52,10 @@ class SettingsViewModel(
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
                     hebrewPrimary = prefs.hebrewPrimary,
                     candleLightingOffset = prefs.candleLightingOffset,
-                    dynamicHolidayTheme = prefs.dynamicHolidayTheme
+                    dynamicHolidayTheme = prefs.dynamicHolidayTheme,
+                    showDeveloperSettings = prefs.showDeveloperSettings,
+                    devDateOverride = prefs.devDateOverride,
+                    devForceHolidayTheme = prefs.devForceHolidayTheme
                 )
             }
         }

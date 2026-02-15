@@ -7,5 +7,8 @@ data class UserPreferences(
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val hebrewPrimary: Boolean = false,
-    val dynamicHolidayTheme: Boolean = true
+    val dynamicHolidayTheme: Boolean = true,
+    val showDeveloperSettings: Boolean = true,
+    val devDateOverride: java.time.LocalDate? = null,
+    val devForceHolidayTheme: String? = null
 )

@@ -105,7 +105,7 @@ class CalendarViewModel(
             _state.value = _state.value.copy(
                 currentMonth = yearMonth,
                 monthDays = markedDays,
-                today = LocalDate.now(),
+                today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewMonthHeader,
                 isLoading = false
             )
@@ -139,7 +139,7 @@ class CalendarViewModel(
             _state.value = _state.value.copy(
                 hebrewYearMonth = hym,
                 monthDays = markedDays,
-                today = LocalDate.now(),
+                today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewHeader,
                 gregorianHeader = gregHeader,
                 isLoading = false

@@ -20,14 +20,24 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -35,6 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.Minhag
+import com.levana.app.ui.theme.HolidayTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -126,6 +139,19 @@ fun SettingsContent(
                 onIntent(SettingsIntent.SetCandleLightingOffset(it))
             }
         )
+
+        if (state.showDeveloperSettings) {
+            DeveloperSettingsSection(
+                devDateOverride = state.devDateOverride,
+                devForceHolidayTheme = state.devForceHolidayTheme,
+                onDateOverrideChange = {
+                    onIntent(SettingsIntent.SetDevDateOverride(it))
+                },
+                onForceHolidayThemeChange = {
+                    onIntent(SettingsIntent.SetDevForceHolidayTheme(it))
+                }
+            )
+        }
     }
 }
 
@@ -316,6 +342,165 @@ private fun PersonalEventsSection(onPersonalEvents: () -> Unit) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DeveloperSettingsSection(
+    devDateOverride: LocalDate?,
+    devForceHolidayTheme: String?,
+    onDateOverrideChange: (LocalDate?) -> Unit,
+    onForceHolidayThemeChange: (String?) -> Unit
+) {
+    SectionCard(
+        title = "Developer Settings",
+        description = "For testing and development"
+    ) {
+        // Date Override
+        Text(
+            text = "Date Override",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        DateOverridePicker(
+            currentDate = devDateOverride,
+            onDateChange = onDateOverrideChange
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Force Holiday Theme
+        Text(
+            text = "Force Holiday Theme",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        HolidayThemePicker(
+            selected = devForceHolidayTheme,
+            onSelect = onForceHolidayThemeChange
+        )
+    }
+}
+
+@Composable
+private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate?) -> Unit) {
+    var yearText by remember(currentDate) {
+        mutableStateOf(currentDate?.year?.toString() ?: "")
+    }
+    var monthText by remember(currentDate) {
+        mutableStateOf(currentDate?.monthValue?.toString() ?: "")
+    }
+    var dayText by remember(currentDate) {
+        mutableStateOf(currentDate?.dayOfMonth?.toString() ?: "")
+    }
+
+    if (currentDate != null) {
+        Text(
+            text = "Currently: ${currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = yearText,
+            onValueChange = { yearText = it },
+            label = { Text("Year") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+        OutlinedTextField(
+            value = monthText,
+            onValueChange = { monthText = it },
+            label = { Text("Month") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+        OutlinedTextField(
+            value = dayText,
+            onValueChange = { dayText = it },
+            label = { Text("Day") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+    }
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
+    ) {
+        TextButton(onClick = {
+            yearText = ""
+            monthText = ""
+            dayText = ""
+            onDateChange(null)
+        }) {
+            Text("Clear")
+        }
+        TextButton(onClick = {
+            try {
+                val y = yearText.toInt()
+                val m = monthText.toInt()
+                val d = dayText.toInt()
+                onDateChange(LocalDate.of(y, m, d))
+            } catch (_: Exception) {
+                // Invalid input, ignore
+            }
+        }) {
+            Text("Apply")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf("None") + HolidayTheme.entries.map { it.name }
+    val displayValue = selected ?: "None"
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = displayValue,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelect(if (option == "None") null else option)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }
