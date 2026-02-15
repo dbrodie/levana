@@ -377,9 +377,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 11: Personal Events
+### Increment 11: Personal Events -- DONE
 
-**Branch:** `increment-11-personal-events`
+**Branch:** `increment-11-personal-events` (merged)
 **Depends on:** Increment 10
 
 **What to build:**
@@ -407,17 +407,17 @@ These decisions apply across all increments:
 - Personal events accessible from a FAB or menu on the calendar screen
 
 **Acceptance criteria:**
-- [ ] Can add a birthday with Hebrew date and name
-- [ ] Can add a yahrzeit with Hebrew date and name
-- [ ] Can add a custom event with user-provided title and Hebrew date
-- [ ] Selecting Yahrzeit type shows explanatory text about Adar rules
-- [ ] Events appear in a list view
-- [ ] Can edit and delete existing events
-- [ ] Events show as indicators on their calendar cells
-- [ ] Yahrzeit in Adar of non-leap year appears in Adar II of leap year
-- [ ] Yahrzeit in Adar I of leap year stays in Adar I
-- [ ] Hebrew date picker allows selecting valid Hebrew dates
-- [ ] `./gradlew build` passes
+- [x] Can add a birthday with Hebrew date and name
+- [x] Can add a yahrzeit with Hebrew date and name
+- [x] Can add a custom event with user-provided title and Hebrew date
+- [x] Selecting Yahrzeit type shows explanatory text about Adar rules
+- [x] Events appear in a list view
+- [x] Can edit and delete existing events
+- [x] Events show as indicators on their calendar cells
+- [x] Yahrzeit in Adar of non-leap year appears in Adar II of leap year
+- [x] Yahrzeit in Adar I of leap year stays in Adar I
+- [x] Hebrew date picker allows selecting valid Hebrew dates
+- [x] `./gradlew build` passes
 
 ---
 
