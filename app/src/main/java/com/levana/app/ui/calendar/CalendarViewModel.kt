@@ -3,6 +3,7 @@ package com.levana.app.ui.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
+import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewYearMonth
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 
 class CalendarViewModel(
     private val calendarRepository: CalendarRepository,
-    private val preferencesRepository: PreferencesRepository
+    private val preferencesRepository: PreferencesRepository,
+    private val personalEventRepository: PersonalEventRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CalendarState())
@@ -89,9 +91,20 @@ class CalendarViewModel(
             )
             val hebrewMonthHeader = buildHebrewMonthHeader(monthDays)
 
+            val eventDates = personalEventRepository
+                .getEventDatesForGregorianMonth(yearMonth.year, yearMonth.monthValue)
+
+            val markedDays = monthDays.map { day ->
+                if (eventDates.contains(day.gregorianDate)) {
+                    day.copy(hasPersonalEvent = true)
+                } else {
+                    day
+                }
+            }
+
             _state.value = _state.value.copy(
                 currentMonth = yearMonth,
-                monthDays = monthDays,
+                monthDays = markedDays,
                 today = LocalDate.now(),
                 hebrewMonthHeader = hebrewMonthHeader,
                 isLoading = false
@@ -112,9 +125,20 @@ class CalendarViewModel(
             val hebrewHeader = "$hebrewMonthName ${hym.year}"
             val gregHeader = buildGregorianRange(monthDays)
 
+            val eventDays = personalEventRepository
+                .getEventDaysForHebrewMonth(hym.year, hym.jewishDateMonth)
+
+            val markedDays = monthDays.map { day ->
+                if (eventDays.contains(day.day)) {
+                    day.copy(hasPersonalEvent = true)
+                } else {
+                    day
+                }
+            }
+
             _state.value = _state.value.copy(
                 hebrewYearMonth = hym,
-                monthDays = monthDays,
+                monthDays = markedDays,
                 today = LocalDate.now(),
                 hebrewMonthHeader = hebrewHeader,
                 gregorianHeader = gregHeader,

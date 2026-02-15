@@ -3,6 +3,7 @@ package com.levana.app.ui.daydetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
+import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.data.ZmanimRepository
 import com.levana.app.domain.model.Location
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 class DayDetailViewModel(
     private val calendarRepository: CalendarRepository,
     private val zmanimRepository: ZmanimRepository,
-    private val preferencesRepository: PreferencesRepository
+    private val preferencesRepository: PreferencesRepository,
+    private val personalEventRepository: PersonalEventRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DayDetailState())
@@ -43,8 +45,10 @@ class DayDetailViewModel(
                 location,
                 prefs.candleLightingOffset
             )
+            val personalEvents = personalEventRepository.getEventsForDate(date)
             _state.value = DayDetailState(
                 dayInfo = dayInfo.copy(shabbatInfo = shabbatInfo),
+                personalEvents = personalEvents,
                 isLoading = false
             )
         }

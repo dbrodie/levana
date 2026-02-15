@@ -45,13 +45,17 @@ import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.ui.calendar.CalendarScreen
 import com.levana.app.ui.daydetail.DayDetailScreen
+import com.levana.app.ui.events.AddEditEventScreen
+import com.levana.app.ui.events.EventsScreen
 import com.levana.app.ui.location.CityPickerScreen
 import com.levana.app.ui.location.ManualLocationScreen
+import com.levana.app.ui.navigation.AddEditEventRoute
 import com.levana.app.ui.navigation.CalendarRoute
 import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
+import com.levana.app.ui.navigation.PersonalEventsRoute
 import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
@@ -245,6 +249,15 @@ fun LevanaApp() {
                         navController.navigate(
                             ZmanimRoute(date.toEpochDay())
                         )
+                    },
+                    onAddEvent = { day, month, year ->
+                        navController.navigate(
+                            AddEditEventRoute(
+                                prefillDay = day,
+                                prefillMonth = month,
+                                prefillYear = year
+                            )
+                        )
                     }
                 )
             }
@@ -263,6 +276,35 @@ fun LevanaApp() {
                 SettingsScreen(
                     onChangeLocation = {
                         navController.navigate(CityPickerRoute)
+                    },
+                    onPersonalEvents = {
+                        navController.navigate(PersonalEventsRoute)
+                    }
+                )
+            }
+
+            composable<PersonalEventsRoute> {
+                EventsScreen(
+                    onAddEvent = {
+                        navController.navigate(AddEditEventRoute())
+                    },
+                    onEditEvent = { eventId ->
+                        navController.navigate(
+                            AddEditEventRoute(eventId = eventId)
+                        )
+                    }
+                )
+            }
+
+            composable<AddEditEventRoute> { backStack ->
+                val route = backStack.toRoute<AddEditEventRoute>()
+                AddEditEventScreen(
+                    eventId = route.eventId,
+                    prefillDay = route.prefillDay,
+                    prefillMonth = route.prefillMonth,
+                    prefillYear = route.prefillYear,
+                    onSaved = {
+                        navController.popBackStack()
                     }
                 )
             }

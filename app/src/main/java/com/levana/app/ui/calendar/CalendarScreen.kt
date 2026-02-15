@@ -422,6 +422,13 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, on
                             .background(holidayCategoryColor(category))
                     )
                 }
+                if (day.hasPersonalEvent) {
+                    Text(
+                        text = "\u2605",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
             }
             Text(
                 text = day.hebrewDayOfMonthFormatted,

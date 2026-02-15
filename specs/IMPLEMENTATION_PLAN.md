@@ -384,13 +384,18 @@ These decisions apply across all increments:
 
 **What to build:**
 - Room database (v1) with `PersonalEvent` entity:
-  - Fields: id, name, hebrewDay, hebrewMonth, hebrewYear, eventType (BIRTHDAY/YAHRZEIT), notes
+  - Fields: id, name, hebrewDay, hebrewMonth, hebrewYear, eventType (BIRTHDAY/YAHRZEIT/CUSTOM), customTitle (for CUSTOM type), notes
+- Three event types:
+  - **Birthday** — name + Hebrew date, recurs annually on the same Hebrew date
+  - **Yahrzeit** — name + Hebrew date, recurs annually with special Adar rules
+  - **Custom** — user-provided title + Hebrew date, recurs annually on the same Hebrew date
 - CRUD screens: event list, add event, edit event, delete confirmation
 - Hebrew date picker composable (select Hebrew day, month, year)
 - Yahrzeit recurrence calculation with leap year Adar rules:
   - Death in Adar of non-leap year → observe in Adar II of leap year
   - Death in Adar I of leap year → observe in Adar I
   - Death in Adar II of leap year → observe in Adar II
+- Explanatory text on the add/edit screen when Yahrzeit is selected, noting the special Adar rules
 - Calendar cell indicators for days with personal events
 - Koin module for Room database
 
@@ -398,11 +403,14 @@ These decisions apply across all increments:
 - Room database created with `@Database(version = 1)`
 - Hebrew date picker: scrollable columns for day (1-30), month (Tishrei-Elul), year
 - Yahrzeit Adar rules are halachically defined — implement per Shulchan Aruch
+- Custom events use `customTitle` as display name; Birthday/Yahrzeit use `name` (the person's name)
 - Personal events accessible from a FAB or menu on the calendar screen
 
 **Acceptance criteria:**
 - [ ] Can add a birthday with Hebrew date and name
 - [ ] Can add a yahrzeit with Hebrew date and name
+- [ ] Can add a custom event with user-provided title and Hebrew date
+- [ ] Selecting Yahrzeit type shows explanatory text about Adar rules
 - [ ] Events appear in a list view
 - [ ] Can edit and delete existing events
 - [ ] Events show as indicators on their calendar cells

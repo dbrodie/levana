@@ -15,6 +15,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
@@ -39,6 +40,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsScreen(
     onChangeLocation: () -> Unit,
+    onPersonalEvents: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -48,6 +50,7 @@ fun SettingsScreen(
         state = state,
         onIntent = viewModel::onIntent,
         onChangeLocation = onChangeLocation,
+        onPersonalEvents = onPersonalEvents,
         modifier = modifier
     )
 }
@@ -57,6 +60,7 @@ fun SettingsContent(
     state: SettingsState,
     onIntent: (SettingsIntent) -> Unit,
     onChangeLocation: () -> Unit,
+    onPersonalEvents: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -70,6 +74,8 @@ fun SettingsContent(
             locationName = state.locationName,
             onChangeLocation = onChangeLocation
         )
+
+        PersonalEventsSection(onPersonalEvents = onPersonalEvents)
 
         MinhagSection(
             selected = state.minhag,
@@ -267,6 +273,39 @@ private fun CandleLightingSection(offset: Double, onOffsetChange: (Double) -> Un
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Increase")
             }
+        }
+    }
+}
+
+@Composable
+private fun PersonalEventsSection(onPersonalEvents: () -> Unit) {
+    SectionCard(
+        title = "Personal Events",
+        description = "Birthdays, yahrzeits, and custom events"
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onPersonalEvents),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.Event,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Manage Events",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            )
+            Text(
+                text = "Open",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

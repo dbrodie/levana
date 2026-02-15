@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.levana.app.data.db.PersonalEvent
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
 import java.time.LocalDate
@@ -46,6 +47,7 @@ private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 fun DayDetailScreen(
     dateEpochDay: Long,
     onShowZmanim: (LocalDate) -> Unit = {},
+    onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: DayDetailViewModel = koinViewModel()
 ) {
@@ -60,6 +62,7 @@ fun DayDetailScreen(
     DayDetailContent(
         state = state,
         onShowZmanim = onShowZmanim,
+        onAddEvent = onAddEvent,
         modifier = modifier
     )
 }
@@ -68,6 +71,7 @@ fun DayDetailScreen(
 fun DayDetailContent(
     state: DayDetailState,
     onShowZmanim: (LocalDate) -> Unit = {},
+    onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -135,6 +139,11 @@ fun DayDetailContent(
                         OmerSection(dayInfo.omerFormatted!!)
                     }
 
+                    if (state.personalEvents.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PersonalEventsSection(state.personalEvents)
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = {
@@ -143,6 +152,20 @@ fun DayDetailContent(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Show Zmanim")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            onAddEvent(
+                                dayInfo.hebrewDay.day,
+                                dayInfo.hebrewDay.month.jewishDateValue,
+                                dayInfo.hebrewDay.year
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Add Event for This Day")
                     }
                 }
             }
@@ -349,6 +372,47 @@ private fun OmerSection(omerFormatted: String) {
                 text = omerFormatted,
                 style = MaterialTheme.typography.bodyLarge
             )
+        }
+    }
+}
+
+@Composable
+private fun PersonalEventsSection(events: List<PersonalEvent>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Personal Events",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            events.forEach { event ->
+                Text(
+                    text = event.displayTitle,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = event.eventType.name.lowercase()
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                        .copy(alpha = 0.7f)
+                )
+                if (event.notes.isNotBlank()) {
+                    Text(
+                        text = event.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                            .copy(alpha = 0.7f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
     }
 }
