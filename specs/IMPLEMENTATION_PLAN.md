@@ -421,9 +421,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 12: Dynamic Holiday Theming
+### Increment 12: Dynamic Holiday Theming -- DONE
 
-**Branch:** `increment-12-holiday-theming`
+**Branch:** `increment-12-holiday-theming` (merged)
 **Depends on:** Increment 10
 
 **What to build:**
@@ -448,12 +448,12 @@ These decisions apply across all increments:
 - When disabled, fall back to default Material You or static palette
 
 **Acceptance criteria:**
-- [ ] During a holiday period, app accent color matches the defined theme
-- [ ] Color changes at the correct halachic times (erev start)
-- [ ] Disabling dynamic theming in settings reverts to default colors
-- [ ] Regular days use the default Material You / static palette
-- [ ] Theme change is visually smooth (no jarring flash)
-- [ ] `./gradlew build` passes
+- [x] During a holiday period, app accent color matches the defined theme
+- [x] Color changes at the correct halachic times (erev start)
+- [x] Disabling dynamic theming in settings reverts to default colors
+- [x] Regular days use the default Material You / static palette
+- [x] Theme change is visually smooth (no jarring flash)
+- [x] `./gradlew build` passes
 
 ---
 
