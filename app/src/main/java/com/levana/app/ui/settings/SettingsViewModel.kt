@@ -32,6 +32,8 @@ class SettingsViewModel(
                     preferencesRepository.saveHebrewPrimary(intent.enabled)
                 is SettingsIntent.SetCandleLightingOffset ->
                     preferencesRepository.saveCandleLightingOffset(intent.offset)
+                is SettingsIntent.SetDynamicHolidayTheme ->
+                    preferencesRepository.saveDynamicHolidayTheme(intent.enabled)
             }
         }
     }
@@ -45,7 +47,8 @@ class SettingsViewModel(
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
                     hebrewPrimary = prefs.hebrewPrimary,
-                    candleLightingOffset = prefs.candleLightingOffset
+                    candleLightingOffset = prefs.candleLightingOffset,
+                    dynamicHolidayTheme = prefs.dynamicHolidayTheme
                 )
             }
         }

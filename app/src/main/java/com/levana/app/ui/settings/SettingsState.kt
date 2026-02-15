@@ -8,5 +8,6 @@ data class SettingsState(
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val hebrewPrimary: Boolean = false,
-    val candleLightingOffset: Double = 18.0
+    val candleLightingOffset: Double = 18.0,
+    val dynamicHolidayTheme: Boolean = true
 )

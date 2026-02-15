@@ -60,6 +60,7 @@ import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
 import com.levana.app.ui.settings.SettingsScreen
+import com.levana.app.ui.theme.HolidayThemeResolver
 import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
@@ -71,7 +72,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LevanaTheme {
+            val preferencesRepository: PreferencesRepository = koinInject()
+            val prefs by preferencesRepository.preferences.collectAsState(
+                initial = null
+            )
+            val holidayTheme = if (prefs?.dynamicHolidayTheme == true) {
+                HolidayThemeResolver.resolve()
+            } else {
+                null
+            }
+            LevanaTheme(holidayTheme = holidayTheme) {
                 LevanaApp()
             }
         }

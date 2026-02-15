@@ -110,6 +110,16 @@ fun SettingsContent(
             }
         )
 
+        ToggleSection(
+            title = "Holiday Theming",
+            description = "Change app colors during holiday periods",
+            label = "Enable holiday theming",
+            checked = state.dynamicHolidayTheme,
+            onCheckedChange = {
+                onIntent(SettingsIntent.SetDynamicHolidayTheme(it))
+            }
+        )
+
         CandleLightingSection(
             offset = state.candleLightingOffset,
             onOffsetChange = {

@@ -36,6 +36,8 @@ class PreferencesRepository(private val context: Context) {
         val SHOW_MODERN_ISRAELI =
             booleanPreferencesKey("show_modern_israeli")
         val HEBREW_PRIMARY = booleanPreferencesKey("hebrew_primary")
+        val DYNAMIC_HOLIDAY_THEME =
+            booleanPreferencesKey("dynamic_holiday_theme")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -76,7 +78,8 @@ class PreferencesRepository(private val context: Context) {
             minhag = minhag,
             isInIsrael = isInIsrael,
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
-            hebrewPrimary = prefs[Keys.HEBREW_PRIMARY] ?: false
+            hebrewPrimary = prefs[Keys.HEBREW_PRIMARY] ?: false,
+            dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true
         )
     }
 
@@ -119,6 +122,12 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveHebrewPrimary(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.HEBREW_PRIMARY] = enabled
+        }
+    }
+
+    suspend fun saveDynamicHolidayTheme(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.DYNAMIC_HOLIDAY_THEME] = enabled
         }
     }
 }

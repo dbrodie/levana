@@ -26,9 +26,13 @@ private val DarkColorScheme = darkColorScheme(
 fun LevanaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    holidayTheme: HolidayTheme? = null,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
+        holidayTheme != null -> {
+            if (darkTheme) holidayTheme.darkScheme() else holidayTheme.lightScheme()
+        }
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
