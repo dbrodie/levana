@@ -1,21 +1,33 @@
 package com.levana.app.ui.daydetail
 
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.text.format.DateFormat
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
@@ -23,13 +35,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.levana.app.data.db.PersonalEvent
+import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
 import java.time.LocalDate
@@ -106,7 +123,7 @@ fun DayDetailContent(
                             Spacer(modifier = Modifier.height(16.dp))
                             ShabbatTimeCard(
                                 "Candle Lighting",
-                                "הדלקת נרות",
+                                "\u05d4\u05d3\u05dc\u05e7\u05ea \u05e0\u05e8\u05d5\u05ea",
                                 info.candleLightingTime
                             )
                         }
@@ -114,7 +131,7 @@ fun DayDetailContent(
                             Spacer(modifier = Modifier.height(16.dp))
                             ShabbatTimeCard(
                                 "Havdalah",
-                                "הבדלה",
+                                "\u05d4\u05d1\u05d3\u05dc\u05d4",
                                 info.havdalahTime
                             )
                         }
@@ -139,9 +156,9 @@ fun DayDetailContent(
                         OmerSection(dayInfo.omerFormatted!!)
                     }
 
-                    if (state.personalEvents.isNotEmpty()) {
+                    if (state.calendarEvents.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        PersonalEventsSection(state.personalEvents)
+                        PersonalEventsSection(state.calendarEvents)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -175,7 +192,10 @@ fun DayDetailContent(
 
 @Composable
 private fun DateHeader(dayInfo: DayInfo) {
-    val dayOfWeekName = dayInfo.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    val dayOfWeekName = dayInfo.dayOfWeek.getDisplayName(
+        TextStyle.FULL,
+        Locale.getDefault()
+    )
     val gregorianFormatted = dayInfo.gregorianDate.format(
         DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
     )
@@ -234,7 +254,8 @@ private fun HolidaySection(holidays: List<Holiday>) {
                 Text(
                     text = holiday.hebrewName,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme
+                        .onSecondaryContainer.copy(alpha = 0.8f)
                 )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -377,7 +398,9 @@ private fun OmerSection(omerFormatted: String) {
 }
 
 @Composable
-private fun PersonalEventsSection(events: List<PersonalEvent>) {
+private fun PersonalEventsSection(events: List<CalendarEvent>) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -392,24 +415,105 @@ private fun PersonalEventsSection(events: List<PersonalEvent>) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             events.forEach { event ->
-                Text(
-                    text = event.displayTitle,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = event.eventType.name.lowercase()
-                        .replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                        .copy(alpha = 0.7f)
-                )
-                if (event.notes.isNotBlank()) {
-                    Text(
-                        text = event.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                            .copy(alpha = 0.7f)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    when (event) {
+                        is CalendarEvent.Birthday -> {
+                            val photoBitmap = remember(
+                                event.birthday.contactPhotoUri
+                            ) {
+                                event.birthday.contactPhotoUri?.let {
+                                        uriStr ->
+                                    try {
+                                        context.contentResolver
+                                            .openInputStream(
+                                                Uri.parse(uriStr)
+                                            )?.use {
+                                                BitmapFactory
+                                                    .decodeStream(it)
+                                            }
+                                    } catch (_: Exception) {
+                                        null
+                                    }
+                                }
+                            }
+                            if (photoBitmap != null) {
+                                Image(
+                                    bitmap = photoBitmap.asImageBitmap(),
+                                    contentDescription = event.title,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Filled.Cake,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = MaterialTheme.colorScheme
+                                        .primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = event.title,
+                                    style = MaterialTheme.typography
+                                        .bodyLarge
+                                )
+                                Text(
+                                    text = "Birthday",
+                                    style = MaterialTheme.typography
+                                        .labelSmall,
+                                    color = MaterialTheme.colorScheme
+                                        .onTertiaryContainer
+                                        .copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                        is CalendarEvent.CustomEvent -> {
+                            Icon(
+                                imageVector = if (
+                                    event.event.useYahrzeitRules
+                                ) {
+                                    Icons.Outlined.WbTwilight
+                                } else {
+                                    Icons.Filled.Event
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = event.title,
+                                    style = MaterialTheme.typography
+                                        .bodyLarge
+                                )
+                                if (event.event.useYahrzeitRules) {
+                                    Text(
+                                        text = "Yahrzeit",
+                                        style = MaterialTheme.typography
+                                            .labelSmall,
+                                        color = MaterialTheme.colorScheme
+                                            .onTertiaryContainer
+                                            .copy(alpha = 0.7f)
+                                    )
+                                }
+                                if (event.event.notes.isNotBlank()) {
+                                    Text(
+                                        text = event.event.notes,
+                                        style = MaterialTheme.typography
+                                            .bodySmall,
+                                        color = MaterialTheme.colorScheme
+                                            .onTertiaryContainer
+                                            .copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
             }

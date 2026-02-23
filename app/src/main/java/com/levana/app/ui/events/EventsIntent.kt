@@ -4,5 +4,7 @@ import com.levana.app.data.db.PersonalEvent
 
 sealed interface EventsIntent {
     data object LoadEvents : EventsIntent
-    data class DeleteEvent(val event: PersonalEvent) : EventsIntent
+    data class DeleteCustomEvent(val event: PersonalEvent) : EventsIntent
+    data class DeleteBirthday(val contactLookupKey: String) : EventsIntent
+    data object ContactsPermissionGranted : EventsIntent
 }

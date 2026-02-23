@@ -3,6 +3,7 @@ package com.levana.app.ui.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
+import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.HebrewDay
@@ -20,7 +21,8 @@ import kotlinx.coroutines.launch
 class CalendarViewModel(
     private val calendarRepository: CalendarRepository,
     private val preferencesRepository: PreferencesRepository,
-    private val personalEventRepository: PersonalEventRepository
+    private val personalEventRepository: PersonalEventRepository,
+    private val contactBirthdayRepository: ContactBirthdayRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CalendarState())
@@ -64,7 +66,8 @@ class CalendarViewModel(
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
-                val modeChanged = currentPrefs.hebrewPrimary != prefs.hebrewPrimary
+                val modeChanged =
+                    currentPrefs.hebrewPrimary != prefs.hebrewPrimary
                 currentPrefs = prefs
                 _state.value = _state.value.copy(
                     locationName = prefs.location?.name ?: "",
@@ -73,7 +76,9 @@ class CalendarViewModel(
                 if (modeChanged || _state.value.monthDays.isEmpty()) {
                     onIntent(CalendarIntent.LoadToday)
                 } else if (prefs.hebrewPrimary) {
-                    _state.value.hebrewYearMonth?.let { loadHebrewMonth(it) }
+                    _state.value.hebrewYearMonth?.let {
+                        loadHebrewMonth(it)
+                    }
                 } else {
                     loadMonth(_state.value.currentMonth)
                 }
@@ -92,10 +97,25 @@ class CalendarViewModel(
             val hebrewMonthHeader = buildHebrewMonthHeader(monthDays)
 
             val eventDates = personalEventRepository
-                .getEventDatesForGregorianMonth(yearMonth.year, yearMonth.monthValue)
+                .getEventDatesForGregorianMonth(
+                    yearMonth.year,
+                    yearMonth.monthValue
+                )
+
+            val birthdayDates = try {
+                contactBirthdayRepository
+                    .getBirthdayDatesForGregorianMonth(
+                        yearMonth.year,
+                        yearMonth.monthValue
+                    )
+            } catch (_: SecurityException) {
+                emptySet()
+            }
+
+            val allEventDates = eventDates + birthdayDates
 
             val markedDays = monthDays.map { day ->
-                if (eventDates.contains(day.gregorianDate)) {
+                if (allEventDates.contains(day.gregorianDate)) {
                     day.copy(hasPersonalEvent = true)
                 } else {
                     day
@@ -128,8 +148,20 @@ class CalendarViewModel(
             val eventDays = personalEventRepository
                 .getEventDaysForHebrewMonth(hym.year, hym.jewishDateMonth)
 
+            val birthdayDays = try {
+                contactBirthdayRepository
+                    .getBirthdayDaysForHebrewMonth(
+                        hym.year,
+                        hym.jewishDateMonth
+                    )
+            } catch (_: SecurityException) {
+                emptySet()
+            }
+
+            val allEventDays = eventDays + birthdayDays
+
             val markedDays = monthDays.map { day ->
-                if (eventDays.contains(day.day)) {
+                if (allEventDays.contains(day.day)) {
                     day.copy(hasPersonalEvent = true)
                 } else {
                     day
@@ -152,7 +184,9 @@ class CalendarViewModel(
         val first = days.first().gregorianDate
         val last = days.last().gregorianDate
         val fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        return if (first.month == last.month && first.year == last.year) {
+        return if (first.month == last.month &&
+            first.year == last.year
+        ) {
             first.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
         } else {
             "${first.format(fmt)} \u2013 ${last.format(fmt)}"
@@ -179,7 +213,8 @@ class CalendarViewModel(
             if (firstYear == lastYear) {
                 "$firstMonthName\u2013$lastMonthName $firstYear"
             } else {
-                "$firstMonthName $firstYear \u2013 $lastMonthName $lastYear"
+                "$firstMonthName $firstYear \u2013 " +
+                    "$lastMonthName $lastYear"
             }
         }
     }

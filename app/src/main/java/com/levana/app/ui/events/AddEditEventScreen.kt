@@ -14,19 +14,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
-import com.levana.app.domain.model.EventType
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -48,9 +48,15 @@ fun AddEditEventScreen(
     }
 
     LaunchedEffect(prefillDay, prefillMonth, prefillYear) {
-        if (prefillDay > 0 && prefillMonth > 0 && prefillYear > 0 && eventId == 0L) {
+        if (prefillDay > 0 && prefillMonth > 0 && prefillYear > 0 &&
+            eventId == 0L
+        ) {
             viewModel.onIntent(
-                AddEditEventIntent.PreFillDate(prefillDay, prefillMonth, prefillYear)
+                AddEditEventIntent.PreFillDate(
+                    prefillDay,
+                    prefillMonth,
+                    prefillYear
+                )
             )
         }
     }
@@ -72,85 +78,19 @@ fun AddEditEventScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Event type selector
-        Text(
-            text = "Event Type",
-            style = MaterialTheme.typography.titleSmall
+        // Title field
+        OutlinedTextField(
+            value = state.title,
+            onValueChange = {
+                viewModel.onIntent(AddEditEventIntent.SetTitle(it))
+            },
+            label = { Text("Title") },
+            placeholder = {
+                Text("e.g., Dad's Yahrzeit, Anniversary")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EventType.entries.forEach { type ->
-                FilterChip(
-                    selected = state.eventType == type,
-                    onClick = {
-                        viewModel.onIntent(AddEditEventIntent.SetEventType(type))
-                    },
-                    label = {
-                        Text(
-                            type.name.lowercase().replaceFirstChar { it.uppercase() }
-                        )
-                    }
-                )
-            }
-        }
-
-        // Yahrzeit explanatory text
-        if (state.eventType == EventType.YAHRZEIT) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    text = "Yahrzeit has special rules for leap years: if the " +
-                        "original date was in Adar of a non-leap year, it is " +
-                        "observed in Adar II during leap years. Dates in Adar I " +
-                        "or Adar II of a leap year remain in their respective " +
-                        "Adar.",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Name / Title field
-        if (state.eventType == EventType.CUSTOM) {
-            OutlinedTextField(
-                value = state.customTitle,
-                onValueChange = {
-                    viewModel.onIntent(AddEditEventIntent.SetCustomTitle(it))
-                },
-                label = { Text("Event Title") },
-                placeholder = { Text("e.g., Anniversary, Aliyah date") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        } else {
-            OutlinedTextField(
-                value = state.name,
-                onValueChange = {
-                    viewModel.onIntent(AddEditEventIntent.SetName(it))
-                },
-                label = { Text("Name") },
-                placeholder = {
-                    Text(
-                        if (state.eventType == EventType.BIRTHDAY) {
-                            "Person's name"
-                        } else {
-                            "Name of the deceased"
-                        }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -189,6 +129,50 @@ fun AddEditEventScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Yahrzeit rules toggle
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Use yahrzeit Adar rules",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Switch(
+                        checked = state.useYahrzeitRules,
+                        onCheckedChange = {
+                            viewModel.onIntent(
+                                AddEditEventIntent.SetUseYahrzeitRules(it)
+                            )
+                        }
+                    )
+                }
+                if (state.useYahrzeitRules) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Adar of a non-leap year maps to Adar II " +
+                            "in leap years. Adar I/II of a leap year " +
+                            "remain in their respective Adar.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme
+                            .onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Notes field
         OutlinedTextField(
             value = state.notes,
@@ -206,22 +190,15 @@ fun AddEditEventScreen(
         Button(
             onClick = { viewModel.onIntent(AddEditEventIntent.Save) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !state.isSaving && isFormValid(state)
+            enabled = !state.isSaving && state.title.isNotBlank()
         ) {
             Text(if (state.isEditing) "Update" else "Save")
         }
     }
 }
 
-private fun isFormValid(state: AddEditEventState): Boolean {
-    return when (state.eventType) {
-        EventType.CUSTOM -> state.customTitle.isNotBlank()
-        else -> state.name.isNotBlank()
-    }
-}
-
 @Composable
-private fun HebrewDatePicker(
+internal fun HebrewDatePicker(
     day: Int,
     month: Int,
     year: Int,
@@ -290,7 +267,10 @@ private fun HebrewDatePicker(
     }
 }
 
-private data class MonthOption(val jewishDateMonth: Int, val displayName: String)
+private data class MonthOption(
+    val jewishDateMonth: Int,
+    val displayName: String
+)
 
 private fun buildMonthList(isLeapYear: Boolean): List<MonthOption> = buildList {
     add(MonthOption(JewishDate.TISHREI, "Tishrei"))
@@ -321,7 +301,7 @@ private fun NumberPicker(
 ) {
     Row(
         modifier = modifier,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.material3.IconButton(
@@ -364,13 +344,14 @@ private fun MonthPicker(
     onMonthChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentIndex = months.indexOfFirst { it.jewishDateMonth == selectedMonth }
-        .coerceAtLeast(0)
+    val currentIndex = months.indexOfFirst {
+        it.jewishDateMonth == selectedMonth
+    }.coerceAtLeast(0)
     val currentMonth = months[currentIndex]
 
     Row(
         modifier = modifier,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         androidx.compose.material3.IconButton(
@@ -395,7 +376,9 @@ private fun MonthPicker(
         androidx.compose.material3.IconButton(
             onClick = {
                 if (currentIndex < months.size - 1) {
-                    onMonthChange(months[currentIndex + 1].jewishDateMonth)
+                    onMonthChange(
+                        months[currentIndex + 1].jewishDateMonth
+                    )
                 }
             },
             enabled = currentIndex < months.size - 1

@@ -3,9 +3,11 @@ package com.levana.app.ui.daydetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.CalendarRepository
+import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.data.ZmanimRepository
+import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.Location
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +20,8 @@ class DayDetailViewModel(
     private val calendarRepository: CalendarRepository,
     private val zmanimRepository: ZmanimRepository,
     private val preferencesRepository: PreferencesRepository,
-    private val personalEventRepository: PersonalEventRepository
+    private val personalEventRepository: PersonalEventRepository,
+    private val contactBirthdayRepository: ContactBirthdayRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DayDetailState())
@@ -45,10 +48,26 @@ class DayDetailViewModel(
                 location,
                 prefs.candleLightingOffset
             )
-            val personalEvents = personalEventRepository.getEventsForDate(date)
+
+            val personalEvents =
+                personalEventRepository.getEventsForDate(date)
+            val contactBirthdays = try {
+                contactBirthdayRepository.getBirthdaysForDate(date)
+            } catch (_: SecurityException) {
+                emptyList()
+            }
+
+            val calendarEvents = mutableListOf<CalendarEvent>()
+            contactBirthdays.forEach {
+                calendarEvents.add(CalendarEvent.Birthday(it))
+            }
+            personalEvents.forEach {
+                calendarEvents.add(CalendarEvent.CustomEvent(it))
+            }
+
             _state.value = DayDetailState(
                 dayInfo = dayInfo.copy(shabbatInfo = shabbatInfo),
-                personalEvents = personalEvents,
+                calendarEvents = calendarEvents,
                 isLoading = false
             )
         }

@@ -33,3 +33,6 @@ data class AddEditEventRoute(
     val prefillMonth: Int = 0,
     val prefillYear: Int = 0
 )
+
+@Serializable
+data class ContactBirthdayRoute(val contactLookupKey: String = "")

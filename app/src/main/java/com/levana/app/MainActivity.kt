@@ -43,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
 import com.levana.app.ui.daydetail.DayDetailScreen
 import com.levana.app.ui.events.AddEditEventScreen
@@ -52,6 +53,7 @@ import com.levana.app.ui.location.ManualLocationScreen
 import com.levana.app.ui.navigation.AddEditEventRoute
 import com.levana.app.ui.navigation.CalendarRoute
 import com.levana.app.ui.navigation.CityPickerRoute
+import com.levana.app.ui.navigation.ContactBirthdayRoute
 import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
@@ -312,6 +314,16 @@ fun LevanaApp() {
                         navController.navigate(
                             AddEditEventRoute(eventId = eventId)
                         )
+                    },
+                    onAddBirthday = {
+                        navController.navigate(ContactBirthdayRoute())
+                    },
+                    onEditBirthday = { lookupKey ->
+                        navController.navigate(
+                            ContactBirthdayRoute(
+                                contactLookupKey = lookupKey
+                            )
+                        )
                     }
                 )
             }
@@ -323,6 +335,17 @@ fun LevanaApp() {
                     prefillDay = route.prefillDay,
                     prefillMonth = route.prefillMonth,
                     prefillYear = route.prefillYear,
+                    onSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable<ContactBirthdayRoute> { backStack ->
+                val route =
+                    backStack.toRoute<ContactBirthdayRoute>()
+                ContactBirthdayScreen(
+                    contactLookupKey = route.contactLookupKey,
                     onSaved = {
                         navController.popBackStack()
                     }
