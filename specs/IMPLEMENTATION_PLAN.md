@@ -462,28 +462,34 @@ These decisions apply across all increments:
 **Branch:** `increment-13-contacts`
 **Depends on:** Increment 11
 
-**What to build:**
-- Custom MIME type for Hebrew dates stored in Android contacts
-- Link personal events (birthdays/yahrzeits) to contacts
-- Contact picker when creating/editing a personal event
-- Contact photo displayed on event list and day detail
-- Room migration v1 → v2: add `contactUri` column to `PersonalEvent`
-- `READ_CONTACTS` permission flow
+**What was built:**
+- Separate birthday system stored in Android Contacts DB via custom MIME type
+- `ContactBirthdayRepository` for CRUD on contact birthday data rows
+- `HebrewDateMatcher` for birthday and yahrzeit Adar-aware date matching
+- Dedicated birthday UI: `ContactBirthdayScreen` with contact picker and Hebrew date picker
+- Tabbed `EventsScreen` with Birthdays tab and Custom Events tab
+- `CalendarEvent` sealed interface unifying birthdays and custom events for `DayDetailScreen`
+- `PersonalEvent` simplified: removed `EventType` enum, added `useYahrzeitRules` boolean
+- `READ_CONTACTS` + `WRITE_CONTACTS` runtime permission flow
+- Calendar dot indicators for contact birthdays
 
 **Key technical notes:**
-- Custom MIME type: `vnd.android.cursor.item/com.levana.hebrew_date`
-- Use `ContactsContract` to read/write custom data rows
-- Contact linking is optional — events work without a linked contact
-- Room migration must be tested to ensure no data loss
+- Custom MIME type: `vnd.android.cursor.item/com.levana.hebrew_birthday`
+- Birthdays are stored entirely in the Android Contacts DB (not Room) as custom data rows
+- Personal events (yahrzeits, custom) remain in Room — the two systems are independent
+- `HebrewDateMatcher` implements both simple birthday rules and Shulchan Aruch yahrzeit rules for Adar in leap years
+- `CalendarEvent` sealed interface (`Birthday` | `CustomEvent`) unifies display in DayDetail
+- Permission gate checks both READ and WRITE before showing birthday features
 
 **Acceptance criteria:**
-- [ ] Creating an event offers option to link a contact
-- [ ] Linked events show the contact's photo
-- [ ] Hebrew date appears as a custom field in the Android Contacts app
-- [ ] Unlinking a contact removes the custom field from Contacts
-- [ ] Events without linked contacts still work normally
-- [ ] Room migration from v1 → v2 preserves existing events
-- [ ] `./gradlew build` passes
+- [x] Adding a birthday picks a contact and sets a Hebrew date
+- [x] Birthdays tab shows all contacts with Hebrew birthdays and their photos
+- [x] Birthday data is stored as a custom MIME row in Android Contacts
+- [x] Deleting a birthday removes the custom data row from Contacts
+- [x] Custom events (yahrzeits, etc.) still work independently in Room
+- [x] DayDetail shows both birthdays and custom events for the selected date
+- [x] Calendar shows dot indicators for days with birthdays
+- [x] `./gradlew build` passes
 
 ---
 
