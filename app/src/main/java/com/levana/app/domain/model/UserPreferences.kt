@@ -8,6 +8,7 @@ data class UserPreferences(
     val showModernIsraeliHolidays: Boolean = true,
     val hebrewPrimary: Boolean = false,
     val dynamicHolidayTheme: Boolean = true,
+    val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,
     val devDateOverride: java.time.LocalDate? = null,
     val devForceHolidayTheme: String? = null

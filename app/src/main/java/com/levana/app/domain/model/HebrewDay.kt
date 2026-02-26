@@ -12,5 +12,6 @@ data class HebrewDay(
     val gregorianDate: LocalDate,
     val hasCandles: Boolean = false,
     val holidayCategory: HolidayCategory? = null,
-    val hasPersonalEvent: Boolean = false
+    val hasPersonalEvent: Boolean = false,
+    val systemEventColors: List<Int> = emptyList()
 )

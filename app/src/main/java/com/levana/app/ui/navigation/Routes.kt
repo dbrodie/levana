@@ -36,3 +36,6 @@ data class AddEditEventRoute(
 
 @Serializable
 data class ContactBirthdayRoute(val contactLookupKey: String = "")
+
+@Serializable
+data object CalendarSelectionRoute

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.levana.app.domain.model.Location
 import com.levana.app.domain.model.Minhag
@@ -46,6 +47,8 @@ class PreferencesRepository(private val context: Context) {
             longPreferencesKey("dev_date_override")
         val DEV_FORCE_HOLIDAY_THEME =
             stringPreferencesKey("dev_force_holiday_theme")
+        val SELECTED_CALENDAR_IDS =
+            stringSetPreferencesKey("selected_calendar_ids")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -88,6 +91,8 @@ class PreferencesRepository(private val context: Context) {
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
             hebrewPrimary = prefs[Keys.HEBREW_PRIMARY] ?: false,
             dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true,
+            selectedCalendarIds = prefs[Keys.SELECTED_CALENDAR_IDS]
+                ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet(),
             showDeveloperSettings = prefs[Keys.SHOW_DEVELOPER_SETTINGS] ?: true,
             devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let {
                 LocalDate.ofEpochDay(it)
@@ -167,6 +172,13 @@ class PreferencesRepository(private val context: Context) {
             } else {
                 prefs.remove(Keys.DEV_FORCE_HOLIDAY_THEME)
             }
+        }
+    }
+
+    suspend fun saveSelectedCalendarIds(ids: Set<Long>) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.SELECTED_CALENDAR_IDS] =
+                ids.map { it.toString() }.toSet()
         }
     }
 }

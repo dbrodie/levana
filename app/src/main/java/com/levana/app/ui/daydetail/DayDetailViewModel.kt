@@ -6,6 +6,7 @@ import com.levana.app.data.CalendarRepository
 import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.data.ZmanimRepository
 import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.Location
@@ -21,7 +22,8 @@ class DayDetailViewModel(
     private val zmanimRepository: ZmanimRepository,
     private val preferencesRepository: PreferencesRepository,
     private val personalEventRepository: PersonalEventRepository,
-    private val contactBirthdayRepository: ContactBirthdayRepository
+    private val contactBirthdayRepository: ContactBirthdayRepository,
+    private val systemCalendarRepository: SystemCalendarRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DayDetailState())
@@ -65,9 +67,19 @@ class DayDetailViewModel(
                 calendarEvents.add(CalendarEvent.CustomEvent(it))
             }
 
+            val systemEvents = try {
+                systemCalendarRepository.getEventsForDate(
+                    date,
+                    prefs.selectedCalendarIds
+                )
+            } catch (_: SecurityException) {
+                emptyList()
+            }
+
             _state.value = DayDetailState(
                 dayInfo = dayInfo.copy(shabbatInfo = shabbatInfo),
                 calendarEvents = calendarEvents,
+                systemEvents = systemEvents,
                 isLoading = false
             )
         }

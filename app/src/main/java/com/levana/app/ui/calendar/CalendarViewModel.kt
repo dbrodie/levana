@@ -6,6 +6,7 @@ import com.levana.app.data.CalendarRepository
 import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.UserPreferences
@@ -22,7 +23,8 @@ class CalendarViewModel(
     private val calendarRepository: CalendarRepository,
     private val preferencesRepository: PreferencesRepository,
     private val personalEventRepository: PersonalEventRepository,
-    private val contactBirthdayRepository: ContactBirthdayRepository
+    private val contactBirthdayRepository: ContactBirthdayRepository,
+    private val systemCalendarRepository: SystemCalendarRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CalendarState())
@@ -114,12 +116,27 @@ class CalendarViewModel(
 
             val allEventDates = eventDates + birthdayDates
 
+            val systemEventColors = try {
+                val start = yearMonth.atDay(1)
+                val end = yearMonth.atEndOfMonth()
+                systemCalendarRepository.getEventColorsForDateRange(
+                    start,
+                    end,
+                    currentPrefs.selectedCalendarIds
+                )
+            } catch (_: SecurityException) {
+                emptyMap()
+            }
+
             val markedDays = monthDays.map { day ->
-                if (allEventDates.contains(day.gregorianDate)) {
-                    day.copy(hasPersonalEvent = true)
-                } else {
-                    day
-                }
+                day.copy(
+                    hasPersonalEvent = allEventDates.contains(
+                        day.gregorianDate
+                    ),
+                    systemEventColors = systemEventColors[
+                        day.gregorianDate
+                    ] ?: emptyList()
+                )
             }
 
             _state.value = _state.value.copy(
@@ -160,12 +177,29 @@ class CalendarViewModel(
 
             val allEventDays = eventDays + birthdayDays
 
-            val markedDays = monthDays.map { day ->
-                if (allEventDays.contains(day.day)) {
-                    day.copy(hasPersonalEvent = true)
+            val systemEventColors = try {
+                if (monthDays.isNotEmpty()) {
+                    val start = monthDays.first().gregorianDate
+                    val end = monthDays.last().gregorianDate
+                    systemCalendarRepository.getEventColorsForDateRange(
+                        start,
+                        end,
+                        currentPrefs.selectedCalendarIds
+                    )
                 } else {
-                    day
+                    emptyMap()
                 }
+            } catch (_: SecurityException) {
+                emptyMap()
+            }
+
+            val markedDays = monthDays.map { day ->
+                day.copy(
+                    hasPersonalEvent = allEventDays.contains(day.day),
+                    systemEventColors = systemEventColors[
+                        day.gregorianDate
+                    ] ?: emptyList()
+                )
             }
 
             _state.value = _state.value.copy(

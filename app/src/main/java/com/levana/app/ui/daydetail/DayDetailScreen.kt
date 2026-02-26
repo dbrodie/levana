@@ -1,9 +1,14 @@
 package com.levana.app.ui.daydetail
 
+import android.content.ContentUris
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -49,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
+import com.levana.app.domain.model.SystemCalendarEvent
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -159,6 +166,11 @@ fun DayDetailContent(
                     if (state.calendarEvents.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         PersonalEventsSection(state.calendarEvents)
+                    }
+
+                    if (state.systemEvents.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SystemEventsSection(state.systemEvents)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -516,6 +528,73 @@ private fun PersonalEventsSection(events: List<CalendarEvent>) {
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SystemEventsSection(events: List<SystemCalendarEvent>) {
+    val context = LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
+    val formatter = if (is24Hour) TIME_24H else TIME_12H
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Calendar Events",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            events.forEach { event ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val uri = ContentUris.withAppendedId(
+                                CalendarContract.Events.CONTENT_URI,
+                                event.eventId
+                            )
+                            val intent = Intent(Intent.ACTION_VIEW)
+                                .setData(uri)
+                            context.startActivity(intent)
+                        }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(Color(event.calendarColor))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = event.title,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = if (event.allDay) {
+                                "All day"
+                            } else {
+                                "${event.startTime.toLocalTime().format(formatter)} \u2013 " +
+                                    event.endTime.toLocalTime().format(
+                                        formatter
+                                    )
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme
+                                .onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

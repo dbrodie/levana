@@ -15,6 +15,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
@@ -54,6 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsScreen(
     onChangeLocation: () -> Unit,
     onPersonalEvents: () -> Unit,
+    onSystemCalendars: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -64,6 +66,7 @@ fun SettingsScreen(
         onIntent = viewModel::onIntent,
         onChangeLocation = onChangeLocation,
         onPersonalEvents = onPersonalEvents,
+        onSystemCalendars = onSystemCalendars,
         modifier = modifier
     )
 }
@@ -74,6 +77,7 @@ fun SettingsContent(
     onIntent: (SettingsIntent) -> Unit,
     onChangeLocation: () -> Unit,
     onPersonalEvents: () -> Unit,
+    onSystemCalendars: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -89,6 +93,8 @@ fun SettingsContent(
         )
 
         PersonalEventsSection(onPersonalEvents = onPersonalEvents)
+
+        SystemCalendarsSection(onSystemCalendars = onSystemCalendars)
 
         MinhagSection(
             selected = state.minhag,
@@ -332,6 +338,39 @@ private fun PersonalEventsSection(onPersonalEvents: () -> Unit) {
             )
             Text(
                 text = "Manage Events",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            )
+            Text(
+                text = "Open",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun SystemCalendarsSection(onSystemCalendars: () -> Unit) {
+    SectionCard(
+        title = "System Calendars",
+        description = "Show events from your device calendars"
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onSystemCalendars),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Select Calendars",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier
                     .weight(1f)

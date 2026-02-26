@@ -45,6 +45,7 @@ import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
+import com.levana.app.ui.calendarselection.CalendarSelectionScreen
 import com.levana.app.ui.daydetail.DayDetailScreen
 import com.levana.app.ui.events.AddEditEventScreen
 import com.levana.app.ui.events.EventsScreen
@@ -52,6 +53,7 @@ import com.levana.app.ui.location.CityPickerScreen
 import com.levana.app.ui.location.ManualLocationScreen
 import com.levana.app.ui.navigation.AddEditEventRoute
 import com.levana.app.ui.navigation.CalendarRoute
+import com.levana.app.ui.navigation.CalendarSelectionRoute
 import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.ContactBirthdayRoute
 import com.levana.app.ui.navigation.DayDetailRoute
@@ -301,6 +303,9 @@ fun LevanaApp() {
                     },
                     onPersonalEvents = {
                         navController.navigate(PersonalEventsRoute)
+                    },
+                    onSystemCalendars = {
+                        navController.navigate(CalendarSelectionRoute)
                     }
                 )
             }
@@ -339,6 +344,10 @@ fun LevanaApp() {
                         navController.popBackStack()
                     }
                 )
+            }
+
+            composable<CalendarSelectionRoute> {
+                CalendarSelectionScreen()
             }
 
             composable<ContactBirthdayRoute> { backStack ->

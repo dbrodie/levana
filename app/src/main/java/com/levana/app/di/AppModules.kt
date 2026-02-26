@@ -7,10 +7,12 @@ import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.LocationService
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.data.ZmanimRepository
 import com.levana.app.data.db.LevanaDatabase
 import com.levana.app.ui.birthday.ContactBirthdayViewModel
 import com.levana.app.ui.calendar.CalendarViewModel
+import com.levana.app.ui.calendarselection.CalendarSelectionViewModel
 import com.levana.app.ui.daydetail.DayDetailViewModel
 import com.levana.app.ui.events.AddEditEventViewModel
 import com.levana.app.ui.events.EventsViewModel
@@ -37,17 +39,19 @@ val dataModule = module {
     single { ZmanimRepository() }
     single { PersonalEventRepository(get()) }
     single { ContactBirthdayRepository(androidContext()) }
+    single { SystemCalendarRepository(androidContext()) }
 }
 
 val viewModelModule = module {
-    viewModel { CalendarViewModel(get(), get(), get(), get()) }
-    viewModel { DayDetailViewModel(get(), get(), get(), get(), get()) }
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get()) }
+    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { EventsViewModel(get(), get()) }
     viewModel { AddEditEventViewModel(get()) }
     viewModel { ContactBirthdayViewModel(get()) }
+    viewModel { CalendarSelectionViewModel(get(), get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

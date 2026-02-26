@@ -429,6 +429,14 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, on
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
+                day.systemEventColors.forEach { colorInt ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(colorInt))
+                    )
+                }
             }
             Text(
                 text = day.hebrewDayOfMonthFormatted,
