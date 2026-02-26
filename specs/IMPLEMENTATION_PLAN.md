@@ -513,13 +513,13 @@ These decisions apply across all increments:
 - Permission denied → gracefully hide the feature, don't crash
 
 **Acceptance criteria:**
-- [ ] Calendar selection screen lists all device calendars
-- [ ] Selected calendars' events appear as colored dots on Levana calendar
-- [ ] Day detail shows event titles and times from selected calendars
-- [ ] Calendar colors from the system are respected
-- [ ] Denying calendar permission hides the feature gracefully
-- [ ] Selected calendars persist across restarts
-- [ ] `./gradlew build` passes
+- [x] Calendar selection screen lists all device calendars
+- [x] Selected calendars' events appear as colored dots on Levana calendar
+- [x] Day detail shows event titles and times from selected calendars
+- [x] Calendar colors from the system are respected
+- [x] Denying calendar permission hides the feature gracefully
+- [x] Selected calendars persist across restarts
+- [x] `./gradlew build` passes
 
 ---
 
