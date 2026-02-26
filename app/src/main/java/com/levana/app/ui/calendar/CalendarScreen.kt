@@ -124,7 +124,7 @@ private fun GregorianCalendarContent(
             onNext = { onIntent(CalendarIntent.NextMonth) }
         )
 
-        DayOfWeekHeader(rtl = false)
+        DayOfWeekHeader(hebrewPrimary = false)
 
         if (state.isLoading && state.monthDays.isEmpty()) {
             Box(
@@ -171,7 +171,7 @@ private fun HebrewCalendarContent(
             onNext = { onIntent(CalendarIntent.NextHebrewMonth) }
         )
 
-        DayOfWeekHeader(rtl = true)
+        DayOfWeekHeader(hebrewPrimary = true)
 
         if (state.isLoading && state.monthDays.isEmpty()) {
             Box(
@@ -280,28 +280,18 @@ private fun HebrewMonthHeader(
 
 @VisibleForTesting
 @Composable
-internal fun DayOfWeekHeader(rtl: Boolean) {
-    val daysOfWeek = if (rtl) {
-        listOf(
-            DayOfWeek.SATURDAY,
-            DayOfWeek.FRIDAY,
-            DayOfWeek.THURSDAY,
-            DayOfWeek.WEDNESDAY,
-            DayOfWeek.TUESDAY,
-            DayOfWeek.MONDAY,
-            DayOfWeek.SUNDAY
-        )
-    } else {
-        listOf(
-            DayOfWeek.SUNDAY,
-            DayOfWeek.MONDAY,
-            DayOfWeek.TUESDAY,
-            DayOfWeek.WEDNESDAY,
-            DayOfWeek.THURSDAY,
-            DayOfWeek.FRIDAY,
-            DayOfWeek.SATURDAY
-        )
-    }
+internal fun DayOfWeekHeader(hebrewPrimary: Boolean) {
+    val daysOfWeek = listOf(
+        DayOfWeek.SUNDAY,
+        DayOfWeek.MONDAY,
+        DayOfWeek.TUESDAY,
+        DayOfWeek.WEDNESDAY,
+        DayOfWeek.THURSDAY,
+        DayOfWeek.FRIDAY,
+        DayOfWeek.SATURDAY
+    )
+
+    val locale = if (hebrewPrimary) Locale("he") else Locale.getDefault()
 
     Row(
         modifier = Modifier
@@ -310,7 +300,7 @@ internal fun DayOfWeekHeader(rtl: Boolean) {
     ) {
         daysOfWeek.forEach { day ->
             Text(
-                text = day.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                text = day.getDisplayName(TextStyle.SHORT, locale),
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
