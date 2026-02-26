@@ -1,5 +1,6 @@
 package com.levana.app.ui.calendar
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -277,8 +278,9 @@ private fun HebrewMonthHeader(
     }
 }
 
+@VisibleForTesting
 @Composable
-private fun DayOfWeekHeader(rtl: Boolean) {
+internal fun DayOfWeekHeader(rtl: Boolean) {
     val daysOfWeek = if (rtl) {
         listOf(
             DayOfWeek.SATURDAY,
