@@ -26,9 +26,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.notifications.NotificationPoster
 import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
 import com.levana.app.ui.calendarselection.CalendarSelectionScreen
@@ -76,6 +79,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val deepLinkEpochDay = intent?.getLongExtra(
+            NotificationPoster.EXTRA_DATE_EPOCH_DAY,
+            0L
+        ) ?: 0L
         setContent {
             val preferencesRepository: PreferencesRepository = koinInject()
             val prefs by preferencesRepository.preferences.collectAsState(
@@ -96,7 +103,7 @@ class MainActivity : ComponentActivity() {
                 null
             }
             LevanaTheme(holidayTheme = holidayTheme) {
-                LevanaApp()
+                LevanaApp(deepLinkEpochDay = deepLinkEpochDay)
             }
         }
     }
@@ -110,7 +117,7 @@ private data class BottomNavItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LevanaApp() {
+fun LevanaApp(deepLinkEpochDay: Long = 0L) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val canGoBack = backStackEntry?.destination?.route != null &&
@@ -127,6 +134,13 @@ fun LevanaApp() {
     if (prefs == null) return
 
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
+
+    // Handle notification deep-link
+    LaunchedEffect(deepLinkEpochDay) {
+        if (deepLinkEpochDay != 0L && hasLocation) {
+            navController.navigate(DayDetailRoute(deepLinkEpochDay))
+        }
+    }
 
     val bottomNavItems = listOf(
         BottomNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),

@@ -173,6 +173,41 @@ class ZmanimRepository {
         }
     }
 
+    fun getSunsetTime(date: LocalDate, location: Location): LocalTime? {
+        val czc = createCalendar(date, location)
+        return toLocalTime(czc.sunset, location)
+    }
+
+    fun getFastTimes(date: LocalDate, location: Location): Pair<LocalTime?, LocalTime?>? {
+        val jc = createJewishCalendar(date)
+        val yomTovIndex = jc.yomTovIndex
+        if (yomTovIndex < 0) return null
+
+        val isFast = yomTovIndex == JewishCalendar.SEVENTEEN_OF_TAMMUZ ||
+            yomTovIndex == JewishCalendar.TISHA_BEAV ||
+            yomTovIndex == JewishCalendar.FAST_OF_GEDALYAH ||
+            yomTovIndex == JewishCalendar.TENTH_OF_TEVES ||
+            yomTovIndex == JewishCalendar.FAST_OF_ESTHER
+
+        if (!isFast) return null
+
+        val czc = createCalendar(date, location)
+        val isTishaBav = yomTovIndex == JewishCalendar.TISHA_BEAV
+
+        val startTime = if (isTishaBav) {
+            // Tisha B'Av starts at sunset of the previous day
+            val prevCzc = createCalendar(date.minusDays(1), location)
+            toLocalTime(prevCzc.sunset, location)
+        } else {
+            // Minor fasts start at dawn (alot hashachar)
+            toLocalTime(czc.alosHashachar, location)
+        }
+
+        val endTime = toLocalTime(czc.tzais, location)
+
+        return Pair(startTime, endTime)
+    }
+
     private fun createJewishCalendar(date: LocalDate): JewishCalendar {
         val gc = GregorianCalendar(
             date.year,

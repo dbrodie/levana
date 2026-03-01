@@ -12,4 +12,13 @@ sealed interface SettingsIntent {
     data class SetDynamicHolidayTheme(val enabled: Boolean) : SettingsIntent
     data class SetDevDateOverride(val date: LocalDate?) : SettingsIntent
     data class SetDevForceHolidayTheme(val theme: String?) : SettingsIntent
+    data class SetNotifyCandleLighting(val enabled: Boolean) : SettingsIntent
+    data class SetCandleLightingNotifyMode(val mode: String) : SettingsIntent
+    data class SetCandleLightingMorningTime(val minutes: Int) : SettingsIntent
+    data class SetCandleLightingHoursBefore(val hours: Int) : SettingsIntent
+    data class SetNotifyHolidays(val enabled: Boolean) : SettingsIntent
+    data class SetHolidayNotifyDaysBefore(val days: Int) : SettingsIntent
+    data class SetNotifyFasts(val enabled: Boolean) : SettingsIntent
+    data class SetNotifyPersonalEvents(val enabled: Boolean) : SettingsIntent
+    data class SetNotifyOmer(val enabled: Boolean) : SettingsIntent
 }

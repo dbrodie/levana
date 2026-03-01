@@ -10,6 +10,7 @@ import com.levana.app.data.PreferencesRepository
 import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.data.ZmanimRepository
 import com.levana.app.data.db.LevanaDatabase
+import com.levana.app.notifications.NotificationAlarmScheduler
 import com.levana.app.ui.birthday.ContactBirthdayViewModel
 import com.levana.app.ui.calendar.CalendarViewModel
 import com.levana.app.ui.calendarselection.CalendarSelectionViewModel
@@ -40,6 +41,7 @@ val dataModule = module {
     single { PersonalEventRepository(get()) }
     single { ContactBirthdayRepository(androidContext()) }
     single { SystemCalendarRepository(androidContext()) }
+    single { NotificationAlarmScheduler(androidContext()) }
 }
 
 val viewModelModule = module {

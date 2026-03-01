@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -49,6 +50,24 @@ class PreferencesRepository(private val context: Context) {
             stringPreferencesKey("dev_force_holiday_theme")
         val SELECTED_CALENDAR_IDS =
             stringSetPreferencesKey("selected_calendar_ids")
+        val NOTIFY_CANDLE_LIGHTING =
+            booleanPreferencesKey("notify_candle_lighting")
+        val CANDLE_LIGHTING_NOTIFY_MODE =
+            stringPreferencesKey("candle_lighting_notify_mode")
+        val CANDLE_LIGHTING_MORNING_TIME =
+            intPreferencesKey("candle_lighting_morning_time")
+        val CANDLE_LIGHTING_HOURS_BEFORE =
+            intPreferencesKey("candle_lighting_hours_before")
+        val NOTIFY_HOLIDAYS =
+            booleanPreferencesKey("notify_holidays")
+        val HOLIDAY_NOTIFY_DAYS_BEFORE =
+            intPreferencesKey("holiday_notify_days_before")
+        val NOTIFY_FASTS =
+            booleanPreferencesKey("notify_fasts")
+        val NOTIFY_PERSONAL_EVENTS =
+            booleanPreferencesKey("notify_personal_events")
+        val NOTIFY_OMER =
+            booleanPreferencesKey("notify_omer")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -97,7 +116,16 @@ class PreferencesRepository(private val context: Context) {
             devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let {
                 LocalDate.ofEpochDay(it)
             },
-            devForceHolidayTheme = prefs[Keys.DEV_FORCE_HOLIDAY_THEME]
+            devForceHolidayTheme = prefs[Keys.DEV_FORCE_HOLIDAY_THEME],
+            notifyCandleLighting = prefs[Keys.NOTIFY_CANDLE_LIGHTING] ?: false,
+            candleLightingNotifyMode = prefs[Keys.CANDLE_LIGHTING_NOTIFY_MODE] ?: "morning",
+            candleLightingMorningTime = prefs[Keys.CANDLE_LIGHTING_MORNING_TIME] ?: 480,
+            candleLightingHoursBefore = prefs[Keys.CANDLE_LIGHTING_HOURS_BEFORE] ?: 2,
+            notifyHolidays = prefs[Keys.NOTIFY_HOLIDAYS] ?: false,
+            holidayNotifyDaysBefore = prefs[Keys.HOLIDAY_NOTIFY_DAYS_BEFORE] ?: 1,
+            notifyFasts = prefs[Keys.NOTIFY_FASTS] ?: false,
+            notifyPersonalEvents = prefs[Keys.NOTIFY_PERSONAL_EVENTS] ?: false,
+            notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false
         )
     }
 
@@ -179,6 +207,60 @@ class PreferencesRepository(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[Keys.SELECTED_CALENDAR_IDS] =
                 ids.map { it.toString() }.toSet()
+        }
+    }
+
+    suspend fun saveNotifyCandleLighting(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_CANDLE_LIGHTING] = enabled
+        }
+    }
+
+    suspend fun saveCandleLightingNotifyMode(mode: String) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.CANDLE_LIGHTING_NOTIFY_MODE] = mode
+        }
+    }
+
+    suspend fun saveCandleLightingMorningTime(minutes: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.CANDLE_LIGHTING_MORNING_TIME] = minutes
+        }
+    }
+
+    suspend fun saveCandleLightingHoursBefore(hours: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.CANDLE_LIGHTING_HOURS_BEFORE] = hours
+        }
+    }
+
+    suspend fun saveNotifyHolidays(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_HOLIDAYS] = enabled
+        }
+    }
+
+    suspend fun saveHolidayNotifyDaysBefore(days: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.HOLIDAY_NOTIFY_DAYS_BEFORE] = days
+        }
+    }
+
+    suspend fun saveNotifyFasts(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_FASTS] = enabled
+        }
+    }
+
+    suspend fun saveNotifyPersonalEvents(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_PERSONAL_EVENTS] = enabled
+        }
+    }
+
+    suspend fun saveNotifyOmer(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_OMER] = enabled
         }
     }
 }

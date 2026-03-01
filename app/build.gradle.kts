@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.kotlin.serialization.json)
 
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.datastore.preferences)
     implementation(libs.play.services.location)
     implementation(libs.compose.material.icons.extended)

@@ -1,5 +1,9 @@
 package com.levana.app.ui.settings
 
+import android.Manifest
+import android.app.AlarmManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -145,6 +150,8 @@ fun SettingsContent(
                 onIntent(SettingsIntent.SetCandleLightingOffset(it))
             }
         )
+
+        NotificationsSection(state = state, onIntent = onIntent)
 
         if (state.showDeveloperSettings) {
             DeveloperSettingsSection(
@@ -502,6 +509,373 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
         }) {
             Text("Apply")
         }
+    }
+}
+
+@Composable
+private fun NotificationsSection(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+    val context = LocalContext.current
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasNotificationPermission = granted
+    }
+
+    fun ensurePermissionThenEnable(onGranted: () -> Unit) {
+        if (hasNotificationPermission) {
+            onGranted()
+        } else {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    fun needsExactAlarm(): Boolean {
+        val alarmManager = context.getSystemService(AlarmManager::class.java)
+        return !alarmManager.canScheduleExactAlarms()
+    }
+
+    SectionCard(
+        title = "Notifications",
+        description = "Configure reminders for events and times"
+    ) {
+        // Candle Lighting
+        NotificationToggleRow(
+            label = "Candle Lighting",
+            checked = state.notifyCandleLighting,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    ensurePermissionThenEnable {
+                        onIntent(SettingsIntent.SetNotifyCandleLighting(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetNotifyCandleLighting(false))
+                }
+            }
+        )
+
+        if (state.notifyCandleLighting) {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Mode selector
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp)
+                    .selectableGroup()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = state.candleLightingNotifyMode == "morning",
+                            onClick = {
+                                onIntent(
+                                    SettingsIntent.SetCandleLightingNotifyMode("morning")
+                                )
+                            },
+                            role = Role.RadioButton
+                        )
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = state.candleLightingNotifyMode == "morning",
+                        onClick = null
+                    )
+                    Text(
+                        text = "Morning of erev",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+
+                if (state.candleLightingNotifyMode == "morning") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 32.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val hours = state.candleLightingMorningTime / 60
+                        val minutes = state.candleLightingMorningTime % 60
+                        Text(
+                            text = "At %d:%02d AM".format(
+                                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
+                                minutes
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingMorningTime > 360) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingMorningTime(
+                                            state.candleLightingMorningTime - 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.Remove,
+                                contentDescription = "Earlier"
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingMorningTime < 720) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingMorningTime(
+                                            state.candleLightingMorningTime + 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Later"
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = state.candleLightingNotifyMode == "hours_before",
+                            onClick = {
+                                onIntent(
+                                    SettingsIntent.SetCandleLightingNotifyMode("hours_before")
+                                )
+                            },
+                            role = Role.RadioButton
+                        )
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = state.candleLightingNotifyMode == "hours_before",
+                        onClick = null
+                    )
+                    Text(
+                        text = "Hours before",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+
+                if (state.candleLightingNotifyMode == "hours_before") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 32.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${state.candleLightingHoursBefore} hours before",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingHoursBefore > 1) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingHoursBefore(
+                                            state.candleLightingHoursBefore - 1
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.Remove,
+                                contentDescription = "Decrease"
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingHoursBefore < 6) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingHoursBefore(
+                                            state.candleLightingHoursBefore + 1
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Increase"
+                            )
+                        }
+                    }
+
+                    if (needsExactAlarm()) {
+                        Text(
+                            text = "Exact alarm permission required",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 32.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Holidays
+        NotificationToggleRow(
+            label = "Holidays",
+            checked = state.notifyHolidays,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    ensurePermissionThenEnable {
+                        onIntent(SettingsIntent.SetNotifyHolidays(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetNotifyHolidays(false))
+                }
+            }
+        )
+
+        if (state.notifyHolidays) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${state.holidayNotifyDaysBefore} days before",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        if (state.holidayNotifyDaysBefore > 0) {
+                            onIntent(
+                                SettingsIntent.SetHolidayNotifyDaysBefore(
+                                    state.holidayNotifyDaysBefore - 1
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                }
+                IconButton(
+                    onClick = {
+                        if (state.holidayNotifyDaysBefore < 14) {
+                            onIntent(
+                                SettingsIntent.SetHolidayNotifyDaysBefore(
+                                    state.holidayNotifyDaysBefore + 1
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Increase")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Fasts
+        NotificationToggleRow(
+            label = "Fasts",
+            checked = state.notifyFasts,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    ensurePermissionThenEnable {
+                        onIntent(SettingsIntent.SetNotifyFasts(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetNotifyFasts(false))
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Personal Events
+        NotificationToggleRow(
+            label = "Personal Events",
+            checked = state.notifyPersonalEvents,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    ensurePermissionThenEnable {
+                        onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Omer
+        NotificationToggleRow(
+            label = "Omer (at sunset)",
+            checked = state.notifyOmer,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    ensurePermissionThenEnable {
+                        onIntent(SettingsIntent.SetNotifyOmer(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetNotifyOmer(false))
+                }
+            }
+        )
+
+        if (state.notifyOmer && needsExactAlarm()) {
+            Text(
+                text = "Exact alarm permission required for sunset notifications",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationToggleRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 
