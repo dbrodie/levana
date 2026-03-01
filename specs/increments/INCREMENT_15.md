@@ -24,10 +24,10 @@ Notification system for candle lighting, holidays, fasts, personal events, and O
 - Omer body includes day count with weeks/days breakdown
 
 ### NotificationAlarmScheduler
-- Schedules exact alarms via `AlarmManager.setExactAndAllowWhileIdle()`
+- Schedules inexact alarms via `AlarmManager.setAndAllowWhileIdle()`
 - `scheduleCandleLighting()` — for "hours before" mode, fires N hours before candle lighting
 - `scheduleOmerReminder()` — fires at sunset for Omer counting
-- Guards with `canScheduleExactAlarms()` before scheduling
+- No special permission needed — fires within a few minutes of target time
 - Converts `LocalTime` + timezone → epoch millis; skips if time already past
 - `cancelAll()` cancels all pending alarm intents
 
@@ -40,11 +40,11 @@ Notification system for candle lighting, holidays, fasts, personal events, and O
 - `CoroutineWorker` with `KoinComponent` for dependency injection
 - Runs daily via `PeriodicWorkRequest` (enqueued in `LevanaApplication.onCreate()`)
 - Reads `UserPreferences` to determine which categories are enabled
-- **Candle lighting**: Checks `hasCandles(today)`, supports "morning" mode (immediate or scheduled) and "hours before" mode (exact alarm)
+- **Candle lighting**: Checks `hasCandles(today)`, supports "morning" mode (immediate or scheduled) and "hours before" mode (alarm)
 - **Holidays**: Looks ahead `holidayNotifyDaysBefore` days for Torah/Rabbinic holidays
 - **Fasts**: Checks tomorrow for fast days — all fasts notify the day before
 - **Personal events**: Posts for today's personal events and contact birthdays
-- **Omer**: Schedules exact alarm at sunset for today's Omer count
+- **Omer**: Schedules alarm at sunset for today's Omer count
 - Companion: `enqueueDaily()` and `enqueueImmediate()`
 
 ### BootReceiver
@@ -59,7 +59,6 @@ Notification system for candle lighting, holidays, fasts, personal events, and O
   - **Personal Events** toggle
   - **Omer** toggle
 - `POST_NOTIFICATIONS` permission requested on first toggle enable
-- Exact alarm permission warning shown when needed
 
 ### Deep-Link Navigation
 - `MainActivity` reads `EXTRA_DATE_EPOCH_DAY` from intent
@@ -74,17 +73,17 @@ Notification system for candle lighting, holidays, fasts, personal events, and O
 | Category | When Notification Fires |
 |----------|------------------------|
 | Candle Lighting (morning mode) | Configurable morning time (default 8:00 AM) on erev Shabbat/Yom Tov |
-| Candle Lighting (hours-before mode) | N hours before candle lighting time (exact alarm) |
+| Candle Lighting (hours-before mode) | N hours before candle lighting time (alarm) |
 | Holidays | Up to N days before (configurable 0-14, default 1) |
 | Fasts | Morning of the day before the fast |
 | Personal Events | Morning of the Hebrew date match |
-| Omer | At sunset (exact alarm) |
+| Omer | At sunset (alarm) |
 
 ## Key Technical Decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Scheduling | WorkManager daily + AlarmManager exact | WorkManager for reliable daily trigger; AlarmManager for time-precise notifications |
+| Scheduling | WorkManager daily + AlarmManager inexact | WorkManager for reliable daily trigger; AlarmManager for time-based notifications (no special permission needed) |
 | DI in Worker | KoinComponent interface | WorkManager creates workers via factory; KoinComponent allows field injection |
 | Fast timing | All fasts notify day before | User requested: gives advance notice for all fasts |
 | Notification IDs | `channelOrdinal * 10000 + dayOfYear` | Prevents collisions across channels while allowing same-day updates |
@@ -103,7 +102,7 @@ Notification system for candle lighting, holidays, fasts, personal events, and O
 
 - `gradle/libs.versions.toml` — Added `work = "2.10.0"` and `androidx-work-runtime-ktx`
 - `app/build.gradle.kts` — Added `implementation(libs.androidx.work.runtime.ktx)`
-- `AndroidManifest.xml` — Added `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED` permissions; registered receivers
+- `AndroidManifest.xml` — Added `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` permissions; registered receivers
 - `LevanaApplication.kt` — Channel creation and worker enqueue on startup
 - `AppModules.kt` — Added `NotificationAlarmScheduler` to Koin
 - `UserPreferences.kt` — Added 9 notification preference fields

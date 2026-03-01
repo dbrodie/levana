@@ -530,15 +530,15 @@ These decisions apply across all increments:
 
 **What to build:**
 - Notification channels: Candle Lighting, Holidays, Fasts, Personal Events, Omer
-- `AlarmManager` for exact-time notifications (candle lighting, Omer at sunset)
+- `AlarmManager` for time-based notifications (candle lighting, Omer at sunset)
 - `WorkManager` for daily scheduling of event-based notifications
 - Per-category enable/disable and timing configuration in settings
 - `BootReceiver` to reschedule alarms after device reboot
 - Deep-link from notification tap → day detail screen
-- `POST_NOTIFICATIONS` (API 33+) and `SCHEDULE_EXACT_ALARM` permission flows
+- `POST_NOTIFICATIONS` (API 33+) permission flow
 
 **Key technical notes:**
-- `AlarmManager.setExactAndAllowWhileIdle()` for time-critical candle lighting
+- `AlarmManager.setAndAllowWhileIdle()` for time-based notifications (no special permission needed)
 - `WorkManager` periodic task recalculates and schedules next day's alarms
 - Boot receiver registered in manifest with `RECEIVE_BOOT_COMPLETED`
 - Notifications must work when app is not in foreground
