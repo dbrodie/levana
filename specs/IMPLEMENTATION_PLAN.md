@@ -523,14 +523,14 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 15: Notifications
+### ~~Increment 15: Notifications~~ DONE
 
-**Branch:** `increment-15-notifications`
+**Branch:** `increment-15-notifications` (merged)
 **Depends on:** Increment 11
 
 **What to build:**
-- Notification channels: Candle Lighting, Holidays, Personal Events, Omer
-- `AlarmManager` for exact-time notifications (candle lighting, zmanim)
+- Notification channels: Candle Lighting, Holidays, Fasts, Personal Events, Omer
+- `AlarmManager` for exact-time notifications (candle lighting, Omer at sunset)
 - `WorkManager` for daily scheduling of event-based notifications
 - Per-category enable/disable and timing configuration in settings
 - `BootReceiver` to reschedule alarms after device reboot
@@ -542,16 +542,18 @@ These decisions apply across all increments:
 - `WorkManager` periodic task recalculates and schedules next day's alarms
 - Boot receiver registered in manifest with `RECEIVE_BOOT_COMPLETED`
 - Notifications must work when app is not in foreground
+- All fasts notify the day before (Tisha B'Av and minor fasts alike)
 
 **Acceptance criteria:**
-- [ ] Candle lighting notification fires at configured time before sunset on Friday
-- [ ] Holiday notification fires before holiday begins
-- [ ] Personal event notification fires on the day of the event
-- [ ] Omer counting reminder fires daily during Omer period
-- [ ] Tapping a notification opens the relevant day detail
-- [ ] Notifications survive device reboot
-- [ ] Per-category toggles in settings enable/disable notifications
-- [ ] `./gradlew build` passes
+- [x] Candle lighting notification fires at configured time on erev Shabbat/Yom Tov
+- [x] Holiday notification fires configurable days before holiday begins
+- [x] Fast notification fires the day before the fast with start/end times
+- [x] Personal event notification fires on the day of the event
+- [x] Omer counting reminder fires at sunset during Omer period
+- [x] Tapping a notification opens the relevant day detail
+- [x] Notifications survive device reboot
+- [x] Per-category toggles in settings enable/disable notifications
+- [x] `./gradlew build` passes
 
 ---
 
