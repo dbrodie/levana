@@ -53,13 +53,11 @@ class NotificationAlarmScheduler(private val context: Context) {
         )
 
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        if (alarmManager.canScheduleExactAlarms()) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerMillis,
-                pendingIntent
-            )
-        }
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerMillis,
+            pendingIntent
+        )
     }
 
     fun scheduleOmerReminder(
@@ -88,13 +86,11 @@ class NotificationAlarmScheduler(private val context: Context) {
         )
 
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        if (alarmManager.canScheduleExactAlarms()) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerMillis,
-                pendingIntent
-            )
-        }
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerMillis,
+            pendingIntent
+        )
     }
 
     fun cancelAll() {

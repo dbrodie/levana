@@ -1,7 +1,6 @@
 package com.levana.app.ui.settings
 
 import android.Manifest
-import android.app.AlarmManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -538,11 +537,6 @@ private fun NotificationsSection(state: SettingsState, onIntent: (SettingsIntent
         }
     }
 
-    fun needsExactAlarm(): Boolean {
-        val alarmManager = context.getSystemService(AlarmManager::class.java)
-        return !alarmManager.canScheduleExactAlarms()
-    }
-
     SectionCard(
         title = "Notifications",
         description = "Configure reminders for events and times"
@@ -724,14 +718,6 @@ private fun NotificationsSection(state: SettingsState, onIntent: (SettingsIntent
                         }
                     }
 
-                    if (needsExactAlarm()) {
-                        Text(
-                            text = "Exact alarm permission required",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 32.dp)
-                        )
-                    }
                 }
             }
         }
@@ -846,14 +832,6 @@ private fun NotificationsSection(state: SettingsState, onIntent: (SettingsIntent
             }
         )
 
-        if (state.notifyOmer && needsExactAlarm()) {
-            Text(
-                text = "Exact alarm permission required for sunset notifications",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-        }
     }
 }
 
