@@ -62,6 +62,19 @@ class CalendarViewModel(
                     ?: HebrewYearMonth.now()
                 loadHebrewMonth(current.previous())
             }
+            is CalendarIntent.GoToToday -> {
+                _state.value = _state.value.copy(
+                    selectedDate = currentPrefs.devDateOverride ?: LocalDate.now()
+                )
+                if (currentPrefs.hebrewPrimary) {
+                    loadHebrewMonth(HebrewYearMonth.now())
+                } else {
+                    loadMonth(YearMonth.now())
+                }
+            }
+            is CalendarIntent.SelectDay -> {
+                _state.value = _state.value.copy(selectedDate = intent.date)
+            }
         }
     }
 

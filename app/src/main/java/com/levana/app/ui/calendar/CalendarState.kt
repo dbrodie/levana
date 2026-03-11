@@ -14,5 +14,6 @@ data class CalendarState(
     val isLoading: Boolean = true,
     val locationName: String = "",
     val hebrewPrimary: Boolean = false,
-    val hebrewYearMonth: HebrewYearMonth? = null
+    val hebrewYearMonth: HebrewYearMonth? = null,
+    val selectedDate: LocalDate = LocalDate.now()
 )
