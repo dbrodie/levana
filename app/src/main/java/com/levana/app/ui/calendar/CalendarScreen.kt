@@ -149,22 +149,22 @@ private fun GregorianCalendarContent(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val gridHeight = maxWidth / 7 / 0.85f * 6 + 4.dp
 
-            if (state.isLoading && state.monthDays.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(gridHeight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth().height(gridHeight)
-                ) { page ->
-                    val offset = page - PAGER_INITIAL_PAGE
-                    val pageMonth = baseMonth.plusMonths(offset.toLong())
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth().height(gridHeight)
+            ) { page ->
+                val offset = page - PAGER_INITIAL_PAGE
+                val pageMonth = baseMonth.plusMonths(offset.toLong())
 
-                    if (pageMonth == state.currentMonth) {
+                if (pageMonth == state.currentMonth) {
+                    if (state.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
                         GregorianMonthGrid(
                             monthDays = state.monthDays,
                             currentMonth = state.currentMonth,
@@ -174,9 +174,9 @@ private fun GregorianCalendarContent(
                                 onIntent(CalendarIntent.SelectDay(date))
                             }
                         )
-                    } else {
-                        Box(modifier = Modifier.fillMaxSize())
                     }
+                } else {
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }

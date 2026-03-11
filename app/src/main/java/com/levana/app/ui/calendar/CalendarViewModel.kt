@@ -103,7 +103,11 @@ class CalendarViewModel(
 
     private fun loadMonth(yearMonth: YearMonth) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(
+                isLoading = true,
+                currentMonth = yearMonth,
+                monthDays = emptyList()
+            )
 
             val monthDays = calendarRepository.getMonthDays(
                 yearMonth,
@@ -153,7 +157,6 @@ class CalendarViewModel(
             }
 
             _state.value = _state.value.copy(
-                currentMonth = yearMonth,
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewMonthHeader,
@@ -164,7 +167,11 @@ class CalendarViewModel(
 
     private fun loadHebrewMonth(hym: HebrewYearMonth) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(
+                isLoading = true,
+                hebrewYearMonth = hym,
+                monthDays = emptyList()
+            )
 
             val monthDays = calendarRepository.getHebrewMonthDays(
                 hym,
@@ -216,7 +223,6 @@ class CalendarViewModel(
             }
 
             _state.value = _state.value.copy(
-                hebrewYearMonth = hym,
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewHeader,
