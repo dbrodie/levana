@@ -57,7 +57,6 @@ import com.levana.app.notifications.NotificationPoster
 import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
 import com.levana.app.ui.calendarselection.CalendarSelectionScreen
-import com.levana.app.ui.daydetail.DayDetailScreen
 import com.levana.app.ui.events.AddEditEventScreen
 import com.levana.app.ui.events.EventsScreen
 import com.levana.app.ui.location.CityPickerScreen
@@ -67,7 +66,6 @@ import com.levana.app.ui.navigation.CalendarRoute
 import com.levana.app.ui.navigation.CalendarSelectionRoute
 import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.ContactBirthdayRoute
-import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
@@ -143,10 +141,13 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
 
-    // Handle notification deep-link
+    // Handle notification deep-link — open calendar (day detail is inline)
     LaunchedEffect(deepLinkEpochDay) {
         if (deepLinkEpochDay != 0L && hasLocation) {
-            navController.navigate(DayDetailRoute(deepLinkEpochDay))
+            navController.navigate(CalendarRoute) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 
@@ -288,27 +289,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                     CalendarScreen(
                         onShowZmanim = { date ->
                             navController.navigate(ZmanimRoute(date.toEpochDay()))
-                        },
-                        onAddEvent = { day, month, year ->
-                            navController.navigate(
-                                AddEditEventRoute(
-                                    prefillDay = day,
-                                    prefillMonth = month,
-                                    prefillYear = year
-                                )
-                            )
-                        }
-                    )
-                }
-
-                composable<DayDetailRoute> { backStack ->
-                    val route = backStack.toRoute<DayDetailRoute>()
-                    DayDetailScreen(
-                        dateEpochDay = route.dateEpochDay,
-                        onShowZmanim = { date ->
-                            navController.navigate(
-                                ZmanimRoute(date.toEpochDay())
-                            )
                         },
                         onAddEvent = { day, month, year ->
                             navController.navigate(
