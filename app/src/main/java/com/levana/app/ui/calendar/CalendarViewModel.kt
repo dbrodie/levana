@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,7 @@ class CalendarViewModel(
     val state: StateFlow<CalendarState> = _state.asStateFlow()
 
     private var currentPrefs = UserPreferences()
+    private var loadJob: Job? = null
 
     init {
         observePreferences()
@@ -102,7 +104,8 @@ class CalendarViewModel(
     }
 
     private fun loadMonth(yearMonth: YearMonth) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = true,
                 currentMonth = yearMonth,
@@ -166,7 +169,8 @@ class CalendarViewModel(
     }
 
     private fun loadHebrewMonth(hym: HebrewYearMonth) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.value = _state.value.copy(
                 isLoading = true,
                 hebrewYearMonth = hym,
