@@ -8,6 +8,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -45,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -184,12 +188,19 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.CalendarMonth,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
@@ -226,6 +237,26 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         )
                     }
 
+                    if (hasLocation) {
+                        Text(
+                            text = "LOCATIONS",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                        )
+                        NavigationDrawerItem(
+                            label = { Text(locationName) },
+                            icon = {
+                                Icon(Icons.Filled.LocationOn, contentDescription = null)
+                            },
+                            selected = true,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(CityPickerRoute)
+                            }
+                        )
+                    }
+
                     Spacer(modifier = Modifier.weight(1f))
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -243,25 +274,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                             }
                         }
                     )
-                    if (hasLocation) {
-                        Text(
-                            text = "Locations",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
-                        )
-                        NavigationDrawerItem(
-                            label = { Text(locationName) },
-                            icon = {
-                                Icon(Icons.Filled.LocationOn, contentDescription = null)
-                            },
-                            selected = true,
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                navController.navigate(CityPickerRoute)
-                            }
-                        )
-                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
