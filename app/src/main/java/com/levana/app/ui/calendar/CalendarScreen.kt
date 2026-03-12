@@ -24,7 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -147,8 +149,14 @@ private fun GregorianCalendarContent(
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
+        ElevatedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        ) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
+            val gridHeight = 24.dp + maxWidth / 7 * 6 + 4.dp
 
             HorizontalPager(
                 state = pagerState,
@@ -181,6 +189,7 @@ private fun GregorianCalendarContent(
                 }
             }
         }
+        } // ElevatedCard
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
@@ -213,8 +222,14 @@ private fun HebrewCalendarContent(
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
+        ElevatedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        ) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
+            val gridHeight = 24.dp + maxWidth / 7 * 6 + 4.dp
 
             if (state.isLoading && state.monthDays.isEmpty()) {
                 Box(
@@ -236,6 +251,7 @@ private fun HebrewCalendarContent(
                 }
             }
         }
+        } // ElevatedCard
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
@@ -495,7 +511,7 @@ private fun DayCell(
     val backgroundColor = when {
         isToday -> MaterialTheme.colorScheme.primaryContainer
         isSelected -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surface
+        else -> Color.Transparent
     }
 
     val primaryTextColor = when {
