@@ -83,9 +83,11 @@ import com.levana.app.ui.navigation.ContactBirthdayRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
+import com.levana.app.ui.navigation.HalachicTimesSettingsRoute
 import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
+import com.levana.app.ui.settings.HalachicTimesSettingsScreen
 import com.levana.app.ui.settings.SettingsScreen
 import com.levana.app.ui.theme.HolidayTheme
 import com.levana.app.ui.theme.HolidayThemeResolver
@@ -400,8 +402,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         },
                         onSystemCalendars = {
                             navController.navigate(CalendarSelectionRoute)
+                        },
+                        onHalachicTimesSettings = {
+                            navController.navigate(HalachicTimesSettingsRoute)
                         }
                     )
+                }
+
+                composable<HalachicTimesSettingsRoute> {
+                    HalachicTimesSettingsScreen()
                 }
 
                 composable<PersonalEventsRoute> {

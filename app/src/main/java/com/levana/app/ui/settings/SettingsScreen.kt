@@ -75,6 +75,7 @@ import kotlin.math.roundToInt
 fun SettingsScreen(
     onChangeLocation: () -> Unit,
     onSystemCalendars: () -> Unit,
+    onHalachicTimesSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -85,8 +86,34 @@ fun SettingsScreen(
         onIntent = viewModel::onIntent,
         onChangeLocation = onChangeLocation,
         onSystemCalendars = onSystemCalendars,
+        onHalachicTimesSettings = onHalachicTimesSettings,
         modifier = modifier
     )
+}
+
+@Composable
+fun HalachicTimesSettingsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val atMax = state.selectedZmanim.size >= 5
+
+    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+        Text(
+            text = "Shown in the day panel (up to 5)",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+        )
+        HalachicTimesSection(
+            selectedZmanim = state.selectedZmanim,
+            atMax = atMax,
+            onToggle = { name, enabled ->
+                viewModel.onIntent(SettingsIntent.ToggleZman(name, enabled))
+            }
+        )
+    }
 }
 
 @Composable
@@ -95,6 +122,7 @@ fun SettingsContent(
     onIntent: (SettingsIntent) -> Unit,
     onChangeLocation: () -> Unit,
     onSystemCalendars: () -> Unit,
+    onHalachicTimesSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showMinhagDialog by remember { mutableStateOf(false) }
@@ -222,18 +250,18 @@ fun SettingsContent(
         )
 
         HorizontalDivider()
-        SettingsSectionHeader("Halachic Times")
 
-        Text(
-            text = "Shown in the day panel (up to 5)",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
-        )
-
-        HalachicTimesSection(
-            selectedZmanim = state.selectedZmanim,
-            onToggle = { name, enabled -> onIntent(SettingsIntent.ToggleZman(name, enabled)) }
+        val selectedCount = state.selectedZmanim.size
+        ListItem(
+            headlineContent = { Text("Halachic Times") },
+            supportingContent = { Text("$selectedCount of 5 shown in day panel") },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onHalachicTimesSettings)
         )
 
         HorizontalDivider()
@@ -479,11 +507,11 @@ private val ALL_ZMANIM = listOf(
 )
 
 @Composable
-private fun HalachicTimesSection(
+internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
+    atMax: Boolean,
     onToggle: (name: String, enabled: Boolean) -> Unit
 ) {
-    val atMax = selectedZmanim.size >= 5
 
     ALL_ZMANIM.forEach { name ->
         val checked = name in selectedZmanim
