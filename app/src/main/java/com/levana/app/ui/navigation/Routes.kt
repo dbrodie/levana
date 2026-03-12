@@ -6,9 +6,6 @@ import kotlinx.serialization.Serializable
 data object CalendarRoute
 
 @Serializable
-data class DayDetailRoute(val dateEpochDay: Long)
-
-@Serializable
 data object OnboardingRoute
 
 @Serializable
