@@ -379,9 +379,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         onChangeLocation = {
                             navController.navigate(CityPickerRoute)
                         },
-                        onPersonalEvents = {
-                            navController.navigate(PersonalEventsRoute)
-                        },
                         onSystemCalendars = {
                             navController.navigate(CalendarSelectionRoute)
                         }
