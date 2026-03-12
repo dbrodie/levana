@@ -3,7 +3,6 @@ package com.levana.app.ui.settings
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,32 +11,48 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.NoFood
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Stars
+import androidx.compose.material.icons.outlined.WbTwilight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +68,7 @@ import com.levana.app.ui.theme.HolidayTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.koin.androidx.compose.koinViewModel
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -80,309 +96,641 @@ fun SettingsContent(
     onSystemCalendars: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showMinhagDialog by remember { mutableStateOf(false) }
+    var showAppLanguageDialog by remember { mutableStateOf(false) }
+    var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
+    var showCandleLightingModeDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        LocationSection(
-            locationName = state.locationName,
-            onChangeLocation = onChangeLocation
+        // --- Location & System Calendars (no header) ---
+        ListItem(
+            headlineContent = { Text("Location") },
+            supportingContent = {
+                if (state.locationName.isNotEmpty()) Text(state.locationName)
+            },
+            leadingContent = {
+                Icon(Icons.Outlined.LocationOn, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onChangeLocation)
+        )
+        ListItem(
+            headlineContent = { Text("System Calendars") },
+            leadingContent = {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onSystemCalendars)
         )
 
-        SystemCalendarsSection(onSystemCalendars = onSystemCalendars)
+        HorizontalDivider()
+        SettingsSectionHeader("Calendar Preferences")
 
-        MinhagSection(
-            selected = state.minhag,
-            onSelect = { onIntent(SettingsIntent.SetMinhag(it)) }
+        ListItem(
+            headlineContent = { Text("Israel / Diaspora") },
+            supportingContent = { Text("Affects second day Yom Tov and parsha readings") },
+            leadingContent = {
+                Icon(Icons.Outlined.Public, contentDescription = null)
+            },
+            trailingContent = {
+                Switch(
+                    checked = state.isInIsrael,
+                    onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
+                )
+            }
+        )
+        ListItem(
+            headlineContent = { Text("Modern Israeli Holidays") },
+            supportingContent = { Text("Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim") },
+            leadingContent = {
+                Icon(Icons.Outlined.Flag, contentDescription = null)
+            },
+            trailingContent = {
+                Switch(
+                    checked = state.showModernIsraeliHolidays,
+                    onCheckedChange = { onIntent(SettingsIntent.SetShowModernIsraeli(it)) }
+                )
+            }
+        )
+        ListItem(
+            headlineContent = { Text("Candle Lighting Offset") },
+            supportingContent = { Text("${state.candleLightingOffset.toInt()} min before sunset") },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showCandleLightingOffsetDialog = true }
         )
 
-        ToggleSection(
-            title = "Israel / Diaspora",
-            description = "Affects second day Yom Tov and parsha readings",
-            label = "In Israel",
-            checked = state.isInIsrael,
-            onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
+        HorizontalDivider()
+        SettingsSectionHeader("Minhag")
+
+        val minhagLabel = state.minhag.name.lowercase().replaceFirstChar { it.uppercase() }
+        ListItem(
+            headlineContent = { Text("Minhag") },
+            supportingContent = { Text(minhagLabel) },
+            leadingContent = {
+                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showMinhagDialog = true }
         )
 
-        ToggleSection(
-            title = "Modern Israeli Holidays",
-            description = "Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim",
-            label = "Show on calendar",
-            checked = state.showModernIsraeliHolidays,
-            onCheckedChange = {
-                onIntent(SettingsIntent.SetShowModernIsraeli(it))
+        HorizontalDivider()
+        SettingsSectionHeader("Appearance")
+
+        val appLanguageLabel = when (state.appLanguage) {
+            AppLanguage.SYSTEM -> "System default"
+            AppLanguage.HEBREW -> "Hebrew (עברית)"
+        }
+        ListItem(
+            headlineContent = { Text("App Language") },
+            supportingContent = { Text(appLanguageLabel) },
+            leadingContent = {
+                Icon(Icons.Outlined.Language, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showAppLanguageDialog = true }
+        )
+        ListItem(
+            headlineContent = { Text("Holiday Theming") },
+            supportingContent = { Text("Change app colors during holiday periods") },
+            leadingContent = {
+                Icon(Icons.Outlined.Palette, contentDescription = null)
+            },
+            trailingContent = {
+                Switch(
+                    checked = state.dynamicHolidayTheme,
+                    onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
+                )
             }
         )
 
-        AppLanguageSection(
-            selected = state.appLanguage,
-            onSelect = { onIntent(SettingsIntent.SetAppLanguage(it)) }
-        )
+        HorizontalDivider()
+        SettingsSectionHeader("Notifications")
 
-        ToggleSection(
-            title = "Holiday Theming",
-            description = "Change app colors during holiday periods",
-            label = "Enable holiday theming",
-            checked = state.dynamicHolidayTheme,
-            onCheckedChange = {
-                onIntent(SettingsIntent.SetDynamicHolidayTheme(it))
-            }
+        NotificationsSection(
+            state = state,
+            onIntent = onIntent,
+            onShowModeDialog = { showCandleLightingModeDialog = true }
         )
-
-        CandleLightingSection(
-            offset = state.candleLightingOffset,
-            onOffsetChange = {
-                onIntent(SettingsIntent.SetCandleLightingOffset(it))
-            }
-        )
-
-        NotificationsSection(state = state, onIntent = onIntent)
 
         if (state.showDeveloperSettings) {
+            HorizontalDivider()
+            SettingsSectionHeader("Developer Settings")
             DeveloperSettingsSection(
                 devDateOverride = state.devDateOverride,
                 devForceHolidayTheme = state.devForceHolidayTheme,
-                onDateOverrideChange = {
-                    onIntent(SettingsIntent.SetDevDateOverride(it))
-                },
-                onForceHolidayThemeChange = {
-                    onIntent(SettingsIntent.SetDevForceHolidayTheme(it))
-                }
+                onDateOverrideChange = { onIntent(SettingsIntent.SetDevDateOverride(it)) },
+                onForceHolidayThemeChange = { onIntent(SettingsIntent.SetDevForceHolidayTheme(it)) }
             )
         }
+    }
+
+    if (showMinhagDialog) {
+        MinhagDialog(
+            selected = state.minhag,
+            onSelect = {
+                onIntent(SettingsIntent.SetMinhag(it))
+                showMinhagDialog = false
+            },
+            onDismiss = { showMinhagDialog = false }
+        )
+    }
+
+    if (showAppLanguageDialog) {
+        AppLanguageDialog(
+            selected = state.appLanguage,
+            onSelect = {
+                onIntent(SettingsIntent.SetAppLanguage(it))
+                showAppLanguageDialog = false
+            },
+            onDismiss = { showAppLanguageDialog = false }
+        )
+    }
+
+    if (showCandleLightingOffsetDialog) {
+        CandleLightingOffsetDialog(
+            offset = state.candleLightingOffset,
+            onOffsetChange = { onIntent(SettingsIntent.SetCandleLightingOffset(it)) },
+            onDismiss = { showCandleLightingOffsetDialog = false }
+        )
+    }
+
+    if (showCandleLightingModeDialog) {
+        CandleLightingModeDialog(
+            mode = state.candleLightingNotifyMode,
+            onSelect = {
+                onIntent(SettingsIntent.SetCandleLightingNotifyMode(it))
+                showCandleLightingModeDialog = false
+            },
+            onDismiss = { showCandleLightingModeDialog = false }
+        )
     }
 }
 
 @Composable
-private fun SectionCard(
-    title: String,
-    description: String? = null,
-    content: @Composable () -> Unit
+private fun SettingsSectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun MinhagDialog(
+    selected: Minhag,
+    onSelect: (Minhag) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            if (description != null) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Minhag") },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                Minhag.entries.forEach { minhag ->
+                    val label = minhag.name.lowercase().replaceFirstChar { it.uppercase() }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = minhag == selected,
+                                onClick = { onSelect(minhag) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = minhag == selected, onClick = null)
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun AppLanguageDialog(
+    selected: AppLanguage,
+    onSelect: (AppLanguage) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("App Language") },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                AppLanguage.entries.forEach { language ->
+                    val label = when (language) {
+                        AppLanguage.SYSTEM -> "System default"
+                        AppLanguage.HEBREW -> "Hebrew (עברית)"
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = language == selected,
+                                onClick = { onSelect(language) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = language == selected, onClick = null)
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun CandleLightingOffsetDialog(
+    offset: Double,
+    onOffsetChange: (Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var sliderValue by remember(offset) { mutableFloatStateOf(offset.toFloat()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Candle Lighting Offset") },
+        text = {
+            Column {
                 Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "${sliderValue.roundToInt()} min before sunset",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Slider(
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    valueRange = 10f..60f,
+                    steps = 49
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            content()
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onOffsetChange(sliderValue.roundToInt().toDouble())
+                onDismiss()
+            }) { Text("OK") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    }
+    )
 }
 
 @Composable
-private fun LocationSection(locationName: String, onChangeLocation: () -> Unit) {
-    SectionCard(title = "Location") {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onChangeLocation),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.LocationOn,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = locationName,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-            )
-            Text(
-                text = "Change",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun MinhagSection(selected: Minhag, onSelect: (Minhag) -> Unit) {
-    SectionCard(
-        title = "Minhag",
-        description = "Affects prayer customs and some holiday observances"
-    ) {
-        Column(modifier = Modifier.selectableGroup()) {
-            Minhag.entries.forEach { minhag ->
-                val label = minhag.name.lowercase()
-                    .replaceFirstChar { it.uppercase() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = minhag == selected,
-                            onClick = { onSelect(minhag) },
-                            role = Role.RadioButton
-                        )
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = minhag == selected,
-                        onClick = null
-                    )
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AppLanguageSection(selected: AppLanguage, onSelect: (AppLanguage) -> Unit) {
-    SectionCard(
-        title = "App Language",
-        description = "Controls app strings and layout direction. Restarts the app."
-    ) {
-        Column(modifier = Modifier.selectableGroup()) {
-            AppLanguage.entries.forEach { language ->
-                val label = when (language) {
-                    AppLanguage.SYSTEM -> "System default"
-                    AppLanguage.HEBREW -> "Hebrew (עברית)"
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = language == selected,
-                            onClick = { onSelect(language) },
-                            role = Role.RadioButton
-                        )
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = language == selected,
-                        onClick = null
-                    )
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ToggleSection(
-    title: String,
-    description: String,
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+private fun CandleLightingModeDialog(
+    mode: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    SectionCard(title = title, description = description) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge
-            )
+    val options = listOf("morning" to "Morning of erev", "hours_before" to "Hours before")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Notification Mode") },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                options.forEach { (value, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = mode == value,
+                                onClick = { onSelect(value) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = mode == value, onClick = null)
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun NotificationsSection(
+    state: SettingsState,
+    onIntent: (SettingsIntent) -> Unit,
+    onShowModeDialog: () -> Unit
+) {
+    val context = LocalContext.current
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasNotificationPermission = granted
+    }
+
+    fun ensurePermissionThenEnable(onGranted: () -> Unit) {
+        if (hasNotificationPermission) {
+            onGranted()
+        } else {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    // Candle Lighting
+    ListItem(
+        headlineContent = { Text("Candle Lighting") },
+        leadingContent = {
+            Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
+        },
+        trailingContent = {
             Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
-        }
-    }
-}
-
-@Composable
-private fun CandleLightingSection(offset: Double, onOffsetChange: (Double) -> Unit) {
-    SectionCard(
-        title = "Candle Lighting",
-        description = "Minutes before sunset"
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = {
-                    if (offset > 10) onOffsetChange(offset - 1)
+                checked = state.notifyCandleLighting,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        ensurePermissionThenEnable {
+                            onIntent(SettingsIntent.SetNotifyCandleLighting(true))
+                        }
+                    } else {
+                        onIntent(SettingsIntent.SetNotifyCandleLighting(false))
+                    }
                 }
-            ) {
-                Icon(Icons.Filled.Remove, contentDescription = "Decrease")
-            }
-            Text(
-                text = "${offset.toInt()} min",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp)
             )
-            IconButton(
-                onClick = {
-                    if (offset < 60) onOffsetChange(offset + 1)
-                }
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Increase")
-            }
         }
-    }
-}
+    )
 
-@Composable
-private fun SystemCalendarsSection(onSystemCalendars: () -> Unit) {
-    SectionCard(
-        title = "System Calendars",
-        description = "Show events from your device calendars"
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onSystemCalendars),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.DateRange,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+    if (state.notifyCandleLighting) {
+        val modeLabel = when (state.candleLightingNotifyMode) {
+            "morning" -> "Morning of erev"
+            "hours_before" -> "Hours before"
+            else -> state.candleLightingNotifyMode
+        }
+        ListItem(
+            headlineContent = { Text("Notify mode") },
+            supportingContent = { Text(modeLabel) },
+            leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onShowModeDialog)
+        )
+
+        if (state.candleLightingNotifyMode == "morning") {
+            val hours = state.candleLightingMorningTime / 60
+            val minutes = state.candleLightingMorningTime % 60
+            val timeLabel = "At %d:%02d AM".format(
+                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
+                minutes
             )
-            Text(
-                text = "Select Calendars",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
+            ListItem(
+                headlineContent = { Text("Notification time") },
+                supportingContent = { Text(timeLabel) },
+                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingMorningTime > 360) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingMorningTime(
+                                            state.candleLightingMorningTime - 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Remove, contentDescription = "Earlier")
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingMorningTime < 720) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingMorningTime(
+                                            state.candleLightingMorningTime + 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Later")
+                        }
+                    }
+                }
             )
-            Text(
-                text = "Open",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+        }
+
+        if (state.candleLightingNotifyMode == "hours_before") {
+            ListItem(
+                headlineContent = { Text("Hours before") },
+                supportingContent = { Text("${state.candleLightingHoursBefore} hours before sunset") },
+                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingHoursBefore > 1) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingHoursBefore(
+                                            state.candleLightingHoursBefore - 1
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.candleLightingHoursBefore < 6) {
+                                    onIntent(
+                                        SettingsIntent.SetCandleLightingHoursBefore(
+                                            state.candleLightingHoursBefore + 1
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Increase")
+                        }
+                    }
+                }
             )
         }
     }
+
+    // Holidays
+    ListItem(
+        headlineContent = { Text("Holidays") },
+        leadingContent = {
+            Icon(Icons.Outlined.Event, contentDescription = null)
+        },
+        trailingContent = {
+            Switch(
+                checked = state.notifyHolidays,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        ensurePermissionThenEnable {
+                            onIntent(SettingsIntent.SetNotifyHolidays(true))
+                        }
+                    } else {
+                        onIntent(SettingsIntent.SetNotifyHolidays(false))
+                    }
+                }
+            )
+        }
+    )
+
+    if (state.notifyHolidays) {
+        ListItem(
+            headlineContent = { Text("Days before") },
+            supportingContent = { Text("${state.holidayNotifyDaysBefore} days before") },
+            leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+            trailingContent = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            if (state.holidayNotifyDaysBefore > 0) {
+                                onIntent(
+                                    SettingsIntent.SetHolidayNotifyDaysBefore(
+                                        state.holidayNotifyDaysBefore - 1
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                    }
+                    IconButton(
+                        onClick = {
+                            if (state.holidayNotifyDaysBefore < 14) {
+                                onIntent(
+                                    SettingsIntent.SetHolidayNotifyDaysBefore(
+                                        state.holidayNotifyDaysBefore + 1
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Increase")
+                    }
+                }
+            }
+        )
+    }
+
+    // Fasts
+    ListItem(
+        headlineContent = { Text("Fasts") },
+        leadingContent = {
+            Icon(Icons.Outlined.NoFood, contentDescription = null)
+        },
+        trailingContent = {
+            Switch(
+                checked = state.notifyFasts,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        ensurePermissionThenEnable {
+                            onIntent(SettingsIntent.SetNotifyFasts(true))
+                        }
+                    } else {
+                        onIntent(SettingsIntent.SetNotifyFasts(false))
+                    }
+                }
+            )
+        }
+    )
+
+    // Personal Events
+    ListItem(
+        headlineContent = { Text("Personal Events") },
+        leadingContent = {
+            Icon(Icons.Outlined.Person, contentDescription = null)
+        },
+        trailingContent = {
+            Switch(
+                checked = state.notifyPersonalEvents,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        ensurePermissionThenEnable {
+                            onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
+                        }
+                    } else {
+                        onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
+                    }
+                }
+            )
+        }
+    )
+
+    // Omer
+    ListItem(
+        headlineContent = { Text("Omer (at sunset)") },
+        leadingContent = {
+            Icon(Icons.Outlined.Stars, contentDescription = null)
+        },
+        trailingContent = {
+            Switch(
+                checked = state.notifyOmer,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        ensurePermissionThenEnable {
+                            onIntent(SettingsIntent.SetNotifyOmer(true))
+                        }
+                    } else {
+                        onIntent(SettingsIntent.SetNotifyOmer(false))
+                    }
+                }
+            )
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -393,37 +741,29 @@ private fun DeveloperSettingsSection(
     onDateOverrideChange: (LocalDate?) -> Unit,
     onForceHolidayThemeChange: (String?) -> Unit
 ) {
-    SectionCard(
-        title = "Developer Settings",
-        description = "For testing and development"
-    ) {
-        // Date Override
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
             text = "Date Override",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(4.dp))
-
         DateOverridePicker(
             currentDate = devDateOverride,
             onDateChange = onDateOverrideChange
         )
-
         Spacer(modifier = Modifier.height(12.dp))
-
-        // Force Holiday Theme
         Text(
             text = "Force Holiday Theme",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(4.dp))
-
         HolidayThemePicker(
             selected = devForceHolidayTheme,
             onSelect = onForceHolidayThemeChange
         )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -502,352 +842,6 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
         }) {
             Text("Apply")
         }
-    }
-}
-
-@Composable
-private fun NotificationsSection(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
-    val context = LocalContext.current
-    var hasNotificationPermission by remember {
-        mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasNotificationPermission = granted
-    }
-
-    fun ensurePermissionThenEnable(onGranted: () -> Unit) {
-        if (hasNotificationPermission) {
-            onGranted()
-        } else {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-
-    SectionCard(
-        title = "Notifications",
-        description = "Configure reminders for events and times"
-    ) {
-        // Candle Lighting
-        NotificationToggleRow(
-            label = "Candle Lighting",
-            checked = state.notifyCandleLighting,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    ensurePermissionThenEnable {
-                        onIntent(SettingsIntent.SetNotifyCandleLighting(true))
-                    }
-                } else {
-                    onIntent(SettingsIntent.SetNotifyCandleLighting(false))
-                }
-            }
-        )
-
-        if (state.notifyCandleLighting) {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Mode selector
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp)
-                    .selectableGroup()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.candleLightingNotifyMode == "morning",
-                            onClick = {
-                                onIntent(
-                                    SettingsIntent.SetCandleLightingNotifyMode("morning")
-                                )
-                            },
-                            role = Role.RadioButton
-                        )
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = state.candleLightingNotifyMode == "morning",
-                        onClick = null
-                    )
-                    Text(
-                        text = "Morning of erev",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-
-                if (state.candleLightingNotifyMode == "morning") {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 32.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val hours = state.candleLightingMorningTime / 60
-                        val minutes = state.candleLightingMorningTime % 60
-                        Text(
-                            text = "At %d:%02d AM".format(
-                                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
-                                minutes
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingMorningTime > 360) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingMorningTime(
-                                            state.candleLightingMorningTime - 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Filled.Remove,
-                                contentDescription = "Earlier"
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingMorningTime < 720) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingMorningTime(
-                                            state.candleLightingMorningTime + 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Later"
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.candleLightingNotifyMode == "hours_before",
-                            onClick = {
-                                onIntent(
-                                    SettingsIntent.SetCandleLightingNotifyMode("hours_before")
-                                )
-                            },
-                            role = Role.RadioButton
-                        )
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = state.candleLightingNotifyMode == "hours_before",
-                        onClick = null
-                    )
-                    Text(
-                        text = "Hours before",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-
-                if (state.candleLightingNotifyMode == "hours_before") {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 32.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${state.candleLightingHoursBefore} hours before",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingHoursBefore > 1) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingHoursBefore(
-                                            state.candleLightingHoursBefore - 1
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Filled.Remove,
-                                contentDescription = "Decrease"
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingHoursBefore < 6) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingHoursBefore(
-                                            state.candleLightingHoursBefore + 1
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Increase"
-                            )
-                        }
-                    }
-
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Holidays
-        NotificationToggleRow(
-            label = "Holidays",
-            checked = state.notifyHolidays,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    ensurePermissionThenEnable {
-                        onIntent(SettingsIntent.SetNotifyHolidays(true))
-                    }
-                } else {
-                    onIntent(SettingsIntent.SetNotifyHolidays(false))
-                }
-            }
-        )
-
-        if (state.notifyHolidays) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${state.holidayNotifyDaysBefore} days before",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(
-                    onClick = {
-                        if (state.holidayNotifyDaysBefore > 0) {
-                            onIntent(
-                                SettingsIntent.SetHolidayNotifyDaysBefore(
-                                    state.holidayNotifyDaysBefore - 1
-                                )
-                            )
-                        }
-                    }
-                ) {
-                    Icon(Icons.Filled.Remove, contentDescription = "Decrease")
-                }
-                IconButton(
-                    onClick = {
-                        if (state.holidayNotifyDaysBefore < 14) {
-                            onIntent(
-                                SettingsIntent.SetHolidayNotifyDaysBefore(
-                                    state.holidayNotifyDaysBefore + 1
-                                )
-                            )
-                        }
-                    }
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Increase")
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Fasts
-        NotificationToggleRow(
-            label = "Fasts",
-            checked = state.notifyFasts,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    ensurePermissionThenEnable {
-                        onIntent(SettingsIntent.SetNotifyFasts(true))
-                    }
-                } else {
-                    onIntent(SettingsIntent.SetNotifyFasts(false))
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Personal Events
-        NotificationToggleRow(
-            label = "Personal Events",
-            checked = state.notifyPersonalEvents,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    ensurePermissionThenEnable {
-                        onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
-                    }
-                } else {
-                    onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Omer
-        NotificationToggleRow(
-            label = "Omer (at sunset)",
-            checked = state.notifyOmer,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    ensurePermissionThenEnable {
-                        onIntent(SettingsIntent.SetNotifyOmer(true))
-                    }
-                } else {
-                    onIntent(SettingsIntent.SetNotifyOmer(false))
-                }
-            }
-        )
-
-    }
-}
-
-@Composable
-private fun NotificationToggleRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
     }
 }
 
