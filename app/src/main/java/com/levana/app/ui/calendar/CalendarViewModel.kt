@@ -41,7 +41,7 @@ class CalendarViewModel(
     fun onIntent(intent: CalendarIntent) {
         when (intent) {
             is CalendarIntent.LoadToday -> {
-                if (currentPrefs.hebrewPrimary) {
+                if (currentPrefs.calendarHebrewMode) {
                     loadHebrewMonth(HebrewYearMonth.now())
                 } else {
                     loadMonth(YearMonth.now())
@@ -68,7 +68,7 @@ class CalendarViewModel(
                 _state.value = _state.value.copy(
                     selectedDate = currentPrefs.devDateOverride ?: LocalDate.now()
                 )
-                if (currentPrefs.hebrewPrimary) {
+                if (currentPrefs.calendarHebrewMode) {
                     loadHebrewMonth(HebrewYearMonth.now())
                 } else {
                     loadMonth(YearMonth.now())
@@ -77,9 +77,9 @@ class CalendarViewModel(
             is CalendarIntent.SelectDay -> {
                 _state.value = _state.value.copy(selectedDate = intent.date)
             }
-            is CalendarIntent.ToggleHebrewPrimary -> {
+            is CalendarIntent.ToggleCalendarHebrewMode -> {
                 viewModelScope.launch {
-                    preferencesRepository.saveHebrewPrimary(!currentPrefs.hebrewPrimary)
+                    preferencesRepository.saveCalendarHebrewMode(!currentPrefs.calendarHebrewMode)
                 }
             }
         }
@@ -89,15 +89,15 @@ class CalendarViewModel(
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
                 val modeChanged =
-                    currentPrefs.hebrewPrimary != prefs.hebrewPrimary
+                    currentPrefs.calendarHebrewMode != prefs.calendarHebrewMode
                 currentPrefs = prefs
                 _state.value = _state.value.copy(
                     locationName = prefs.location?.name ?: "",
-                    hebrewPrimary = prefs.hebrewPrimary
+                    calendarHebrewMode = prefs.calendarHebrewMode
                 )
                 if (modeChanged || _state.value.monthDays.isEmpty()) {
                     onIntent(CalendarIntent.LoadToday)
-                } else if (prefs.hebrewPrimary) {
+                } else if (prefs.calendarHebrewMode) {
                     _state.value.hebrewYearMonth?.let {
                         loadHebrewMonth(it)
                     }

@@ -49,7 +49,7 @@ val viewModelModule = module {
     viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get()) }
+    viewModel { SettingsViewModel(get(), androidContext()) }
     viewModel { EventsViewModel(get(), get()) }
     viewModel { AddEditEventViewModel(get()) }
     viewModel { ContactBirthdayViewModel(get()) }

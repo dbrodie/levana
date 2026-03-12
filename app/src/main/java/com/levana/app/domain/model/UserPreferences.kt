@@ -6,7 +6,7 @@ data class UserPreferences(
     val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
-    val hebrewPrimary: Boolean = false,
+    val calendarHebrewMode: Boolean = false,
     val dynamicHolidayTheme: Boolean = true,
     val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,

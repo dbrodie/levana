@@ -51,8 +51,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -118,8 +122,16 @@ class MainActivity : ComponentActivity() {
             } else {
                 null
             }
-            LevanaTheme(holidayTheme = holidayTheme) {
-                LevanaApp(deepLinkEpochDay = deepLinkEpochDay)
+            val configuration = LocalConfiguration.current
+            val layoutDirection = if (configuration.layoutDirection == android.util.LayoutDirection.RTL) {
+                LayoutDirection.Rtl
+            } else {
+                LayoutDirection.Ltr
+            }
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                LevanaTheme(holidayTheme = holidayTheme) {
+                    LevanaApp(deepLinkEpochDay = deepLinkEpochDay)
+                }
             }
         }
     }

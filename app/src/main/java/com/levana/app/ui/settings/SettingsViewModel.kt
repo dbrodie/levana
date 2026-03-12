@@ -1,5 +1,8 @@
 package com.levana.app.ui.settings
 
+import android.app.LocaleManager
+import android.content.Context
+import android.os.LocaleList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.PreferencesRepository
@@ -9,13 +12,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-    private val preferencesRepository: PreferencesRepository
+    private val preferencesRepository: PreferencesRepository,
+    private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
 
     init {
+        val localeManager = context.getSystemService(LocaleManager::class.java)
+        val currentLocales = localeManager.applicationLocales
+        val initialLanguage = if (!currentLocales.isEmpty &&
+            currentLocales[0]?.language.let { it == "iw" || it == "he" }
+        ) {
+            AppLanguage.HEBREW
+        } else {
+            AppLanguage.SYSTEM
+        }
+        _state.value = _state.value.copy(appLanguage = initialLanguage)
         observePreferences()
     }
 
@@ -28,8 +42,17 @@ class SettingsViewModel(
                     preferencesRepository.saveIsInIsrael(intent.inIsrael)
                 is SettingsIntent.SetShowModernIsraeli ->
                     preferencesRepository.saveShowModernIsraeliHolidays(intent.show)
-                is SettingsIntent.SetHebrewPrimary ->
-                    preferencesRepository.saveHebrewPrimary(intent.enabled)
+                is SettingsIntent.SetAppLanguage -> {
+                    val localeManager = context.getSystemService(LocaleManager::class.java)
+                    if (intent.language == AppLanguage.HEBREW) {
+                        localeManager.applicationLocales =
+                            LocaleList.forLanguageTags("iw")
+                    } else {
+                        localeManager.applicationLocales =
+                            LocaleList.getEmptyLocaleList()
+                    }
+                    _state.value = _state.value.copy(appLanguage = intent.language)
+                }
                 is SettingsIntent.SetCandleLightingOffset ->
                     preferencesRepository.saveCandleLightingOffset(intent.offset)
                 is SettingsIntent.SetDynamicHolidayTheme ->
@@ -63,12 +86,11 @@ class SettingsViewModel(
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
-                _state.value = SettingsState(
+                _state.value = _state.value.copy(
                     locationName = prefs.location?.name ?: "Not set",
                     minhag = prefs.minhag,
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
-                    hebrewPrimary = prefs.hebrewPrimary,
                     candleLightingOffset = prefs.candleLightingOffset,
                     dynamicHolidayTheme = prefs.dynamicHolidayTheme,
                     showDeveloperSettings = prefs.showDeveloperSettings,

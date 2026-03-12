@@ -28,7 +28,7 @@ class DayOfWeekHeaderScreenshotTest {
     @Test
     fun dayOfWeekHeader_gregorian_ltr() {
         composeTestRule.setContent {
-            DayOfWeekHeader(hebrewPrimary = false)
+            DayOfWeekHeader(calendarHebrewMode = false)
         }
         composeTestRule.onNode(isRoot())
             .captureRoboImage("src/test/screenshots/dayOfWeekHeader_gregorian_ltr.png")
@@ -38,7 +38,7 @@ class DayOfWeekHeaderScreenshotTest {
     fun dayOfWeekHeader_hebrew_rtl() {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                DayOfWeekHeader(hebrewPrimary = true)
+                DayOfWeekHeader(calendarHebrewMode = true)
             }
         }
         composeTestRule.onNode(isRoot())

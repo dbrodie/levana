@@ -13,7 +13,7 @@ data class CalendarState(
     val gregorianHeader: String = "",
     val isLoading: Boolean = true,
     val locationName: String = "",
-    val hebrewPrimary: Boolean = false,
+    val calendarHebrewMode: Boolean = false,
     val hebrewYearMonth: HebrewYearMonth? = null,
     val selectedDate: LocalDate = LocalDate.now()
 )

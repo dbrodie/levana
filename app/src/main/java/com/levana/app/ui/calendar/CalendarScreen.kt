@@ -101,10 +101,8 @@ fun CalendarScreen(
         dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
     }
 
-    if (state.hebrewPrimary) {
-        CompositionLocalProvider(
-            LocalLayoutDirection provides LayoutDirection.Rtl
-        ) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        if (state.calendarHebrewMode) {
             HebrewCalendarContent(
                 state = state,
                 onIntent = viewModel::onIntent,
@@ -114,17 +112,17 @@ fun CalendarScreen(
                 onAddEvent = onAddEvent,
                 modifier = modifier
             )
+        } else {
+            GregorianCalendarContent(
+                state = state,
+                onIntent = viewModel::onIntent,
+                onOpenDrawer = onOpenDrawer,
+                dayDetailState = dayDetailState,
+                onShowZmanim = onShowZmanim,
+                onAddEvent = onAddEvent,
+                modifier = modifier
+            )
         }
-    } else {
-        GregorianCalendarContent(
-            state = state,
-            onIntent = viewModel::onIntent,
-            onOpenDrawer = onOpenDrawer,
-            dayDetailState = dayDetailState,
-            onShowZmanim = onShowZmanim,
-            onAddEvent = onAddEvent,
-            modifier = modifier
-        )
     }
 }
 
@@ -170,7 +168,7 @@ private fun GregorianCalendarContent(
             state = state,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
-            onToggleMode = { onIntent(CalendarIntent.ToggleHebrewPrimary) }
+            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) }
         )
 
         ElevatedCard(
@@ -270,7 +268,7 @@ private fun HebrewCalendarContent(
             gregorianHeader = state.gregorianHeader,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
-            onToggleMode = { onIntent(CalendarIntent.ToggleHebrewPrimary) }
+            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) }
         )
 
         ElevatedCard(
@@ -343,10 +341,18 @@ private fun GregorianMonthHeader(
         }
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onToggleMode),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Icon(
+                Icons.Filled.SwapVert,
+                contentDescription = "Switch to Hebrew calendar",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column {
                 Text(
                     text = state.currentMonth.month.getDisplayName(
                         TextStyle.FULL,
@@ -360,9 +366,6 @@ private fun GregorianMonthHeader(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            IconButton(onClick = onToggleMode) {
-                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Hebrew calendar")
             }
         }
 
@@ -386,47 +389,45 @@ private fun HebrewMonthHeader(
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // In RTL context the hamburger stays on the physical left via LTR override
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            IconButton(onClick = onOpenDrawer) {
-                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
-            }
+        IconButton(onClick = onOpenDrawer) {
+            Icon(Icons.Filled.Menu, contentDescription = "Open menu")
         }
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onToggleMode),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Icon(
+                Icons.Filled.SwapVert,
+                contentDescription = "Switch to Gregorian calendar",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column {
                 Text(
                     text = hebrewHeader,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Text(
-                        text = gregorianHeader,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            IconButton(onClick = onToggleMode) {
-                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Gregorian calendar")
+                Text(
+                    text = gregorianHeader,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            IconButton(onClick = onGoToToday) {
-                Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
-            }
+        IconButton(onClick = onGoToToday) {
+            Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
         }
     }
 }
 
 @VisibleForTesting
 @Composable
-internal fun DayOfWeekHeader(hebrewPrimary: Boolean) {
+internal fun DayOfWeekHeader(calendarHebrewMode: Boolean) {
     val daysOfWeek = listOf(
         DayOfWeek.SUNDAY,
         DayOfWeek.MONDAY,
@@ -437,7 +438,7 @@ internal fun DayOfWeekHeader(hebrewPrimary: Boolean) {
         DayOfWeek.SATURDAY
     )
 
-    val locale = if (hebrewPrimary) Locale("he") else Locale.getDefault()
+    val locale = if (calendarHebrewMode) Locale("he") else Locale.getDefault()
 
     Row(
         modifier = Modifier
@@ -500,7 +501,7 @@ private fun GregorianMonthGrid(
                 day = day,
                 isToday = day.gregorianDate == today,
                 isSelected = day.gregorianDate == selectedDate,
-                hebrewPrimary = false,
+                calendarHebrewMode = false,
                 onClick = { onDayClick(day.gregorianDate) }
             )
         }
@@ -552,7 +553,7 @@ private fun HebrewMonthGrid(
                 day = day,
                 isToday = day.gregorianDate == today,
                 isSelected = day.gregorianDate == selectedDate,
-                hebrewPrimary = true,
+                calendarHebrewMode = true,
                 onClick = { onDayClick(day.gregorianDate) }
             )
         }
@@ -564,7 +565,7 @@ private fun DayCell(
     day: HebrewDay,
     isToday: Boolean,
     isSelected: Boolean,
-    hebrewPrimary: Boolean,
+    calendarHebrewMode: Boolean,
     onClick: () -> Unit
 ) {
     val backgroundColor = when {
@@ -630,7 +631,7 @@ private fun DayCell(
                 }
             }
 
-            if (hebrewPrimary) {
+            if (calendarHebrewMode) {
                 // Hebrew letter is primary
                 Text(
                     text = day.hebrewDayOfMonthFormatted,
