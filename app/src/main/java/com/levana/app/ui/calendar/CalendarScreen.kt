@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -513,9 +512,9 @@ private fun DayCell(
 
     Box(
         modifier = Modifier
-            .aspectRatio(0.85f)
+            .aspectRatio(1f)
             .padding(1.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(CircleShape)
             .background(backgroundColor)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center

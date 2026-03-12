@@ -9,10 +9,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -39,7 +42,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -154,8 +159,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
     val drawerNavItems = listOf(
         DrawerNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
         DrawerNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
-        DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute),
-        DrawerNavItem("Settings", Icons.Filled.Settings, SettingsRoute)
+        DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute)
     )
 
     val showDrawer = hasLocation && backStackEntry?.destination?.let { dest ->
@@ -176,12 +180,31 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         .padding(horizontal = 16.dp)
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 8.dp)
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.app_name),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Calendar",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     drawerNavItems.forEach { item ->
@@ -205,14 +228,34 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    NavigationDrawerItem(
+                        label = { Text("Settings") },
+                        icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                        selected = backStackEntry?.destination?.hasRoute(SettingsRoute::class) == true,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate(SettingsRoute) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
                     if (hasLocation) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Text(
+                            text = "Locations",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                        )
                         NavigationDrawerItem(
                             label = { Text(locationName) },
                             icon = {
                                 Icon(Icons.Filled.LocationOn, contentDescription = null)
                             },
-                            selected = false,
+                            selected = true,
                             onClick = {
                                 scope.launch { drawerState.close() }
                                 navController.navigate(CityPickerRoute)
