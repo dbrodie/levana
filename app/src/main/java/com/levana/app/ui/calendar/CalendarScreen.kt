@@ -31,7 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -274,30 +274,29 @@ private fun GregorianMonthHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onOpenDrawer) {
             Icon(Icons.Filled.Menu, contentDescription = "Open menu")
         }
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = state.hebrewMonthHeader,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = state.currentMonth.month.getDisplayName(
                     TextStyle.FULL,
                     Locale.getDefault()
                 ) + " " + state.currentMonth.year,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = state.hebrewMonthHeader,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        TextButton(onClick = onGoToToday) {
+        OutlinedButton(onClick = onGoToToday) {
             Text("Today", style = MaterialTheme.typography.labelMedium)
         }
     }
@@ -316,7 +315,6 @@ private fun HebrewMonthHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         // In RTL context the hamburger stays on the physical left via LTR override
@@ -326,18 +324,16 @@ private fun HebrewMonthHeader(
             }
         }
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = hebrewHeader,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            CompositionLocalProvider(
-                LocalLayoutDirection provides LayoutDirection.Ltr
-            ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Text(
                     text = gregorianHeader,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -345,7 +341,7 @@ private fun HebrewMonthHeader(
 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onGoToToday) {
+                OutlinedButton(onClick = onGoToToday) {
                     Text("Today", style = MaterialTheme.typography.labelMedium)
                 }
                 IconButton(onClick = onNext) {
