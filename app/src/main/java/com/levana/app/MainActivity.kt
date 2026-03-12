@@ -224,29 +224,34 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
             }
         }
     ) {
+        val isCalendarRoute =
+            backStackEntry?.destination?.hasRoute(CalendarRoute::class) == true
+
         Scaffold(
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text(stringResource(R.string.app_name)) },
-                    navigationIcon = {
-                        if (showDrawer) {
-                            IconButton(
-                                onClick = { scope.launch { drawerState.open() } }
-                            ) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
-                            }
-                        } else if (canGoBack) {
-                            IconButton(
-                                onClick = { navController.popBackStack() }
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
+                if (!isCalendarRoute) {
+                    CenterAlignedTopAppBar(
+                        title = { Text(stringResource(R.string.app_name)) },
+                        navigationIcon = {
+                            if (showDrawer) {
+                                IconButton(
+                                    onClick = { scope.launch { drawerState.open() } }
+                                ) {
+                                    Icon(Icons.Filled.Menu, contentDescription = "Open menu")
+                                }
+                            } else if (canGoBack) {
+                                IconButton(
+                                    onClick = { navController.popBackStack() }
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { innerPadding ->
             NavHost(
@@ -287,6 +292,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
                 composable<CalendarRoute> {
                     CalendarScreen(
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
                         onShowZmanim = { date ->
                             navController.navigate(ZmanimRoute(date.toEpochDay()))
                         },

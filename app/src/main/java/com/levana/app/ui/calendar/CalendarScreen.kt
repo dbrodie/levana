@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +63,7 @@ private const val PAGER_INITIAL_PAGE = 600
 
 @Composable
 fun CalendarScreen(
+    onOpenDrawer: () -> Unit = {},
     onShowZmanim: (LocalDate) -> Unit = {},
     onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
@@ -82,6 +84,7 @@ fun CalendarScreen(
             HebrewCalendarContent(
                 state = state,
                 onIntent = viewModel::onIntent,
+                onOpenDrawer = onOpenDrawer,
                 dayDetailState = dayDetailState,
                 onShowZmanim = onShowZmanim,
                 onAddEvent = onAddEvent,
@@ -92,6 +95,7 @@ fun CalendarScreen(
         GregorianCalendarContent(
             state = state,
             onIntent = viewModel::onIntent,
+            onOpenDrawer = onOpenDrawer,
             dayDetailState = dayDetailState,
             onShowZmanim = onShowZmanim,
             onAddEvent = onAddEvent,
@@ -104,6 +108,7 @@ fun CalendarScreen(
 private fun GregorianCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
+    onOpenDrawer: () -> Unit,
     dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
     onAddEvent: (Int, Int, Int) -> Unit,
@@ -139,7 +144,7 @@ private fun GregorianCalendarContent(
     Column(modifier = modifier.fillMaxSize()) {
         GregorianMonthHeader(
             state = state,
-            onPrevious = { onIntent(CalendarIntent.PreviousMonth) },
+            onOpenDrawer = onOpenDrawer,
             onNext = { onIntent(CalendarIntent.NextMonth) },
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
@@ -196,6 +201,7 @@ private fun GregorianCalendarContent(
 private fun HebrewCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
+    onOpenDrawer: () -> Unit,
     dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
     onAddEvent: (Int, Int, Int) -> Unit,
@@ -205,6 +211,7 @@ private fun HebrewCalendarContent(
         HebrewMonthHeader(
             hebrewHeader = state.hebrewMonthHeader,
             gregorianHeader = state.gregorianHeader,
+            onOpenDrawer = onOpenDrawer,
             onPrevious = { onIntent(CalendarIntent.PreviousHebrewMonth) },
             onNext = { onIntent(CalendarIntent.NextHebrewMonth) },
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
@@ -250,22 +257,19 @@ private fun HebrewCalendarContent(
 @Composable
 private fun GregorianMonthHeader(
     state: CalendarState,
-    onPrevious: () -> Unit,
+    onOpenDrawer: () -> Unit,
     onNext: () -> Unit,
     onGoToToday: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrevious) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Previous month"
-            )
+        IconButton(onClick = onOpenDrawer) {
+            Icon(Icons.Filled.Menu, contentDescription = "Open menu")
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -302,6 +306,7 @@ private fun GregorianMonthHeader(
 private fun HebrewMonthHeader(
     hebrewHeader: String,
     gregorianHeader: String,
+    onOpenDrawer: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onGoToToday: () -> Unit
@@ -309,15 +314,15 @@ private fun HebrewMonthHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onNext) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Next month"
-            )
+        // In RTL context the hamburger stays on the physical left via LTR override
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
+            }
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -337,17 +342,23 @@ private fun HebrewMonthHeader(
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onGoToToday) {
                     Text("Today", style = MaterialTheme.typography.labelMedium)
                 }
-            }
-            IconButton(onClick = onPrevious) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Previous month"
-                )
+                IconButton(onClick = onNext) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Previous month"
+                    )
+                }
+                IconButton(onClick = onPrevious) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Next month"
+                    )
+                }
             }
         }
     }
