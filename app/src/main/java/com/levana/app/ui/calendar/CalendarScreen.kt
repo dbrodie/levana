@@ -148,10 +148,8 @@ private fun GregorianCalendarContent(
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
-        DayOfWeekHeader(hebrewPrimary = false)
-
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = maxWidth / 7 / 0.85f * 6 + 4.dp
+            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
 
             HorizontalPager(
                 state = pagerState,
@@ -216,10 +214,8 @@ private fun HebrewCalendarContent(
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
-        DayOfWeekHeader(hebrewPrimary = true)
-
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = maxWidth / 7 / 0.85f * 6 + 4.dp
+            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
 
             if (state.isLoading && state.monthDays.isEmpty()) {
                 Box(
@@ -396,6 +392,10 @@ private fun GregorianMonthGrid(
 ) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
     val leadingEmptyCells = firstDayOfWeek.value % 7
+    val daysOfWeek = listOf(
+        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -404,6 +404,19 @@ private fun GregorianMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
+        items(7) { index ->
+            Box(
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         items(leadingEmptyCells) {
             Box(modifier = Modifier.aspectRatio(0.85f))
         }
@@ -431,6 +444,10 @@ private fun HebrewMonthGrid(
     val firstDate = monthDays.first().gregorianDate
     val dayVal = firstDate.dayOfWeek.value // Mon=1..Sun=7
     val leadingEmptyCells = (dayVal % 7 + 1) % 7
+    val daysOfWeek = listOf(
+        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -439,6 +456,19 @@ private fun HebrewMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
+        items(7) { index ->
+            Box(
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale("he")),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         items(leadingEmptyCells) {
             Box(modifier = Modifier.aspectRatio(0.85f))
         }
