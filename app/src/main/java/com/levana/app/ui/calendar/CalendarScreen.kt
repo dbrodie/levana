@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,7 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -296,8 +297,8 @@ private fun GregorianMonthHeader(
             )
         }
 
-        OutlinedButton(onClick = onGoToToday) {
-            Text("Today", style = MaterialTheme.typography.labelMedium)
+        OutlinedIconButton(onClick = onGoToToday) {
+            Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
         }
     }
 }
@@ -341,8 +342,8 @@ private fun HebrewMonthHeader(
 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = onGoToToday) {
-                    Text("Today", style = MaterialTheme.typography.labelMedium)
+                OutlinedIconButton(onClick = onGoToToday) {
+                    Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
                 }
                 IconButton(onClick = onNext) {
                     Icon(
