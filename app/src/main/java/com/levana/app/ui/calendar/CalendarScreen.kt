@@ -21,10 +21,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -36,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.HolidayCategory
 import com.levana.app.ui.daydetail.DayDetailContent
 import com.levana.app.ui.daydetail.DayDetailIntent
@@ -61,6 +62,28 @@ import org.koin.androidx.compose.koinViewModel
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
+
+private fun HebrewYearMonth.plusMonths(n: Int): HebrewYearMonth {
+    var result = this
+    if (n > 0) repeat(n) { result = result.next() }
+    else if (n < 0) repeat(-n) { result = result.previous() }
+    return result
+}
+
+private fun HebrewYearMonth.stepsTo(other: HebrewYearMonth): Int {
+    if (this == other) return 0
+    var current = this
+    for (i in 1..PAGER_INITIAL_PAGE) {
+        current = current.next()
+        if (current == other) return i
+    }
+    current = this
+    for (i in 1..PAGER_INITIAL_PAGE) {
+        current = current.previous()
+        if (current == other) return -i
+    }
+    return 0
+}
 
 @Composable
 fun CalendarScreen(
@@ -146,7 +169,8 @@ private fun GregorianCalendarContent(
         GregorianMonthHeader(
             state = state,
             onOpenDrawer = onOpenDrawer,
-            onGoToToday = { onIntent(CalendarIntent.GoToToday) }
+            onGoToToday = { onIntent(CalendarIntent.GoToToday) },
+            onToggleMode = { onIntent(CalendarIntent.ToggleHebrewPrimary) }
         )
 
         ElevatedCard(
@@ -212,14 +236,41 @@ private fun HebrewCalendarContent(
     onAddEvent: (Int, Int, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val pagerState = rememberPagerState(
+        initialPage = PAGER_INITIAL_PAGE,
+        pageCount = { PAGER_PAGE_COUNT }
+    )
+
+    val baseHebrewMonth = remember { HebrewYearMonth.now() }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            val offset = page - PAGER_INITIAL_PAGE
+            val targetMonth = baseHebrewMonth.plusMonths(offset)
+            if (targetMonth != state.hebrewYearMonth) {
+                onIntent(CalendarIntent.LoadHebrewMonth(targetMonth))
+            }
+        }
+    }
+
+    val currentHebrewMonth = state.hebrewYearMonth ?: baseHebrewMonth
+    val expectedPage = remember(currentHebrewMonth) {
+        PAGER_INITIAL_PAGE + baseHebrewMonth.stepsTo(currentHebrewMonth)
+    }
+
+    LaunchedEffect(expectedPage) {
+        if (pagerState.settledPage != expectedPage) {
+            pagerState.animateScrollToPage(expectedPage)
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         HebrewMonthHeader(
             hebrewHeader = state.hebrewMonthHeader,
             gregorianHeader = state.gregorianHeader,
             onOpenDrawer = onOpenDrawer,
-            onPrevious = { onIntent(CalendarIntent.PreviousHebrewMonth) },
-            onNext = { onIntent(CalendarIntent.NextHebrewMonth) },
-            onGoToToday = { onIntent(CalendarIntent.GoToToday) }
+            onGoToToday = { onIntent(CalendarIntent.GoToToday) },
+            onToggleMode = { onIntent(CalendarIntent.ToggleHebrewPrimary) }
         )
 
         ElevatedCard(
@@ -231,23 +282,33 @@ private fun HebrewCalendarContent(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val gridHeight = 24.dp + maxWidth / 7 * 6 + 4.dp
 
-            if (state.isLoading && state.monthDays.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(gridHeight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxWidth().height(gridHeight)) {
-                    HebrewMonthGrid(
-                        monthDays = state.monthDays,
-                        today = state.today,
-                        selectedDate = state.selectedDate,
-                        onDayClick = { date ->
-                            onIntent(CalendarIntent.SelectDay(date))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth().height(gridHeight)
+            ) { page ->
+                val offset = page - PAGER_INITIAL_PAGE
+                val pageMonth = baseHebrewMonth.plusMonths(offset)
+
+                if (pageMonth == state.hebrewYearMonth) {
+                    if (state.isLoading && state.monthDays.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
-                    )
+                    } else {
+                        HebrewMonthGrid(
+                            monthDays = state.monthDays,
+                            today = state.today,
+                            selectedDate = state.selectedDate,
+                            onDayClick = { date ->
+                                onIntent(CalendarIntent.SelectDay(date))
+                            }
+                        )
+                    }
+                } else {
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
@@ -268,7 +329,8 @@ private fun HebrewCalendarContent(
 private fun GregorianMonthHeader(
     state: CalendarState,
     onOpenDrawer: () -> Unit,
-    onGoToToday: () -> Unit
+    onGoToToday: () -> Unit,
+    onToggleMode: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -280,20 +342,28 @@ private fun GregorianMonthHeader(
             Icon(Icons.Filled.Menu, contentDescription = "Open menu")
         }
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = state.currentMonth.month.getDisplayName(
-                    TextStyle.FULL,
-                    Locale.getDefault()
-                ) + " " + state.currentMonth.year,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = state.hebrewMonthHeader,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = state.currentMonth.month.getDisplayName(
+                        TextStyle.FULL,
+                        Locale.getDefault()
+                    ) + " " + state.currentMonth.year,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = state.hebrewMonthHeader,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onToggleMode) {
+                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Hebrew calendar")
+            }
         }
 
         IconButton(onClick = onGoToToday) {
@@ -307,9 +377,8 @@ private fun HebrewMonthHeader(
     hebrewHeader: String,
     gregorianHeader: String,
     onOpenDrawer: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onGoToToday: () -> Unit
+    onGoToToday: () -> Unit,
+    onToggleMode: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -324,38 +393,32 @@ private fun HebrewMonthHeader(
             }
         }
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = hebrewHeader,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = gregorianHeader,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = hebrewHeader,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Text(
+                        text = gregorianHeader,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            IconButton(onClick = onToggleMode) {
+                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Gregorian calendar")
             }
         }
 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onGoToToday) {
-                    Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
-                }
-                IconButton(onClick = onNext) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous month"
-                    )
-                }
-                IconButton(onClick = onPrevious) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next month"
-                    )
-                }
+            IconButton(onClick = onGoToToday) {
+                Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
             }
         }
     }

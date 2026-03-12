@@ -77,6 +77,11 @@ class CalendarViewModel(
             is CalendarIntent.SelectDay -> {
                 _state.value = _state.value.copy(selectedDate = intent.date)
             }
+            is CalendarIntent.ToggleHebrewPrimary -> {
+                viewModelScope.launch {
+                    preferencesRepository.saveHebrewPrimary(!currentPrefs.hebrewPrimary)
+                }
+            }
         }
     }
 
