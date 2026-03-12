@@ -5,11 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,11 +24,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HolidayCategory
+import com.levana.app.ui.daydetail.DayDetailContent
+import com.levana.app.ui.daydetail.DayDetailIntent
+import com.levana.app.ui.daydetail.DayDetailViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -56,11 +63,19 @@ private const val PAGER_INITIAL_PAGE = 600
 
 @Composable
 fun CalendarScreen(
-    onDayClick: (LocalDate) -> Unit,
+    onOpenDrawer: () -> Unit = {},
+    onShowZmanim: (LocalDate) -> Unit = {},
+    onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
-    viewModel: CalendarViewModel = koinViewModel()
+    viewModel: CalendarViewModel = koinViewModel(),
+    dayDetailViewModel: DayDetailViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val dayDetailState by dayDetailViewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(state.selectedDate) {
+        dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+    }
 
     if (state.hebrewPrimary) {
         CompositionLocalProvider(
@@ -69,7 +84,10 @@ fun CalendarScreen(
             HebrewCalendarContent(
                 state = state,
                 onIntent = viewModel::onIntent,
-                onDayClick = onDayClick,
+                onOpenDrawer = onOpenDrawer,
+                dayDetailState = dayDetailState,
+                onShowZmanim = onShowZmanim,
+                onAddEvent = onAddEvent,
                 modifier = modifier
             )
         }
@@ -77,7 +95,10 @@ fun CalendarScreen(
         GregorianCalendarContent(
             state = state,
             onIntent = viewModel::onIntent,
-            onDayClick = onDayClick,
+            onOpenDrawer = onOpenDrawer,
+            dayDetailState = dayDetailState,
+            onShowZmanim = onShowZmanim,
+            onAddEvent = onAddEvent,
             modifier = modifier
         )
     }
@@ -87,7 +108,10 @@ fun CalendarScreen(
 private fun GregorianCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
-    onDayClick: (LocalDate) -> Unit,
+    onOpenDrawer: () -> Unit,
+    dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
+    onShowZmanim: (LocalDate) -> Unit,
+    onAddEvent: (Int, Int, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(
@@ -120,38 +144,52 @@ private fun GregorianCalendarContent(
     Column(modifier = modifier.fillMaxSize()) {
         GregorianMonthHeader(
             state = state,
-            onPrevious = { onIntent(CalendarIntent.PreviousMonth) },
-            onNext = { onIntent(CalendarIntent.NextMonth) }
+            onOpenDrawer = onOpenDrawer,
+            onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
-        DayOfWeekHeader(hebrewPrimary = false)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
 
-        if (state.isLoading && state.monthDays.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxWidth().height(gridHeight)
             ) { page ->
                 val offset = page - PAGER_INITIAL_PAGE
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
 
                 if (pageMonth == state.currentMonth) {
-                    GregorianMonthGrid(
-                        monthDays = state.monthDays,
-                        currentMonth = state.currentMonth,
-                        today = state.today,
-                        onDayClick = onDayClick
-                    )
+                    if (state.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        GregorianMonthGrid(
+                            monthDays = state.monthDays,
+                            currentMonth = state.currentMonth,
+                            today = state.today,
+                            selectedDate = state.selectedDate,
+                            onDayClick = { date ->
+                                onIntent(CalendarIntent.SelectDay(date))
+                            }
+                        )
+                    }
                 } else {
                     Box(modifier = Modifier.fillMaxSize())
                 }
             }
+        }
+
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            DayDetailContent(
+                state = dayDetailState,
+                onShowZmanim = onShowZmanim,
+                onAddEvent = onAddEvent,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
@@ -160,50 +198,72 @@ private fun GregorianCalendarContent(
 private fun HebrewCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
-    onDayClick: (LocalDate) -> Unit,
+    onOpenDrawer: () -> Unit,
+    dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
+    onShowZmanim: (LocalDate) -> Unit,
+    onAddEvent: (Int, Int, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         HebrewMonthHeader(
             hebrewHeader = state.hebrewMonthHeader,
             gregorianHeader = state.gregorianHeader,
+            onOpenDrawer = onOpenDrawer,
             onPrevious = { onIntent(CalendarIntent.PreviousHebrewMonth) },
-            onNext = { onIntent(CalendarIntent.NextHebrewMonth) }
+            onNext = { onIntent(CalendarIntent.NextHebrewMonth) },
+            onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
-        DayOfWeekHeader(hebrewPrimary = true)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val gridHeight = 24.dp + maxWidth / 7 / 0.85f * 6 + 4.dp
 
-        if (state.isLoading && state.monthDays.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            if (state.isLoading && state.monthDays.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(gridHeight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxWidth().height(gridHeight)) {
+                    HebrewMonthGrid(
+                        monthDays = state.monthDays,
+                        today = state.today,
+                        selectedDate = state.selectedDate,
+                        onDayClick = { date ->
+                            onIntent(CalendarIntent.SelectDay(date))
+                        }
+                    )
+                }
             }
-        } else {
-            HebrewMonthGrid(
-                monthDays = state.monthDays,
-                today = state.today,
-                onDayClick = onDayClick
+        }
+
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            DayDetailContent(
+                state = dayDetailState,
+                onShowZmanim = onShowZmanim,
+                onAddEvent = onAddEvent,
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
 }
 
 @Composable
-private fun GregorianMonthHeader(state: CalendarState, onPrevious: () -> Unit, onNext: () -> Unit) {
+private fun GregorianMonthHeader(
+    state: CalendarState,
+    onOpenDrawer: () -> Unit,
+    onGoToToday: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrevious) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Previous month"
-            )
+        IconButton(onClick = onOpenDrawer) {
+            Icon(Icons.Filled.Menu, contentDescription = "Open menu")
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -222,11 +282,8 @@ private fun GregorianMonthHeader(state: CalendarState, onPrevious: () -> Unit, o
             )
         }
 
-        IconButton(onClick = onNext) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Next month"
-            )
+        TextButton(onClick = onGoToToday) {
+            Text("Today", style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -235,21 +292,23 @@ private fun GregorianMonthHeader(state: CalendarState, onPrevious: () -> Unit, o
 private fun HebrewMonthHeader(
     hebrewHeader: String,
     gregorianHeader: String,
+    onOpenDrawer: () -> Unit,
     onPrevious: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onGoToToday: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onNext) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Next month"
-            )
+        // In RTL context the hamburger stays on the physical left via LTR override
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
+            }
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -269,11 +328,24 @@ private fun HebrewMonthHeader(
             }
         }
 
-        IconButton(onClick = onPrevious) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Previous month"
-            )
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onGoToToday) {
+                    Text("Today", style = MaterialTheme.typography.labelMedium)
+                }
+                IconButton(onClick = onNext) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Previous month"
+                    )
+                }
+                IconButton(onClick = onPrevious) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Next month"
+                    )
+                }
+            }
         }
     }
 }
@@ -315,10 +387,15 @@ private fun GregorianMonthGrid(
     monthDays: List<HebrewDay>,
     currentMonth: YearMonth,
     today: LocalDate,
+    selectedDate: LocalDate,
     onDayClick: (LocalDate) -> Unit
 ) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
     val leadingEmptyCells = firstDayOfWeek.value % 7
+    val daysOfWeek = listOf(
+        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -327,14 +404,28 @@ private fun GregorianMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
+        items(7) { index ->
+            Box(
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         items(leadingEmptyCells) {
-            Box(modifier = Modifier.aspectRatio(1f))
+            Box(modifier = Modifier.aspectRatio(0.85f))
         }
 
         items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
             DayCell(
                 day = day,
                 isToday = day.gregorianDate == today,
+                isSelected = day.gregorianDate == selectedDate,
                 hebrewPrimary = false,
                 onClick = { onDayClick(day.gregorianDate) }
             )
@@ -346,15 +437,17 @@ private fun GregorianMonthGrid(
 private fun HebrewMonthGrid(
     monthDays: List<HebrewDay>,
     today: LocalDate,
+    selectedDate: LocalDate,
     onDayClick: (LocalDate) -> Unit
 ) {
     if (monthDays.isEmpty()) return
     val firstDate = monthDays.first().gregorianDate
-    // For RTL grid: Shabbat (Saturday) is column 0
-    // DayOfWeek.SATURDAY.value = 6, we want offset from Saturday
     val dayVal = firstDate.dayOfWeek.value // Mon=1..Sun=7
-    // Map to Sat=0, Sun=1, Mon=2, ..., Fri=6
     val leadingEmptyCells = (dayVal % 7 + 1) % 7
+    val daysOfWeek = listOf(
+        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -363,14 +456,28 @@ private fun HebrewMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
+        items(7) { index ->
+            Box(
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale("he")),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         items(leadingEmptyCells) {
-            Box(modifier = Modifier.aspectRatio(1f))
+            Box(modifier = Modifier.aspectRatio(0.85f))
         }
 
         items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
             DayCell(
                 day = day,
                 isToday = day.gregorianDate == today,
+                isSelected = day.gregorianDate == selectedDate,
                 hebrewPrimary = true,
                 onClick = { onDayClick(day.gregorianDate) }
             )
@@ -379,16 +486,34 @@ private fun HebrewMonthGrid(
 }
 
 @Composable
-private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, onClick: () -> Unit) {
-    val backgroundColor = if (isToday) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
+private fun DayCell(
+    day: HebrewDay,
+    isToday: Boolean,
+    isSelected: Boolean,
+    hebrewPrimary: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when {
+        isToday -> MaterialTheme.colorScheme.primaryContainer
+        isSelected -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.surface
+    }
+
+    val primaryTextColor = when {
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+        isSelected -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    val secondaryTextColor = when {
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        isSelected -> MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
         modifier = Modifier
-            .aspectRatio(1f)
+            .aspectRatio(0.85f)
             .padding(1.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
@@ -430,39 +555,32 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, hebrewPrimary: Boolean, on
                     )
                 }
             }
-            Text(
-                text = day.hebrewDayOfMonthFormatted,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                color = if (isToday) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
-            )
+
             if (hebrewPrimary) {
+                // Hebrew letter is primary
+                Text(
+                    text = day.hebrewDayOfMonthFormatted,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = primaryTextColor
+                )
                 Text(
                     text = "${day.gregorianDate.dayOfMonth}/${day.gregorianDate.monthValue}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isToday) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                            alpha = 0.7f
-                        )
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = secondaryTextColor
                 )
             } else {
+                // Gregorian day is primary
                 Text(
                     text = day.gregorianDate.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = primaryTextColor
+                )
+                Text(
+                    text = day.hebrewDayOfMonthFormatted,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isToday) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(
-                            alpha = 0.7f
-                        )
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = secondaryTextColor
                 )
             }
         }

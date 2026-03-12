@@ -38,8 +38,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +47,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
@@ -59,37 +55,9 @@ import com.levana.app.domain.model.SystemCalendarEvent
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.time.format.TextStyle
-import java.util.Locale
-import org.koin.androidx.compose.koinViewModel
 
 private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
 private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
-
-@Composable
-fun DayDetailScreen(
-    dateEpochDay: Long,
-    onShowZmanim: (LocalDate) -> Unit = {},
-    onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
-    modifier: Modifier = Modifier,
-    viewModel: DayDetailViewModel = koinViewModel()
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    LaunchedEffect(dateEpochDay) {
-        viewModel.onIntent(
-            DayDetailIntent.LoadDay(LocalDate.ofEpochDay(dateEpochDay))
-        )
-    }
-
-    DayDetailContent(
-        state = state,
-        onShowZmanim = onShowZmanim,
-        onAddEvent = onAddEvent,
-        modifier = modifier
-    )
-}
 
 @Composable
 fun DayDetailContent(
@@ -118,10 +86,7 @@ fun DayDetailContent(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    DateHeader(dayInfo)
-
                     if (dayInfo.holidays.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
                         HolidaySection(dayInfo.holidays)
                     }
 
@@ -200,46 +165,6 @@ fun DayDetailContent(
             }
         }
     }
-}
-
-@Composable
-private fun DateHeader(dayInfo: DayInfo) {
-    val dayOfWeekName = dayInfo.dayOfWeek.getDisplayName(
-        TextStyle.FULL,
-        Locale.getDefault()
-    )
-    val gregorianFormatted = dayInfo.gregorianDate.format(
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-    )
-
-    Text(
-        text = dayInfo.hebrewDay.hebrewFormatted,
-        style = MaterialTheme.typography.headlineLarge,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Text(
-        text = dayInfo.hebrewDay.transliterated,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    Text(
-        text = dayOfWeekName,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    Text(
-        text = gregorianFormatted,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

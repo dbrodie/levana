@@ -8,29 +8,37 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -49,7 +57,6 @@ import com.levana.app.notifications.NotificationPoster
 import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
 import com.levana.app.ui.calendarselection.CalendarSelectionScreen
-import com.levana.app.ui.daydetail.DayDetailScreen
 import com.levana.app.ui.events.AddEditEventScreen
 import com.levana.app.ui.events.EventsScreen
 import com.levana.app.ui.location.CityPickerScreen
@@ -59,7 +66,6 @@ import com.levana.app.ui.navigation.CalendarRoute
 import com.levana.app.ui.navigation.CalendarSelectionRoute
 import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.ContactBirthdayRoute
-import com.levana.app.ui.navigation.DayDetailRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
@@ -109,7 +115,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class BottomNavItem(
+private data class DrawerNavItem(
     val label: String,
     val icon: ImageVector,
     val route: Any
@@ -135,244 +141,247 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
 
-    // Handle notification deep-link
+    // Handle notification deep-link — open calendar (day detail is inline)
     LaunchedEffect(deepLinkEpochDay) {
         if (deepLinkEpochDay != 0L && hasLocation) {
-            navController.navigate(DayDetailRoute(deepLinkEpochDay))
+            navController.navigate(CalendarRoute) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 
-    val bottomNavItems = listOf(
-        BottomNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
-        BottomNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
-        BottomNavItem(
-            "Settings",
-            Icons.Filled.Settings,
-            SettingsRoute
-        )
+    val drawerNavItems = listOf(
+        DrawerNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
+        DrawerNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
+        DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute),
+        DrawerNavItem("Settings", Icons.Filled.Settings, SettingsRoute)
     )
 
-    val showBottomBar = hasLocation && backStackEntry?.destination?.let { dest ->
-        bottomNavItems.any { item ->
-            dest.hasRoute(item.route::class)
-        }
+    val showDrawer = hasLocation && backStackEntry?.destination?.let { dest ->
+        drawerNavItems.any { item -> dest.hasRoute(item.route::class) }
     } == true
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                navigationIcon = {
-                    if (canGoBack && !showBottomBar) {
-                        IconButton(
-                            onClick = { navController.popBackStack() }
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (hasLocation) {
-                        Text(
-                            text = locationName,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                            modifier = Modifier
-                                .clickable {
-                                    navController.navigate(CityPickerRoute)
-                                }
-                                .padding(end = 4.dp)
-                        )
-                        Icon(
-                            Icons.Filled.LocationOn,
-                            contentDescription = "Change location",
-                            tint = MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                            modifier = Modifier
-                                .clickable {
-                                    navController.navigate(CityPickerRoute)
-                                }
-                                .padding(end = 8.dp)
-                        )
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    bottomNavItems.forEach { item ->
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = showDrawer,
+        drawerContent = {
+            ModalDrawerSheet {
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    drawerNavItems.forEach { item ->
                         val selected =
-                            backStackEntry?.destination?.hasRoute(
-                                item.route::class
-                            ) == true
-                        NavigationBarItem(
+                            backStackEntry?.destination?.hasRoute(item.route::class) == true
+                        NavigationDrawerItem(
+                            label = { Text(item.label) },
+                            icon = { Icon(item.icon, contentDescription = null) },
                             selected = selected,
                             onClick = {
+                                scope.launch { drawerState.close() }
                                 navController.navigate(item.route) {
                                     popUpTo(
-                                        navController.graph
-                                            .findStartDestination().id
-                                    ) {
-                                        inclusive = false
-                                    }
+                                        navController.graph.findStartDestination().id
+                                    ) { inclusive = false }
                                     launchSingleTop = true
                                 }
-                            },
-                            icon = {
-                                Icon(item.icon, contentDescription = null)
-                            },
-                            label = { Text(item.label) }
+                            }
                         )
                     }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    if (hasLocation) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        NavigationDrawerItem(
+                            label = { Text(locationName) },
+                            icon = {
+                                Icon(Icons.Filled.LocationOn, contentDescription = null)
+                            },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(CityPickerRoute)
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDest,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable<OnboardingRoute> {
-                GpsOnboarding(
-                    navController = navController,
-                    preferencesRepository = preferencesRepository
-                )
-            }
+    ) {
+        val isCalendarRoute =
+            backStackEntry?.destination?.hasRoute(CalendarRoute::class) == true
 
-            composable<CityPickerRoute> {
-                CityPickerScreen(
-                    onLocationSaved = {
-                        navController.navigate(CalendarRoute) {
-                            popUpTo(0) { inclusive = true }
+        Scaffold(
+            topBar = {
+                if (!isCalendarRoute) {
+                    CenterAlignedTopAppBar(
+                        title = { Text(stringResource(R.string.app_name)) },
+                        navigationIcon = {
+                            if (showDrawer) {
+                                IconButton(
+                                    onClick = { scope.launch { drawerState.open() } }
+                                ) {
+                                    Icon(Icons.Filled.Menu, contentDescription = "Open menu")
+                                }
+                            } else if (canGoBack) {
+                                IconButton(
+                                    onClick = { navController.popBackStack() }
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = startDest,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable<OnboardingRoute> {
+                    GpsOnboarding(
+                        navController = navController,
+                        preferencesRepository = preferencesRepository
+                    )
+                }
 
-            composable<ManualLocationRoute> {
-                val scope = rememberCoroutineScope()
-                ManualLocationScreen(
-                    onSave = { location ->
-                        scope.launch {
-                            preferencesRepository.saveLocation(location)
+                composable<CityPickerRoute> {
+                    CityPickerScreen(
+                        onLocationSaved = {
                             navController.navigate(CalendarRoute) {
                                 popUpTo(0) { inclusive = true }
                             }
                         }
-                    }
-                )
-            }
-
-            composable<CalendarRoute> {
-                CalendarScreen(
-                    onDayClick = { date ->
-                        navController.navigate(
-                            DayDetailRoute(date.toEpochDay())
-                        )
-                    }
-                )
-            }
-
-            composable<DayDetailRoute> { backStack ->
-                val route = backStack.toRoute<DayDetailRoute>()
-                DayDetailScreen(
-                    dateEpochDay = route.dateEpochDay,
-                    onShowZmanim = { date ->
-                        navController.navigate(
-                            ZmanimRoute(date.toEpochDay())
-                        )
-                    },
-                    onAddEvent = { day, month, year ->
-                        navController.navigate(
-                            AddEditEventRoute(
-                                prefillDay = day,
-                                prefillMonth = month,
-                                prefillYear = year
-                            )
-                        )
-                    }
-                )
-            }
-
-            composable<ZmanimRoute> { backStack ->
-                val route = backStack.toRoute<ZmanimRoute>()
-                val initialDate = if (route.dateEpochDay != 0L) {
-                    LocalDate.ofEpochDay(route.dateEpochDay)
-                } else {
-                    null
+                    )
                 }
-                ZmanimScreen(initialDate = initialDate)
-            }
 
-            composable<SettingsRoute> {
-                SettingsScreen(
-                    onChangeLocation = {
-                        navController.navigate(CityPickerRoute)
-                    },
-                    onPersonalEvents = {
-                        navController.navigate(PersonalEventsRoute)
-                    },
-                    onSystemCalendars = {
-                        navController.navigate(CalendarSelectionRoute)
-                    }
-                )
-            }
+                composable<ManualLocationRoute> {
+                    val scope2 = rememberCoroutineScope()
+                    ManualLocationScreen(
+                        onSave = { location ->
+                            scope2.launch {
+                                preferencesRepository.saveLocation(location)
+                                navController.navigate(CalendarRoute) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        }
+                    )
+                }
 
-            composable<PersonalEventsRoute> {
-                EventsScreen(
-                    onAddEvent = {
-                        navController.navigate(AddEditEventRoute())
-                    },
-                    onEditEvent = { eventId ->
-                        navController.navigate(
-                            AddEditEventRoute(eventId = eventId)
-                        )
-                    },
-                    onAddBirthday = {
-                        navController.navigate(ContactBirthdayRoute())
-                    },
-                    onEditBirthday = { lookupKey ->
-                        navController.navigate(
-                            ContactBirthdayRoute(
-                                contactLookupKey = lookupKey
+                composable<CalendarRoute> {
+                    CalendarScreen(
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                        onShowZmanim = { date ->
+                            navController.navigate(ZmanimRoute(date.toEpochDay()))
+                        },
+                        onAddEvent = { day, month, year ->
+                            navController.navigate(
+                                AddEditEventRoute(
+                                    prefillDay = day,
+                                    prefillMonth = month,
+                                    prefillYear = year
+                                )
                             )
-                        )
-                    }
-                )
-            }
+                        }
+                    )
+                }
 
-            composable<AddEditEventRoute> { backStack ->
-                val route = backStack.toRoute<AddEditEventRoute>()
-                AddEditEventScreen(
-                    eventId = route.eventId,
-                    prefillDay = route.prefillDay,
-                    prefillMonth = route.prefillMonth,
-                    prefillYear = route.prefillYear,
-                    onSaved = {
-                        navController.popBackStack()
+                composable<ZmanimRoute> { backStack ->
+                    val route = backStack.toRoute<ZmanimRoute>()
+                    val initialDate = if (route.dateEpochDay != 0L) {
+                        LocalDate.ofEpochDay(route.dateEpochDay)
+                    } else {
+                        null
                     }
-                )
-            }
+                    ZmanimScreen(initialDate = initialDate)
+                }
 
-            composable<CalendarSelectionRoute> {
-                CalendarSelectionScreen()
-            }
+                composable<SettingsRoute> {
+                    SettingsScreen(
+                        onChangeLocation = {
+                            navController.navigate(CityPickerRoute)
+                        },
+                        onPersonalEvents = {
+                            navController.navigate(PersonalEventsRoute)
+                        },
+                        onSystemCalendars = {
+                            navController.navigate(CalendarSelectionRoute)
+                        }
+                    )
+                }
 
-            composable<ContactBirthdayRoute> { backStack ->
-                val route =
-                    backStack.toRoute<ContactBirthdayRoute>()
-                ContactBirthdayScreen(
-                    contactLookupKey = route.contactLookupKey,
-                    onSaved = {
-                        navController.popBackStack()
-                    }
-                )
+                composable<PersonalEventsRoute> {
+                    EventsScreen(
+                        onAddEvent = {
+                            navController.navigate(AddEditEventRoute())
+                        },
+                        onEditEvent = { eventId ->
+                            navController.navigate(
+                                AddEditEventRoute(eventId = eventId)
+                            )
+                        },
+                        onAddBirthday = {
+                            navController.navigate(ContactBirthdayRoute())
+                        },
+                        onEditBirthday = { lookupKey ->
+                            navController.navigate(
+                                ContactBirthdayRoute(
+                                    contactLookupKey = lookupKey
+                                )
+                            )
+                        }
+                    )
+                }
+
+                composable<AddEditEventRoute> { backStack ->
+                    val route = backStack.toRoute<AddEditEventRoute>()
+                    AddEditEventScreen(
+                        eventId = route.eventId,
+                        prefillDay = route.prefillDay,
+                        prefillMonth = route.prefillMonth,
+                        prefillYear = route.prefillYear,
+                        onSaved = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable<CalendarSelectionRoute> {
+                    CalendarSelectionScreen()
+                }
+
+                composable<ContactBirthdayRoute> { backStack ->
+                    val route =
+                        backStack.toRoute<ContactBirthdayRoute>()
+                    ContactBirthdayScreen(
+                        contactLookupKey = route.contactLookupKey,
+                        onSaved = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
         }
     }

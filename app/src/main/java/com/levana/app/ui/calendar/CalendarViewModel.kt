@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,7 @@ class CalendarViewModel(
     val state: StateFlow<CalendarState> = _state.asStateFlow()
 
     private var currentPrefs = UserPreferences()
+    private var loadJob: Job? = null
 
     init {
         observePreferences()
@@ -62,6 +64,19 @@ class CalendarViewModel(
                     ?: HebrewYearMonth.now()
                 loadHebrewMonth(current.previous())
             }
+            is CalendarIntent.GoToToday -> {
+                _state.value = _state.value.copy(
+                    selectedDate = currentPrefs.devDateOverride ?: LocalDate.now()
+                )
+                if (currentPrefs.hebrewPrimary) {
+                    loadHebrewMonth(HebrewYearMonth.now())
+                } else {
+                    loadMonth(YearMonth.now())
+                }
+            }
+            is CalendarIntent.SelectDay -> {
+                _state.value = _state.value.copy(selectedDate = intent.date)
+            }
         }
     }
 
@@ -89,8 +104,13 @@ class CalendarViewModel(
     }
 
     private fun loadMonth(yearMonth: YearMonth) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isLoading = true,
+                currentMonth = yearMonth,
+                monthDays = emptyList()
+            )
 
             val monthDays = calendarRepository.getMonthDays(
                 yearMonth,
@@ -140,7 +160,6 @@ class CalendarViewModel(
             }
 
             _state.value = _state.value.copy(
-                currentMonth = yearMonth,
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewMonthHeader,
@@ -150,8 +169,13 @@ class CalendarViewModel(
     }
 
     private fun loadHebrewMonth(hym: HebrewYearMonth) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isLoading = true,
+                hebrewYearMonth = hym,
+                monthDays = emptyList()
+            )
 
             val monthDays = calendarRepository.getHebrewMonthDays(
                 hym,
@@ -203,7 +227,6 @@ class CalendarViewModel(
             }
 
             _state.value = _state.value.copy(
-                hebrewYearMonth = hym,
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewHeader,
