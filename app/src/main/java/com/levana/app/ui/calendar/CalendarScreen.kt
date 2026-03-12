@@ -341,10 +341,18 @@ private fun GregorianMonthHeader(
         }
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onToggleMode),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Icon(
+                Icons.Filled.SwapVert,
+                contentDescription = "Switch to Hebrew calendar",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column {
                 Text(
                     text = state.currentMonth.month.getDisplayName(
                         TextStyle.FULL,
@@ -358,9 +366,6 @@ private fun GregorianMonthHeader(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            IconButton(onClick = onToggleMode) {
-                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Hebrew calendar")
             }
         }
 
@@ -389,10 +394,18 @@ private fun HebrewMonthHeader(
         }
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onToggleMode),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Icon(
+                Icons.Filled.SwapVert,
+                contentDescription = "Switch to Gregorian calendar",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column {
                 Text(
                     text = hebrewHeader,
                     style = MaterialTheme.typography.titleMedium,
@@ -403,9 +416,6 @@ private fun HebrewMonthHeader(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            IconButton(onClick = onToggleMode) {
-                Icon(Icons.Filled.SwapVert, contentDescription = "Switch to Gregorian calendar")
             }
         }
 

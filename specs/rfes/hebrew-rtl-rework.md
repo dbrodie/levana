@@ -49,7 +49,9 @@ The current `hebrewPrimary` preference conflates two separate concerns:
 - `ui/calendar/CalendarScreen.kt` — remove RTL wrapper, add LTR wrapper, remove inner overrides, rename param
 - `ui/settings/SettingsState.kt` — remove `hebrewPrimary`, add `appLanguage: AppLanguage`
 - `ui/settings/SettingsIntent.kt` — remove `SetHebrewPrimary`, add `SetAppLanguage`
-- `ui/settings/SettingsViewModel.kt` — add Context param, read/write `LocaleManager`, remove old Hebrew handling
+- `ui/settings/SettingsViewModel.kt` — add Context param, read/write `LocaleManager`, remove old Hebrew handling; detect locale by checking both `"iw"` and `"he"` (Android normalises `"iw"` → `"he"` internally)
 - `ui/settings/SettingsScreen.kt` — remove Hebrew-Primary toggle, add App Language radio section
 - `AndroidManifest.xml` — add `android:localeConfig="@xml/locales_config"`
 - `di/AppModules.kt` — pass `androidContext()` to `SettingsViewModel`
+- `MainActivity.kt` — explicitly bridge `LocalConfiguration.current.layoutDirection` → `LocalLayoutDirection` at the root; Compose does not derive this automatically from the view system
+- `ui/calendar/CalendarScreen.kt` (additional) — move mode-toggle icon to left of month name; icon + text form a single clickable row

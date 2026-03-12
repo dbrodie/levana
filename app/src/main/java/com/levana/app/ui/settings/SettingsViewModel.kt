@@ -23,7 +23,7 @@ class SettingsViewModel(
         val localeManager = context.getSystemService(LocaleManager::class.java)
         val currentLocales = localeManager.applicationLocales
         val initialLanguage = if (!currentLocales.isEmpty &&
-            currentLocales[0]?.language == "iw"
+            currentLocales[0]?.language.let { it == "iw" || it == "he" }
         ) {
             AppLanguage.HEBREW
         } else {
