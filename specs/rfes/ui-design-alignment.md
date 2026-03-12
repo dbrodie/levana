@@ -1,48 +1,85 @@
-# UI Design Alignment — Quick Wins
+# UI Design Alignment
 
 **Branch:** `ui-design-alignment`
 **Date:** 2026-03-12
+**Status:** Merged to master
 
 ## Context
 
-Comparing the running app against the Stitch "Calendar with Jewish Times v1" and "Sidebar Navigation V2" designs revealed several visual gaps. This spec covers the quick-win items. Inline zmanim integration is deferred.
+Comparing the running app against the Stitch "Calendar with Jewish Times v1", "Sidebar Navigation V2", and "Swap Icon Variation Final" designs revealed several visual gaps. This branch addresses all of them.
 
 ---
 
-## Gap 1: Day Cell Selected Indicator Shape
+## Change 1: Day Cell Selected Indicator Shape
 
-**File:** `app/src/main/java/com/levana/app/ui/calendar/CalendarScreen.kt` (~line 516)
+**File:** `CalendarScreen.kt`
 
-**Change:**
 - `aspectRatio(0.85f)` → `aspectRatio(1f)` (square cells so circle looks correct)
 - `RoundedCornerShape(8.dp)` → `CircleShape`
 
 ---
 
-## Gap 2: Navigation Drawer Header
+## Change 2: Navigation Drawer Header
 
-**File:** `app/src/main/java/com/levana/app/MainActivity.kt` (~line 179)
+**File:** `MainActivity.kt`
 
-**Change:** Replace single `Text("Levana")` with a `Row` containing:
-- `CalendarMonth` icon (primary color)
-- `Column` with "Levana" (bold headline, primary color) + "Calendar" subtitle (labelMedium, onSurfaceVariant)
-
----
-
-## Gap 3: Settings Separation in Drawer
-
-**File:** `app/src/main/java/com/levana/app/MainActivity.kt`
-
-**Change:**
-- Remove `DrawerNavItem("Settings", ...)` from `drawerNavItems` list
-- Add standalone Settings `NavigationDrawerItem` in bottom section (after divider, before Locations)
+- Replaced single `Text("Levana")` with a `Row` containing:
+  - App moon crescent logo (`ic_launcher_foreground`) on a primary-colored circle
+  - `Column` with "Levana" (bold headline, primary color) + "Calendar" subtitle (labelMedium, onSurfaceVariant)
 
 ---
 
-## Gap 4: LOCATIONS Section in Drawer
+## Change 3: Settings Separation in Drawer
 
-**File:** `app/src/main/java/com/levana/app/MainActivity.kt`
+**File:** `MainActivity.kt`
 
-**Change:**
-- Add `Text("Locations", style = labelSmall, color = onSurfaceVariant)` section header before location item
-- Set location `NavigationDrawerItem` with `selected = true` to show active highlight
+- Removed Settings from the main `drawerNavItems` list
+- Added standalone Settings `NavigationDrawerItem` at the bottom section (after divider)
+
+---
+
+## Change 4: LOCATIONS Section in Drawer
+
+**File:** `MainActivity.kt`
+
+- Added `Text("LOCATIONS", style = labelSmall)` section header before the location item
+- Location `NavigationDrawerItem` uses `selected = true` to show active highlight
+
+---
+
+## Change 5: Today Button — Outline to Plain
+
+**File:** `CalendarScreen.kt`
+
+- Changed `FilledTonalIconButton` (then `OutlinedIconButton`) → plain `IconButton` for the today button in both Gregorian and Hebrew headers
+
+---
+
+## Change 6: Remove Personal Events from Settings
+
+**File:** `SettingsScreen.kt`, `MainActivity.kt`
+
+- Removed "Personal Events" section card from Settings screen
+- Events is now only accessible via the sidebar navigation drawer
+
+---
+
+## Change 7: Calendar Mode Toggle Button (Swap Icon)
+
+**Files:** `CalendarScreen.kt`, `CalendarIntent.kt`, `CalendarViewModel.kt`
+
+- Added `SwapVert` icon button next to the month title in both Gregorian and Hebrew headers
+- Tapping toggles between Gregorian and Hebrew-primary calendar modes
+- Implemented via new `ToggleHebrewPrimary` intent → `preferencesRepository.saveHebrewPrimary(!current)`
+
+---
+
+## Change 8: Hebrew Calendar Swipe Navigation
+
+**File:** `CalendarScreen.kt`
+
+- Added `HorizontalPager` to `HebrewCalendarContent`, matching the Gregorian implementation
+- Swiping left/right navigates Hebrew months (RTL layout means swipe direction is natural for Hebrew)
+- Removed prev/next arrow buttons from `HebrewMonthHeader`; swiping replaces them
+- Added `HebrewYearMonth.plusMonths(n)` and `HebrewYearMonth.stepsTo(other)` private helpers for pager ↔ month offset mapping
+- "Go to today" animates the pager to the correct page
