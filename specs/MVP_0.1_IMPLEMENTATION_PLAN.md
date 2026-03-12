@@ -1,9 +1,9 @@
-# Levana - Implementation Plan
+# Levana - MVP 0.1 Implementation Plan
 
 ## Document Status
 
-**Version:** 1.0
-**Status:** Draft
+**Version:** 0.1
+**Status:** Complete
 **Architecture:** MVI + Koin (per `ARCHITECTURE_SPEC.md`)
 
 ---
@@ -13,7 +13,7 @@
 Every increment follows this process:
 
 1. **Branch** — Create a feature branch from `master` named `increment-XX-short-description`
-2. **Spec** — Write a detailed spec at `specs/increments/INCREMENT_XX.md` covering what will be built, key decisions, and acceptance criteria. Commit this spec to the branch.
+2. **Spec** — Write a detailed spec at `specs/mvp_0.1/INCREMENT_XX.md` covering what will be built, key decisions, and acceptance criteria. Commit this spec to the branch.
 3. **Implement** — Build the increment on the branch, committing as needed
 4. **Build & Test** — Run `./gradlew build` (and any tests) to verify everything compiles and passes
 5. **Review** — User reviews the branch (code + on-device verification against the spec's acceptance criteria)
@@ -24,16 +24,14 @@ Every increment follows this process:
 ## Dependency Graph
 
 ```
-1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 ─┬─ 9 → 10 ─┬─ 11 ─┬─ 13
-                                   │           │      └─ 15
-                                   │           ├─ 12
-                                   │           └─ 14
-                                   └─ 16 → 17 → 18
+1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 ─┬─ 11 ─┬─ 13
+                                             │      └─ 15
+                                             ├─ 12
+                                             └─ 14
 ```
 
-After Increment 8, work can proceed on two parallel tracks:
-- **Feature track:** 9 → 10 → (11, 12, 14 in parallel) → 13 (after 11) and 15 (after 11)
-- **Polish track:** 16 → 17 → 18
+After Increment 10, work can proceed in parallel:
+- 11, 12, 14 in parallel → 13 (after 11) and 15 (after 11)
 
 ---
 
@@ -557,109 +555,9 @@ These decisions apply across all increments:
 
 ---
 
-### Increment 16: Accessibility & Polish
-
-**Branch:** `increment-16-accessibility`
-**Depends on:** Increment 8
-
-**What to build:**
-- TalkBack support: meaningful `contentDescription` on all interactive elements
-- Screen reader-friendly date announcements ("Tuesday, 15 Shevat 5786, February 3, 2026")
-- WCAG AA color contrast ratios verified and fixed
-- Minimum 48dp touch targets on all interactive elements
-- Keyboard navigation support with visible focus indicators
-- Font scaling: all text uses `sp` units and layouts handle large text gracefully
-- Accessibility Scanner audit and fixes
-
-**Key technical notes:**
-- Use `semantics { }` modifier for custom TalkBack descriptions
-- `Modifier.clickable` automatically provides 48dp minimum — verify custom components
-- Test with system font scaled to maximum (200%)
-- Test with TalkBack enabled end-to-end
-
-**Acceptance criteria:**
-- [ ] TalkBack correctly announces Hebrew dates, holidays, and zmanim
-- [ ] All interactive elements have meaningful content descriptions
-- [ ] Color contrast meets WCAG AA (4.5:1 for normal text, 3:1 for large text)
-- [ ] All touch targets are at least 48dp × 48dp
-- [ ] Keyboard navigation works through all screens with visible focus
-- [ ] App remains usable with font scaled to 200%
-- [ ] Android Accessibility Scanner reports no critical issues
-- [ ] `./gradlew build` passes
-
----
-
-### Increment 17: Appearance & About
-
-**Branch:** `increment-17-appearance`
-**Depends on:** Increment 16
-
-**What to build:**
-- Theme selection in settings: Dark / Light / System (default)
-- About screen with:
-  - App version (from `BuildConfig`)
-  - License: GPLv3 with full text accessible
-  - Open source library acknowledgments (auto-generated or manual)
-  - Link to source code repository
-- Splash screen via `SplashScreen` API (Android 12+)
-- Edge-to-edge display with proper inset handling
-
-**Key technical notes:**
-- Use `AppCompatDelegate.setDefaultNightMode()` or Compose `isSystemInDarkTheme()` with override
-- Splash screen: use `core-splashscreen` library for the launch animation
-- Edge-to-edge: `WindowCompat.setDecorFitsSystemWindows(window, false)` + padding for insets
-- About screen libraries: consider `aboutlibraries` Gradle plugin
-
-**Acceptance criteria:**
-- [ ] Dark/Light/System theme toggle works and persists
-- [ ] About screen shows app version number
-- [ ] About screen shows GPLv3 license information
-- [ ] About screen lists open source library acknowledgments
-- [ ] Splash screen shows on cold launch with app icon/name
-- [ ] Edge-to-edge: content extends behind system bars with correct padding
-- [ ] `./gradlew build` passes
-
----
-
-### Increment 18: Testing Hardening & CI
-
-**Branch:** `increment-18-testing-ci`
-**Depends on:** Increment 17
-
-**What to build:**
-- koin-test module validation: verify all DI modules resolve correctly
-- Comprehensive unit tests:
-  - Domain: Hebrew date conversion, yahrzeit Adar rules, Omer calculation, holiday mapping
-  - ViewModel: state transitions for each screen's MVI triad
-  - Room: DAO queries, migration v1→v2
-- Paparazzi snapshot catalog: state catalog tests for every screen
-- CI pipeline (GitHub Actions):
-  - Build, lint, test on every push/PR
-  - Paparazzi snapshot verification
-- R8/ProGuard rules for release build (keep KosherJava classes, Room entities)
-- Release build configuration: signing config placeholder, minification enabled
-
-**Key technical notes:**
-- koin-test `checkModules { }` validates the entire DI graph
-- Paparazzi State Catalog: each screen defines a `companion object` with sample states
-- CI matrix: test on API 34 emulator image
-- ProGuard: KosherJava uses reflection in some areas — test thoroughly
-
-**Acceptance criteria:**
-- [ ] `./gradlew app:checkKoinModules` (or equivalent test) passes
-- [ ] All unit tests pass: `./gradlew test`
-- [ ] Paparazzi snapshots generate and verify: `./gradlew app:verifyPaparazziDebug`
-- [ ] CI pipeline runs and passes on GitHub Actions
-- [ ] Release APK builds: `./gradlew assembleRelease`
-- [ ] Release APK installs and runs correctly on device
-- [ ] No ProGuard/R8 crashes in release build
-- [ ] `./gradlew build` passes
-
----
-
 ## Verification Checklist
 
-After completing all increments, the app should satisfy:
+After completing all MVP 0.1 increments, the app should satisfy:
 
 - [ ] Fully offline — no network permissions in manifest
 - [ ] Hebrew dates accurate against published calendars
@@ -669,6 +567,4 @@ After completing all increments, the app should satisfy:
 - [ ] Yahrzeit Adar rules correct per halacha
 - [ ] All four minhagim selectable and affecting relevant calculations
 - [ ] RTL layout correct in Hebrew mode
-- [ ] TalkBack fully functional
-- [ ] All tests passing, CI green
-- [ ] Release APK signed and installable
+- [ ] `./gradlew build` passes
