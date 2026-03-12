@@ -39,7 +39,7 @@ class PreferencesRepository(private val context: Context) {
             booleanPreferencesKey("is_in_israel_manual")
         val SHOW_MODERN_ISRAELI =
             booleanPreferencesKey("show_modern_israeli")
-        val HEBREW_PRIMARY = booleanPreferencesKey("hebrew_primary")
+        val CALENDAR_HEBREW_MODE = booleanPreferencesKey("hebrew_primary")
         val DYNAMIC_HOLIDAY_THEME =
             booleanPreferencesKey("dynamic_holiday_theme")
         val SHOW_DEVELOPER_SETTINGS =
@@ -108,7 +108,7 @@ class PreferencesRepository(private val context: Context) {
             minhag = minhag,
             isInIsrael = isInIsrael,
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
-            hebrewPrimary = prefs[Keys.HEBREW_PRIMARY] ?: false,
+            calendarHebrewMode = prefs[Keys.CALENDAR_HEBREW_MODE] ?: false,
             dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true,
             selectedCalendarIds = prefs[Keys.SELECTED_CALENDAR_IDS]
                 ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet(),
@@ -165,9 +165,9 @@ class PreferencesRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveHebrewPrimary(enabled: Boolean) {
+    suspend fun saveCalendarHebrewMode(enabled: Boolean) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.HEBREW_PRIMARY] = enabled
+            prefs[Keys.CALENDAR_HEBREW_MODE] = enabled
         }
     }
 

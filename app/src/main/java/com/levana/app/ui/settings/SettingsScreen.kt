@@ -117,14 +117,9 @@ fun SettingsContent(
             }
         )
 
-        ToggleSection(
-            title = "Hebrew-Primary Mode",
-            description = "Calendar organized by Hebrew months",
-            label = "Enable Hebrew-primary",
-            checked = state.hebrewPrimary,
-            onCheckedChange = {
-                onIntent(SettingsIntent.SetHebrewPrimary(it))
-            }
+        AppLanguageSection(
+            selected = state.appLanguage,
+            onSelect = { onIntent(SettingsIntent.SetAppLanguage(it)) }
         )
 
         ToggleSection(
@@ -245,6 +240,44 @@ private fun MinhagSection(selected: Minhag, onSelect: (Minhag) -> Unit) {
                 ) {
                     RadioButton(
                         selected = minhag == selected,
+                        onClick = null
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppLanguageSection(selected: AppLanguage, onSelect: (AppLanguage) -> Unit) {
+    SectionCard(
+        title = "App Language",
+        description = "Controls app strings and layout direction. Restarts the app."
+    ) {
+        Column(modifier = Modifier.selectableGroup()) {
+            AppLanguage.entries.forEach { language ->
+                val label = when (language) {
+                    AppLanguage.SYSTEM -> "System default"
+                    AppLanguage.HEBREW -> "Hebrew (עברית)"
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = language == selected,
+                            onClick = { onSelect(language) },
+                            role = Role.RadioButton
+                        )
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = language == selected,
                         onClick = null
                     )
                     Text(
