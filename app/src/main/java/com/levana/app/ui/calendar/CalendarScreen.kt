@@ -32,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -297,7 +296,7 @@ private fun GregorianMonthHeader(
             )
         }
 
-        OutlinedIconButton(onClick = onGoToToday) {
+        IconButton(onClick = onGoToToday) {
             Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
         }
     }
@@ -342,7 +341,7 @@ private fun HebrewMonthHeader(
 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedIconButton(onClick = onGoToToday) {
+                IconButton(onClick = onGoToToday) {
                     Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
                 }
                 IconButton(onClick = onNext) {
