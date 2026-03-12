@@ -26,17 +26,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -52,6 +54,7 @@ import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.DayInfo
 import com.levana.app.domain.model.Holiday
 import com.levana.app.domain.model.SystemCalendarEvent
+import com.levana.app.domain.model.ZmanTime
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -62,8 +65,7 @@ private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 @Composable
 fun DayDetailContent(
     state: DayDetailState,
-    onShowZmanim: (LocalDate) -> Unit = {},
-    onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
+    onShowAllZmanim: (LocalDate) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -86,82 +88,139 @@ fun DayDetailContent(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (dayInfo.holidays.isNotEmpty()) {
-                        HolidaySection(dayInfo.holidays)
+                    // 1. Personal Events
+                    if (state.calendarEvents.isNotEmpty()) {
+                        PersonalEventsSection(state.calendarEvents)
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    if (state.systemEvents.isNotEmpty()) {
+                        SystemEventsSection(state.systemEvents)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // 2. Holidays
+                    if (dayInfo.holidays.isNotEmpty()) {
+                        HolidaySection(dayInfo.holidays)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // 3. Shabbat / Yom Tov times
                     dayInfo.shabbatInfo?.let { info ->
                         if (info.showCandleLighting) {
-                            Spacer(modifier = Modifier.height(16.dp))
                             ShabbatTimeCard(
                                 "Candle Lighting",
                                 "\u05d4\u05d3\u05dc\u05e7\u05ea \u05e0\u05e8\u05d5\u05ea",
                                 info.candleLightingTime
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                         if (info.showHavdalah) {
-                            Spacer(modifier = Modifier.height(16.dp))
                             ShabbatTimeCard(
                                 "Havdalah",
                                 "\u05d4\u05d1\u05d3\u05dc\u05d4",
                                 info.havdalahTime
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
 
+                    // 4. Parasha
                     if (dayInfo.parsha != null) {
-                        Spacer(modifier = Modifier.height(16.dp))
                         ParshaSection(
                             dayInfo.parsha,
                             dayInfo.parshaHebrew,
                             dayInfo.specialShabbat
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    // 5. Molad
                     if (dayInfo.molad != null) {
-                        Spacer(modifier = Modifier.height(16.dp))
                         MoladSection(dayInfo.molad)
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    // 6. Omer
                     if (dayInfo.omerFormatted != null) {
-                        Spacer(modifier = Modifier.height(16.dp))
                         OmerSection(dayInfo.omerFormatted!!)
-                    }
-
-                    if (state.calendarEvents.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        PersonalEventsSection(state.calendarEvents)
                     }
 
-                    if (state.systemEvents.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SystemEventsSection(state.systemEvents)
-                    }
+                    // 7. Halachic Times
+                    HalachicTimesSection(
+                        times = state.halachicTimes,
+                        onShowAll = { onShowAllZmanim(dayInfo.gregorianDate) }
+                    )
+                }
+            }
+        }
+    }
+}
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = {
-                            onShowZmanim(dayInfo.gregorianDate)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+@Composable
+private fun HalachicTimesSection(
+    times: List<ZmanTime>,
+    onShowAll: () -> Unit
+) {
+    val context = LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
+    val formatter = if (is24Hour) TIME_24H else TIME_12H
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)) {
+            Text(
+                text = "Halachic Times",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+            if (times.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                times.forEach { zman ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Show Zmanim")
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = {
-                            onAddEvent(
-                                dayInfo.hebrewDay.day,
-                                dayInfo.hebrewDay.month.jewishDateValue,
-                                dayInfo.hebrewDay.year
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = zman.name,
+                                style = MaterialTheme.typography.bodyMedium
                             )
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Add Event for This Day")
+                            Text(
+                                text = zman.hebrewName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = zman.time?.format(formatter) ?: "--:--",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
+                HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
+            }
+            TextButton(
+                onClick = onShowAll,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("More Halachic Times")
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    Icons.AutoMirrored.Outlined.ArrowForwardIos,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp)
+                )
             }
         }
     }

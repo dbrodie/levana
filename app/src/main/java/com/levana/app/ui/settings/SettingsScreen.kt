@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Stars
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -218,6 +219,21 @@ fun SettingsContent(
                     onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
                 )
             }
+        )
+
+        HorizontalDivider()
+        SettingsSectionHeader("Halachic Times")
+
+        Text(
+            text = "Shown in the day panel (up to 5)",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
+        )
+
+        HalachicTimesSection(
+            selectedZmanim = state.selectedZmanim,
+            onToggle = { name, enabled -> onIntent(SettingsIntent.ToggleZman(name, enabled)) }
         )
 
         HorizontalDivider()
@@ -453,6 +469,47 @@ private fun CandleLightingModeDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+private val ALL_ZMANIM = listOf(
+    "Alot HaShachar", "Misheyakir", "Sunrise",
+    "Sof Zman Shema (GRA)", "Sof Zman Shema (MGA)", "Sof Zman Tefillah",
+    "Chatzot", "Mincha Gedolah", "Mincha Ketanah", "Plag HaMincha",
+    "Candle Lighting", "Sunset", "Nightfall", "Havdalah", "Chatzot HaLaylah"
+)
+
+@Composable
+private fun HalachicTimesSection(
+    selectedZmanim: Set<String>,
+    onToggle: (name: String, enabled: Boolean) -> Unit
+) {
+    val atMax = selectedZmanim.size >= 5
+
+    ALL_ZMANIM.forEach { name ->
+        val checked = name in selectedZmanim
+        val enabled = checked || !atMax
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = name,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            },
+            trailingContent = {
+                Checkbox(
+                    checked = checked,
+                    onCheckedChange = if (enabled) {
+                        { onToggle(name, it) }
+                    } else null,
+                    enabled = enabled
+                )
+            },
+            modifier = Modifier.clickable(enabled = enabled) {
+                onToggle(name, !checked)
+            }
+        )
+    }
 }
 
 @Composable

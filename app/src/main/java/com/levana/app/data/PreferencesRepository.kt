@@ -68,6 +68,8 @@ class PreferencesRepository(private val context: Context) {
             booleanPreferencesKey("notify_personal_events")
         val NOTIFY_OMER =
             booleanPreferencesKey("notify_omer")
+        val SELECTED_ZMANIM =
+            stringSetPreferencesKey("selected_zmanim")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -125,7 +127,9 @@ class PreferencesRepository(private val context: Context) {
             holidayNotifyDaysBefore = prefs[Keys.HOLIDAY_NOTIFY_DAYS_BEFORE] ?: 1,
             notifyFasts = prefs[Keys.NOTIFY_FASTS] ?: false,
             notifyPersonalEvents = prefs[Keys.NOTIFY_PERSONAL_EVENTS] ?: false,
-            notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false
+            notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false,
+            selectedZmanim = prefs[Keys.SELECTED_ZMANIM]
+                ?: setOf("Sunrise", "Sunset", "Nightfall")
         )
     }
 
@@ -261,6 +265,12 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveNotifyOmer(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.NOTIFY_OMER] = enabled
+        }
+    }
+
+    suspend fun saveSelectedZmanim(zmanim: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.SELECTED_ZMANIM] = zmanim
         }
     }
 }

@@ -20,5 +20,6 @@ data class UserPreferences(
     val holidayNotifyDaysBefore: Int = 1,
     val notifyFasts: Boolean = false,
     val notifyPersonalEvents: Boolean = false,
-    val notifyOmer: Boolean = false
+    val notifyOmer: Boolean = false,
+    val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall")
 )

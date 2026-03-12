@@ -79,6 +79,11 @@ class SettingsViewModel(
                     preferencesRepository.saveNotifyPersonalEvents(intent.enabled)
                 is SettingsIntent.SetNotifyOmer ->
                     preferencesRepository.saveNotifyOmer(intent.enabled)
+                is SettingsIntent.ToggleZman -> {
+                    val current = _state.value.selectedZmanim.toMutableSet()
+                    if (intent.enabled) current.add(intent.name) else current.remove(intent.name)
+                    preferencesRepository.saveSelectedZmanim(current)
+                }
             }
         }
     }
@@ -104,7 +109,8 @@ class SettingsViewModel(
                     holidayNotifyDaysBefore = prefs.holidayNotifyDaysBefore,
                     notifyFasts = prefs.notifyFasts,
                     notifyPersonalEvents = prefs.notifyPersonalEvents,
-                    notifyOmer = prefs.notifyOmer
+                    notifyOmer = prefs.notifyOmer,
+                    selectedZmanim = prefs.selectedZmanim
                 )
             }
         }

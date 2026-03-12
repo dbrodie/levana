@@ -76,10 +76,14 @@ class DayDetailViewModel(
                 emptyList()
             }
 
+            val allZmanim = zmanimRepository.getZmanim(date, location, prefs.candleLightingOffset)
+            val halachicTimes = allZmanim.filter { it.name in prefs.selectedZmanim }
+
             _state.value = DayDetailState(
                 dayInfo = dayInfo.copy(shabbatInfo = shabbatInfo),
                 calendarEvents = calendarEvents,
                 systemEvents = systemEvents,
+                halachicTimes = halachicTimes,
                 isLoading = false
             )
         }

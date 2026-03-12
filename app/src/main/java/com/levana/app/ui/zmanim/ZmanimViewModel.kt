@@ -20,13 +20,8 @@ class ZmanimViewModel(
     private val _state = MutableStateFlow(ZmanimState())
     val state: StateFlow<ZmanimState> = _state.asStateFlow()
 
-    init {
-        onIntent(ZmanimIntent.LoadToday)
-    }
-
     fun onIntent(intent: ZmanimIntent) {
         when (intent) {
-            is ZmanimIntent.LoadToday -> loadZmanim(LocalDate.now())
             is ZmanimIntent.LoadDate -> loadZmanim(intent.date)
         }
     }

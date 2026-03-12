@@ -175,13 +175,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val drawerNavItems = listOf(
         DrawerNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
-        DrawerNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
         DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute)
     )
 
     val showDrawer = hasLocation && backStackEntry?.destination?.let { dest ->
         drawerNavItems.any { item -> dest.hasRoute(item.route::class) }
     } == true
+
+    val isZmanimRoute =
+        backStackEntry?.destination?.hasRoute(ZmanimRoute::class) == true
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -299,7 +301,12 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
             topBar = {
                 if (!isCalendarRoute) {
                     CenterAlignedTopAppBar(
-                        title = { Text(stringResource(R.string.app_name)) },
+                        title = {
+                            Text(
+                                if (isZmanimRoute) "Halachic Times"
+                                else stringResource(R.string.app_name)
+                            )
+                        },
                         navigationIcon = {
                             if (showDrawer) {
                                 IconButton(
