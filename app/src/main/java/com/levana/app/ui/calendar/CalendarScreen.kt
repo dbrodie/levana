@@ -145,7 +145,6 @@ private fun GregorianCalendarContent(
         GregorianMonthHeader(
             state = state,
             onOpenDrawer = onOpenDrawer,
-            onNext = { onIntent(CalendarIntent.NextMonth) },
             onGoToToday = { onIntent(CalendarIntent.GoToToday) }
         )
 
@@ -258,7 +257,6 @@ private fun HebrewCalendarContent(
 private fun GregorianMonthHeader(
     state: CalendarState,
     onOpenDrawer: () -> Unit,
-    onNext: () -> Unit,
     onGoToToday: () -> Unit
 ) {
     Row(
@@ -288,16 +286,8 @@ private fun GregorianMonthHeader(
             )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onGoToToday) {
-                Text("Today", style = MaterialTheme.typography.labelMedium)
-            }
-            IconButton(onClick = onNext) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next month"
-                )
-            }
+        TextButton(onClick = onGoToToday) {
+            Text("Today", style = MaterialTheme.typography.labelMedium)
         }
     }
 }
