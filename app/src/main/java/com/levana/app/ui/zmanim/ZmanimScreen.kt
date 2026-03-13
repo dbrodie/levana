@@ -10,9 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -93,6 +92,12 @@ private fun ZmanimContent(
                     ZmanCategory.EVENING -> MaterialTheme.colorScheme.tertiaryContainer
                     ZmanCategory.NIGHT -> MaterialTheme.colorScheme.surfaceVariant
                 }
+                val labelColor = when (category) {
+                    ZmanCategory.MORNING -> MaterialTheme.colorScheme.onPrimaryContainer
+                    ZmanCategory.AFTERNOON -> MaterialTheme.colorScheme.onSecondaryContainer
+                    ZmanCategory.EVENING -> MaterialTheme.colorScheme.onTertiaryContainer
+                    ZmanCategory.NIGHT -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -103,12 +108,12 @@ private fun ZmanimContent(
                         text = label,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = labelColor
                     )
                 }
             }
 
-            itemsIndexed(zmanim, key = { _, z -> "${category.name}:${z.name}" }) { index, zman ->
+            items(zmanim, key = { z -> "${category.name}:${z.name}" }) { zman ->
                 ListItem(
                     headlineContent = { Text(zman.name) },
                     supportingContent = {
@@ -125,9 +130,6 @@ private fun ZmanimContent(
                         )
                     }
                 )
-                if (index < zmanim.lastIndex) {
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                }
             }
         }
 
