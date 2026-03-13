@@ -20,9 +20,16 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        named("debug") {
+            // uses the default ~/.android/debug.keystore
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
