@@ -21,6 +21,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
@@ -163,12 +164,19 @@ private fun GregorianCalendarContent(
         }
     }
 
+    val onAddEventClick: () -> Unit = {
+        dayDetailState.dayInfo?.hebrewDay?.let { h ->
+            onAddEvent(h.day, h.month.jewishDateValue, h.year)
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         GregorianMonthHeader(
             state = state,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
-            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) }
+            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
+            onAddEvent = onAddEventClick
         )
 
         ElevatedCard(
@@ -216,8 +224,7 @@ private fun GregorianCalendarContent(
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
                 state = dayDetailState,
-                onShowZmanim = onShowZmanim,
-                onAddEvent = onAddEvent,
+                onShowAllZmanim = onShowZmanim,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -262,13 +269,20 @@ private fun HebrewCalendarContent(
         }
     }
 
+    val onAddEventClick: () -> Unit = {
+        dayDetailState.dayInfo?.hebrewDay?.let { h ->
+            onAddEvent(h.day, h.month.jewishDateValue, h.year)
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         HebrewMonthHeader(
             hebrewHeader = state.hebrewMonthHeader,
             gregorianHeader = state.gregorianHeader,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
-            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) }
+            onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
+            onAddEvent = onAddEventClick
         )
 
         ElevatedCard(
@@ -315,8 +329,7 @@ private fun HebrewCalendarContent(
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
                 state = dayDetailState,
-                onShowZmanim = onShowZmanim,
-                onAddEvent = onAddEvent,
+                onShowAllZmanim = onShowZmanim,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -328,7 +341,8 @@ private fun GregorianMonthHeader(
     state: CalendarState,
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
-    onToggleMode: () -> Unit
+    onToggleMode: () -> Unit,
+    onAddEvent: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -372,6 +386,9 @@ private fun GregorianMonthHeader(
         IconButton(onClick = onGoToToday) {
             Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
         }
+        IconButton(onClick = onAddEvent) {
+            Icon(Icons.Filled.Add, contentDescription = "Add event")
+        }
     }
 }
 
@@ -381,7 +398,8 @@ private fun HebrewMonthHeader(
     gregorianHeader: String,
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
-    onToggleMode: () -> Unit
+    onToggleMode: () -> Unit,
+    onAddEvent: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -421,6 +439,9 @@ private fun HebrewMonthHeader(
 
         IconButton(onClick = onGoToToday) {
             Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
+        }
+        IconButton(onClick = onAddEvent) {
+            Icon(Icons.Filled.Add, contentDescription = "Add event")
         }
     }
 }
@@ -517,8 +538,7 @@ private fun HebrewMonthGrid(
 ) {
     if (monthDays.isEmpty()) return
     val firstDate = monthDays.first().gregorianDate
-    val dayVal = firstDate.dayOfWeek.value // Mon=1..Sun=7
-    val leadingEmptyCells = (dayVal % 7 + 1) % 7
+    val leadingEmptyCells = firstDate.dayOfWeek.value % 7
     val daysOfWeek = listOf(
         DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
         DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY

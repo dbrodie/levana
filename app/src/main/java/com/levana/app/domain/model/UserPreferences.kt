@@ -1,7 +1,10 @@
 package com.levana.app.domain.model
 
 data class UserPreferences(
-    val location: Location? = null,
+    val savedLocations: List<SavedLocation> = emptyList(),
+    val activeLocationId: String? = null,
+    val useCurrentLocation: Boolean = false,
+    val gpsLocation: Location? = null,
     val candleLightingOffset: Double = 18.0,
     val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,
@@ -20,5 +23,14 @@ data class UserPreferences(
     val holidayNotifyDaysBefore: Int = 1,
     val notifyFasts: Boolean = false,
     val notifyPersonalEvents: Boolean = false,
-    val notifyOmer: Boolean = false
+    val notifyOmer: Boolean = false,
+    val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall")
 )
+
+val UserPreferences.activeLocation: Location?
+    get() = when {
+        activeLocationId == null && useCurrentLocation -> gpsLocation
+        activeLocationId != null -> savedLocations.find { it.id == activeLocationId }?.location
+        useCurrentLocation -> gpsLocation
+        else -> savedLocations.firstOrNull()?.location
+    }

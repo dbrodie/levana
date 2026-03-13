@@ -13,10 +13,16 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.levana.app.domain.model.Location
 import com.levana.app.domain.model.Minhag
+import com.levana.app.domain.model.SavedLocation
 import com.levana.app.domain.model.UserPreferences
+import com.levana.app.domain.model.activeLocation
 import java.time.LocalDate
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences"
@@ -24,13 +30,24 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 
 class PreferencesRepository(private val context: Context) {
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     private object Keys {
+        // New multi-location keys
+        val SAVED_LOCATIONS = stringPreferencesKey("saved_locations")
+        val ACTIVE_LOCATION_ID = stringPreferencesKey("active_location_id")
+        val USE_CURRENT_LOCATION = booleanPreferencesKey("use_current_location")
+        val GPS_LOCATION = stringPreferencesKey("gps_location")
+
+        // Legacy single-location keys (kept for migration)
         val LOCATION_NAME = stringPreferencesKey("location_name")
         val LOCATION_COUNTRY = stringPreferencesKey("location_country")
         val LOCATION_LAT = doublePreferencesKey("location_lat")
         val LOCATION_LON = doublePreferencesKey("location_lon")
         val LOCATION_ELEV = doublePreferencesKey("location_elev")
         val LOCATION_TZ = stringPreferencesKey("location_tz")
+
+        // Other preference keys
         val CANDLE_LIGHTING_OFFSET =
             doublePreferencesKey("candle_lighting_offset")
         val MINHAG = stringPreferencesKey("minhag")
@@ -68,22 +85,44 @@ class PreferencesRepository(private val context: Context) {
             booleanPreferencesKey("notify_personal_events")
         val NOTIFY_OMER =
             booleanPreferencesKey("notify_omer")
+        val SELECTED_ZMANIM =
+            stringSetPreferencesKey("selected_zmanim")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
-        val name = prefs[Keys.LOCATION_NAME]
-        val location = if (name != null) {
-            Location(
-                latitude = prefs[Keys.LOCATION_LAT] ?: 0.0,
-                longitude = prefs[Keys.LOCATION_LON] ?: 0.0,
-                elevation = prefs[Keys.LOCATION_ELEV] ?: 0.0,
-                timezoneId = prefs[Keys.LOCATION_TZ] ?: "UTC",
-                name = name,
-                country = prefs[Keys.LOCATION_COUNTRY] ?: ""
-            )
+        // Migration: if no saved_locations but old location_name exists, migrate
+        val savedLocationsJson = prefs[Keys.SAVED_LOCATIONS]
+        val savedLocations = if (savedLocationsJson != null) {
+            runCatching { json.decodeFromString<List<SavedLocation>>(savedLocationsJson) }
+                .getOrDefault(emptyList())
         } else {
-            null
+            val legacyName = prefs[Keys.LOCATION_NAME]
+            if (legacyName != null) {
+                listOf(
+                    SavedLocation(
+                        id = UUID.randomUUID().toString(),
+                        location = Location(
+                            latitude = prefs[Keys.LOCATION_LAT] ?: 0.0,
+                            longitude = prefs[Keys.LOCATION_LON] ?: 0.0,
+                            elevation = prefs[Keys.LOCATION_ELEV] ?: 0.0,
+                            timezoneId = prefs[Keys.LOCATION_TZ] ?: "UTC",
+                            name = legacyName,
+                            country = prefs[Keys.LOCATION_COUNTRY] ?: ""
+                        )
+                    )
+                )
+            } else {
+                emptyList()
+            }
         }
+
+        val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
+        val useCurrentLocation = prefs[Keys.USE_CURRENT_LOCATION] ?: false
+        val gpsLocationJson = prefs[Keys.GPS_LOCATION]
+        val gpsLocation = gpsLocationJson?.let {
+            runCatching { json.decodeFromString<Location>(it) }.getOrNull()
+        }
+
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
         val minhagStr = prefs[Keys.MINHAG]
         val minhag = minhagStr?.let {
@@ -94,16 +133,27 @@ class PreferencesRepository(private val context: Context) {
             }
         } ?: Minhag.ASHKENAZI
 
+        // Build a temporary prefs to compute activeLocation for isInIsrael inference
+        val tempPrefs = UserPreferences(
+            savedLocations = savedLocations,
+            activeLocationId = activeLocationId,
+            useCurrentLocation = useCurrentLocation,
+            gpsLocation = gpsLocation
+        )
+        val activeLocation = tempPrefs.activeLocation
+
         val isManualIsrael = prefs[Keys.IS_IN_ISRAEL_MANUAL] ?: false
         val isInIsrael = if (isManualIsrael) {
             prefs[Keys.IS_IN_ISRAEL] ?: false
         } else {
-            val tz = prefs[Keys.LOCATION_TZ] ?: ""
-            tz == "Asia/Jerusalem"
+            activeLocation?.timezoneId == "Asia/Jerusalem"
         }
 
         UserPreferences(
-            location = location,
+            savedLocations = savedLocations,
+            activeLocationId = activeLocationId,
+            useCurrentLocation = useCurrentLocation,
+            gpsLocation = gpsLocation,
             candleLightingOffset = candleOffset,
             minhag = minhag,
             isInIsrael = isInIsrael,
@@ -125,18 +175,90 @@ class PreferencesRepository(private val context: Context) {
             holidayNotifyDaysBefore = prefs[Keys.HOLIDAY_NOTIFY_DAYS_BEFORE] ?: 1,
             notifyFasts = prefs[Keys.NOTIFY_FASTS] ?: false,
             notifyPersonalEvents = prefs[Keys.NOTIFY_PERSONAL_EVENTS] ?: false,
-            notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false
+            notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false,
+            selectedZmanim = prefs[Keys.SELECTED_ZMANIM]
+                ?: setOf("Sunrise", "Sunset", "Nightfall")
         )
     }
 
-    suspend fun saveLocation(location: Location) {
+    suspend fun addSavedLocation(location: Location): String {
+        val newId = UUID.randomUUID().toString()
+        val newEntry = SavedLocation(id = newId, location = location)
         context.dataStore.edit { prefs ->
-            prefs[Keys.LOCATION_NAME] = location.name
-            prefs[Keys.LOCATION_COUNTRY] = location.country
-            prefs[Keys.LOCATION_LAT] = location.latitude
-            prefs[Keys.LOCATION_LON] = location.longitude
-            prefs[Keys.LOCATION_ELEV] = location.elevation
-            prefs[Keys.LOCATION_TZ] = location.timezoneId
+            val currentJson = prefs[Keys.SAVED_LOCATIONS]
+            val current = if (currentJson != null) {
+                runCatching { json.decodeFromString<List<SavedLocation>>(currentJson) }
+                    .getOrDefault(emptyList())
+            } else {
+                // Inline migration: carry forward any legacy single location
+                val legacyName = prefs[Keys.LOCATION_NAME]
+                if (legacyName != null) {
+                    val legacy = SavedLocation(
+                        id = UUID.randomUUID().toString(),
+                        location = Location(
+                            latitude = prefs[Keys.LOCATION_LAT] ?: 0.0,
+                            longitude = prefs[Keys.LOCATION_LON] ?: 0.0,
+                            elevation = prefs[Keys.LOCATION_ELEV] ?: 0.0,
+                            timezoneId = prefs[Keys.LOCATION_TZ] ?: "UTC",
+                            name = legacyName,
+                            country = prefs[Keys.LOCATION_COUNTRY] ?: ""
+                        )
+                    )
+                    // Clear legacy keys
+                    prefs.remove(Keys.LOCATION_NAME)
+                    prefs.remove(Keys.LOCATION_COUNTRY)
+                    prefs.remove(Keys.LOCATION_LAT)
+                    prefs.remove(Keys.LOCATION_LON)
+                    prefs.remove(Keys.LOCATION_ELEV)
+                    prefs.remove(Keys.LOCATION_TZ)
+                    listOf(legacy)
+                } else {
+                    emptyList()
+                }
+            }
+            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(current + newEntry)
+        }
+        return newId
+    }
+
+    suspend fun removeSavedLocation(id: String) {
+        context.dataStore.edit { prefs ->
+            val currentJson = prefs[Keys.SAVED_LOCATIONS]
+            val current = if (currentJson != null) {
+                runCatching { json.decodeFromString<List<SavedLocation>>(currentJson) }
+                    .getOrDefault(emptyList())
+            } else {
+                emptyList()
+            }
+            val updated = current.filter { it.id != id }
+            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(updated)
+
+            // If removed location was active, clear activeLocationId
+            if (prefs[Keys.ACTIVE_LOCATION_ID] == id) {
+                prefs.remove(Keys.ACTIVE_LOCATION_ID)
+            }
+        }
+    }
+
+    suspend fun setActiveLocationId(id: String?) {
+        context.dataStore.edit { prefs ->
+            if (id != null) {
+                prefs[Keys.ACTIVE_LOCATION_ID] = id
+            } else {
+                prefs.remove(Keys.ACTIVE_LOCATION_ID)
+            }
+        }
+    }
+
+    suspend fun setUseCurrentLocation(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.USE_CURRENT_LOCATION] = enabled
+        }
+    }
+
+    suspend fun updateGpsLocation(location: Location) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.GPS_LOCATION] = json.encodeToString(location)
         }
     }
 
@@ -261,6 +383,12 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveNotifyOmer(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.NOTIFY_OMER] = enabled
+        }
+    }
+
+    suspend fun saveSelectedZmanim(zmanim: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.SELECTED_ZMANIM] = zmanim
         }
     }
 }

@@ -23,11 +23,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,15 +43,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +60,9 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -67,6 +72,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.domain.model.activeLocation
 import com.levana.app.notifications.NotificationPoster
 import com.levana.app.ui.birthday.ContactBirthdayScreen
 import com.levana.app.ui.calendar.CalendarScreen
@@ -80,12 +86,16 @@ import com.levana.app.ui.navigation.CalendarRoute
 import com.levana.app.ui.navigation.CalendarSelectionRoute
 import com.levana.app.ui.navigation.CityPickerRoute
 import com.levana.app.ui.navigation.ContactBirthdayRoute
+import com.levana.app.ui.navigation.LocationsSettingsRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
+import com.levana.app.ui.navigation.HalachicTimesSettingsRoute
 import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
+import com.levana.app.ui.settings.HalachicTimesSettingsScreen
+import com.levana.app.ui.settings.LocationsSettingsScreen
 import com.levana.app.ui.settings.SettingsScreen
 import com.levana.app.ui.theme.HolidayTheme
 import com.levana.app.ui.theme.HolidayThemeResolver
@@ -143,6 +153,8 @@ private data class DrawerNavItem(
     val route: Any
 )
 
+private const val GPS_SENTINEL = "__gps__"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LevanaApp(deepLinkEpochDay: Long = 0L) {
@@ -152,16 +164,39 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         navController.previousBackStackEntry != null
 
     val preferencesRepository: PreferencesRepository = koinInject()
+    val locationService: LocationService = koinInject()
     val prefs by preferencesRepository.preferences.collectAsState(
         initial = null
     )
 
-    val hasLocation = prefs?.location != null
-    val locationName = prefs?.location?.name ?: ""
+    val hasLocation = prefs?.activeLocation != null
+    val locationName = prefs?.activeLocation?.name ?: ""
 
     if (prefs == null) return
 
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
+
+    // GPS foreground refresh on resume
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (prefs?.useCurrentLocation == true) {
+                    scope.launch {
+                        try {
+                            val loc = locationService.getCurrentLocation()
+                            preferencesRepository.updateGpsLocation(loc)
+                        } catch (_: Exception) {
+                            // Permission missing or GPS unavailable — skip silently
+                        }
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // Handle notification deep-link — open calendar (day detail is inline)
     LaunchedEffect(deepLinkEpochDay) {
@@ -175,7 +210,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val drawerNavItems = listOf(
         DrawerNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
-        DrawerNavItem("Zmanim", Icons.Filled.WbSunny, ZmanimRoute()),
         DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute)
     )
 
@@ -183,8 +217,13 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         drawerNavItems.any { item -> dest.hasRoute(item.route::class) }
     } == true
 
+    val isZmanimRoute =
+        backStackEntry?.destination?.hasRoute(ZmanimRoute::class) == true
+
+    val isHalachicTimesSettingsRoute =
+        backStackEntry?.destination?.hasRoute(HalachicTimesSettingsRoute::class) == true
+
     val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -251,23 +290,75 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                     }
 
                     if (hasLocation) {
-                        Text(
-                            text = "LOCATIONS",
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
-                        )
-                        NavigationDrawerItem(
-                            label = { Text(locationName) },
-                            icon = {
-                                Icon(Icons.Filled.LocationOn, contentDescription = null)
-                            },
-                            selected = true,
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                navController.navigate(CityPickerRoute)
+                        ) {
+                            Text(
+                                text = "LOCATIONS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navController.navigate(LocationsSettingsRoute)
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = "Manage locations",
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
-                        )
+                        }
+
+                        val currentPrefs = prefs
+                        if (currentPrefs != null) {
+                            // GPS item (shown only if useCurrentLocation = true)
+                            if (currentPrefs.useCurrentLocation) {
+                                val isGpsActive = currentPrefs.activeLocationId == null
+                                val gpsLabel = currentPrefs.gpsLocation?.name ?: "Detecting…"
+                                NavigationDrawerItem(
+                                    label = { Text(gpsLabel) },
+                                    icon = {
+                                        Icon(Icons.Filled.GpsFixed, contentDescription = null)
+                                    },
+                                    selected = isGpsActive,
+                                    onClick = {
+                                        scope.launch {
+                                            preferencesRepository.setActiveLocationId(null)
+                                            drawerState.close()
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Saved locations
+                            currentPrefs.savedLocations.forEach { saved ->
+                                val isActive = currentPrefs.activeLocationId == saved.id ||
+                                    (currentPrefs.activeLocationId == null &&
+                                        !currentPrefs.useCurrentLocation &&
+                                        currentPrefs.savedLocations.firstOrNull()?.id == saved.id)
+                                NavigationDrawerItem(
+                                    label = { Text(saved.location.name) },
+                                    icon = {
+                                        Icon(Icons.Filled.LocationOn, contentDescription = null)
+                                    },
+                                    selected = isActive,
+                                    onClick = {
+                                        scope.launch {
+                                            preferencesRepository.setActiveLocationId(saved.id)
+                                            drawerState.close()
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -299,7 +390,12 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
             topBar = {
                 if (!isCalendarRoute) {
                     CenterAlignedTopAppBar(
-                        title = { Text(stringResource(R.string.app_name)) },
+                        title = {
+                            Text(
+                                if (isZmanimRoute || isHalachicTimesSettingsRoute) "Halachic Times"
+                                else stringResource(R.string.app_name)
+                            )
+                        },
                         navigationIcon = {
                             if (showDrawer) {
                                 IconButton(
@@ -337,8 +433,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                 composable<CityPickerRoute> {
                     CityPickerScreen(
                         onLocationSaved = {
-                            navController.navigate(CalendarRoute) {
-                                popUpTo(0) { inclusive = true }
+                            if (navController.previousBackStackEntry
+                                    ?.destination
+                                    ?.hasRoute(LocationsSettingsRoute::class) == true
+                            ) {
+                                navController.popBackStack()
+                            } else {
+                                navController.navigate(CalendarRoute) {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                         }
                     )
@@ -349,7 +452,8 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                     ManualLocationScreen(
                         onSave = { location ->
                             scope2.launch {
-                                preferencesRepository.saveLocation(location)
+                                val newId = preferencesRepository.addSavedLocation(location)
+                                preferencesRepository.setActiveLocationId(newId)
                                 navController.navigate(CalendarRoute) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -389,10 +493,30 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                 composable<SettingsRoute> {
                     SettingsScreen(
                         onChangeLocation = {
-                            navController.navigate(CityPickerRoute)
+                            navController.navigate(LocationsSettingsRoute)
                         },
                         onSystemCalendars = {
                             navController.navigate(CalendarSelectionRoute)
+                        },
+                        onHalachicTimesSettings = {
+                            navController.navigate(HalachicTimesSettingsRoute)
+                        }
+                    )
+                }
+
+                composable<HalachicTimesSettingsRoute> {
+                    HalachicTimesSettingsScreen()
+                }
+
+                composable<LocationsSettingsRoute> {
+                    LocationsSettingsScreen(
+                        onAddLocation = {
+                            navController.navigate(CityPickerRoute)
+                        },
+                        onNoLocations = {
+                            navController.navigate(CityPickerRoute) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     )
                 }
@@ -469,7 +593,8 @@ private fun GpsOnboarding(
             scope.launch {
                 try {
                     val loc = locationService.getCurrentLocation()
-                    preferencesRepository.saveLocation(loc)
+                    val newId = preferencesRepository.addSavedLocation(loc)
+                    preferencesRepository.setActiveLocationId(newId)
                     navController.navigate(CalendarRoute) {
                         popUpTo(OnboardingRoute) { inclusive = true }
                     }

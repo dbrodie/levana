@@ -22,4 +22,5 @@ sealed interface SettingsIntent {
     data class SetNotifyFasts(val enabled: Boolean) : SettingsIntent
     data class SetNotifyPersonalEvents(val enabled: Boolean) : SettingsIntent
     data class SetNotifyOmer(val enabled: Boolean) : SettingsIntent
+    data class ToggleZman(val name: String, val enabled: Boolean) : SettingsIntent
 }

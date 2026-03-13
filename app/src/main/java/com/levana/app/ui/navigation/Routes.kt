@@ -36,3 +36,9 @@ data class ContactBirthdayRoute(val contactLookupKey: String = "")
 
 @Serializable
 data object CalendarSelectionRoute
+
+@Serializable
+data object HalachicTimesSettingsRoute
+
+@Serializable
+data object LocationsSettingsRoute

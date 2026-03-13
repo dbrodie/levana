@@ -16,6 +16,7 @@ import com.levana.app.data.ZmanimRepository
 import com.levana.app.domain.model.HolidayCategory
 import com.levana.app.domain.model.Location
 import com.levana.app.domain.model.UserPreferences
+import com.levana.app.domain.model.activeLocation
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
@@ -37,7 +38,7 @@ class DailyNotificationWorker(
 
     override suspend fun doWork(): Result {
         val prefs = preferencesRepository.preferences.first()
-        val location = prefs.location ?: return Result.success()
+        val location = prefs.activeLocation ?: return Result.success()
         val today = prefs.devDateOverride ?: LocalDate.now()
 
         if (prefs.notifyCandleLighting) {

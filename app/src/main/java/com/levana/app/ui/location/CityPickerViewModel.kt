@@ -46,7 +46,8 @@ class CityPickerViewModel(
     private fun selectCity(city: Location) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true)
-            preferencesRepository.saveLocation(city)
+            val newId = preferencesRepository.addSavedLocation(city)
+            preferencesRepository.setActiveLocationId(newId)
             _events.emit(CityPickerEvent.LocationSaved)
         }
     }
