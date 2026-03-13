@@ -15,7 +15,9 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class DayDetailViewModel(
@@ -30,6 +32,19 @@ class DayDetailViewModel(
     private val _state = MutableStateFlow(DayDetailState())
     val state: StateFlow<DayDetailState> = _state.asStateFlow()
 
+    private var lastLoadedDate: LocalDate? = null
+
+    init {
+        viewModelScope.launch {
+            preferencesRepository.preferences
+                .map { it.activeLocation }
+                .distinctUntilChanged()
+                .collect {
+                    lastLoadedDate?.let { date -> loadDay(date) }
+                }
+        }
+    }
+
     fun onIntent(intent: DayDetailIntent) {
         when (intent) {
             is DayDetailIntent.LoadDay -> loadDay(intent.date)
@@ -37,6 +52,7 @@ class DayDetailViewModel(
     }
 
     private fun loadDay(date: LocalDate) {
+        lastLoadedDate = date
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
