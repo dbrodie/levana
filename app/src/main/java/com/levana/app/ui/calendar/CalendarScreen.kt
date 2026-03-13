@@ -538,8 +538,7 @@ private fun HebrewMonthGrid(
 ) {
     if (monthDays.isEmpty()) return
     val firstDate = monthDays.first().gregorianDate
-    val dayVal = firstDate.dayOfWeek.value // Mon=1..Sun=7
-    val leadingEmptyCells = (dayVal % 7 + 1) % 7
+    val leadingEmptyCells = firstDate.dayOfWeek.value % 7
     val daysOfWeek = listOf(
         DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
         DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
