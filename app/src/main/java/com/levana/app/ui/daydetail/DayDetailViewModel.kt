@@ -10,6 +10,7 @@ import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.data.ZmanimRepository
 import com.levana.app.domain.model.CalendarEvent
 import com.levana.app.domain.model.Location
+import com.levana.app.domain.model.activeLocation
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +40,7 @@ class DayDetailViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
-            val location = prefs.location ?: Location.JERUSALEM
+            val location = prefs.activeLocation ?: Location.JERUSALEM
             val dayInfo = calendarRepository.getDayInfo(
                 date,
                 prefs.isInIsrael,

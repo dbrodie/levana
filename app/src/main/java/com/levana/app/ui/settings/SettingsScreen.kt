@@ -19,8 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Language
@@ -56,6 +59,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +68,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.Minhag
+import com.levana.app.domain.model.SavedLocation
 import com.levana.app.ui.theme.HolidayTheme
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.koin.androidx.compose.koinViewModel
@@ -97,21 +105,120 @@ fun HalachicTimesSettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val atMax = state.selectedZmanim.size >= 5
-
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
-        Text(
-            text = "Shown in the day panel (up to 5)",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
-        )
         HalachicTimesSection(
             selectedZmanim = state.selectedZmanim,
-            atMax = atMax,
             onToggle = { name, enabled ->
                 viewModel.onIntent(SettingsIntent.ToggleZman(name, enabled))
             }
+        )
+    }
+}
+
+@Composable
+fun LocationsSettingsScreen(
+    onAddLocation: () -> Unit,
+    onNoLocations: () -> Unit,
+    modifier: Modifier = Modifier,
+    preferencesRepository: PreferencesRepository = koinInject(),
+    viewModel: SettingsViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+
+    LocationsSettingsContent(
+        useCurrentLocation = state.useCurrentLocation,
+        gpsLocationName = state.gpsLocationName,
+        savedLocations = state.savedLocations,
+        activeLocationId = state.activeLocationId,
+        onToggleGps = { enabled ->
+            scope.launch { preferencesRepository.setUseCurrentLocation(enabled) }
+        },
+        onDelete = { id ->
+            scope.launch {
+                val wasActive = state.activeLocationId == id
+                preferencesRepository.removeSavedLocation(id)
+                if (wasActive) {
+                    val remaining = state.savedLocations.filter { it.id != id }
+                    if (remaining.isEmpty() && !state.useCurrentLocation) {
+                        onNoLocations()
+                    }
+                }
+            }
+        },
+        onAddLocation = onAddLocation,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun LocationsSettingsContent(
+    useCurrentLocation: Boolean,
+    gpsLocationName: String?,
+    savedLocations: List<SavedLocation>,
+    activeLocationId: String?,
+    onToggleGps: (Boolean) -> Unit,
+    onDelete: (String) -> Unit,
+    onAddLocation: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        ListItem(
+            headlineContent = { Text("Use Current Location") },
+            supportingContent = { Text("Automatically detect location") },
+            leadingContent = {
+                Icon(Icons.Filled.GpsFixed, contentDescription = null)
+            },
+            trailingContent = {
+                Switch(
+                    checked = useCurrentLocation,
+                    onCheckedChange = onToggleGps
+                )
+            }
+        )
+
+        if (useCurrentLocation && gpsLocationName != null) {
+            ListItem(
+                headlineContent = { Text(gpsLocationName) },
+                leadingContent = {
+                    Icon(Icons.Filled.GpsFixed, contentDescription = null)
+                }
+            )
+        }
+
+        if (savedLocations.isNotEmpty()) {
+            HorizontalDivider()
+            SettingsSectionHeader("Saved Locations")
+
+            savedLocations.forEach { saved ->
+                ListItem(
+                    headlineContent = { Text(saved.location.name) },
+                    supportingContent = if (saved.location.country.isNotEmpty()) {
+                        { Text(saved.location.country) }
+                    } else null,
+                    leadingContent = {
+                        Icon(Icons.Outlined.LocationOn, contentDescription = null)
+                    },
+                    trailingContent = {
+                        IconButton(onClick = { onDelete(saved.id) }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                        }
+                    }
+                )
+            }
+        }
+
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("Add Location") },
+            leadingContent = {
+                Icon(Icons.Filled.Add, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onAddLocation)
         )
     }
 }
@@ -254,7 +361,7 @@ fun SettingsContent(
         val selectedCount = state.selectedZmanim.size
         ListItem(
             headlineContent = { Text("Halachic Times") },
-            supportingContent = { Text("$selectedCount of 5 shown in day panel") },
+            supportingContent = { Text("$selectedCount shown in day panel") },
             leadingContent = {
                 Icon(Icons.Outlined.WbTwilight, contentDescription = null)
             },
@@ -509,33 +616,19 @@ private val ALL_ZMANIM = listOf(
 @Composable
 internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
-    atMax: Boolean,
     onToggle: (name: String, enabled: Boolean) -> Unit
 ) {
-
     ALL_ZMANIM.forEach { name ->
         val checked = name in selectedZmanim
-        val enabled = checked || !atMax
         ListItem(
-            headlineContent = {
-                Text(
-                    text = name,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                )
-            },
+            headlineContent = { Text(text = name) },
             trailingContent = {
                 Checkbox(
                     checked = checked,
-                    onCheckedChange = if (enabled) {
-                        { onToggle(name, it) }
-                    } else null,
-                    enabled = enabled
+                    onCheckedChange = { onToggle(name, it) }
                 )
             },
-            modifier = Modifier.clickable(enabled = enabled) {
-                onToggle(name, !checked)
-            }
+            modifier = Modifier.clickable { onToggle(name, !checked) }
         )
     }
 }

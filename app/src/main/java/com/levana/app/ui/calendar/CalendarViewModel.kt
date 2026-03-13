@@ -10,6 +10,7 @@ import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.domain.model.HebrewDay
 import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.UserPreferences
+import com.levana.app.domain.model.activeLocation
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -92,7 +93,7 @@ class CalendarViewModel(
                     currentPrefs.calendarHebrewMode != prefs.calendarHebrewMode
                 currentPrefs = prefs
                 _state.value = _state.value.copy(
-                    locationName = prefs.location?.name ?: "",
+                    locationName = prefs.activeLocation?.name ?: "",
                     calendarHebrewMode = prefs.calendarHebrewMode
                 )
                 if (modeChanged || _state.value.monthDays.isEmpty()) {

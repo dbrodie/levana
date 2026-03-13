@@ -6,6 +6,7 @@ import android.os.LocaleList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.domain.model.activeLocation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,7 +93,11 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
                 _state.value = _state.value.copy(
-                    locationName = prefs.location?.name ?: "Not set",
+                    locationName = prefs.activeLocation?.name ?: "Not set",
+                    savedLocations = prefs.savedLocations,
+                    activeLocationId = prefs.activeLocationId,
+                    useCurrentLocation = prefs.useCurrentLocation,
+                    gpsLocationName = prefs.gpsLocation?.name,
                     minhag = prefs.minhag,
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
