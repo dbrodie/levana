@@ -63,6 +63,7 @@ import org.koin.androidx.compose.koinViewModel
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
+private val HEBREW_LOCALE = Locale.forLanguageTag("he")
 
 private val DAYS_OF_WEEK = listOf(
     DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
@@ -520,7 +521,7 @@ private fun HebrewMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
-        dayHeaderRow(Locale("he"))
+        dayHeaderRow(HEBREW_LOCALE)
         items(leadingEmptyCells) {
             Box(modifier = Modifier.aspectRatio(0.85f))
         }
