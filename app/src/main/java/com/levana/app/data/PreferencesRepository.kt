@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -11,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.levana.app.domain.model.Location
+import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.SavedLocation
 import com.levana.app.domain.model.UserPreferences
@@ -33,11 +35,9 @@ class PreferencesRepository(private val context: Context) {
 
     private object Keys {
         val SAVED_LOCATIONS = stringPreferencesKey("saved_locations")
-        val ACTIVE_LOCATION_ID = stringPreferencesKey("active_location_id")
-        val USE_CURRENT_LOCATION = booleanPreferencesKey("use_current_location")
+        val LOCATION_MODE = stringPreferencesKey("location_mode")
         val GPS_LOCATION = stringPreferencesKey("gps_location")
 
-        // Other preference keys
         val CANDLE_LIGHTING_OFFSET =
             doublePreferencesKey("candle_lighting_offset")
         val MINHAG = stringPreferencesKey("minhag")
@@ -84,28 +84,21 @@ class PreferencesRepository(private val context: Context) {
             runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
         } ?: emptyList()
 
-        val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
-        val useCurrentLocation = prefs[Keys.USE_CURRENT_LOCATION] ?: false
-        val gpsLocationJson = prefs[Keys.GPS_LOCATION]
-        val gpsLocation = gpsLocationJson?.let {
+        val locationMode = prefs[Keys.LOCATION_MODE]?.let {
+            runCatching { json.decodeFromString<LocationMode>(it) }.getOrNull()
+        }
+        val gpsLocation = prefs[Keys.GPS_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
         }
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
-        val minhagStr = prefs[Keys.MINHAG]
-        val minhag = minhagStr?.let {
-            try {
-                Minhag.valueOf(it)
-            } catch (_: IllegalArgumentException) {
-                Minhag.ASHKENAZI
-            }
+        val minhag = prefs[Keys.MINHAG]?.let {
+            try { Minhag.valueOf(it) } catch (_: IllegalArgumentException) { Minhag.ASHKENAZI }
         } ?: Minhag.ASHKENAZI
 
-        // Build a temporary prefs to compute activeLocation for isInIsrael inference
         val tempPrefs = UserPreferences(
             savedLocations = savedLocations,
-            activeLocationId = activeLocationId,
-            useCurrentLocation = useCurrentLocation,
+            locationMode = locationMode,
             gpsLocation = gpsLocation
         )
         val activeLocation = tempPrefs.activeLocation
@@ -119,8 +112,7 @@ class PreferencesRepository(private val context: Context) {
 
         UserPreferences(
             savedLocations = savedLocations,
-            activeLocationId = activeLocationId,
-            useCurrentLocation = useCurrentLocation,
+            locationMode = locationMode,
             gpsLocation = gpsLocation,
             candleLightingOffset = candleOffset,
             minhag = minhag,
@@ -163,36 +155,27 @@ class PreferencesRepository(private val context: Context) {
 
     suspend fun removeSavedLocation(id: String) {
         context.dataStore.edit { prefs ->
-            val currentJson = prefs[Keys.SAVED_LOCATIONS]
-            val current = if (currentJson != null) {
-                runCatching { json.decodeFromString<List<SavedLocation>>(currentJson) }
-                    .getOrDefault(emptyList())
-            } else {
-                emptyList()
-            }
-            val updated = current.filter { it.id != id }
-            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(updated)
+            val current = prefs[Keys.SAVED_LOCATIONS]?.let {
+                runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
+            } ?: emptyList()
+            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(current.filter { it.id != id })
 
-            // If removed location was active, clear activeLocationId
-            if (prefs[Keys.ACTIVE_LOCATION_ID] == id) {
-                prefs.remove(Keys.ACTIVE_LOCATION_ID)
+            val currentMode = prefs[Keys.LOCATION_MODE]?.let {
+                runCatching { json.decodeFromString<LocationMode>(it) }.getOrNull()
+            }
+            if (currentMode is LocationMode.Saved && currentMode.id == id) {
+                prefs.remove(Keys.LOCATION_MODE)
             }
         }
     }
 
-    suspend fun setActiveLocationId(id: String?) {
+    suspend fun setLocationMode(mode: LocationMode?) {
         context.dataStore.edit { prefs ->
-            if (id != null) {
-                prefs[Keys.ACTIVE_LOCATION_ID] = id
+            if (mode != null) {
+                prefs[Keys.LOCATION_MODE] = json.encodeToString(mode)
             } else {
-                prefs.remove(Keys.ACTIVE_LOCATION_ID)
+                prefs.remove(Keys.LOCATION_MODE)
             }
-        }
-    }
-
-    suspend fun setUseCurrentLocation(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.USE_CURRENT_LOCATION] = enabled
         }
     }
 

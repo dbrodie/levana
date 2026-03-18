@@ -2,8 +2,7 @@ package com.levana.app.domain.model
 
 data class UserPreferences(
     val savedLocations: List<SavedLocation> = emptyList(),
-    val activeLocationId: String? = null,
-    val useCurrentLocation: Boolean = false,
+    val locationMode: LocationMode? = null,
     val gpsLocation: Location? = null,
     val candleLightingOffset: Double = 18.0,
     val minhag: Minhag = Minhag.ASHKENAZI,
@@ -28,9 +27,9 @@ data class UserPreferences(
 )
 
 val UserPreferences.activeLocation: Location?
-    get() = when {
-        activeLocationId == null && useCurrentLocation -> gpsLocation
-        activeLocationId != null -> savedLocations.find { it.id == activeLocationId }?.location
-        useCurrentLocation -> gpsLocation
-        else -> savedLocations.firstOrNull()?.location
+    get() = when (val mode = locationMode) {
+        is LocationMode.Gps -> gpsLocation
+        is LocationMode.Saved -> savedLocations.find { it.id == mode.id }?.location
+            ?: savedLocations.firstOrNull()?.location  // orphaned id → fall back to first
+        null -> null  // no mode set → onboarding
     }

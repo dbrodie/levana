@@ -69,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.SavedLocation
 import com.levana.app.ui.theme.HolidayTheme
@@ -127,18 +128,26 @@ fun LocationsSettingsScreen(
     val scope = rememberCoroutineScope()
 
     LocationsSettingsContent(
-        useCurrentLocation = state.useCurrentLocation,
+        locationMode = state.locationMode,
         gpsLocationName = state.gpsLocationName,
         savedLocations = state.savedLocations,
-        activeLocationId = state.activeLocationId,
         onToggleGps = { enabled ->
-            scope.launch { preferencesRepository.setUseCurrentLocation(enabled) }
+            scope.launch {
+                if (enabled) {
+                    preferencesRepository.setLocationMode(LocationMode.Gps)
+                } else {
+                    val first = state.savedLocations.firstOrNull()
+                    preferencesRepository.setLocationMode(
+                        if (first != null) LocationMode.Saved(first.id) else null
+                    )
+                }
+            }
         },
         onDelete = { id ->
             scope.launch {
                 preferencesRepository.removeSavedLocation(id)
                 val remaining = state.savedLocations.filter { it.id != id }
-                if (remaining.isEmpty() && !state.useCurrentLocation) {
+                if (remaining.isEmpty() && state.locationMode !is LocationMode.Gps) {
                     onNoLocations()
                 }
             }
@@ -150,15 +159,15 @@ fun LocationsSettingsScreen(
 
 @Composable
 private fun LocationsSettingsContent(
-    useCurrentLocation: Boolean,
+    locationMode: LocationMode?,
     gpsLocationName: String?,
     savedLocations: List<SavedLocation>,
-    activeLocationId: String?,
     onToggleGps: (Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onAddLocation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val useCurrentLocation = locationMode is LocationMode.Gps
     Column(
         modifier = modifier
             .fillMaxSize()
