@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class DayDetailViewModel(
@@ -37,11 +36,8 @@ class DayDetailViewModel(
     init {
         viewModelScope.launch {
             preferencesRepository.preferences
-                .map { it.activeLocation }
                 .distinctUntilChanged()
-                .collect {
-                    lastLoadedDate?.let { date -> loadDay(date) }
-                }
+                .collect { lastLoadedDate?.let { date -> loadDay(date) } }
         }
     }
 
