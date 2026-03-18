@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -33,19 +32,10 @@ class PreferencesRepository(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
 
     private object Keys {
-        // New multi-location keys
         val SAVED_LOCATIONS = stringPreferencesKey("saved_locations")
         val ACTIVE_LOCATION_ID = stringPreferencesKey("active_location_id")
         val USE_CURRENT_LOCATION = booleanPreferencesKey("use_current_location")
         val GPS_LOCATION = stringPreferencesKey("gps_location")
-
-        // Legacy single-location keys (kept for migration)
-        val LOCATION_NAME = stringPreferencesKey("location_name")
-        val LOCATION_COUNTRY = stringPreferencesKey("location_country")
-        val LOCATION_LAT = doublePreferencesKey("location_lat")
-        val LOCATION_LON = doublePreferencesKey("location_lon")
-        val LOCATION_ELEV = doublePreferencesKey("location_elev")
-        val LOCATION_TZ = stringPreferencesKey("location_tz")
 
         // Other preference keys
         val CANDLE_LIGHTING_OFFSET =
@@ -90,31 +80,9 @@ class PreferencesRepository(private val context: Context) {
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
-        // Migration: if no saved_locations but old location_name exists, migrate
-        val savedLocationsJson = prefs[Keys.SAVED_LOCATIONS]
-        val savedLocations = if (savedLocationsJson != null) {
-            runCatching { json.decodeFromString<List<SavedLocation>>(savedLocationsJson) }
-                .getOrDefault(emptyList())
-        } else {
-            val legacyName = prefs[Keys.LOCATION_NAME]
-            if (legacyName != null) {
-                listOf(
-                    SavedLocation(
-                        id = UUID.randomUUID().toString(),
-                        location = Location(
-                            latitude = prefs[Keys.LOCATION_LAT] ?: 0.0,
-                            longitude = prefs[Keys.LOCATION_LON] ?: 0.0,
-                            elevation = prefs[Keys.LOCATION_ELEV] ?: 0.0,
-                            timezoneId = prefs[Keys.LOCATION_TZ] ?: "UTC",
-                            name = legacyName,
-                            country = prefs[Keys.LOCATION_COUNTRY] ?: ""
-                        )
-                    )
-                )
-            } else {
-                emptyList()
-            }
-        }
+        val savedLocations = prefs[Keys.SAVED_LOCATIONS]?.let {
+            runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
+        } ?: emptyList()
 
         val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
         val useCurrentLocation = prefs[Keys.USE_CURRENT_LOCATION] ?: false
@@ -185,37 +153,9 @@ class PreferencesRepository(private val context: Context) {
         val newId = UUID.randomUUID().toString()
         val newEntry = SavedLocation(id = newId, location = location)
         context.dataStore.edit { prefs ->
-            val currentJson = prefs[Keys.SAVED_LOCATIONS]
-            val current = if (currentJson != null) {
-                runCatching { json.decodeFromString<List<SavedLocation>>(currentJson) }
-                    .getOrDefault(emptyList())
-            } else {
-                // Inline migration: carry forward any legacy single location
-                val legacyName = prefs[Keys.LOCATION_NAME]
-                if (legacyName != null) {
-                    val legacy = SavedLocation(
-                        id = UUID.randomUUID().toString(),
-                        location = Location(
-                            latitude = prefs[Keys.LOCATION_LAT] ?: 0.0,
-                            longitude = prefs[Keys.LOCATION_LON] ?: 0.0,
-                            elevation = prefs[Keys.LOCATION_ELEV] ?: 0.0,
-                            timezoneId = prefs[Keys.LOCATION_TZ] ?: "UTC",
-                            name = legacyName,
-                            country = prefs[Keys.LOCATION_COUNTRY] ?: ""
-                        )
-                    )
-                    // Clear legacy keys
-                    prefs.remove(Keys.LOCATION_NAME)
-                    prefs.remove(Keys.LOCATION_COUNTRY)
-                    prefs.remove(Keys.LOCATION_LAT)
-                    prefs.remove(Keys.LOCATION_LON)
-                    prefs.remove(Keys.LOCATION_ELEV)
-                    prefs.remove(Keys.LOCATION_TZ)
-                    listOf(legacy)
-                } else {
-                    emptyList()
-                }
-            }
+            val current = prefs[Keys.SAVED_LOCATIONS]?.let {
+                runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
+            } ?: emptyList()
             prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(current + newEntry)
         }
         return newId
