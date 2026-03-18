@@ -196,7 +196,7 @@ private fun GregorianCalendarContent(
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
 
                 if (pageMonth == state.currentMonth) {
-                    if (state.isLoading) {
+                    if (state.isLoading && state.monthDays.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
