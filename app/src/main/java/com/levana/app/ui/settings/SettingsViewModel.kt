@@ -95,8 +95,7 @@ class SettingsViewModel(
                 _state.value = _state.value.copy(
                     locationName = prefs.activeLocation?.name ?: "Not set",
                     savedLocations = prefs.savedLocations,
-                    activeLocationId = prefs.activeLocationId,
-                    useCurrentLocation = prefs.useCurrentLocation,
+                    locationMode = prefs.locationMode,
                     gpsLocationName = prefs.gpsLocation?.name,
                     minhag = prefs.minhag,
                     isInIsrael = prefs.isInIsrael,

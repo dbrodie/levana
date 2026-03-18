@@ -1,6 +1,5 @@
 package com.levana.app.ui.calendar
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -63,6 +63,28 @@ import org.koin.androidx.compose.koinViewModel
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
+private val HEBREW_LOCALE = Locale.forLanguageTag("he")
+
+private val DAYS_OF_WEEK = listOf(
+    DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+    DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+)
+
+private fun LazyGridScope.dayHeaderRow(locale: Locale) {
+    items(7) { index ->
+        Box(
+            modifier = Modifier.fillMaxWidth().height(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = DAYS_OF_WEEK[index].getDisplayName(TextStyle.SHORT, locale),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 private fun HebrewYearMonth.plusMonths(n: Int): HebrewYearMonth {
     var result = this
@@ -196,7 +218,7 @@ private fun GregorianCalendarContent(
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
 
                 if (pageMonth == state.currentMonth) {
-                    if (state.isLoading) {
+                    if (state.isLoading && state.monthDays.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -446,38 +468,6 @@ private fun HebrewMonthHeader(
     }
 }
 
-@VisibleForTesting
-@Composable
-internal fun DayOfWeekHeader(calendarHebrewMode: Boolean) {
-    val daysOfWeek = listOf(
-        DayOfWeek.SUNDAY,
-        DayOfWeek.MONDAY,
-        DayOfWeek.TUESDAY,
-        DayOfWeek.WEDNESDAY,
-        DayOfWeek.THURSDAY,
-        DayOfWeek.FRIDAY,
-        DayOfWeek.SATURDAY
-    )
-
-    val locale = if (calendarHebrewMode) Locale("he") else Locale.getDefault()
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp)
-    ) {
-        daysOfWeek.forEach { day ->
-            Text(
-                text = day.getDisplayName(TextStyle.SHORT, locale),
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 @Composable
 private fun GregorianMonthGrid(
     monthDays: List<HebrewDay>,
@@ -488,10 +478,6 @@ private fun GregorianMonthGrid(
 ) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
     val leadingEmptyCells = firstDayOfWeek.value % 7
-    val daysOfWeek = listOf(
-        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
-        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
-    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -500,19 +486,7 @@ private fun GregorianMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
-        items(7) { index ->
-            Box(
-                modifier = Modifier.fillMaxWidth().height(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        dayHeaderRow(Locale.getDefault())
         items(leadingEmptyCells) {
             Box(modifier = Modifier.aspectRatio(0.85f))
         }
@@ -539,10 +513,6 @@ private fun HebrewMonthGrid(
     if (monthDays.isEmpty()) return
     val firstDate = monthDays.first().gregorianDate
     val leadingEmptyCells = firstDate.dayOfWeek.value % 7
-    val daysOfWeek = listOf(
-        DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
-        DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
-    )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
@@ -551,19 +521,7 @@ private fun HebrewMonthGrid(
             .padding(horizontal = 4.dp),
         userScrollEnabled = false
     ) {
-        items(7) { index ->
-            Box(
-                modifier = Modifier.fillMaxWidth().height(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = daysOfWeek[index].getDisplayName(TextStyle.SHORT, Locale("he")),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        dayHeaderRow(HEBREW_LOCALE)
         items(leadingEmptyCells) {
             Box(modifier = Modifier.aspectRatio(0.85f))
         }

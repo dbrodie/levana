@@ -46,11 +46,11 @@ class DailyNotificationWorker(
         }
 
         if (prefs.notifyHolidays) {
-            handleHolidays(today, location, prefs)
+            handleHolidays(today, prefs)
         }
 
         if (prefs.notifyFasts) {
-            handleFasts(today, location)
+            handleFasts(today, location, prefs)
         }
 
         if (prefs.notifyPersonalEvents) {
@@ -123,7 +123,7 @@ class DailyNotificationWorker(
         }
     }
 
-    private fun handleHolidays(today: LocalDate, location: Location, prefs: UserPreferences) {
+    private fun handleHolidays(today: LocalDate, prefs: UserPreferences) {
         val daysBefore = prefs.holidayNotifyDaysBefore
         for (offset in 0..daysBefore) {
             val checkDate = today.plusDays(offset.toLong())
@@ -147,10 +147,10 @@ class DailyNotificationWorker(
         }
     }
 
-    private fun handleFasts(today: LocalDate, location: Location) {
+    private fun handleFasts(today: LocalDate, location: Location, prefs: UserPreferences) {
         // All fasts: notify the day before
         val tomorrow = today.plusDays(1)
-        val tomorrowInfo = calendarRepository.getDayInfo(tomorrow, inIsrael = false)
+        val tomorrowInfo = calendarRepository.getDayInfo(tomorrow, inIsrael = prefs.isInIsrael)
 
         for (holiday in tomorrowInfo.holidays) {
             if (holiday.category != HolidayCategory.FAST) continue

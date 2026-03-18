@@ -253,21 +253,6 @@ class ZmanimRepository {
     }
 
     private fun midnight(czc: ComplexZmanimCalendar, location: Location): ZmanTime {
-        val sunset = czc.sunset
-        val nextSunrise = czc.sunrise
-        val time = if (sunset != null && nextSunrise != null) {
-            val midMs = (sunset.time + nextSunrise.time) / 2
-            Date(midMs).toInstant()
-                .atZone(ZoneId.of(location.timezoneId))
-                .toLocalTime()
-        } else {
-            null
-        }
-        return ZmanTime(
-            "Chatzot HaLaylah",
-            "חצות הלילה",
-            time,
-            ZmanCategory.NIGHT
-        )
+        return ZmanTime("Chatzot HaLaylah", "חצות הלילה", toLocalTime(czc.solarMidnight, location), ZmanCategory.NIGHT)
     }
 }

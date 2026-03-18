@@ -1,5 +1,6 @@
 package com.levana.app.ui.settings
 
+import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.SavedLocation
 import java.time.LocalDate
@@ -8,8 +9,7 @@ import java.time.LocalDate
 data class SettingsState(
     val locationName: String = "",
     val savedLocations: List<SavedLocation> = emptyList(),
-    val activeLocationId: String? = null,
-    val useCurrentLocation: Boolean = false,
+    val locationMode: LocationMode? = null,
     val gpsLocationName: String? = null,
     val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,

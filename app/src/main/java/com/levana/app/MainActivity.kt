@@ -72,6 +72,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.activeLocation
 import com.levana.app.notifications.NotificationPoster
 import com.levana.app.ui.birthday.ContactBirthdayScreen
@@ -103,6 +104,7 @@ import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
@@ -153,8 +155,6 @@ private data class DrawerNavItem(
     val route: Any
 )
 
-private const val GPS_SENTINEL = "__gps__"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LevanaApp(deepLinkEpochDay: Long = 0L) {
@@ -182,11 +182,13 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                if (prefs?.useCurrentLocation == true) {
+                if (prefs?.locationMode is LocationMode.Gps) {
                     scope.launch {
                         try {
-                            val loc = locationService.getCurrentLocation()
-                            preferencesRepository.updateGpsLocation(loc)
+                            val loc = withTimeoutOrNull(15_000L) {
+                                locationService.getCurrentLocation()
+                            }
+                            if (loc != null) preferencesRepository.updateGpsLocation(loc)
                         } catch (_: Exception) {
                             // Permission missing or GPS unavailable — skip silently
                         }
@@ -319,31 +321,25 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
                         val currentPrefs = prefs
                         if (currentPrefs != null) {
-                            // GPS item (shown only if useCurrentLocation = true)
-                            if (currentPrefs.useCurrentLocation) {
-                                val isGpsActive = currentPrefs.activeLocationId == null
+                            // GPS item (shown only if GPS mode is active)
+                            if (currentPrefs.locationMode is LocationMode.Gps) {
                                 val gpsLabel = currentPrefs.gpsLocation?.name ?: "Detecting…"
                                 NavigationDrawerItem(
                                     label = { Text(gpsLabel) },
                                     icon = {
                                         Icon(Icons.Filled.GpsFixed, contentDescription = null)
                                     },
-                                    selected = isGpsActive,
+                                    selected = true,
                                     onClick = {
-                                        scope.launch {
-                                            preferencesRepository.setActiveLocationId(null)
-                                            drawerState.close()
-                                        }
+                                        scope.launch { drawerState.close() }
                                     }
                                 )
                             }
 
                             // Saved locations
                             currentPrefs.savedLocations.forEach { saved ->
-                                val isActive = currentPrefs.activeLocationId == saved.id ||
-                                    (currentPrefs.activeLocationId == null &&
-                                        !currentPrefs.useCurrentLocation &&
-                                        currentPrefs.savedLocations.firstOrNull()?.id == saved.id)
+                                val isActive = currentPrefs.locationMode is LocationMode.Saved &&
+                                    currentPrefs.locationMode.id == saved.id
                                 NavigationDrawerItem(
                                     label = { Text(saved.location.name) },
                                     icon = {
@@ -352,7 +348,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                     selected = isActive,
                                     onClick = {
                                         scope.launch {
-                                            preferencesRepository.setActiveLocationId(saved.id)
+                                            preferencesRepository.setLocationMode(LocationMode.Saved(saved.id))
                                             drawerState.close()
                                         }
                                     }
@@ -453,7 +449,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         onSave = { location ->
                             scope2.launch {
                                 val newId = preferencesRepository.addSavedLocation(location)
-                                preferencesRepository.setActiveLocationId(newId)
+                                preferencesRepository.setLocationMode(LocationMode.Saved(newId))
                                 navController.navigate(CalendarRoute) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -594,7 +590,7 @@ private fun GpsOnboarding(
                 try {
                     val loc = locationService.getCurrentLocation()
                     val newId = preferencesRepository.addSavedLocation(loc)
-                    preferencesRepository.setActiveLocationId(newId)
+                    preferencesRepository.setLocationMode(LocationMode.Saved(newId))
                     navController.navigate(CalendarRoute) {
                         popUpTo(OnboardingRoute) { inclusive = true }
                     }
