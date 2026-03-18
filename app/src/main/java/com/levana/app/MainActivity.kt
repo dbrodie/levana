@@ -104,6 +104,7 @@ import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
@@ -184,8 +185,10 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                 if (prefs?.locationMode is LocationMode.Gps) {
                     scope.launch {
                         try {
-                            val loc = locationService.getCurrentLocation()
-                            preferencesRepository.updateGpsLocation(loc)
+                            val loc = withTimeoutOrNull(15_000L) {
+                                locationService.getCurrentLocation()
+                            }
+                            if (loc != null) preferencesRepository.updateGpsLocation(loc)
                         } catch (_: Exception) {
                             // Permission missing or GPS unavailable — skip silently
                         }
