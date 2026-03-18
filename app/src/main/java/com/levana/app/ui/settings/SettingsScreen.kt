@@ -136,13 +136,10 @@ fun LocationsSettingsScreen(
         },
         onDelete = { id ->
             scope.launch {
-                val wasActive = state.activeLocationId == id
                 preferencesRepository.removeSavedLocation(id)
-                if (wasActive) {
-                    val remaining = state.savedLocations.filter { it.id != id }
-                    if (remaining.isEmpty() && !state.useCurrentLocation) {
-                        onNoLocations()
-                    }
+                val remaining = state.savedLocations.filter { it.id != id }
+                if (remaining.isEmpty() && !state.useCurrentLocation) {
+                    onNoLocations()
                 }
             }
         },
