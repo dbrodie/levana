@@ -16,9 +16,11 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class CalendarViewModel(
@@ -31,6 +33,12 @@ class CalendarViewModel(
 
     private val _state = MutableStateFlow(CalendarState())
     val state: StateFlow<CalendarState> = _state.asStateFlow()
+
+    private val _hebrewScrollTarget = Channel<HebrewYearMonth>(Channel.CONFLATED)
+    val hebrewScrollTarget = _hebrewScrollTarget.receiveAsFlow()
+
+    private val _gregorianScrollTarget = Channel<YearMonth>(Channel.CONFLATED)
+    val gregorianScrollTarget = _gregorianScrollTarget.receiveAsFlow()
 
     private var currentPrefs = UserPreferences()
     private var loadJob: Job? = null
@@ -70,9 +78,13 @@ class CalendarViewModel(
                     selectedDate = currentPrefs.devDateOverride ?: LocalDate.now()
                 )
                 if (currentPrefs.calendarHebrewMode) {
-                    loadHebrewMonth(HebrewYearMonth.now())
+                    val today = HebrewYearMonth.now()
+                    _hebrewScrollTarget.trySend(today)
+                    loadHebrewMonth(today)
                 } else {
-                    loadMonth(YearMonth.now())
+                    val today = YearMonth.now()
+                    _gregorianScrollTarget.trySend(today)
+                    loadMonth(today)
                 }
             }
             is CalendarIntent.SelectDay -> {
