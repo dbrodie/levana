@@ -217,15 +217,16 @@ private fun GregorianCalendarContent(
                 val offset = page - PAGER_INITIAL_PAGE
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
 
-                if (pageMonth == state.currentMonth) {
-                    if (state.isLoading && state.monthDays.isEmpty()) {
+                val cachedDays = state.gregorianMonthCache[pageMonth]
+                when {
+                    pageMonth == state.currentMonth && state.isLoading && state.monthDays.isEmpty() ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
                         }
-                    } else {
+                    pageMonth == state.currentMonth ->
                         GregorianMonthGrid(
                             monthDays = state.monthDays,
                             currentMonth = state.currentMonth,
@@ -235,9 +236,17 @@ private fun GregorianCalendarContent(
                                 onIntent(CalendarIntent.SelectDay(date))
                             }
                         )
-                    }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize())
+                    cachedDays != null ->
+                        GregorianMonthGrid(
+                            monthDays = cachedDays,
+                            currentMonth = pageMonth,
+                            today = state.today,
+                            selectedDate = state.selectedDate,
+                            onDayClick = { date ->
+                                onIntent(CalendarIntent.SelectDay(date))
+                            }
+                        )
+                    else -> Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
@@ -323,15 +332,16 @@ private fun HebrewCalendarContent(
                 val offset = page - PAGER_INITIAL_PAGE
                 val pageMonth = baseHebrewMonth.plusMonths(offset)
 
-                if (pageMonth == state.hebrewYearMonth) {
-                    if (state.isLoading && state.monthDays.isEmpty()) {
+                val cachedDays = state.hebrewMonthCache[pageMonth]
+                when {
+                    pageMonth == state.hebrewYearMonth && state.isLoading && state.monthDays.isEmpty() ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
                         }
-                    } else {
+                    pageMonth == state.hebrewYearMonth ->
                         HebrewMonthGrid(
                             monthDays = state.monthDays,
                             today = state.today,
@@ -340,9 +350,16 @@ private fun HebrewCalendarContent(
                                 onIntent(CalendarIntent.SelectDay(date))
                             }
                         )
-                    }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize())
+                    cachedDays != null ->
+                        HebrewMonthGrid(
+                            monthDays = cachedDays,
+                            today = state.today,
+                            selectedDate = state.selectedDate,
+                            onDayClick = { date ->
+                                onIntent(CalendarIntent.SelectDay(date))
+                            }
+                        )
+                    else -> Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
