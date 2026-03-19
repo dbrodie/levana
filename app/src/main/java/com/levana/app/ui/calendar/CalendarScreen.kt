@@ -37,7 +37,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.Flow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,6 +131,7 @@ fun CalendarScreen(
             HebrewCalendarContent(
                 state = state,
                 onIntent = viewModel::onIntent,
+                scrollTarget = viewModel.hebrewScrollTarget,
                 onOpenDrawer = onOpenDrawer,
                 dayDetailState = dayDetailState,
                 onShowZmanim = onShowZmanim,
@@ -139,6 +142,7 @@ fun CalendarScreen(
             GregorianCalendarContent(
                 state = state,
                 onIntent = viewModel::onIntent,
+                scrollTarget = viewModel.gregorianScrollTarget,
                 onOpenDrawer = onOpenDrawer,
                 dayDetailState = dayDetailState,
                 onShowZmanim = onShowZmanim,
@@ -153,6 +157,7 @@ fun CalendarScreen(
 private fun GregorianCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
+    scrollTarget: Flow<YearMonth>,
     onOpenDrawer: () -> Unit,
     dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
@@ -164,25 +169,24 @@ private fun GregorianCalendarContent(
         pageCount = { PAGER_PAGE_COUNT }
     )
 
-    val baseMonth = YearMonth.now()
+    val baseMonth = remember { YearMonth.now() }
+    val currentState by rememberUpdatedState(state)
 
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
             val offset = page - PAGER_INITIAL_PAGE
             val targetMonth = baseMonth.plusMonths(offset.toLong())
-            if (targetMonth != state.currentMonth) {
+            if (targetMonth != currentState.currentMonth) {
                 onIntent(CalendarIntent.LoadMonth(targetMonth))
             }
         }
     }
 
-    val expectedPage = PAGER_INITIAL_PAGE +
-        ((state.currentMonth.year - baseMonth.year) * 12) +
-        (state.currentMonth.monthValue - baseMonth.monthValue)
-
-    LaunchedEffect(expectedPage) {
-        if (pagerState.settledPage != expectedPage) {
-            pagerState.animateScrollToPage(expectedPage)
+    LaunchedEffect(Unit) {
+        scrollTarget.collect { targetMonth ->
+            val offset = ((targetMonth.year - baseMonth.year) * 12) +
+                (targetMonth.monthValue - baseMonth.monthValue)
+            pagerState.animateScrollToPage(PAGER_INITIAL_PAGE + offset)
         }
     }
 
@@ -257,6 +261,7 @@ private fun GregorianCalendarContent(
 private fun HebrewCalendarContent(
     state: CalendarState,
     onIntent: (CalendarIntent) -> Unit,
+    scrollTarget: Flow<HebrewYearMonth>,
     onOpenDrawer: () -> Unit,
     dayDetailState: com.levana.app.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
@@ -269,25 +274,21 @@ private fun HebrewCalendarContent(
     )
 
     val baseHebrewMonth = remember { HebrewYearMonth.now() }
+    val currentState by rememberUpdatedState(state)
 
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
             val offset = page - PAGER_INITIAL_PAGE
             val targetMonth = baseHebrewMonth.plusMonths(offset)
-            if (targetMonth != state.hebrewYearMonth) {
+            if (targetMonth != currentState.hebrewYearMonth) {
                 onIntent(CalendarIntent.LoadHebrewMonth(targetMonth))
             }
         }
     }
 
-    val currentHebrewMonth = state.hebrewYearMonth ?: baseHebrewMonth
-    val expectedPage = remember(currentHebrewMonth) {
-        PAGER_INITIAL_PAGE + baseHebrewMonth.stepsTo(currentHebrewMonth)
-    }
-
-    LaunchedEffect(expectedPage) {
-        if (pagerState.settledPage != expectedPage) {
-            pagerState.animateScrollToPage(expectedPage)
+    LaunchedEffect(Unit) {
+        scrollTarget.collect { targetMonth ->
+            pagerState.animateScrollToPage(PAGER_INITIAL_PAGE + baseHebrewMonth.stepsTo(targetMonth))
         }
     }
 
