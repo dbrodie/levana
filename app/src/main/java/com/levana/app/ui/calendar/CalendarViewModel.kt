@@ -2,12 +2,14 @@ package com.levana.app.ui.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import com.levana.app.data.CalendarRepository
 import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.domain.model.HebrewDay
+import com.levana.app.domain.model.HebrewMonth
 import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.UserPreferences
 import com.levana.app.domain.model.activeLocation
@@ -15,6 +17,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.GregorianCalendar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,6 +84,37 @@ class CalendarViewModel(
             is CalendarIntent.ToggleCalendarHebrewMode -> {
                 viewModelScope.launch {
                     preferencesRepository.saveCalendarHebrewMode(!currentPrefs.calendarHebrewMode)
+                }
+            }
+            is CalendarIntent.OpenGoToDateDialog -> {
+                _state.value = _state.value.copy(showGoToDateDialog = true)
+            }
+            is CalendarIntent.CloseGoToDateDialog -> {
+                _state.value = _state.value.copy(showGoToDateDialog = false)
+            }
+            is CalendarIntent.GoToDate -> {
+                val date = intent.date
+                _state.value = _state.value.copy(
+                    selectedDate = date,
+                    showGoToDateDialog = false
+                )
+                if (currentPrefs.calendarHebrewMode) {
+                    val gc = GregorianCalendar(
+                        date.year,
+                        date.monthValue - 1,
+                        date.dayOfMonth
+                    )
+                    val jd = JewishDate(gc)
+                    val isLeap = jd.isJewishLeapYear
+                    loadHebrewMonth(
+                        HebrewYearMonth(
+                            jd.jewishYear,
+                            HebrewMonth.from(jd.jewishMonth, isLeap),
+                            jd.jewishMonth
+                        )
+                    )
+                } else {
+                    loadMonth(YearMonth.from(date))
                 }
             }
         }

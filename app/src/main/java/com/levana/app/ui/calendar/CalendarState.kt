@@ -15,5 +15,6 @@ data class CalendarState(
     val locationName: String = "",
     val calendarHebrewMode: Boolean = false,
     val hebrewYearMonth: HebrewYearMonth? = null,
-    val selectedDate: LocalDate = LocalDate.now()
+    val selectedDate: LocalDate = LocalDate.now(),
+    val showGoToDateDialog: Boolean = false
 )
