@@ -15,4 +15,7 @@ sealed interface CalendarIntent {
     data object GoToToday : CalendarIntent
     data class SelectDay(val date: LocalDate) : CalendarIntent
     data object ToggleCalendarHebrewMode : CalendarIntent
+    data object OpenGoToDateDialog : CalendarIntent
+    data object CloseGoToDateDialog : CalendarIntent
+    data class GoToDate(val date: LocalDate) : CalendarIntent
 }

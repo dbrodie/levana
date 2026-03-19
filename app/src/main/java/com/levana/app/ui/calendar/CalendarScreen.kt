@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.CardDefaults
@@ -151,6 +152,15 @@ fun CalendarScreen(
             )
         }
     }
+
+    if (state.showGoToDateDialog) {
+        GoToDateDialog(
+            initialDate = state.selectedDate,
+            calendarHebrewMode = state.calendarHebrewMode,
+            onConfirm = { date -> viewModel.onIntent(CalendarIntent.GoToDate(date)) },
+            onDismiss = { viewModel.onIntent(CalendarIntent.CloseGoToDateDialog) }
+        )
+    }
 }
 
 @Composable
@@ -201,6 +211,7 @@ private fun GregorianCalendarContent(
             state = state,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
+            onGoToDate = { onIntent(CalendarIntent.OpenGoToDateDialog) },
             onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
             onAddEvent = onAddEventClick
         )
@@ -304,6 +315,7 @@ private fun HebrewCalendarContent(
             gregorianHeader = state.gregorianHeader,
             onOpenDrawer = onOpenDrawer,
             onGoToToday = { onIntent(CalendarIntent.GoToToday) },
+            onGoToDate = { onIntent(CalendarIntent.OpenGoToDateDialog) },
             onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
             onAddEvent = onAddEventClick
         )
@@ -364,6 +376,7 @@ private fun GregorianMonthHeader(
     state: CalendarState,
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
+    onGoToDate: () -> Unit,
     onToggleMode: () -> Unit,
     onAddEvent: () -> Unit
 ) {
@@ -409,6 +422,9 @@ private fun GregorianMonthHeader(
         IconButton(onClick = onGoToToday) {
             Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
         }
+        IconButton(onClick = onGoToDate) {
+            Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
+        }
         IconButton(onClick = onAddEvent) {
             Icon(Icons.Filled.Add, contentDescription = "Add event")
         }
@@ -421,6 +437,7 @@ private fun HebrewMonthHeader(
     gregorianHeader: String,
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
+    onGoToDate: () -> Unit,
     onToggleMode: () -> Unit,
     onAddEvent: () -> Unit
 ) {
@@ -462,6 +479,9 @@ private fun HebrewMonthHeader(
 
         IconButton(onClick = onGoToToday) {
             Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
+        }
+        IconButton(onClick = onGoToDate) {
+            Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
         }
         IconButton(onClick = onAddEvent) {
             Icon(Icons.Filled.Add, contentDescription = "Add event")
