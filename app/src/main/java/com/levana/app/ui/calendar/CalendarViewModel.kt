@@ -45,6 +45,7 @@ class CalendarViewModel(
 
     private var currentPrefs = UserPreferences()
     private var loadJob: Job? = null
+    private var adjacentJob: Job? = null
 
     init {
         observePreferences()
@@ -155,136 +156,175 @@ class CalendarViewModel(
         }
     }
 
-    private fun loadMonth(yearMonth: YearMonth) {
-        loadJob?.cancel()
-        loadJob = viewModelScope.launch {
-            _state.value = _state.value.copy(
-                isLoading = true,
-                currentMonth = yearMonth,
-                monthDays = emptyList()
+    private suspend fun loadMonthDaysOnly(yearMonth: YearMonth): List<HebrewDay> {
+        val monthDays = calendarRepository.getMonthDays(
+            yearMonth,
+            currentPrefs.isInIsrael
+        )
+
+        val eventDates = personalEventRepository
+            .getEventDatesForGregorianMonth(
+                yearMonth.year,
+                yearMonth.monthValue
             )
 
-            val monthDays = calendarRepository.getMonthDays(
-                yearMonth,
-                currentPrefs.isInIsrael
-            )
-            val hebrewMonthHeader = buildHebrewMonthHeader(monthDays)
-
-            val eventDates = personalEventRepository
-                .getEventDatesForGregorianMonth(
+        val birthdayDates = try {
+            contactBirthdayRepository
+                .getBirthdayDatesForGregorianMonth(
                     yearMonth.year,
                     yearMonth.monthValue
                 )
+        } catch (_: SecurityException) {
+            emptySet()
+        }
 
-            val birthdayDates = try {
-                contactBirthdayRepository
-                    .getBirthdayDatesForGregorianMonth(
-                        yearMonth.year,
-                        yearMonth.monthValue
+        val allEventDates = eventDates + birthdayDates
+
+        val systemEventColors = try {
+            val start = yearMonth.atDay(1)
+            val end = yearMonth.atEndOfMonth()
+            systemCalendarRepository.getEventColorsForDateRange(
+                start,
+                end,
+                currentPrefs.selectedCalendarIds
+            )
+        } catch (_: SecurityException) {
+            emptyMap()
+        }
+
+        return monthDays.map { day ->
+            day.copy(
+                hasPersonalEvent = allEventDates.contains(day.gregorianDate),
+                systemEventColors = systemEventColors[day.gregorianDate] ?: emptyList()
+            )
+        }
+    }
+
+    private fun loadMonth(yearMonth: YearMonth) {
+        loadJob?.cancel()
+        adjacentJob?.cancel()
+
+        _state.value = _state.value.copy(
+            isLoading = true,
+            currentMonth = yearMonth,
+            monthDays = emptyList()
+        )
+
+        loadJob = viewModelScope.launch {
+            val markedDays = loadMonthDaysOnly(yearMonth)
+            val hebrewMonthHeader = buildHebrewMonthHeader(markedDays)
+            _state.value = _state.value.copy(
+                monthDays = markedDays,
+                today = currentPrefs.devDateOverride ?: LocalDate.now(),
+                hebrewMonthHeader = hebrewMonthHeader,
+                isLoading = false,
+                gregorianMonthCache = mapOf(yearMonth to markedDays)
+            )
+        }
+
+        adjacentJob = viewModelScope.launch {
+            val prev = yearMonth.minusMonths(1)
+            val next = yearMonth.plusMonths(1)
+            val prevDays = loadMonthDaysOnly(prev)
+            val nextDays = loadMonthDaysOnly(next)
+            val current = _state.value
+            if (current.currentMonth == yearMonth) {
+                _state.value = current.copy(
+                    gregorianMonthCache = mapOf(
+                        prev to prevDays,
+                        yearMonth to (current.gregorianMonthCache[yearMonth] ?: current.monthDays),
+                        next to nextDays
                     )
-            } catch (_: SecurityException) {
-                emptySet()
+                )
             }
+        }
+    }
 
-            val allEventDates = eventDates + birthdayDates
+    private suspend fun loadHebrewMonthDaysOnly(hym: HebrewYearMonth): List<HebrewDay> {
+        val monthDays = calendarRepository.getHebrewMonthDays(
+            hym,
+            currentPrefs.isInIsrael
+        )
 
-            val systemEventColors = try {
-                val start = yearMonth.atDay(1)
-                val end = yearMonth.atEndOfMonth()
+        val eventDays = personalEventRepository
+            .getEventDaysForHebrewMonth(hym.year, hym.jewishDateMonth)
+
+        val birthdayDays = try {
+            contactBirthdayRepository
+                .getBirthdayDaysForHebrewMonth(
+                    hym.year,
+                    hym.jewishDateMonth
+                )
+        } catch (_: SecurityException) {
+            emptySet()
+        }
+
+        val allEventDays = eventDays + birthdayDays
+
+        val systemEventColors = try {
+            if (monthDays.isNotEmpty()) {
+                val start = monthDays.first().gregorianDate
+                val end = monthDays.last().gregorianDate
                 systemCalendarRepository.getEventColorsForDateRange(
                     start,
                     end,
                     currentPrefs.selectedCalendarIds
                 )
-            } catch (_: SecurityException) {
+            } else {
                 emptyMap()
             }
+        } catch (_: SecurityException) {
+            emptyMap()
+        }
 
-            val markedDays = monthDays.map { day ->
-                day.copy(
-                    hasPersonalEvent = allEventDates.contains(
-                        day.gregorianDate
-                    ),
-                    systemEventColors = systemEventColors[
-                        day.gregorianDate
-                    ] ?: emptyList()
-                )
-            }
-
-            _state.value = _state.value.copy(
-                monthDays = markedDays,
-                today = currentPrefs.devDateOverride ?: LocalDate.now(),
-                hebrewMonthHeader = hebrewMonthHeader,
-                isLoading = false
+        return monthDays.map { day ->
+            day.copy(
+                hasPersonalEvent = allEventDays.contains(day.day),
+                systemEventColors = systemEventColors[day.gregorianDate] ?: emptyList()
             )
         }
     }
 
     private fun loadHebrewMonth(hym: HebrewYearMonth) {
         loadJob?.cancel()
+        adjacentJob?.cancel()
+
+        _state.value = _state.value.copy(
+            isLoading = true,
+            hebrewYearMonth = hym,
+            monthDays = emptyList()
+        )
+
         loadJob = viewModelScope.launch {
-            _state.value = _state.value.copy(
-                isLoading = true,
-                hebrewYearMonth = hym,
-                monthDays = emptyList()
-            )
-
-            val monthDays = calendarRepository.getHebrewMonthDays(
-                hym,
-                currentPrefs.isInIsrael
-            )
-            val hebrewMonthName =
-                calendarRepository.getHebrewMonthName(hym)
+            val markedDays = loadHebrewMonthDaysOnly(hym)
+            val hebrewMonthName = calendarRepository.getHebrewMonthName(hym)
             val hebrewHeader = "$hebrewMonthName ${hym.year}"
-            val gregHeader = buildGregorianRange(monthDays)
-
-            val eventDays = personalEventRepository
-                .getEventDaysForHebrewMonth(hym.year, hym.jewishDateMonth)
-
-            val birthdayDays = try {
-                contactBirthdayRepository
-                    .getBirthdayDaysForHebrewMonth(
-                        hym.year,
-                        hym.jewishDateMonth
-                    )
-            } catch (_: SecurityException) {
-                emptySet()
-            }
-
-            val allEventDays = eventDays + birthdayDays
-
-            val systemEventColors = try {
-                if (monthDays.isNotEmpty()) {
-                    val start = monthDays.first().gregorianDate
-                    val end = monthDays.last().gregorianDate
-                    systemCalendarRepository.getEventColorsForDateRange(
-                        start,
-                        end,
-                        currentPrefs.selectedCalendarIds
-                    )
-                } else {
-                    emptyMap()
-                }
-            } catch (_: SecurityException) {
-                emptyMap()
-            }
-
-            val markedDays = monthDays.map { day ->
-                day.copy(
-                    hasPersonalEvent = allEventDays.contains(day.day),
-                    systemEventColors = systemEventColors[
-                        day.gregorianDate
-                    ] ?: emptyList()
-                )
-            }
-
+            val gregHeader = buildGregorianRange(markedDays)
             _state.value = _state.value.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 hebrewMonthHeader = hebrewHeader,
                 gregorianHeader = gregHeader,
-                isLoading = false
+                isLoading = false,
+                hebrewMonthCache = mapOf(hym to markedDays)
             )
+        }
+
+        adjacentJob = viewModelScope.launch {
+            val prev = hym.previous()
+            val next = hym.next()
+            val prevDays = loadHebrewMonthDaysOnly(prev)
+            val nextDays = loadHebrewMonthDaysOnly(next)
+            val current = _state.value
+            if (current.hebrewYearMonth == hym) {
+                _state.value = current.copy(
+                    hebrewMonthCache = mapOf(
+                        prev to prevDays,
+                        hym to (current.hebrewMonthCache[hym] ?: current.monthDays),
+                        next to nextDays
+                    )
+                )
+            }
         }
     }
 
