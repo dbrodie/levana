@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +89,9 @@ fun GoToDateDialog(
         } catch (_: Exception) { }
     }
 
+    var hebrewError by remember { mutableStateOf(false) }
+    var gregorianError by remember { mutableStateOf(false) }
+
     val hebrewSection: @Composable () -> Unit = {
         Text(
             text = "Hebrew Date",
@@ -101,7 +105,8 @@ fun GoToDateDialog(
             hebrewYear = hebrewYear,
             onDayChange = { hebrewDay = it; syncHebrewToGregorian() },
             onMonthChange = { hebrewMonth = it; syncHebrewToGregorian() },
-            onYearChange = { hebrewYear = it; syncHebrewToGregorian() }
+            onYearChange = { hebrewYear = it; syncHebrewToGregorian() },
+            onErrorChange = { hebrewError = it }
         )
     }
 
@@ -118,7 +123,8 @@ fun GoToDateDialog(
             gregYear = gregYear,
             onDayChange = { gregDay = it; syncGregorianToHebrew() },
             onMonthChange = { gregMonth = it; syncGregorianToHebrew() },
-            onYearChange = { gregYear = it; syncGregorianToHebrew() }
+            onYearChange = { gregYear = it; syncGregorianToHebrew() },
+            onErrorChange = { gregorianError = it }
         )
     }
 
@@ -139,6 +145,14 @@ fun GoToDateDialog(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
                     hebrewSection()
+                }
+                if (hebrewError || gregorianError) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Invalid date",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
@@ -172,8 +186,12 @@ private fun HebrewPickerRow(
     hebrewYear: Int,
     onDayChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
+    onYearChange: (Int) -> Unit,
+    onErrorChange: (Boolean) -> Unit = {}
 ) {
+    var dayError by remember { mutableStateOf(false) }
+    var yearError by remember { mutableStateOf(false) }
+
     val isLeapYear = try {
         JewishDate(hebrewYear, JewishDate.TISHREI, 1).isJewishLeapYear
     } catch (_: Exception) {
@@ -196,6 +214,7 @@ private fun HebrewPickerRow(
                 value = hebrewDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
+                onIsErrorChange = { dayError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -214,6 +233,7 @@ private fun HebrewPickerRow(
                 value = hebrewYear,
                 range = 5700..5900,
                 onValueChange = onYearChange,
+                onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -228,8 +248,12 @@ private fun GregorianPickerRow(
     gregYear: Int,
     onDayChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
+    onYearChange: (Int) -> Unit,
+    onErrorChange: (Boolean) -> Unit = {}
 ) {
+    var dayError by remember { mutableStateOf(false) }
+    var yearError by remember { mutableStateOf(false) }
+
     val daysInMonth = try {
         java.time.YearMonth.of(gregYear, gregMonth).lengthOfMonth()
     } catch (_: Exception) {
@@ -246,6 +270,7 @@ private fun GregorianPickerRow(
                 value = gregDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
+                onIsErrorChange = { dayError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -263,6 +288,7 @@ private fun GregorianPickerRow(
                 value = gregYear,
                 range = 1940..2140,
                 onValueChange = onYearChange,
+                onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -296,10 +322,13 @@ private fun DayYearField(
     value: Int,
     range: IntRange,
     onValueChange: (Int) -> Unit,
+    onIsErrorChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var text by remember(value) { mutableStateOf(value.toString()) }
     val isError = text.isEmpty() || text.toIntOrNull()?.let { it !in range } ?: true
+
+    LaunchedEffect(isError) { onIsErrorChange(isError) }
 
     OutlinedTextField(
         value = text,
