@@ -26,13 +26,17 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -388,6 +392,7 @@ private fun HebrewCalendarContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GregorianMonthHeader(
     state: CalendarState,
@@ -397,57 +402,56 @@ private fun GregorianMonthHeader(
     onToggleMode: () -> Unit,
     onAddEvent: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onOpenDrawer) {
-            Icon(Icons.Filled.Menu, contentDescription = "Open menu")
-        }
-
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onToggleMode),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.SwapVert,
-                contentDescription = "Switch to Hebrew calendar",
-                modifier = Modifier.padding(horizontal = 4.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Column {
-                Text(
-                    text = state.currentMonth.month.getDisplayName(
-                        TextStyle.FULL,
-                        Locale.getDefault()
-                    ) + " " + state.currentMonth.year,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = state.hebrewMonthHeader,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    TopAppBar(
+        navigationIcon = {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
             }
-        }
-
-        IconButton(onClick = onGoToToday) {
-            Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
-        }
-        IconButton(onClick = onGoToDate) {
-            Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
-        }
-        IconButton(onClick = onAddEvent) {
-            Icon(Icons.Filled.Add, contentDescription = "Add event")
-        }
-    }
+        },
+        title = {
+            Row(
+                modifier = Modifier.clickable(onClick = onToggleMode),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.SwapVert,
+                    contentDescription = "Switch to Hebrew calendar",
+                    modifier = Modifier.padding(end = 4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Column {
+                    Text(
+                        text = state.currentMonth.month.getDisplayName(
+                            TextStyle.FULL,
+                            Locale.getDefault()
+                        ) + " " + state.currentMonth.year,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = state.hebrewMonthHeader,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        actions = {
+            IconButton(onClick = onGoToToday) {
+                Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
+            }
+            IconButton(onClick = onGoToDate) {
+                Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
+            }
+            IconButton(onClick = onAddEvent) {
+                Icon(Icons.Filled.Add, contentDescription = "Add event")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(),
+        windowInsets = WindowInsets(0)
+    )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HebrewMonthHeader(
     hebrewHeader: String,
@@ -458,52 +462,50 @@ private fun HebrewMonthHeader(
     onToggleMode: () -> Unit,
     onAddEvent: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onOpenDrawer) {
-            Icon(Icons.Filled.Menu, contentDescription = "Open menu")
-        }
-
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onToggleMode),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.SwapVert,
-                contentDescription = "Switch to Gregorian calendar",
-                modifier = Modifier.padding(horizontal = 4.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Column {
-                Text(
-                    text = hebrewHeader,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = gregorianHeader,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    TopAppBar(
+        navigationIcon = {
+            IconButton(onClick = onOpenDrawer) {
+                Icon(Icons.Filled.Menu, contentDescription = "Open menu")
             }
-        }
-
-        IconButton(onClick = onGoToToday) {
-            Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
-        }
-        IconButton(onClick = onGoToDate) {
-            Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
-        }
-        IconButton(onClick = onAddEvent) {
-            Icon(Icons.Filled.Add, contentDescription = "Add event")
-        }
-    }
+        },
+        title = {
+            Row(
+                modifier = Modifier.clickable(onClick = onToggleMode),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.SwapVert,
+                    contentDescription = "Switch to Gregorian calendar",
+                    modifier = Modifier.padding(end = 4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Column {
+                    Text(
+                        text = hebrewHeader,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = gregorianHeader,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        actions = {
+            IconButton(onClick = onGoToToday) {
+                Icon(Icons.Filled.CalendarToday, contentDescription = "Go to today")
+            }
+            IconButton(onClick = onGoToDate) {
+                Icon(Icons.Filled.EditCalendar, contentDescription = "Go to date")
+            }
+            IconButton(onClick = onAddEvent) {
+                Icon(Icons.Filled.Add, contentDescription = "Add event")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(),
+        windowInsets = WindowInsets(0)
+    )
 }
 
 @Composable
