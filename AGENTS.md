@@ -45,7 +45,9 @@ levana/
 
 1. **Plan** — work in plan mode; research the codebase and design the approach
 2. **Save spec** — write the spec to `specs/rfes/<feature-name>.md`
-3. **Create branch** — `git checkout -b <feature-name>`
-4. **Commit spec** — commit the spec file to the branch before any code
-5. **Develop** — implement the feature on the branch
-6. **Approve & merge** — once the feature is approved, commit and merge to `master`
+3. **Create worktree** — `git worktree add .claude/worktrees/<feature-name> -b <feature-name>`
+4. **Work in worktree** — all development happens inside `.claude/worktrees/<feature-name>/`
+5. **Commit spec** — commit the spec file to the branch before any code
+6. **Develop** — implement the feature on the branch inside the worktree
+7. **Approve & merge** — once the feature is approved, commit and merge to `master`
+8. **Delete worktree** — `git worktree remove .claude/worktrees/<feature-name>`
