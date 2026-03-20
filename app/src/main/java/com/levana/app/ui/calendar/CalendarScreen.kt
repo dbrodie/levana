@@ -1,5 +1,9 @@
 package com.levana.app.ui.calendar
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -36,14 +41,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -200,13 +217,80 @@ private fun GregorianCalendarContent(
         }
     }
 
+    val eventsScrollState = rememberScrollState()
+    val calendarHeightPx = remember { mutableIntStateOf(0) }
+    val calendarHiddenPx = remember { mutableFloatStateOf(0f) }
+    val calendarFraction by remember {
+        derivedStateOf {
+            val h = calendarHeightPx.intValue.toFloat().coerceAtLeast(1f)
+            1f - (calendarHiddenPx.floatValue / h).coerceIn(0f, 1f)
+        }
+    }
+
+    val isResetting = remember { booleanArrayOf(false) }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < 0) {
+                    val h = calendarHeightPx.intValue.toFloat()
+                    if (h > 0f) {
+                        val canConsume = h - calendarHiddenPx.floatValue
+                        if (canConsume > 0f) {
+                            val consume = minOf(-available.y, canConsume)
+                            calendarHiddenPx.floatValue += consume
+                            return Offset(0f, -consume)
+                        }
+                    }
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (!isResetting[0] && available.y > 0f && calendarHiddenPx.floatValue > 0f) {
+                    val consume = minOf(available.y, calendarHiddenPx.floatValue)
+                    calendarHiddenPx.floatValue -= consume
+                    return Offset(0f, consume)
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    suspend fun animateExpand() = coroutineScope {
+        launch {
+            Animatable(calendarHiddenPx.floatValue).animateTo(
+                targetValue = 0f,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            ) { calendarHiddenPx.floatValue = value }
+        }
+        launch {
+            eventsScrollState.animateScrollTo(0)
+        }
+    }
+
+    LaunchedEffect(state.selectedDate) {
+        isResetting[0] = true
+        try { animateExpand() } finally { isResetting[0] = false }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.isScrollInProgress }
+            .collect { isScrolling ->
+                if (isScrolling) {
+                    isResetting[0] = true
+                    try { animateExpand() } finally { isResetting[0] = false }
+                }
+            }
+    }
+
     val onAddEventClick: () -> Unit = {
         dayDetailState.dayInfo?.hebrewDay?.let { h ->
             onAddEvent(h.day, h.month.jewishDateValue, h.year)
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
         GregorianMonthHeader(
             state = state,
             onOpenDrawer = onOpenDrawer,
@@ -216,6 +300,23 @@ private fun GregorianCalendarContent(
             onAddEvent = onAddEventClick
         )
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    if (placeable.height > 0 && calendarHeightPx.intValue == 0) {
+                        calendarHeightPx.intValue = placeable.height
+                    }
+                    val hidden = calendarHiddenPx.floatValue.coerceIn(0f, placeable.height.toFloat())
+                    val reportedHeight = (placeable.height - hidden).toInt().coerceAtLeast(0)
+                    layout(placeable.width, reportedHeight) {
+                        placeable.placeRelative(0, 0)
+                    }
+                }
+                .alpha(calendarFraction)
+                .clipToBounds()
+        ) {
         ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -266,11 +367,13 @@ private fun GregorianCalendarContent(
             }
         }
         } // ElevatedCard
+        } // Box (animated wrapper)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
                 state = dayDetailState,
                 onShowAllZmanim = onShowZmanim,
+                scrollState = eventsScrollState,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -312,13 +415,80 @@ private fun HebrewCalendarContent(
         }
     }
 
+    val eventsScrollState = rememberScrollState()
+    val calendarHeightPx = remember { mutableIntStateOf(0) }
+    val calendarHiddenPx = remember { mutableFloatStateOf(0f) }
+    val calendarFraction by remember {
+        derivedStateOf {
+            val h = calendarHeightPx.intValue.toFloat().coerceAtLeast(1f)
+            1f - (calendarHiddenPx.floatValue / h).coerceIn(0f, 1f)
+        }
+    }
+
+    val isResetting = remember { booleanArrayOf(false) }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < 0) {
+                    val h = calendarHeightPx.intValue.toFloat()
+                    if (h > 0f) {
+                        val canConsume = h - calendarHiddenPx.floatValue
+                        if (canConsume > 0f) {
+                            val consume = minOf(-available.y, canConsume)
+                            calendarHiddenPx.floatValue += consume
+                            return Offset(0f, -consume)
+                        }
+                    }
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (!isResetting[0] && available.y > 0f && calendarHiddenPx.floatValue > 0f) {
+                    val consume = minOf(available.y, calendarHiddenPx.floatValue)
+                    calendarHiddenPx.floatValue -= consume
+                    return Offset(0f, consume)
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    suspend fun animateExpand() = coroutineScope {
+        launch {
+            Animatable(calendarHiddenPx.floatValue).animateTo(
+                targetValue = 0f,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            ) { calendarHiddenPx.floatValue = value }
+        }
+        launch {
+            eventsScrollState.animateScrollTo(0)
+        }
+    }
+
+    LaunchedEffect(state.selectedDate) {
+        isResetting[0] = true
+        try { animateExpand() } finally { isResetting[0] = false }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.isScrollInProgress }
+            .collect { isScrolling ->
+                if (isScrolling) {
+                    isResetting[0] = true
+                    try { animateExpand() } finally { isResetting[0] = false }
+                }
+            }
+    }
+
     val onAddEventClick: () -> Unit = {
         dayDetailState.dayInfo?.hebrewDay?.let { h ->
             onAddEvent(h.day, h.month.jewishDateValue, h.year)
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
         HebrewMonthHeader(
             hebrewHeader = state.hebrewMonthHeader,
             gregorianHeader = state.gregorianHeader,
@@ -329,6 +499,23 @@ private fun HebrewCalendarContent(
             onAddEvent = onAddEventClick
         )
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    if (placeable.height > 0 && calendarHeightPx.intValue == 0) {
+                        calendarHeightPx.intValue = placeable.height
+                    }
+                    val hidden = calendarHiddenPx.floatValue.coerceIn(0f, placeable.height.toFloat())
+                    val reportedHeight = (placeable.height - hidden).toInt().coerceAtLeast(0)
+                    layout(placeable.width, reportedHeight) {
+                        placeable.placeRelative(0, 0)
+                    }
+                }
+                .alpha(calendarFraction)
+                .clipToBounds()
+        ) {
         ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -377,11 +564,13 @@ private fun HebrewCalendarContent(
             }
         }
         } // ElevatedCard
+        } // Box (animated wrapper)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             DayDetailContent(
                 state = dayDetailState,
                 onShowAllZmanim = onShowZmanim,
+                scrollState = eventsScrollState,
                 modifier = Modifier.fillMaxSize()
             )
         }
