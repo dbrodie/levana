@@ -7,21 +7,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
@@ -81,6 +89,9 @@ fun GoToDateDialog(
         } catch (_: Exception) { }
     }
 
+    var hebrewError by remember { mutableStateOf(false) }
+    var gregorianError by remember { mutableStateOf(false) }
+
     val hebrewSection: @Composable () -> Unit = {
         Text(
             text = "Hebrew Date",
@@ -94,7 +105,8 @@ fun GoToDateDialog(
             hebrewYear = hebrewYear,
             onDayChange = { hebrewDay = it; syncHebrewToGregorian() },
             onMonthChange = { hebrewMonth = it; syncHebrewToGregorian() },
-            onYearChange = { hebrewYear = it; syncHebrewToGregorian() }
+            onYearChange = { hebrewYear = it; syncHebrewToGregorian() },
+            onErrorChange = { hebrewError = it }
         )
     }
 
@@ -111,7 +123,8 @@ fun GoToDateDialog(
             gregYear = gregYear,
             onDayChange = { gregDay = it; syncGregorianToHebrew() },
             onMonthChange = { gregMonth = it; syncGregorianToHebrew() },
-            onYearChange = { gregYear = it; syncGregorianToHebrew() }
+            onYearChange = { gregYear = it; syncGregorianToHebrew() },
+            onErrorChange = { gregorianError = it }
         )
     }
 
@@ -132,6 +145,14 @@ fun GoToDateDialog(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
                     hebrewSection()
+                }
+                if (hebrewError || gregorianError) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Invalid date",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
@@ -157,6 +178,7 @@ fun GoToDateDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HebrewPickerRow(
     hebrewDay: Int,
@@ -164,8 +186,12 @@ private fun HebrewPickerRow(
     hebrewYear: Int,
     onDayChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
+    onYearChange: (Int) -> Unit,
+    onErrorChange: (Boolean) -> Unit = {}
 ) {
+    var dayError by remember { mutableStateOf(false) }
+    var yearError by remember { mutableStateOf(false) }
+
     val isLeapYear = try {
         JewishDate(hebrewYear, JewishDate.TISHREI, 1).isJewishLeapYear
     } catch (_: Exception) {
@@ -184,16 +210,17 @@ private fun HebrewPickerRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Day", style = MaterialTheme.typography.labelMedium)
-            SpinnerPicker(
+            DayYearField(
                 value = hebrewDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
+                onIsErrorChange = { dayError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
         Column(modifier = Modifier.weight(2f)) {
             Text("Month", style = MaterialTheme.typography.labelMedium)
-            HebrewMonthSpinner(
+            HebrewMonthDropdown(
                 selectedMonth = hebrewMonth,
                 months = months,
                 onMonthChange = onMonthChange,
@@ -202,16 +229,18 @@ private fun HebrewPickerRow(
         }
         Column(modifier = Modifier.weight(1.2f)) {
             Text("Year", style = MaterialTheme.typography.labelMedium)
-            SpinnerPicker(
+            DayYearField(
                 value = hebrewYear,
                 range = 5700..5900,
                 onValueChange = onYearChange,
+                onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GregorianPickerRow(
     gregDay: Int,
@@ -219,8 +248,12 @@ private fun GregorianPickerRow(
     gregYear: Int,
     onDayChange: (Int) -> Unit,
     onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
+    onYearChange: (Int) -> Unit,
+    onErrorChange: (Boolean) -> Unit = {}
 ) {
+    var dayError by remember { mutableStateOf(false) }
+    var yearError by remember { mutableStateOf(false) }
+
     val daysInMonth = try {
         java.time.YearMonth.of(gregYear, gregMonth).lengthOfMonth()
     } catch (_: Exception) {
@@ -233,16 +266,17 @@ private fun GregorianPickerRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Day", style = MaterialTheme.typography.labelMedium)
-            SpinnerPicker(
+            DayYearField(
                 value = gregDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
+                onIsErrorChange = { dayError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
         Column(modifier = Modifier.weight(2f)) {
             Text("Month", style = MaterialTheme.typography.labelMedium)
-            GregorianMonthSpinner(
+            GregorianMonthDropdown(
                 selectedMonth = gregMonth,
                 onMonthChange = onMonthChange,
                 modifier = Modifier.fillMaxWidth()
@@ -250,10 +284,11 @@ private fun GregorianPickerRow(
         }
         Column(modifier = Modifier.weight(1.2f)) {
             Text("Year", style = MaterialTheme.typography.labelMedium)
-            SpinnerPicker(
+            DayYearField(
                 value = gregYear,
                 range = 1940..2140,
                 onValueChange = onYearChange,
+                onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -283,116 +318,121 @@ private fun buildHebrewMonthList(isLeapYear: Boolean): List<HebrewMonthOption> =
 }
 
 @Composable
-private fun SpinnerPicker(
+private fun DayYearField(
     value: Int,
     range: IntRange,
     onValueChange: (Int) -> Unit,
+    onIsErrorChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        androidx.compose.material3.IconButton(
-            onClick = { if (value > range.first) onValueChange(value - 1) },
-            enabled = value > range.first
-        ) {
-            Text("\u2212", style = MaterialTheme.typography.titleMedium)
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    val isError = text.isEmpty() || text.toIntOrNull()?.let { it !in range } ?: true
+
+    LaunchedEffect(isError) { onIsErrorChange(isError) }
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { input ->
+            text = input
+            val parsed = input.toIntOrNull()
+            if (parsed != null && parsed in range) {
+                onValueChange(parsed)
+            }
+        },
+        isError = isError,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = modifier.onFocusChanged { focusState ->
+            if (!focusState.isFocused) {
+                text = value.toString()
+            }
         }
-        Spacer(modifier = Modifier.width(2.dp))
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.width(40.dp),
-            textAlign = TextAlign.Center
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GregorianMonthDropdown(
+    selectedMonth: Int,
+    onMonthChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val monthName = Month.of(selectedMonth).getDisplayName(TextStyle.FULL, Locale.getDefault())
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = monthName,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
         )
-        Spacer(modifier = Modifier.width(2.dp))
-        androidx.compose.material3.IconButton(
-            onClick = { if (value < range.last) onValueChange(value + 1) },
-            enabled = value < range.last
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
+            (1..12).forEach { month ->
+                val name = Month.of(month).getDisplayName(TextStyle.FULL, Locale.getDefault())
+                DropdownMenuItem(
+                    text = { Text(name) },
+                    onClick = {
+                        onMonthChange(month)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HebrewMonthSpinner(
+private fun HebrewMonthDropdown(
     selectedMonth: Int,
     months: List<HebrewMonthOption>,
     onMonthChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentIndex = months.indexOfFirst { it.jewishDateMonth == selectedMonth }
-        .coerceAtLeast(0)
-    val currentMonth = months[currentIndex]
+    var expanded by remember { mutableStateOf(false) }
+    val displayName = months.firstOrNull { it.jewishDateMonth == selectedMonth }?.displayName
+        ?: months.first().displayName
 
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
     ) {
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (currentIndex > 0) onMonthChange(months[currentIndex - 1].jewishDateMonth)
-            },
-            enabled = currentIndex > 0
-        ) {
-            Text("\u2212", style = MaterialTheme.typography.titleMedium)
-        }
-        Text(
-            text = currentMonth.displayName,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
-        )
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (currentIndex < months.size - 1) {
-                    onMonthChange(months[currentIndex + 1].jewishDateMonth)
-                }
-            },
-            enabled = currentIndex < months.size - 1
-        ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
-        }
-    }
-}
-
-@Composable
-private fun GregorianMonthSpinner(
-    selectedMonth: Int,
-    onMonthChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val monthName = Month.of(selectedMonth)
-        .getDisplayName(TextStyle.FULL, Locale.getDefault())
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        androidx.compose.material3.IconButton(
-            onClick = { if (selectedMonth > 1) onMonthChange(selectedMonth - 1) },
-            enabled = selectedMonth > 1
-        ) {
-            Text("\u2212", style = MaterialTheme.typography.titleMedium)
-        }
-        Text(
-            text = monthName,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
+        OutlinedTextField(
+            value = displayName,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 2.dp)
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
         )
-        androidx.compose.material3.IconButton(
-            onClick = { if (selectedMonth < 12) onMonthChange(selectedMonth + 1) },
-            enabled = selectedMonth < 12
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
+            months.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName) },
+                    onClick = {
+                        onMonthChange(option.jewishDateMonth)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
         }
     }
 }

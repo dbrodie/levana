@@ -14,8 +14,8 @@ The calendar currently only supports "Go to Today". Users have no way to jump to
 - **Dialog**: Two sections — Hebrew spinner picker + Gregorian spinner picker — both always editable; editing either updates the other in real time.
 - **Navigation result**: Scrolls calendar to the target month AND selects/highlights that day.
 - **Default section order**: Hebrew section first in Hebrew mode; Gregorian section first in Gregorian mode.
-- **Gregorian picker style**: Same +/− spinner pattern as the existing `HebrewDatePicker`.
-- **Invalid dates**: Auto-clamp (day capped to the last valid day of the selected month).
+- **Gregorian picker style**: `OutlinedTextField` for day and year; `ExposedDropdownMenuBox` dropdown for month. Hebrew section retains +/− spinner buttons.
+- **Invalid dates**: Day/year text fields show a red outline immediately when the value is out of range or non-numeric. On focus loss the field resets to the last valid value. At confirm time the day is additionally clamped as a safety net.
 - **Year ranges**: Hebrew 5700–5900, Gregorian 1940–2140.
 
 ## Implementation
@@ -35,9 +35,9 @@ The calendar currently only supports "Go to Today". Users have no way to jump to
 
 ### New composable: `GoToDateDialog`
 Material3 `AlertDialog` with:
-- Hebrew spinner row (day / month name / year)
+- Hebrew spinner row (day / month name / year) — +/− buttons for all three fields
 - Divider
-- Gregorian spinner row (day / month name / year)
+- Gregorian row: `OutlinedTextField` for day and year; `ExposedDropdownMenuBox` for month
 - Real-time bidirectional sync via `JewishDate`
 - "Go to Date" confirm button, "Cancel" dismiss button
 
