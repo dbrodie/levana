@@ -10,7 +10,7 @@ The Levana calendar screen uses custom `Row`-based headers (`GregorianMonthHeade
 3. **No scroll elevation tinting** — MD3 TopAppBar should tint on scroll
 4. **Missing `windowInsets = WindowInsets(0)`** — outer navigation layout already handles status bar insets; without this, `TopAppBar` would double-pad
 
-**UI dump measurement:** Header at `[0,75][1080,201]` (~42dp height vs MD3's 64dp standard).
+**UI dump measurement (before):** Header at `[0,75][1080,201]` (~42dp height vs MD3's 56dp standard for small TopAppBar).
 
 ## Approach
 
@@ -34,7 +34,7 @@ Replace both `GregorianMonthHeader` and `HebrewMonthHeader` `Row` composables wi
 ## Verification
 
 1. `./gradlew :app:installDebug` — build must succeed
-2. Header height ~192px (64dp × 3x) in UI dump
+2. Header height ~168px (56dp × 3x) in UI dump — MD3 small TopAppBar standard
 3. Header has surface background node
 4. 3 action icons visible: Today, GoToDate, Add
 5. Tapping title area toggles calendar mode (Gregorian ↔ Hebrew)
