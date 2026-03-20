@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -298,6 +299,7 @@ private fun DayYearField(
     modifier: Modifier = Modifier
 ) {
     var text by remember(value) { mutableStateOf(value.toString()) }
+    val isError = text.isEmpty() || text.toIntOrNull()?.let { it !in range } ?: true
 
     OutlinedTextField(
         value = text,
@@ -308,9 +310,14 @@ private fun DayYearField(
                 onValueChange(parsed)
             }
         },
+        isError = isError,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = modifier
+        modifier = modifier.onFocusChanged { focusState ->
+            if (!focusState.isFocused) {
+                text = value.toString()
+            }
+        }
     )
 }
 
