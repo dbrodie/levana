@@ -1,0 +1,59 @@
+{
+  // Build through the android-dev stage (which includes the claude-base stage).
+  // The --platform flag ensures an amd64 image even when Colima runs an x86_64 VM
+  // on Apple Silicon (Android SDK build tools have no linux/arm64 binaries).
+  //
+  // Colima prerequisite — start an x86_64 VM before opening this devcontainer:
+  //   colima start --arch x86_64 --cpu 4 --memory 8 --disk 60
+  "name": "Levana Android Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "target": "android-dev",
+    "options": ["--platform=linux/amd64"]
+  },
+
+  // host.docker.internal resolves to the host machine inside the container.
+  // Used for ADB wireless — connect to an emulator or physical device on the host:
+  //   adb connect host.docker.internal:5555
+  //   adb devices
+  // For a physical device, first run on the host: adb tcpip 5555
+  "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+
+  // Mount the repo ROOT (not a worktree subdirectory) so that git worktrees
+  // created under .claude/worktrees/ can resolve their .git file back to the
+  // main .git directory. Mounting a worktree directly breaks git inside the
+  // container because the relative path in the .git file won't resolve.
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+
+  // node is the non-root user from the node:20 base image.
+  "remoteUser": "node",
+
+  // Named volumes persist across container rebuilds:
+  //   levana-gradle-cache  — avoids re-downloading Gradle + dependencies
+  //   levana-android-home  — persists the debug signing keystore
+  "mounts": [
+    "source=levana-gradle-cache,target=/home/node/.gradle,type=volume",
+    "source=levana-android-home,target=/home/node/.android,type=volume"
+  ],
+
+  "containerEnv": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "ANDROID_SDK_ROOT": "/opt/android-sdk",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
+  },
+
+  // Generate a debug keystore on first launch (needed for installDebug),
+  // then warm the Gradle daemon so the first build is faster.
+  "postCreateCommand": "mkdir -p /home/node/.android && ([ -f /home/node/.android/debug.keystore ] || keytool -genkey -v -keystore /home/node/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US') && ./gradlew --version",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-gradle",
+        "naco-siren.gradle-language"
+      ]
+    }
+  }
+}
