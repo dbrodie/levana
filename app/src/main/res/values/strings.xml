@@ -46,6 +46,9 @@
     <string name="use_gps">Use GPS</string>
     <string name="enter_manually">Enter Manually</string>
 
+    <!-- Quick Settings tile -->
+    <string name="tile_name">Hebrew Date</string>
+
     <!-- General -->
     <string name="back">Back</string>
     <string name="change_location">Change location</string>

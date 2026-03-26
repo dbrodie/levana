@@ -46,6 +46,9 @@
     <string name="use_gps">השתמש ב-GPS</string>
     <string name="enter_manually">הכנס ידנית</string>
 
+    <!-- Quick Settings tile -->
+    <string name="tile_name">תאריך עברי</string>
+
     <!-- General -->
     <string name="back">חזרה</string>
     <string name="change_location">שנה מיקום</string>
