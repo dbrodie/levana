@@ -115,10 +115,10 @@ adb devices
 
 ## Verification checklist
 
-- [ ] `./gradlew assembleDebug` — no SDK-not-found errors
-- [ ] `./gradlew ktlintCheck`
-- [ ] `./gradlew testDebugUnitTest` — Roborazzi NATIVE mode works (no
+- [x] `./gradlew assembleDebug` — no SDK-not-found errors
+- [x] `./gradlew ktlintCheck`
+- [x] `./gradlew testDebugUnitTest` — Roborazzi NATIVE mode works (no
       `UnsatisfiedLinkError`)
-- [ ] `adb connect host.docker.internal:5555` + `adb devices` shows host
+- [x] `adb connect host.docker.internal:5555` + `adb devices` shows host
       emulator/device
-- [ ] `./gradlew installDebug` deploys APK to ADB target
+- [x] `./gradlew installDebug` deploys APK to ADB target
