@@ -2,14 +2,12 @@ package com.levana.app.ui.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import com.levana.app.data.CalendarRepository
 import com.levana.app.data.ContactBirthdayRepository
 import com.levana.app.data.PersonalEventRepository
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.data.SystemCalendarRepository
 import com.levana.app.domain.model.HebrewDay
-import com.levana.app.domain.model.HebrewMonth
 import com.levana.app.domain.model.HebrewYearMonth
 import com.levana.app.domain.model.UserPreferences
 import com.levana.app.domain.model.activeLocation
@@ -17,7 +15,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.GregorianCalendar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,13 +48,15 @@ class CalendarViewModel(
         observePreferences()
     }
 
+    private fun today(): LocalDate = currentPrefs.devDateOverride ?: LocalDate.now()
+
     fun onIntent(intent: CalendarIntent) {
         when (intent) {
             is CalendarIntent.LoadToday -> {
                 if (currentPrefs.calendarHebrewMode) {
-                    loadHebrewMonth(HebrewYearMonth.now())
+                    loadHebrewMonth(HebrewYearMonth.from(today()))
                 } else {
-                    loadMonth(YearMonth.now())
+                    loadMonth(YearMonth.from(today()))
                 }
             }
             is CalendarIntent.LoadMonth -> loadMonth(intent.yearMonth)
@@ -69,26 +68,25 @@ class CalendarViewModel(
                 loadHebrewMonth(intent.hebrewYearMonth)
             is CalendarIntent.NextHebrewMonth -> {
                 val current = _state.value.hebrewYearMonth
-                    ?: HebrewYearMonth.now()
+                    ?: HebrewYearMonth.from(today())
                 loadHebrewMonth(current.next())
             }
             is CalendarIntent.PreviousHebrewMonth -> {
                 val current = _state.value.hebrewYearMonth
-                    ?: HebrewYearMonth.now()
+                    ?: HebrewYearMonth.from(today())
                 loadHebrewMonth(current.previous())
             }
             is CalendarIntent.GoToToday -> {
-                _state.value = _state.value.copy(
-                    selectedDate = currentPrefs.devDateOverride ?: LocalDate.now()
-                )
+                val today = today()
+                _state.value = _state.value.copy(selectedDate = today)
                 if (currentPrefs.calendarHebrewMode) {
-                    val today = HebrewYearMonth.now()
-                    _hebrewScrollTarget.trySend(today)
-                    loadHebrewMonth(today)
+                    val hebrewToday = HebrewYearMonth.from(today)
+                    _hebrewScrollTarget.trySend(hebrewToday)
+                    loadHebrewMonth(hebrewToday)
                 } else {
-                    val today = YearMonth.now()
-                    _gregorianScrollTarget.trySend(today)
-                    loadMonth(today)
+                    val gregorianToday = YearMonth.from(today)
+                    _gregorianScrollTarget.trySend(gregorianToday)
+                    loadMonth(gregorianToday)
                 }
             }
             is CalendarIntent.SelectDay -> {
@@ -112,20 +110,7 @@ class CalendarViewModel(
                     showGoToDateDialog = false
                 )
                 if (currentPrefs.calendarHebrewMode) {
-                    val gc = GregorianCalendar(
-                        date.year,
-                        date.monthValue - 1,
-                        date.dayOfMonth
-                    )
-                    val jd = JewishDate(gc)
-                    val isLeap = jd.isJewishLeapYear
-                    loadHebrewMonth(
-                        HebrewYearMonth(
-                            jd.jewishYear,
-                            HebrewMonth.from(jd.jewishMonth, isLeap),
-                            jd.jewishMonth
-                        )
-                    )
+                    loadHebrewMonth(HebrewYearMonth.from(date))
                 } else {
                     loadMonth(YearMonth.from(date))
                 }

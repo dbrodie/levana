@@ -68,6 +68,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import com.levana.app.data.PreferencesRepository
 import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
@@ -76,7 +77,7 @@ import com.levana.app.ui.theme.HolidayTheme
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.util.GregorianCalendar
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 
@@ -953,19 +954,24 @@ private fun DeveloperSettingsSection(
 
 @Composable
 private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate?) -> Unit) {
-    var yearText by remember(currentDate) {
-        mutableStateOf(currentDate?.year?.toString() ?: "")
-    }
-    var monthText by remember(currentDate) {
-        mutableStateOf(currentDate?.monthValue?.toString() ?: "")
-    }
-    var dayText by remember(currentDate) {
-        mutableStateOf(currentDate?.dayOfMonth?.toString() ?: "")
+    // Convert stored Gregorian LocalDate back to Hebrew for display and initial field values
+    val currentHebrew = currentDate?.let { date ->
+        JewishDate(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
     }
 
-    if (currentDate != null) {
+    var yearText by remember(currentDate) {
+        mutableStateOf(currentHebrew?.jewishYear?.toString() ?: "")
+    }
+    var monthText by remember(currentDate) {
+        mutableStateOf(currentHebrew?.jewishMonth?.toString() ?: "")
+    }
+    var dayText by remember(currentDate) {
+        mutableStateOf(currentHebrew?.jewishDayOfMonth?.toString() ?: "")
+    }
+
+    if (currentHebrew != null) {
         Text(
-            text = "Currently: ${currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}",
+            text = "Currently: ${currentHebrew.jewishDayOfMonth}/${currentHebrew.jewishMonth}/${currentHebrew.jewishYear} (Hebrew)",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
@@ -980,7 +986,7 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
         OutlinedTextField(
             value = yearText,
             onValueChange = { yearText = it },
-            label = { Text("Year") },
+            label = { Text("Hebrew Year") },
             modifier = Modifier.weight(1f),
             singleLine = true
         )
@@ -1019,7 +1025,15 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
                 val y = yearText.toInt()
                 val m = monthText.toInt()
                 val d = dayText.toInt()
-                onDateChange(LocalDate.of(y, m, d))
+                val jd = JewishDate(y, m, d)
+                val gc = jd.gregorianCalendar
+                onDateChange(
+                    LocalDate.of(
+                        gc.get(GregorianCalendar.YEAR),
+                        gc.get(GregorianCalendar.MONTH) + 1,
+                        gc.get(GregorianCalendar.DAY_OF_MONTH)
+                    )
+                )
             } catch (_: Exception) {
                 // Invalid input, ignore
             }
