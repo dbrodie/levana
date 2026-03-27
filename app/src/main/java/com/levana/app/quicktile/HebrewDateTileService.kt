@@ -5,9 +5,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
@@ -75,9 +74,9 @@ class HebrewDateTileService : TileService() {
         drawable.setBounds(0, 0, sizePx, sizePx)
         drawable.draw(canvas)
 
-        // Knock out the Hebrew day letters as transparent negative space
+        // Draw the Hebrew day letter in white to match the calendar frame
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            color = Color.WHITE
             textAlign = Paint.Align.CENTER
             textSize = sizePx * 0.38f
             typeface = Typeface.DEFAULT_BOLD
