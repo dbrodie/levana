@@ -52,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -235,16 +234,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                 Column(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .padding(horizontal = 16.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 6.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(36.dp)
                                 .background(MaterialTheme.colorScheme.primary, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -252,26 +250,17 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                 painter = painterResource(R.drawable.ic_launcher_foreground),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.app_name),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Calendar",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
                     drawerNavItems.forEach { item ->
                         val selected =
                             backStackEntry?.destination?.hasRoute(item.route::class) == true
@@ -294,13 +283,11 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                     if (hasLocation) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(start = 28.dp, top = 16.dp, bottom = 18.dp, end = 12.dp)
                         ) {
                             Text(
-                                text = "LOCATIONS",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.5.sp
-                                ),
+                                text = "Locations",
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
@@ -359,7 +346,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     NavigationDrawerItem(
                         label = { Text("Settings") },
                         icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
