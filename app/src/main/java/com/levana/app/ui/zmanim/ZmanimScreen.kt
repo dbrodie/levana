@@ -40,7 +40,10 @@ fun ZmanimScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(initialDate) {
-        viewModel.onIntent(ZmanimIntent.LoadDate(initialDate ?: LocalDate.now()))
+        viewModel.onIntent(
+            if (initialDate != null) ZmanimIntent.LoadDate(initialDate)
+            else ZmanimIntent.LoadDefault
+        )
     }
 
     ZmanimContent(state = state, modifier = modifier)

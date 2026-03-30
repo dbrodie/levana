@@ -24,6 +24,10 @@ class ZmanimViewModel(
     fun onIntent(intent: ZmanimIntent) {
         when (intent) {
             is ZmanimIntent.LoadDate -> loadZmanim(intent.date)
+            is ZmanimIntent.LoadDefault -> viewModelScope.launch {
+                val prefs = preferencesRepository.preferences.first()
+                loadZmanim(prefs.devDateOverride ?: LocalDate.now())
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 package com.levana.app.domain.model
 
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import java.time.LocalDate
+import java.util.GregorianCalendar
 
 data class HebrewYearMonth(
     val year: Int,
@@ -101,6 +103,17 @@ data class HebrewYearMonth(
     companion object {
         fun now(): HebrewYearMonth {
             val jd = JewishDate()
+            val isLeap = jd.isJewishLeapYear
+            return HebrewYearMonth(
+                jd.jewishYear,
+                HebrewMonth.from(jd.jewishMonth, isLeap),
+                jd.jewishMonth
+            )
+        }
+
+        fun from(date: LocalDate): HebrewYearMonth {
+            val gc = GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
+            val jd = JewishDate(gc)
             val isLeap = jd.isJewishLeapYear
             return HebrewYearMonth(
                 jd.jewishYear,
