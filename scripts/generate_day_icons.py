@@ -174,7 +174,7 @@ def make_foreground(hebrew_day: str, size: int) -> Image.Image:
     th = bbox[3] - bbox[1]
     lx = LETTER_CX * s - tw / 2.0 - bbox[0]
     ly = LETTER_CY * s - th / 2.0 - bbox[1]
-    draw.text((lx, ly), hebrew_day, font=font, fill=NAVY)
+    draw.text((lx, ly), hebrew_day[::-1], font=font, fill=NAVY)
 
     return img
 
