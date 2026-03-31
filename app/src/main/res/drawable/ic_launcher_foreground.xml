@@ -1,19 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive-icon foreground: 108 × 108 dp viewport.
+    Safe zone: central 72 dp circle (18–90 on each axis).
+
+    Layers (bottom → top):
+      1. Gold moon crescent  — positioned left-centre, horns pointing right
+      2. White calendar box  — positioned right-centre, overlaps moon
+      3. Dark calendar header — top band of the box
+      4. Gold hanging tab    — centred on top edge of the box
+
+    The letter is NOT embedded here; it is drawn at runtime per-day
+    (see mipmap-anydpi-v26/ic_launcher_day_NN.xml and scripts/generate_day_icons.main.kts).
+    This drawable is also used as the nav-drawer logo (see MainActivity.kt).
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Moon crescent shape -->
+
+    <!--
+        Gold moon crescent.
+        Original white crescent shifted −14 in X so the visible arc sits
+        on the left side of the icon behind the calendar box.
+        Outer circle ≈ centre (40,52) r=24; inner cutout ≈ centre (47,52) r=25.
+        Horns reach x≈56 and are hidden beneath the calendar box.
+    -->
+    <path
+        android:fillColor="#F9A825"
+        android:pathData="M40,28
+            C26.7,28 16,38.7 16,52
+            C16,65.3 26.7,76 40,76
+            C46.1,76 51.6,73.8 56,70
+            C49.5,74.5 41.3,77 33,77
+            C19.2,77 8,65.8 8,52
+            C8,38.2 19.2,27 33,27
+            C41.3,27 49.5,29.5 56,34
+            C51.6,30.2 46.1,28 40,28Z" />
+
+    <!-- White calendar box body — rounded rect x=44..82, y=34..78, corner r=4 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,28
-            C40.7,28 30,38.7 30,52
-            C30,65.3 40.7,76 54,76
-            C60.1,76 65.6,73.8 70,70
-            C63.5,74.5 55.3,77 47,77
-            C33.2,77 22,65.8 22,52
-            C22,38.2 33.2,27 47,27
-            C55.3,27 63.5,29.5 70,34
-            C65.6,30.2 60.1,28 54,28Z" />
+        android:pathData="M48,34 L78,34 A4,4,0,0,1,82,38 L82,74
+            A4,4,0,0,1,78,78 L48,78 A4,4,0,0,1,44,74 L44,38
+            A4,4,0,0,1,48,34 Z" />
+
+    <!-- Dark header band — top 13 dp of the box -->
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M48,34 L78,34 A4,4,0,0,1,82,38 L82,47
+            L44,47 L44,38 A4,4,0,0,1,48,34 Z" />
+
+    <!-- Gold hanging tab — centred on top edge, 8 × 8 dp, corner r=2 -->
+    <path
+        android:fillColor="#F9A825"
+        android:pathData="M61,30 L65,30 A2,2,0,0,1,67,32 L67,38
+            A2,2,0,0,1,65,40 L61,40 A2,2,0,0,1,59,38 L59,32
+            A2,2,0,0,1,61,30 Z" />
+
 </vector>

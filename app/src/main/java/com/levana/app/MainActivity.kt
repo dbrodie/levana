@@ -71,6 +71,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.levana.app.data.LocationService
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.icon.DynamicIconManager
 import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.activeLocation
 import com.levana.app.notifications.NotificationPoster
@@ -102,6 +103,8 @@ import com.levana.app.ui.theme.HolidayThemeResolver
 import com.levana.app.ui.theme.LevanaTheme
 import com.levana.app.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
@@ -176,6 +179,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
     val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
 
     // GPS foreground refresh on resume
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     DisposableEffect(lifecycleOwner) {
@@ -192,6 +196,10 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                             // Permission missing or GPS unavailable — skip silently
                         }
                     }
+                }
+                scope.launch(Dispatchers.IO) {
+                    val currentPrefs = preferencesRepository.preferences.first()
+                    DynamicIconManager.update(context, currentPrefs.devDateOverride)
                 }
             }
         }
