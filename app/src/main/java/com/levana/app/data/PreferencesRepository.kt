@@ -77,6 +77,10 @@ class PreferencesRepository(private val context: Context) {
             booleanPreferencesKey("notify_omer")
         val SELECTED_ZMANIM =
             stringSetPreferencesKey("selected_zmanim")
+
+        // Internal update-checker state — NOT part of UserPreferences
+        val LAST_NOTIFIED_UPDATE_VERSION =
+            stringPreferencesKey("last_notified_update_version")
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -312,6 +316,16 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveSelectedZmanim(zmanim: Set<String>) {
         context.dataStore.edit { prefs ->
             prefs[Keys.SELECTED_ZMANIM] = zmanim
+        }
+    }
+
+    suspend fun getLastNotifiedUpdateVersion(): String? {
+        return context.dataStore.data.first()[Keys.LAST_NOTIFIED_UPDATE_VERSION]
+    }
+
+    suspend fun setLastNotifiedUpdateVersion(version: String) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.LAST_NOTIFIED_UPDATE_VERSION] = version
         }
     }
 }

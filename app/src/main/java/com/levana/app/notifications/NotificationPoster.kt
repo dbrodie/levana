@@ -4,11 +4,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.levana.app.MainActivity
 import com.levana.app.R
+import com.levana.app.update.GITHUB_RELEASES_PAGE
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -24,6 +26,7 @@ object NotificationPoster {
     private const val CHANNEL_FASTS_ORDINAL = 2
     private const val CHANNEL_PERSONAL_EVENTS_ORDINAL = 3
     private const val CHANNEL_OMER_ORDINAL = 4
+    private const val NOTIFICATION_ID_UPDATE_AVAILABLE = 9001
 
     private fun notificationId(channelOrdinal: Int, date: LocalDate): Int {
         return channelOrdinal * 10000 + date.dayOfYear
@@ -139,6 +142,35 @@ object NotificationPoster {
             body,
             date
         )
+    }
+
+    fun postUpdateAvailable(context: Context, latestVersion: String) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) return
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            NOTIFICATION_ID_UPDATE_AVAILABLE,
+            Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_RELEASES_PAGE)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val body = "Levana v$latestVersion is available — tap to download"
+        val notification = NotificationCompat.Builder(context, NotificationChannels.UPDATE_AVAILABLE)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Update Available")
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_UPDATE_AVAILABLE, notification)
     }
 
     private fun post(

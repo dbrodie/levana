@@ -4,6 +4,7 @@ import android.app.Application
 import com.levana.app.di.allModules
 import com.levana.app.notifications.DailyNotificationWorker
 import com.levana.app.notifications.NotificationChannels
+import com.levana.app.update.UpdateCheckWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -19,5 +20,6 @@ class LevanaApplication : Application() {
         }
         NotificationChannels.createAll(this)
         DailyNotificationWorker.enqueueDaily(this)
+        UpdateCheckWorker.enqueueDaily(this)
     }
 }

@@ -11,6 +11,7 @@ object NotificationChannels {
     const val FASTS = "fasts"
     const val PERSONAL_EVENTS = "personal_events"
     const val OMER = "omer"
+    const val UPDATE_AVAILABLE = "update_available"
 
     fun createAll(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -50,6 +51,13 @@ object NotificationChannels {
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Sefirat HaOmer reminders"
+            },
+            NotificationChannel(
+                UPDATE_AVAILABLE,
+                "App Updates",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifications when a new version of Levana is available"
             }
         )
 
