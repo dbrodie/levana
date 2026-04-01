@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import com.levana.app.data.PreferencesRepository
+import com.levana.app.ui.calendar.GoToDateDialog
 import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.SavedLocation
@@ -86,6 +87,7 @@ fun SettingsScreen(
     onChangeLocation: () -> Unit,
     onSystemCalendars: () -> Unit,
     onHalachicTimesSettings: () -> Unit,
+    onDeveloperSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -97,6 +99,7 @@ fun SettingsScreen(
         onChangeLocation = onChangeLocation,
         onSystemCalendars = onSystemCalendars,
         onHalachicTimesSettings = onHalachicTimesSettings,
+        onDeveloperSettings = onDeveloperSettings,
         modifier = modifier
     )
 }
@@ -112,6 +115,66 @@ fun HalachicTimesSettingsScreen(
             selectedZmanim = state.selectedZmanim,
             onToggle = { name, enabled ->
                 viewModel.onIntent(SettingsIntent.ToggleZman(name, enabled))
+            }
+        )
+    }
+}
+
+@Composable
+fun DeveloperSettingsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    var showDateDialog by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+        ListItem(
+            headlineContent = { Text("Date Override") },
+            supportingContent = {
+                Text(
+                    state.devDateOverride?.let { date ->
+                        val jd = JewishDate(
+                            GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
+                        )
+                        "${jd.jewishDayOfMonth}/${jd.jewishMonth}/${jd.jewishYear} (Hebrew)"
+                    } ?: "Not set"
+                )
+            },
+            leadingContent = {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showDateDialog = true }
+        )
+
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Force Holiday Theme",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            HolidayThemePicker(
+                selected = state.devForceHolidayTheme,
+                onSelect = { viewModel.onIntent(SettingsIntent.SetDevForceHolidayTheme(it)) }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    if (showDateDialog) {
+        GoToDateDialog(
+            initialDate = state.devDateOverride ?: LocalDate.now(),
+            calendarHebrewMode = true,
+            onConfirm = { date ->
+                viewModel.onIntent(SettingsIntent.SetDevDateOverride(date))
+                showDateDialog = false
+            },
+            onDismiss = { showDateDialog = false },
+            onClear = {
+                viewModel.onIntent(SettingsIntent.SetDevDateOverride(null))
+                showDateDialog = false
             }
         )
     }
@@ -237,6 +300,7 @@ fun SettingsContent(
     onChangeLocation: () -> Unit,
     onSystemCalendars: () -> Unit,
     onHalachicTimesSettings: () -> Unit,
+    onDeveloperSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showMinhagDialog by remember { mutableStateOf(false) }
@@ -389,12 +453,15 @@ fun SettingsContent(
 
         if (state.showDeveloperSettings) {
             HorizontalDivider()
-            SettingsSectionHeader("Developer Settings")
-            DeveloperSettingsSection(
-                devDateOverride = state.devDateOverride,
-                devForceHolidayTheme = state.devForceHolidayTheme,
-                onDateOverrideChange = { onIntent(SettingsIntent.SetDevDateOverride(it)) },
-                onForceHolidayThemeChange = { onIntent(SettingsIntent.SetDevForceHolidayTheme(it)) }
+            ListItem(
+                headlineContent = { Text("Developer Settings") },
+                leadingContent = {
+                    Icon(Icons.Outlined.Person, contentDescription = null)
+                },
+                trailingContent = {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+                },
+                modifier = Modifier.clickable(onClick = onDeveloperSettings)
             )
         }
     }

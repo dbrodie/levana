@@ -43,7 +43,8 @@ fun GoToDateDialog(
     initialDate: LocalDate,
     calendarHebrewMode: Boolean,
     onConfirm: (LocalDate) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onClear: (() -> Unit)? = null
 ) {
     val initJd = remember(initialDate) {
         JewishDate(
@@ -171,8 +172,14 @@ fun GoToDateDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            if (onClear != null) {
+                TextButton(onClick = { onClear(); onDismiss() }) {
+                    Text("Clear")
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
             }
         }
     )
