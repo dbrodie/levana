@@ -178,6 +178,11 @@ class ZmanimRepository {
         return toLocalTime(czc.sunset, location)
     }
 
+    fun getTzaitTime(date: LocalDate, location: Location): LocalTime? {
+        val czc = createCalendar(date, location)
+        return toLocalTime(czc.tzais, location)
+    }
+
     fun getFastTimes(date: LocalDate, location: Location): Pair<LocalTime?, LocalTime?>? {
         val jc = createJewishCalendar(date)
         val yomTovIndex = jc.yomTovIndex

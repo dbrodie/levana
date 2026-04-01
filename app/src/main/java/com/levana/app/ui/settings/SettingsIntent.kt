@@ -22,5 +22,8 @@ sealed interface SettingsIntent {
     data class SetNotifyFasts(val enabled: Boolean) : SettingsIntent
     data class SetNotifyPersonalEvents(val enabled: Boolean) : SettingsIntent
     data class SetNotifyOmer(val enabled: Boolean) : SettingsIntent
+    data class SetNotifyOmerTzait(val enabled: Boolean) : SettingsIntent
+    data class SetNotifyOmerMorning(val enabled: Boolean) : SettingsIntent
+    data class SetNotifyOmerMorningTime(val minutes: Int) : SettingsIntent
     data class ToggleZman(val name: String, val enabled: Boolean) : SettingsIntent
 }

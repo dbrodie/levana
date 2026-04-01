@@ -41,6 +41,15 @@ class NotificationAlarmReceiver : BroadcastReceiver() {
                     NotificationPoster.postOmer(context, date, omerDay)
                 }
             }
+            NotificationAlarmScheduler.ACTION_OMER_MORNING -> {
+                val omerDay = intent.getIntExtra(
+                    NotificationAlarmScheduler.EXTRA_OMER_DAY,
+                    0
+                )
+                if (omerDay > 0) {
+                    NotificationPoster.postOmerMorning(context, date, omerDay)
+                }
+            }
         }
     }
 }

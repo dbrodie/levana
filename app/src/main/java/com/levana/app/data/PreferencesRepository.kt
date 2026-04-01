@@ -75,6 +75,12 @@ class PreferencesRepository(private val context: Context) {
             booleanPreferencesKey("notify_personal_events")
         val NOTIFY_OMER =
             booleanPreferencesKey("notify_omer")
+        val NOTIFY_OMER_TZAIT =
+            booleanPreferencesKey("notify_omer_tzait")
+        val NOTIFY_OMER_MORNING =
+            booleanPreferencesKey("notify_omer_morning")
+        val NOTIFY_OMER_MORNING_TIME =
+            intPreferencesKey("notify_omer_morning_time")
         val SELECTED_ZMANIM =
             stringSetPreferencesKey("selected_zmanim")
 
@@ -140,6 +146,9 @@ class PreferencesRepository(private val context: Context) {
             notifyFasts = prefs[Keys.NOTIFY_FASTS] ?: false,
             notifyPersonalEvents = prefs[Keys.NOTIFY_PERSONAL_EVENTS] ?: false,
             notifyOmer = prefs[Keys.NOTIFY_OMER] ?: false,
+            notifyOmerTzait = prefs[Keys.NOTIFY_OMER_TZAIT] ?: true,
+            notifyOmerMorning = prefs[Keys.NOTIFY_OMER_MORNING] ?: false,
+            notifyOmerMorningTime = prefs[Keys.NOTIFY_OMER_MORNING_TIME] ?: 420,
             selectedZmanim = prefs[Keys.SELECTED_ZMANIM]
                 ?: setOf("Sunrise", "Sunset", "Nightfall")
         )
@@ -310,6 +319,24 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveNotifyOmer(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.NOTIFY_OMER] = enabled
+        }
+    }
+
+    suspend fun saveNotifyOmerTzait(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_OMER_TZAIT] = enabled
+        }
+    }
+
+    suspend fun saveNotifyOmerMorning(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_OMER_MORNING] = enabled
+        }
+    }
+
+    suspend fun saveNotifyOmerMorningTime(minutes: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.NOTIFY_OMER_MORNING_TIME] = minutes
         }
     }
 
