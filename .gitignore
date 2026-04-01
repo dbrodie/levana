@@ -10,3 +10,6 @@
 .cxx
 .claude/
 .kotlin/
+keystore.properties
+*.keystore
+release.keystore
