@@ -42,3 +42,6 @@ data object HalachicTimesSettingsRoute
 
 @Serializable
 data object LocationsSettingsRoute
+
+@Serializable
+data object DeveloperSettingsRoute

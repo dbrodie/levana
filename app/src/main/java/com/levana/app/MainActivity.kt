@@ -91,10 +91,12 @@ import com.levana.app.ui.navigation.LocationsSettingsRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
+import com.levana.app.ui.navigation.DeveloperSettingsRoute
 import com.levana.app.ui.navigation.HalachicTimesSettingsRoute
 import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
+import com.levana.app.ui.settings.DeveloperSettingsScreen
 import com.levana.app.ui.settings.HalachicTimesSettingsScreen
 import com.levana.app.ui.settings.LocationsSettingsScreen
 import com.levana.app.ui.settings.SettingsScreen
@@ -231,6 +233,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val isHalachicTimesSettingsRoute =
         backStackEntry?.destination?.hasRoute(HalachicTimesSettingsRoute::class) == true
+
+    val isDeveloperSettingsRoute =
+        backStackEntry?.destination?.hasRoute(DeveloperSettingsRoute::class) == true
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
@@ -383,6 +388,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         title = {
                             Text(
                                 if (isZmanimRoute || isHalachicTimesSettingsRoute) "Halachic Times"
+                                else if (isDeveloperSettingsRoute) "Developer Settings"
                                 else stringResource(R.string.app_name)
                             )
                         },
@@ -490,12 +496,19 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         },
                         onHalachicTimesSettings = {
                             navController.navigate(HalachicTimesSettingsRoute)
+                        },
+                        onDeveloperSettings = {
+                            navController.navigate(DeveloperSettingsRoute)
                         }
                     )
                 }
 
                 composable<HalachicTimesSettingsRoute> {
                     HalachicTimesSettingsScreen()
+                }
+
+                composable<DeveloperSettingsRoute> {
+                    DeveloperSettingsScreen()
                 }
 
                 composable<LocationsSettingsRoute> {
