@@ -26,3 +26,7 @@ Developer settings (date override, force holiday theme) were embedded inline at 
 - Added optional `onClear: (() -> Unit)?` parameter
 - When set, a "Clear" button appears as the dialog's dismiss button
 - Existing `GoToDateDialog` callers unaffected (parameter defaults to null)
+
+### Calendar pager blank-screen fix
+- **Root cause**: `CalendarIntent.LoadToday` loaded the target month in the ViewModel but did not send a scroll target to the `HorizontalPager`. The pager's `baseMonth` is anchored to real `LocalDate.now()` at composition time; when the dev date override points to a different month, the pager stayed on the real-today page while `currentMonth` changed, causing the `when` block to fall through to the blank `else` branch.
+- **Fix**: `LoadToday` now sends `_gregorianScrollTarget` / `_hebrewScrollTarget` before loading the month, so the pager scrolls to the correct month alongside the data load.

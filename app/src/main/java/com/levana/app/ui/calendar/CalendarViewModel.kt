@@ -54,9 +54,13 @@ class CalendarViewModel(
         when (intent) {
             is CalendarIntent.LoadToday -> {
                 if (currentPrefs.calendarHebrewMode) {
-                    loadHebrewMonth(HebrewYearMonth.from(today()))
+                    val hym = HebrewYearMonth.from(today())
+                    _hebrewScrollTarget.trySend(hym)
+                    loadHebrewMonth(hym)
                 } else {
-                    loadMonth(YearMonth.from(today()))
+                    val todayMonth = YearMonth.from(today())
+                    _gregorianScrollTarget.trySend(todayMonth)
+                    loadMonth(todayMonth)
                 }
             }
             is CalendarIntent.LoadMonth -> loadMonth(intent.yearMonth)
