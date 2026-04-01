@@ -964,7 +964,7 @@ private fun NotificationsSection(
 
     // Omer
     ListItem(
-        headlineContent = { Text("Omer (at sunset)") },
+        headlineContent = { Text("Sefirat HaOmer") },
         leadingContent = {
             Icon(Icons.Outlined.Stars, contentDescription = null)
         },
@@ -983,6 +983,74 @@ private fun NotificationsSection(
             )
         }
     )
+
+    if (state.notifyOmer) {
+        ListItem(
+            headlineContent = { Text("At tzait (nightfall)") },
+            leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+            trailingContent = {
+                Switch(
+                    checked = state.notifyOmerTzait,
+                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerTzait(it)) }
+                )
+            }
+        )
+
+        ListItem(
+            headlineContent = { Text("Morning reminder") },
+            leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+            trailingContent = {
+                Switch(
+                    checked = state.notifyOmerMorning,
+                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerMorning(it)) }
+                )
+            }
+        )
+
+        if (state.notifyOmerMorning) {
+            val hours = state.notifyOmerMorningTime / 60
+            val minutes = state.notifyOmerMorningTime % 60
+            val timeLabel = "At %d:%02d AM".format(
+                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
+                minutes
+            )
+            ListItem(
+                headlineContent = { Text("Reminder time") },
+                supportingContent = { Text(timeLabel) },
+                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                if (state.notifyOmerMorningTime > 360) {
+                                    onIntent(
+                                        SettingsIntent.SetNotifyOmerMorningTime(
+                                            state.notifyOmerMorningTime - 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Remove, contentDescription = "Earlier")
+                        }
+                        IconButton(
+                            onClick = {
+                                if (state.notifyOmerMorningTime < 720) {
+                                    onIntent(
+                                        SettingsIntent.SetNotifyOmerMorningTime(
+                                            state.notifyOmerMorningTime + 30
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "Later")
+                        }
+                    }
+                }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -58,7 +58,7 @@ class DailyNotificationWorker(
         }
 
         if (prefs.notifyOmer) {
-            handleOmer(today, location)
+            handleOmer(today, location, prefs)
         }
 
         return Result.success()
@@ -186,12 +186,22 @@ class DailyNotificationWorker(
         }
     }
 
-    private fun handleOmer(today: LocalDate, location: Location) {
+    private fun handleOmer(today: LocalDate, location: Location, prefs: UserPreferences) {
         val dayInfo = calendarRepository.getDayInfo(today, inIsrael = false)
         val omerDay = dayInfo.omerDay ?: return
 
-        val sunsetTime = zmanimRepository.getSunsetTime(today, location) ?: return
-        alarmScheduler.scheduleOmerReminder(today, sunsetTime, location, omerDay)
+        if (prefs.notifyOmerTzait) {
+            val tzaitTime = zmanimRepository.getTzaitTime(today, location) ?: return
+            alarmScheduler.scheduleOmerReminder(today, tzaitTime, location, omerDay)
+        }
+
+        if (prefs.notifyOmerMorning) {
+            val morningTime = LocalTime.of(
+                prefs.notifyOmerMorningTime / 60,
+                prefs.notifyOmerMorningTime % 60
+            )
+            alarmScheduler.scheduleOmerMorningReminder(today, morningTime, omerDay)
+        }
     }
 
     companion object {

@@ -80,6 +80,12 @@ class SettingsViewModel(
                     preferencesRepository.saveNotifyPersonalEvents(intent.enabled)
                 is SettingsIntent.SetNotifyOmer ->
                     preferencesRepository.saveNotifyOmer(intent.enabled)
+                is SettingsIntent.SetNotifyOmerTzait ->
+                    preferencesRepository.saveNotifyOmerTzait(intent.enabled)
+                is SettingsIntent.SetNotifyOmerMorning ->
+                    preferencesRepository.saveNotifyOmerMorning(intent.enabled)
+                is SettingsIntent.SetNotifyOmerMorningTime ->
+                    preferencesRepository.saveNotifyOmerMorningTime(intent.minutes)
                 is SettingsIntent.ToggleZman -> {
                     val current = _state.value.selectedZmanim.toMutableSet()
                     if (intent.enabled) current.add(intent.name) else current.remove(intent.name)
@@ -114,6 +120,9 @@ class SettingsViewModel(
                     notifyFasts = prefs.notifyFasts,
                     notifyPersonalEvents = prefs.notifyPersonalEvents,
                     notifyOmer = prefs.notifyOmer,
+                    notifyOmerTzait = prefs.notifyOmerTzait,
+                    notifyOmerMorning = prefs.notifyOmerMorning,
+                    notifyOmerMorningTime = prefs.notifyOmerMorningTime,
                     selectedZmanim = prefs.selectedZmanim
                 )
             }

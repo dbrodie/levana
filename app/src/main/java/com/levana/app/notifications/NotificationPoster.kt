@@ -141,6 +141,27 @@ object NotificationPoster {
         )
     }
 
+    fun postOmerMorning(context: Context, date: LocalDate, omerDay: Int) {
+        val weeks = omerDay / 7
+        val remaining = omerDay % 7
+        val body = if (weeks == 0) {
+            "Today is day $omerDay of the Omer"
+        } else if (remaining == 0) {
+            "Today is day $omerDay of the Omer ($weeks weeks)"
+        } else {
+            "Today is day $omerDay of the Omer ($weeks weeks and $remaining days)"
+        }
+
+        post(
+            context,
+            NotificationChannels.OMER,
+            notificationId(CHANNEL_OMER_ORDINAL, date) + 1,
+            "Sefirat HaOmer",
+            body,
+            date
+        )
+    }
+
     private fun post(
         context: Context,
         channelId: String,

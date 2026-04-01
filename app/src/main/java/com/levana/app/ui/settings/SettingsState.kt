@@ -29,5 +29,8 @@ data class SettingsState(
     val notifyFasts: Boolean = false,
     val notifyPersonalEvents: Boolean = false,
     val notifyOmer: Boolean = false,
+    val notifyOmerTzait: Boolean = true,
+    val notifyOmerMorning: Boolean = false,
+    val notifyOmerMorningTime: Int = 420,
     val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall")
 )
