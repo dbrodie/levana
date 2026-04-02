@@ -1,5 +1,6 @@
 package com.levana.app.ui.calendar
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -8,19 +9,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -94,18 +91,21 @@ private val DAYS_OF_WEEK = listOf(
     DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
 )
 
-private fun LazyGridScope.dayHeaderRow(locale: Locale) {
-    items(7) { index ->
-        Box(
-            modifier = Modifier.fillMaxWidth().height(24.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = DAYS_OF_WEEK[index].getDisplayName(TextStyle.SHORT, locale),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+@Composable
+private fun DayHeaderRow(locale: Locale) {
+    Row(modifier = Modifier.fillMaxWidth().height(24.dp)) {
+        DAYS_OF_WEEK.forEach { dow ->
+            Box(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = dow.getDisplayName(TextStyle.SHORT, locale),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -149,28 +149,33 @@ fun CalendarScreen(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        if (state.calendarHebrewMode) {
-            HebrewCalendarContent(
-                state = state,
-                onIntent = viewModel::onIntent,
-                scrollTarget = viewModel.hebrewScrollTarget,
-                onOpenDrawer = onOpenDrawer,
-                dayDetailState = dayDetailState,
-                onShowZmanim = onShowZmanim,
-                onAddEvent = onAddEvent,
-                modifier = modifier
-            )
-        } else {
-            GregorianCalendarContent(
-                state = state,
-                onIntent = viewModel::onIntent,
-                scrollTarget = viewModel.gregorianScrollTarget,
-                onOpenDrawer = onOpenDrawer,
-                dayDetailState = dayDetailState,
-                onShowZmanim = onShowZmanim,
-                onAddEvent = onAddEvent,
-                modifier = modifier
-            )
+        Crossfade(
+            targetState = state.calendarHebrewMode,
+            label = "calendar_mode"
+        ) { hebrewMode ->
+            if (hebrewMode) {
+                HebrewCalendarContent(
+                    state = state,
+                    onIntent = viewModel::onIntent,
+                    scrollTarget = viewModel.hebrewScrollTarget,
+                    onOpenDrawer = onOpenDrawer,
+                    dayDetailState = dayDetailState,
+                    onShowZmanim = onShowZmanim,
+                    onAddEvent = onAddEvent,
+                    modifier = modifier
+                )
+            } else {
+                GregorianCalendarContent(
+                    state = state,
+                    onIntent = viewModel::onIntent,
+                    scrollTarget = viewModel.gregorianScrollTarget,
+                    onOpenDrawer = onOpenDrawer,
+                    dayDetailState = dayDetailState,
+                    onShowZmanim = onShowZmanim,
+                    onAddEvent = onAddEvent,
+                    modifier = modifier
+                )
+            }
         }
     }
 
@@ -327,12 +332,9 @@ private fun GregorianCalendarContent(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = 24.dp + maxWidth / 7 * 6 + 4.dp
-
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth().height(gridHeight)
+                modifier = Modifier.fillMaxWidth()
             ) { page ->
                 val offset = page - PAGER_INITIAL_PAGE
                 val pageMonth = baseMonth.plusMonths(offset.toLong())
@@ -341,7 +343,7 @@ private fun GregorianCalendarContent(
                 when {
                     pageMonth == state.currentMonth && state.isLoading && state.monthDays.isEmpty() ->
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
@@ -366,10 +368,9 @@ private fun GregorianCalendarContent(
                                 onIntent(CalendarIntent.SelectDay(date))
                             }
                         )
-                    else -> Box(modifier = Modifier.fillMaxSize())
+                    else -> Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.85f))
                 }
             }
-        }
         } // ElevatedCard
         } // Box (animated wrapper)
 
@@ -526,12 +527,9 @@ private fun HebrewCalendarContent(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
         ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val gridHeight = 24.dp + maxWidth / 7 * 6 + 4.dp
-
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth().height(gridHeight)
+                modifier = Modifier.fillMaxWidth()
             ) { page ->
                 val offset = page - PAGER_INITIAL_PAGE
                 val pageMonth = baseHebrewMonth.plusMonths(offset)
@@ -540,7 +538,7 @@ private fun HebrewCalendarContent(
                 when {
                     pageMonth == state.hebrewYearMonth && state.isLoading && state.monthDays.isEmpty() ->
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
@@ -563,10 +561,9 @@ private fun HebrewCalendarContent(
                                 onIntent(CalendarIntent.SelectDay(date))
                             }
                         )
-                    else -> Box(modifier = Modifier.fillMaxSize())
+                    else -> Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.85f))
                 }
             }
-        }
         } // ElevatedCard
         } // Box (animated wrapper)
 
@@ -707,27 +704,31 @@ private fun GregorianMonthGrid(
 ) {
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
     val leadingEmptyCells = firstDayOfWeek.value % 7
+    val allCells: List<HebrewDay?> = List(leadingEmptyCells) { null } + monthDays
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(7),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        userScrollEnabled = false
-    ) {
-        dayHeaderRow(Locale.getDefault())
-        items(leadingEmptyCells) {
-            Box(modifier = Modifier.aspectRatio(0.85f))
-        }
-
-        items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
-            DayCell(
-                day = day,
-                isToday = day.gregorianDate == today,
-                isSelected = day.gregorianDate == selectedDate,
-                calendarHebrewMode = false,
-                onClick = { onDayClick(day.gregorianDate) }
-            )
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+        DayHeaderRow(Locale.getDefault())
+        allCells.chunked(7).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                row.forEach { day ->
+                    if (day != null) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            DayCell(
+                                day = day,
+                                isToday = day.gregorianDate == today,
+                                isSelected = day.gregorianDate == selectedDate,
+                                calendarHebrewMode = false,
+                                onClick = { onDayClick(day.gregorianDate) }
+                            )
+                        }
+                    } else {
+                        Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                    }
+                }
+                repeat(7 - row.size) {
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                }
+            }
         }
     }
 }
@@ -742,27 +743,31 @@ private fun HebrewMonthGrid(
     if (monthDays.isEmpty()) return
     val firstDate = monthDays.first().gregorianDate
     val leadingEmptyCells = firstDate.dayOfWeek.value % 7
+    val allCells: List<HebrewDay?> = List(leadingEmptyCells) { null } + monthDays
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(7),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        userScrollEnabled = false
-    ) {
-        dayHeaderRow(HEBREW_LOCALE)
-        items(leadingEmptyCells) {
-            Box(modifier = Modifier.aspectRatio(0.85f))
-        }
-
-        items(monthDays, key = { it.gregorianDate.toEpochDay() }) { day ->
-            DayCell(
-                day = day,
-                isToday = day.gregorianDate == today,
-                isSelected = day.gregorianDate == selectedDate,
-                calendarHebrewMode = true,
-                onClick = { onDayClick(day.gregorianDate) }
-            )
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+        DayHeaderRow(HEBREW_LOCALE)
+        allCells.chunked(7).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                row.forEach { day ->
+                    if (day != null) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            DayCell(
+                                day = day,
+                                isToday = day.gregorianDate == today,
+                                isSelected = day.gregorianDate == selectedDate,
+                                calendarHebrewMode = true,
+                                onClick = { onDayClick(day.gregorianDate) }
+                            )
+                        }
+                    } else {
+                        Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                    }
+                }
+                repeat(7 - row.size) {
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                }
+            }
         }
     }
 }
