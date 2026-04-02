@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EditLocation
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
@@ -24,9 +23,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun OnboardingScreen(
-    onPickCity: () -> Unit,
     onUseGps: () -> Unit,
-    onManualEntry: () -> Unit,
+    onPickCity: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -45,7 +43,7 @@ fun OnboardingScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Choose your location to get started",
+            text = "A Hebrew calendar and zmanim app for Orthodox Jewish life. To get started, set your location.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -54,17 +52,6 @@ fun OnboardingScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = onPickCity,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Filled.LocationCity, contentDescription = null)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Choose a City")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedButton(
             onClick = onUseGps,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -76,12 +63,12 @@ fun OnboardingScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedButton(
-            onClick = onManualEntry,
+            onClick = onPickCity,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Filled.EditLocation, contentDescription = null)
+            Icon(Icons.Filled.LocationCity, contentDescription = null)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Enter Coordinates")
+            Text("Choose a City")
         }
     }
 }
