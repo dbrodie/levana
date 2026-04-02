@@ -10,14 +10,23 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
-// ── Version (derived from git tag via VERSION_NAME env var set by CI) ────────
+// ── Version (git tag via VERSION_NAME in CI; `git describe` locally) ─────────
+fun gitDescribeVersion(): String? = runCatching {
+    val proc = ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
+        .directory(rootProject.projectDir)
+        .start()
+    proc.inputStream.bufferedReader().readLine()?.removePrefix("v")?.trim()
+        ?.takeIf { it.matches(Regex("""\d+\.\d+\.\d+""")) }
+}.getOrNull()
+
 val tagVersion = System.getenv("VERSION_NAME")?.takeIf { it.isNotBlank() }
-val appVersionName = tagVersion ?: "0.0.0-dev"
+    ?: gitDescribeVersion()
 val appVersionCode = tagVersion
     ?.split(".")
     ?.map { it.toInt() }
     ?.let { (maj, min, pat) -> maj * 10000 + min * 100 + pat }
     ?: 1
+val appVersionNameRelease = tagVersion ?: "0.0.0-dev"
 
 // ── Signing (env vars for CI; keystore.properties for local release builds) ──
 val keystoreProps = Properties()
@@ -41,7 +50,7 @@ android {
         minSdk = 34
         targetSdk = 35
         versionCode = appVersionCode
-        versionName = appVersionName
+        versionName = appVersionNameRelease
     }
 
     signingConfigs {
@@ -57,6 +66,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             val rel = signingConfigs.getByName("release")
