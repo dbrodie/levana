@@ -57,12 +57,12 @@ class LocationService(private val context: Context) {
             if (!addresses.isNullOrEmpty()) {
                 val addr = addresses[0]
                 addr.locality ?: addr.subAdminArea ?: addr.adminArea
-                    ?: "%.4f, %.4f".format(lat, lon)
+                    ?: "Current Location"
             } else {
-                "%.4f, %.4f".format(lat, lon)
+                "Current Location"
             }
         } catch (_: Exception) {
-            "%.4f, %.4f".format(lat, lon)
+            "Current Location"
         }
     }
 }
