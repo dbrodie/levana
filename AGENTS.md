@@ -44,10 +44,9 @@ levana/
 ## Feature Development Workflow
 
 1. **Plan** — work in plan mode; research the codebase and design the approach
-2. **Save spec** — write the spec to `specs/rfes/<feature-name>.md`
-3. **Create worktree** — `git worktree add .claude/worktrees/<feature-name> -b <feature-name>`
-4. **Work in worktree** — all development happens inside `.claude/worktrees/<feature-name>/`
-5. **Commit spec** — commit the spec file to the branch before any code
-6. **Develop** — implement the feature on the branch inside the worktree
-7. **Approve & merge** — once the feature is approved, commit and merge to `master`
-8. **Delete worktree** — `git worktree remove .claude/worktrees/<feature-name>`
+2. **Create worktree** — `git worktree add .claude/worktrees/<feature-name> -b <feature-name>`
+3. **Save spec** — write the spec to `specs/rfes/<feature-name>.md` **inside the worktree** (`.claude/worktrees/<feature-name>/specs/rfes/<feature-name>.md`), never in the main repo
+4. **Commit spec** — commit the spec file to the branch before any code
+5. **Develop** — implement the feature on the branch inside the worktree; all work happens inside `.claude/worktrees/<feature-name>/`
+6. **Approve & merge** — once the feature is approved, merge to `master`
+7. **Delete worktree** — `git worktree remove .claude/worktrees/<feature-name>`
