@@ -45,3 +45,6 @@ data object LocationsSettingsRoute
 
 @Serializable
 data object DeveloperSettingsRoute
+
+@Serializable
+data object AboutRoute

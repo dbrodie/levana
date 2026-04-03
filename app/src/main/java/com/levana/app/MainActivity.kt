@@ -91,11 +91,13 @@ import com.levana.app.ui.navigation.LocationsSettingsRoute
 import com.levana.app.ui.navigation.ManualLocationRoute
 import com.levana.app.ui.navigation.OnboardingRoute
 import com.levana.app.ui.navigation.PersonalEventsRoute
+import com.levana.app.ui.navigation.AboutRoute
 import com.levana.app.ui.navigation.DeveloperSettingsRoute
 import com.levana.app.ui.navigation.HalachicTimesSettingsRoute
 import com.levana.app.ui.navigation.SettingsRoute
 import com.levana.app.ui.navigation.ZmanimRoute
 import com.levana.app.ui.onboarding.OnboardingScreen
+import com.levana.app.ui.settings.AboutScreen
 import com.levana.app.ui.settings.DeveloperSettingsScreen
 import com.levana.app.ui.settings.HalachicTimesSettingsScreen
 import com.levana.app.ui.settings.LocationsSettingsScreen
@@ -236,6 +238,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val isDeveloperSettingsRoute =
         backStackEntry?.destination?.hasRoute(DeveloperSettingsRoute::class) == true
+
+    val isAboutRoute =
+        backStackEntry?.destination?.hasRoute(AboutRoute::class) == true
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
@@ -389,6 +394,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                             Text(
                                 if (isZmanimRoute || isHalachicTimesSettingsRoute) "Halachic Times"
                                 else if (isDeveloperSettingsRoute) "Developer Settings"
+                                else if (isAboutRoute) "About"
                                 else stringResource(R.string.app_name)
                             )
                         },
@@ -499,6 +505,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         },
                         onDeveloperSettings = {
                             navController.navigate(DeveloperSettingsRoute)
+                        },
+                        onAbout = {
+                            navController.navigate(AboutRoute)
                         }
                     )
                 }
@@ -509,6 +518,10 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
                 composable<DeveloperSettingsRoute> {
                     DeveloperSettingsScreen()
+                }
+
+                composable<AboutRoute> {
+                    AboutScreen()
                 }
 
                 composable<LocationsSettingsRoute> {

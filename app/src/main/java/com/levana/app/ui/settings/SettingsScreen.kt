@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NoFood
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Stars
@@ -75,6 +76,8 @@ import com.levana.app.domain.model.LocationMode
 import com.levana.app.domain.model.Minhag
 import com.levana.app.domain.model.SavedLocation
 import com.levana.app.ui.theme.HolidayTheme
+import com.levana.app.update.UpdateChecker
+import com.levana.app.update.UpdateSource
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.time.LocalDate
@@ -88,6 +91,7 @@ fun SettingsScreen(
     onSystemCalendars: () -> Unit,
     onHalachicTimesSettings: () -> Unit,
     onDeveloperSettings: () -> Unit,
+    onAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -100,6 +104,7 @@ fun SettingsScreen(
         onSystemCalendars = onSystemCalendars,
         onHalachicTimesSettings = onHalachicTimesSettings,
         onDeveloperSettings = onDeveloperSettings,
+        onAbout = onAbout,
         modifier = modifier
     )
 }
@@ -301,6 +306,7 @@ fun SettingsContent(
     onSystemCalendars: () -> Unit,
     onHalachicTimesSettings: () -> Unit,
     onDeveloperSettings: () -> Unit,
+    onAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showMinhagDialog by remember { mutableStateOf(false) }
@@ -464,6 +470,19 @@ fun SettingsContent(
                 modifier = Modifier.clickable(onClick = onDeveloperSettings)
             )
         }
+
+        HorizontalDivider()
+        SettingsSectionHeader("About")
+        ListItem(
+            headlineContent = { Text("About") },
+            leadingContent = {
+                Icon(Icons.Outlined.Info, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable(onClick = onAbout)
+        )
     }
 
     if (showMinhagDialog) {
@@ -1214,5 +1233,30 @@ private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun AboutScreen(
+    modifier: Modifier = Modifier,
+    updateChecker: UpdateChecker = koinInject()
+) {
+    val versionName = updateChecker.currentVersionName()
+    val installSource = when (updateChecker.detectUpdateSource()) {
+        UpdateSource.PlayStore -> "Google Play"
+        UpdateSource.FDroid -> "F-Droid"
+        UpdateSource.GitHubRelease -> "GitHub Release"
+        UpdateSource.Unknown -> "Unknown"
+    }
+    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        ListItem(
+            headlineContent = { Text("Version") },
+            supportingContent = { Text(versionName) }
+        )
+        HorizontalDivider()
+        ListItem(
+            headlineContent = { Text("Install Source") },
+            supportingContent = { Text(installSource) }
+        )
     }
 }
