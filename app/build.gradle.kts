@@ -70,7 +70,12 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             val rel = signingConfigs.getByName("release")
             signingConfig = if (rel.storeFile?.exists() == true &&
                                 rel.storePassword != null &&
