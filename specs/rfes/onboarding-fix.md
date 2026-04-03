@@ -49,6 +49,10 @@ preferencesRepository.setLocationMode(LocationMode.Gps)
 
 Remove the `onManualEntry = { navController.navigate(ManualLocationRoute) }` argument since the screen no longer has that callback.
 
+### `LocationService.kt` — reverse geocoding fallback
+
+When reverse geocoding fails (no network, emulator, etc.), fall back to `"Current Location"` instead of raw coordinates (`"lat, lon"`). On a real device with network the city name resolves correctly.
+
 ## Out of Scope
 
 - `ManualLocationScreen` and `ManualLocationRoute` are kept; they remain reachable from Settings.
