@@ -596,8 +596,8 @@ private fun GpsOnboarding(
             scope.launch {
                 try {
                     val loc = locationService.getCurrentLocation()
-                    val newId = preferencesRepository.addSavedLocation(loc)
-                    preferencesRepository.setLocationMode(LocationMode.Saved(newId))
+                    preferencesRepository.updateGpsLocation(loc)
+                    preferencesRepository.setLocationMode(LocationMode.Gps)
                     navController.navigate(CalendarRoute) {
                         popUpTo(OnboardingRoute) { inclusive = true }
                     }
@@ -619,7 +619,6 @@ private fun GpsOnboarding(
     }
 
     OnboardingScreen(
-        onPickCity = { navController.navigate(CityPickerRoute) },
         onUseGps = {
             permissionLauncher.launch(
                 arrayOf(
@@ -628,6 +627,6 @@ private fun GpsOnboarding(
                 )
             )
         },
-        onManualEntry = { navController.navigate(ManualLocationRoute) }
+        onPickCity = { navController.navigate(CityPickerRoute) }
     )
 }
