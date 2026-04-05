@@ -165,12 +165,12 @@ object NotificationPoster {
         )
     }
 
-    fun postUpdateAvailable(context: Context, latestVersion: String) {
+    fun postUpdateAvailable(context: Context, latestVersion: String): Boolean {
         if (ContextCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) return false
 
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -192,6 +192,7 @@ object NotificationPoster {
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_UPDATE_AVAILABLE, notification)
+        return true
     }
 
     private fun post(

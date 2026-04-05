@@ -42,8 +42,9 @@ class UpdateCheckWorker(
             return Result.success()
         }
 
-        NotificationPoster.postUpdateAvailable(applicationContext, latestVersion)
-        preferencesRepository.setLastNotifiedUpdateVersion(latestVersion)
+        if (NotificationPoster.postUpdateAvailable(applicationContext, latestVersion)) {
+            preferencesRepository.setLastNotifiedUpdateVersion(latestVersion)
+        }
 
         return Result.success()
     }
