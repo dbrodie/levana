@@ -47,7 +47,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -244,6 +247,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
+    // Slot for per-screen actions rendered in the global TopAppBar
+    var topBarActionsContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = showDrawer,
@@ -415,6 +421,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                     )
                                 }
                             }
+                        },
+                        actions = {
+                            topBarActionsContent?.invoke()
                         }
                     )
                 }
@@ -556,6 +565,12 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                     contactLookupKey = lookupKey
                                 )
                             )
+                        },
+                        onRegisterTopBarActions = { actions ->
+                            topBarActionsContent = actions
+                        },
+                        onUnregisterTopBarActions = {
+                            topBarActionsContent = null
                         }
                     )
                 }

@@ -37,7 +37,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,8 +48,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,13 +78,14 @@ private val hebrewFormatter = HebrewDateFormatter().apply {
     isHebrewFormat = true
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventsScreen(
     onAddEvent: () -> Unit,
     onEditEvent: (Long) -> Unit,
     onAddBirthday: () -> Unit,
     onEditBirthday: (String) -> Unit,
+    onRegisterTopBarActions: (@Composable () -> Unit) -> Unit,
+    onUnregisterTopBarActions: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: EventsViewModel = koinViewModel()
 ) {
@@ -162,6 +162,55 @@ fun EventsScreen(
         }
     }
 
+    // Overflow menu state — defined here so the lambda registered below can capture it
+    val showOverflowMenuState = remember { mutableStateOf(false) }
+
+    // Register the MoreVert button into the parent's TopAppBar for this screen's lifetime.
+    // The button is only visible on the Events tab (page 1), not the Birthdays tab.
+    DisposableEffect(Unit) {
+        onRegisterTopBarActions {
+            if (pagerState.currentPage == 1) Box {
+                IconButton(onClick = { showOverflowMenuState.value = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                }
+                DropdownMenu(
+                    expanded = showOverflowMenuState.value,
+                    onDismissRequest = { showOverflowMenuState.value = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Export as JSON") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            exportJsonLauncher.launch("levana_events.json")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Export as CSV") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            exportCsvLauncher.launch("levana_events.csv")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import events") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            importLauncher.launch(
+                                arrayOf(
+                                    "application/json",
+                                    "text/csv",
+                                    "text/comma-separated-values",
+                                    "*/*"
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        onDispose { onUnregisterTopBarActions() }
+    }
+
     // Show export result as a snackbar
     LaunchedEffect(state.exportMessage) {
         val msg = state.exportMessage ?: return@LaunchedEffect
@@ -196,49 +245,7 @@ fun EventsScreen(
         )
     }
 
-    var showOverflowMenu by remember { mutableStateOf(false) }
-
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Events") },
-                actions = {
-                    Box {
-                        IconButton(onClick = { showOverflowMenu = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More options")
-                        }
-                        DropdownMenu(
-                            expanded = showOverflowMenu,
-                            onDismissRequest = { showOverflowMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Export as JSON") },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    exportJsonLauncher.launch("levana_events.json")
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Export as CSV") },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    exportCsvLauncher.launch("levana_events.csv")
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Import events") },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    importLauncher.launch(
-                                        arrayOf("application/json", "text/csv", "text/comma-separated-values", "*/*")
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
