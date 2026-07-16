@@ -11,6 +11,8 @@ class PersonalEventRepository(private val dao: PersonalEventDao) {
 
     fun getAll(): Flow<List<PersonalEvent>> = dao.getAll()
 
+    suspend fun getAllOnce(): List<PersonalEvent> = dao.getAllOnce()
+
     suspend fun getById(id: Long): PersonalEvent? = dao.getById(id)
 
     suspend fun insert(event: PersonalEvent): Long = dao.insert(event)

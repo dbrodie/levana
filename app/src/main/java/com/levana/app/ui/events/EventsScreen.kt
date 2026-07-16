@@ -28,22 +28,29 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +68,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import com.levana.app.data.EventSerializer
 import com.levana.app.data.db.PersonalEvent
 import com.levana.app.domain.model.ContactBirthday
 import kotlinx.coroutines.launch
@@ -76,12 +84,16 @@ fun EventsScreen(
     onEditEvent: (Long) -> Unit,
     onAddBirthday: () -> Unit,
     onEditBirthday: (String) -> Unit,
+    onRegisterTopBarActions: (@Composable () -> Unit) -> Unit,
+    onUnregisterTopBarActions: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: EventsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LifecycleResumeEffect(Unit) {
         viewModel.onIntent(EventsIntent.LoadEvents)
@@ -94,6 +106,147 @@ fun EventsScreen(
         if (permissions.values.any { it }) {
             viewModel.onIntent(EventsIntent.ContactsPermissionGranted)
         }
+    }
+
+    val exportJsonLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val message = try {
+            val content = EventSerializer.toJson(state.customEvents)
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: error("Could not open output file")
+            outputStream.use { stream ->
+                stream.write(content.toByteArray())
+            }
+            "Exported ${state.customEvents.size} event(s)"
+        } catch (e: Exception) {
+            "Export failed: ${e.message}"
+        }
+        viewModel.onIntent(EventsIntent.ShowExportResult(message))
+    }
+
+    val exportCsvLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val message = try {
+            val content = EventSerializer.toCsv(state.customEvents)
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: error("Could not open output file")
+            outputStream.use { stream ->
+                stream.write(content.toByteArray())
+            }
+            "Exported ${state.customEvents.size} event(s)"
+        } catch (e: Exception) {
+            "Export failed: ${e.message}"
+        }
+        viewModel.onIntent(EventsIntent.ShowExportResult(message))
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        try {
+            val content = context.contentResolver.openInputStream(uri)?.use { stream ->
+                stream.readBytes().toString(Charsets.UTF_8)
+            } ?: run {
+                viewModel.onIntent(
+                    EventsIntent.ShowExportResult("Import failed: could not read file")
+                )
+                return@rememberLauncherForActivityResult
+            }
+            val isCsv = detectCsv(uri, content)
+            viewModel.onIntent(EventsIntent.ImportEvents(content, isCsv))
+        } catch (e: Exception) {
+            viewModel.onIntent(
+                EventsIntent.ShowExportResult("Import failed: ${e.message}")
+            )
+        }
+    }
+
+    // Overflow menu state — defined here so the lambda registered below can capture it
+    val showOverflowMenuState = remember { mutableStateOf(false) }
+
+    // Register the MoreVert button into the parent's TopAppBar for this screen's lifetime.
+    // The button is only visible on the Events tab (page 1), not the Birthdays tab.
+    DisposableEffect(Unit) {
+        onRegisterTopBarActions {
+            if (pagerState.currentPage == 1) Box {
+                IconButton(onClick = { showOverflowMenuState.value = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                }
+                DropdownMenu(
+                    expanded = showOverflowMenuState.value,
+                    onDismissRequest = { showOverflowMenuState.value = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Export as JSON") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            exportJsonLauncher.launch("levana_events.json")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Export as CSV") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            exportCsvLauncher.launch("levana_events.csv")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import events") },
+                        onClick = {
+                            showOverflowMenuState.value = false
+                            importLauncher.launch(
+                                arrayOf(
+                                    "application/json",
+                                    "text/csv",
+                                    "text/comma-separated-values",
+                                    "*/*"
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        onDispose { onUnregisterTopBarActions() }
+    }
+
+    // Show export result as a snackbar
+    LaunchedEffect(state.exportMessage) {
+        val msg = state.exportMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        viewModel.onIntent(EventsIntent.DismissExportResult)
+    }
+
+    // Import result dialog
+    state.importResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onIntent(EventsIntent.DismissImportResult) },
+            title = { Text(if (result.error != null) "Import Failed" else "Import Complete") },
+            text = {
+                Text(
+                    if (result.error != null) {
+                        result.error
+                    } else {
+                        buildString {
+                            append("Imported ${result.imported} event(s)")
+                            if (result.skipped > 0) {
+                                append(", skipped ${result.skipped} duplicate(s)")
+                            }
+                        }
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onIntent(EventsIntent.DismissImportResult) }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -119,6 +272,7 @@ fun EventsScreen(
                 Icon(Icons.Filled.Add, contentDescription = "Add")
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -176,6 +330,14 @@ fun EventsScreen(
             }
         }
     }
+}
+
+/** Returns true if the content looks like CSV rather than JSON. */
+private fun detectCsv(uri: Uri, content: String): Boolean {
+    val path = uri.lastPathSegment?.lowercase() ?: ""
+    if (path.endsWith(".json")) return false
+    if (path.endsWith(".csv")) return true
+    return !content.trimStart().startsWith("[")
 }
 
 @Composable
