@@ -9,6 +9,7 @@
 .externalNativeBuild
 .cxx
 .claude/
+.agents/
 .kotlin/
 keystore.properties
 *.keystore
