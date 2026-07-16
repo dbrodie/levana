@@ -104,31 +104,61 @@ class EventsViewModel(
                 return@launch
             }
 
-            val existing = personalEventRepository.getAllOnce()
-            val existingKeys = existing.map { DuplicateKey(it.title, it.hebrewDay, it.hebrewMonth, it.hebrewYear) }.toSet()
+            val importPlan = deduplicateImportedEvents(
+                existing = personalEventRepository.getAllOnce(),
+                parsed = parsed
+            )
 
-            var imported = 0
-            var skipped = 0
-            for (event in parsed) {
-                val key = DuplicateKey(event.title, event.hebrewDay, event.hebrewMonth, event.hebrewYear)
-                if (key in existingKeys) {
-                    skipped++
-                } else {
-                    personalEventRepository.insert(event)
-                    imported++
-                }
+            for (event in importPlan.events) {
+                personalEventRepository.insert(event)
             }
 
             _state.value = _state.value.copy(
-                importResult = ImportResult(imported = imported, skipped = skipped)
+                importResult = ImportResult(
+                    imported = importPlan.events.size,
+                    skipped = importPlan.skipped
+                )
             )
         }
     }
-
-    private data class DuplicateKey(
-        val title: String,
-        val hebrewDay: Int,
-        val hebrewMonth: Int,
-        val hebrewYear: Int
-    )
 }
+
+internal data class EventImportPlan(
+    val events: List<PersonalEvent>,
+    val skipped: Int
+)
+
+internal fun deduplicateImportedEvents(
+    existing: List<PersonalEvent>,
+    parsed: List<PersonalEvent>
+): EventImportPlan {
+    val knownKeys = existing.map {
+        DuplicateKey(it.title, it.hebrewDay, it.hebrewMonth, it.hebrewYear)
+    }.toMutableSet()
+    val eventsToImport = mutableListOf<PersonalEvent>()
+    var skipped = 0
+
+    for (event in parsed) {
+        val key = DuplicateKey(
+            event.title,
+            event.hebrewDay,
+            event.hebrewMonth,
+            event.hebrewYear
+        )
+        if (key in knownKeys) {
+            skipped++
+        } else {
+            eventsToImport.add(event)
+            knownKeys.add(key)
+        }
+    }
+
+    return EventImportPlan(events = eventsToImport, skipped = skipped)
+}
+
+private data class DuplicateKey(
+    val title: String,
+    val hebrewDay: Int,
+    val hebrewMonth: Int,
+    val hebrewYear: Int
+)

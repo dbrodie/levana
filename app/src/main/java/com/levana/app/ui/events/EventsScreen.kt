@@ -114,7 +114,9 @@ fun EventsScreen(
         uri ?: return@rememberLauncherForActivityResult
         val message = try {
             val content = EventSerializer.toJson(state.customEvents)
-            context.contentResolver.openOutputStream(uri)?.use { stream ->
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: error("Could not open output file")
+            outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
             "Exported ${state.customEvents.size} event(s)"
@@ -130,7 +132,9 @@ fun EventsScreen(
         uri ?: return@rememberLauncherForActivityResult
         val message = try {
             val content = EventSerializer.toCsv(state.customEvents)
-            context.contentResolver.openOutputStream(uri)?.use { stream ->
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: error("Could not open output file")
+            outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
             "Exported ${state.customEvents.size} event(s)"

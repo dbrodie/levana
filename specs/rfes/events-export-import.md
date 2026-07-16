@@ -100,11 +100,21 @@ No new external dependencies. Uses:
 
 ## Testing
 
-1. Build: `./gradlew :app:assembleDebug`
-2. Navigate to Events screen → on Birthdays tab, confirm no three-dot icon appears
-3. Switch to Events tab → confirm `MoreVert` icon appears in the TopAppBar
-4. Add several events; export as JSON and inspect the file contents
-5. Export as CSV and verify it opens correctly in a spreadsheet
-6. Clear all events; import the JSON → verify events restored, count matches
-7. Import the same JSON again → verify all events reported as duplicates (skipped)
-8. Import a malformed file → verify an error dialog appears without a crash
+Automated:
+
+1. `./gradlew :app:testDebugUnitTest`
+   - JSON export/import omits Room IDs and preserves event fields
+   - CSV export/import preserves commas, quotes, CRLF line endings, blank lines, and embedded newlines
+   - CSV import rejects malformed headers and unclosed quoted fields
+   - Import deduplication skips both pre-existing events and duplicate rows within the same file
+2. `./gradlew :app:assembleDebug`
+
+Manual:
+
+1. Navigate to Events screen → on Birthdays tab, confirm no three-dot icon appears
+2. Switch to Events tab → confirm `MoreVert` icon appears in the TopAppBar
+3. Add several events; export as JSON and inspect the file contents
+4. Export as CSV and verify it opens correctly in a spreadsheet
+5. Clear all events; import the JSON → verify events restored, count matches
+6. Import the same JSON again → verify all events reported as duplicates (skipped)
+7. Import a malformed file → verify an error dialog appears without a crash

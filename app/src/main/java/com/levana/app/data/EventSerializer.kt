@@ -40,18 +40,15 @@ object EventSerializer {
     }
 
     fun fromCsv(content: String): List<PersonalEvent> {
-        val lines = content.lines()
-        if (lines.isEmpty()) return emptyList()
+        val rows = parseCsv(content)
+        if (rows.isEmpty()) return emptyList()
 
-        // Validate header
-        val header = lines.first().trim()
+        val header = rows.first().joinToString(",")
         require(header == CSV_HEADER) {
             "Unexpected CSV header: $header"
         }
 
-        return lines.drop(1)
-            .filter { it.isNotBlank() }
-            .map { parseCsvRow(it) }
+        return rows.drop(1).map { parseCsvRow(it) }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -83,45 +80,71 @@ object EventSerializer {
     }
 
     /**
-     * Parse a single RFC 4180 CSV row into a [PersonalEvent].
-     * Handles quoted fields containing commas and escaped double-quotes.
+     * Parses RFC 4180 rows, including quoted fields containing commas, quotes,
+     * CRLF line endings, and embedded newlines.
      */
-    private fun parseCsvRow(line: String): PersonalEvent {
-        val fields = splitCsvRow(line)
-        require(fields.size == 6) { "Expected 6 fields, got ${fields.size} in: $line" }
+    private fun parseCsv(content: String): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
+        val row = mutableListOf<String>()
+        val field = StringBuilder()
+        var inQuotes = false
+        var i = 0
+
+        fun finishRow() {
+            row.add(field.toString())
+            field.clear()
+            if (row.any { it.isNotEmpty() }) {
+                rows.add(row.toList())
+            }
+            row.clear()
+        }
+
+        while (i < content.length) {
+            val ch = content[i]
+            when {
+                ch == '"' && inQuotes && i + 1 < content.length && content[i + 1] == '"' -> {
+                    field.append('"')
+                    i++
+                }
+                ch == '"' -> {
+                    inQuotes = !inQuotes
+                }
+                ch == ',' && !inQuotes -> {
+                    row.add(field.toString())
+                    field.clear()
+                }
+                (ch == '\n' || ch == '\r') && !inQuotes -> {
+                    if (ch == '\r' && i + 1 < content.length && content[i + 1] == '\n') {
+                        i++
+                    }
+                    finishRow()
+                }
+                else -> field.append(ch)
+            }
+            i++
+        }
+
+        require(!inQuotes) { "Unclosed quoted field" }
+        if (field.isNotEmpty() || row.isNotEmpty()) {
+            finishRow()
+        }
+
+        return rows
+    }
+
+    private fun parseCsvRow(fields: List<String>): PersonalEvent {
+        require(fields.size == 6) { "Expected 6 fields, got ${fields.size}" }
+        val yahrzeitRules = fields[5].trim().lowercase()
+        require(yahrzeitRules == "true" || yahrzeitRules == "false") {
+            "Invalid useYahrzeitRules value: ${fields[5]}"
+        }
         return PersonalEvent(
             title = fields[0],
             hebrewDay = fields[1].toInt(),
             hebrewMonth = fields[2].toInt(),
             hebrewYear = fields[3].toInt(),
             notes = fields[4],
-            useYahrzeitRules = fields[5].trim().lowercase() == "true"
+            useYahrzeitRules = yahrzeitRules == "true"
         )
-    }
-
-    private fun splitCsvRow(line: String): List<String> {
-        val fields = mutableListOf<String>()
-        val current = StringBuilder()
-        var inQuotes = false
-        var i = 0
-        while (i < line.length) {
-            val ch = line[i]
-            when {
-                ch == '"' && !inQuotes -> inQuotes = true
-                ch == '"' && inQuotes && i + 1 < line.length && line[i + 1] == '"' -> {
-                    current.append('"')
-                    i++ // skip second quote
-                }
-                ch == '"' && inQuotes -> inQuotes = false
-                ch == ',' && !inQuotes -> {
-                    fields.add(current.toString())
-                    current.clear()
-                }
-                else -> current.append(ch)
-            }
-            i++
-        }
-        fields.add(current.toString())
-        return fields
     }
 }
