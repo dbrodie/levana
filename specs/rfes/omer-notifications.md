@@ -24,7 +24,7 @@ The existing Omer notification fired at sunset, which is halachically early — 
 - Add `saveNotifyOmerTzait`, `saveNotifyOmerMorning`, `saveNotifyOmerMorningTime` save methods.
 
 ### `notifications/NotificationAlarmScheduler.kt`
-- Add `ACTION_OMER_MORNING = "com.levana.app.OMER_MORNING_ALARM"` and `REQUEST_OMER_MORNING = 201000`.
+- Add `ACTION_OMER_MORNING = "ninja.doskey.app.levana.OMER_MORNING_ALARM"` and `REQUEST_OMER_MORNING = 201000`.
 - Add `scheduleOmerMorningReminder(date, morningTime, omerDay)` using `ZoneId.systemDefault()` (wall-clock time, no location needed).
 - Update `cancelAll()` to cancel morning omer alarms alongside evening ones.
 

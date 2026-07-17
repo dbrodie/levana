@@ -26,7 +26,7 @@ Bootstrap the Android project with Gradle Kotlin DSL, version catalog, Koin depe
 
 ### Package Structure
 ```
-com.levana.app/
+ninja.doskey.app.levana/
 ├── LevanaApplication.kt
 ├── MainActivity.kt
 ├── data/          # (empty — future data layer)
@@ -52,7 +52,7 @@ com.levana.app/
 | Min SDK | 34 | Per PROJECT_SPEC — Android 14 |
 | Target SDK | 35 | Latest stable target |
 | ktlint plugin | jlleitschuh/ktlint-gradle | Well-maintained, Gradle integration |
-| Package name | `com.levana.app` | Short, memorable, matches project identity |
+| Package name | `ninja.doskey.app.levana` | Reverse-domain identifier for the doskey.ninja owner |
 
 ## Dependencies (libs.versions.toml)
 

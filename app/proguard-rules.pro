@@ -2,7 +2,7 @@
 -keep class com.kosherjava.zmanim.** { *; }
 
 # Room entities
--keep class com.levana.app.data.db.** { *; }
+-keep class ninja.doskey.app.levana.data.db.** { *; }
 
 # Kotlin serialization
 -keepattributes *Annotation*, InnerClasses
@@ -13,11 +13,11 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.levana.app.**$$serializer { *; }
--keepclassmembers class com.levana.app.** {
+-keep,includedescriptorclasses class ninja.doskey.app.levana.**$$serializer { *; }
+-keepclassmembers class ninja.doskey.app.levana.** {
     *** Companion;
 }
--keepclasseswithmembers class com.levana.app.** {
+-keepclasseswithmembers class ninja.doskey.app.levana.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 

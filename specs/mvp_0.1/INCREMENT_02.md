@@ -38,7 +38,7 @@ Integrate the KosherJava zmanim library, create domain models for Hebrew dates a
 
 ## Package Structure (new/modified files)
 ```
-com.levana.app/
+ninja.doskey.app.levana/
 ├── data/
 │   └── CalendarRepository.kt
 ├── domain/
