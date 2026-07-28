@@ -91,7 +91,15 @@ class ZmanimRepository {
                     location
                 )
             )
-            add(zman("Sunrise", "הנץ החמה", czc.sunrise, ZmanCategory.MORNING, location))
+            add(
+                zman(
+                    "Sunrise",
+                    "הנץ החמה",
+                    czc.seaLevelSunrise,
+                    ZmanCategory.MORNING,
+                    location
+                )
+            )
             add(
                 zman(
                     "Sof Zman Shema (GRA)",
@@ -157,7 +165,15 @@ class ZmanimRepository {
                     )
                 )
             }
-            add(zman("Sunset", "שקיעה", czc.sunset, ZmanCategory.EVENING, location))
+            add(
+                zman(
+                    "Sunset",
+                    "שקיעה",
+                    czc.seaLevelSunset,
+                    ZmanCategory.EVENING,
+                    location
+                )
+            )
             add(zman("Nightfall", "צאת הכוכבים", czc.tzais, ZmanCategory.EVENING, location))
             if (shabbatInfo.showHavdalah) {
                 add(
@@ -175,7 +191,7 @@ class ZmanimRepository {
 
     fun getSunsetTime(date: LocalDate, location: Location): LocalTime? {
         val czc = createCalendar(date, location)
-        return toLocalTime(czc.sunset, location)
+        return toLocalTime(czc.seaLevelSunset, location)
     }
 
     fun getTzaitTime(date: LocalDate, location: Location): LocalTime? {
