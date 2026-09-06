@@ -9,7 +9,9 @@
 .externalNativeBuild
 .cxx
 .claude/
-.agents/
+/.agents/*
+!/.agents/skills/
+!/.agents/skills/**
 .kotlin/
 keystore.properties
 *.keystore
