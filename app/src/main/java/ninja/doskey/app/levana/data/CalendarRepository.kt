@@ -29,16 +29,17 @@ class CalendarRepository {
         return toHebrewDay(jewishCalendar, date)
     }
 
-    fun getMonthDays(yearMonth: YearMonth, inIsrael: Boolean = false): List<HebrewDay> {
+    fun getMonthDays(yearMonth: YearMonth, inIsrael: Boolean = false, showModernIsraeli: Boolean = true): List<HebrewDay> {
         return (1..yearMonth.lengthOfMonth()).map { dayOfMonth ->
             val date = yearMonth.atDay(dayOfMonth)
-            getHebrewDay(date, inIsrael)
+            toHebrewDay(createJewishCalendar(date, inIsrael, showModernIsraeli), date, showModernIsraeli)
         }
     }
 
     fun getHebrewMonthDays(
         hebrewYearMonth: HebrewYearMonth,
-        inIsrael: Boolean = false
+        inIsrael: Boolean = false,
+        showModernIsraeli: Boolean = true
     ): List<HebrewDay> {
         val daysInMonth = hebrewYearMonth.daysInMonth()
         return (1..daysInMonth).map { day ->
@@ -48,13 +49,14 @@ class CalendarRepository {
                 day
             )
             jc.setInIsrael(inIsrael)
+            jc.setUseModernHolidays(showModernIsraeli)
             val gc = jc.gregorianCalendar
             val date = LocalDate.of(
                 gc.get(GregorianCalendar.YEAR),
                 gc.get(GregorianCalendar.MONTH) + 1,
                 gc.get(GregorianCalendar.DAY_OF_MONTH)
             )
-            toHebrewDay(jc, date)
+            toHebrewDay(jc, date, showModernIsraeli)
         }
     }
 
@@ -72,7 +74,7 @@ class CalendarRepository {
         inIsrael: Boolean = false,
         showModernIsraeli: Boolean = true
     ): DayInfo {
-        val jewishCalendar = createJewishCalendar(date, inIsrael)
+        val jewishCalendar = createJewishCalendar(date, inIsrael, showModernIsraeli)
         val hebrewDay = toHebrewDay(jewishCalendar, date)
 
         val holidays = buildList {
@@ -168,7 +170,7 @@ class CalendarRepository {
         return "Molad: $dayOfWeek $time, $chalakim chalakim"
     }
 
-    private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false): JewishCalendar {
+    private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false, useModernHolidays: Boolean = true): JewishCalendar {
         val gregorianCalendar = GregorianCalendar(
             date.year,
             date.monthValue - 1,
@@ -176,19 +178,21 @@ class CalendarRepository {
         )
         return JewishCalendar(gregorianCalendar).apply {
             setInIsrael(inIsrael)
+            setUseModernHolidays(useModernHolidays)
         }
     }
 
-    private fun toHebrewDay(jewishCalendar: JewishCalendar, date: LocalDate): HebrewDay {
+    private fun toHebrewDay(jewishCalendar: JewishCalendar, date: LocalDate, showModernIsraeli: Boolean = true): HebrewDay {
         val hasCandles = date.dayOfWeek == DayOfWeek.FRIDAY ||
             jewishCalendar.isErevYomTov ||
             jewishCalendar.isErevYomTovSheni
         val yomTovIndex = jewishCalendar.yomTovIndex
-        val holidayCategory = if (yomTovIndex >= 0) {
-            HolidayMapper.mapHoliday(yomTovIndex)?.category
-        } else {
-            null
-        }
+        val holiday = (if (yomTovIndex >= 0) HolidayMapper.mapHoliday(yomTovIndex) else null)
+            ?.takeIf { showModernIsraeli || it.category != HolidayCategory.MODERN_ISRAELI }
+        val parsha = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
+            ?.let { translitFormatter.formatParsha(jewishCalendar) }
+        val parshaHebrew = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
+            ?.let { hebrewFormatter.formatParsha(jewishCalendar) }
         return HebrewDay(
             day = jewishCalendar.jewishDayOfMonth,
             month = HebrewMonth.from(
@@ -203,7 +207,11 @@ class CalendarRepository {
             ),
             gregorianDate = date,
             hasCandles = hasCandles,
-            holidayCategory = holidayCategory
+            holidayCategory = holiday?.category,
+            holidayLabel = holiday?.name,
+            holidayLabelHebrew = holiday?.hebrewName,
+            parshaLabel = parsha,
+            parshaLabelHebrew = parshaHebrew
         )
     }
 }

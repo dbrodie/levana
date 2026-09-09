@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,9 +115,13 @@ class CalendarViewModel(
                     showGoToDateDialog = false
                 )
                 if (currentPrefs.calendarHebrewMode) {
-                    loadHebrewMonth(HebrewYearMonth.from(date))
+                    val target = HebrewYearMonth.from(date)
+                    _hebrewScrollTarget.trySend(target)
+                    loadHebrewMonth(target)
                 } else {
-                    loadMonth(YearMonth.from(date))
+                    val target = YearMonth.from(date)
+                    _gregorianScrollTarget.trySend(target)
+                    loadMonth(target)
                 }
             }
         }
@@ -132,8 +137,21 @@ class CalendarViewModel(
                     locationName = prefs.activeLocation?.name ?: "",
                     calendarHebrewMode = prefs.calendarHebrewMode
                 )
-                if (modeChanged || _state.value.monthDays.isEmpty()) {
+                if (_state.value.monthDays.isEmpty()) {
                     onIntent(CalendarIntent.LoadToday)
+                } else if (modeChanged) {
+                    // Switching calendar systems follows the currently selected day,
+                    // rather than unexpectedly returning a browsed calendar to today.
+                    val selectedDate = _state.value.selectedDate
+                    if (prefs.calendarHebrewMode) {
+                        val target = HebrewYearMonth.from(selectedDate)
+                        _hebrewScrollTarget.trySend(target)
+                        loadHebrewMonth(target)
+                    } else {
+                        val target = YearMonth.from(selectedDate)
+                        _gregorianScrollTarget.trySend(target)
+                        loadMonth(target)
+                    }
                 } else if (prefs.calendarHebrewMode) {
                     _state.value.hebrewYearMonth?.let {
                         loadHebrewMonth(it)
@@ -148,7 +166,8 @@ class CalendarViewModel(
     private suspend fun loadMonthDaysOnly(yearMonth: YearMonth): List<HebrewDay> {
         val monthDays = calendarRepository.getMonthDays(
             yearMonth,
-            currentPrefs.isInIsrael
+            currentPrefs.isInIsrael,
+            currentPrefs.showModernIsraeliHolidays
         )
 
         val eventDates = personalEventRepository
@@ -232,7 +251,8 @@ class CalendarViewModel(
     private suspend fun loadHebrewMonthDaysOnly(hym: HebrewYearMonth): List<HebrewDay> {
         val monthDays = calendarRepository.getHebrewMonthDays(
             hym,
-            currentPrefs.isInIsrael
+            currentPrefs.isInIsrael,
+            currentPrefs.showModernIsraeliHolidays
         )
 
         val eventDays = personalEventRepository
@@ -335,18 +355,23 @@ class CalendarViewModel(
         if (days.isEmpty()) return ""
         val firstDay = days.first()
         val lastDay = days.last()
+        val useHebrewNames = Locale.getDefault().language in setOf("he", "iw")
 
-        val firstMonthName = firstDay.month.name.lowercase()
-            .replaceFirstChar { it.uppercase() }
-            .replace("_", " ")
+        fun monthName(day: HebrewDay): String = if (useHebrewNames) {
+            calendarRepository.getHebrewMonthName(
+                HebrewYearMonth(day.year, day.month, day.month.jewishDateValue)
+            )
+        } else {
+            day.month.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")
+        }
+
+        val firstMonthName = monthName(firstDay)
         val firstYear = firstDay.year
 
         return if (firstDay.month == lastDay.month) {
             "$firstMonthName $firstYear"
         } else {
-            val lastMonthName = lastDay.month.name.lowercase()
-                .replaceFirstChar { it.uppercase() }
-                .replace("_", " ")
+            val lastMonthName = monthName(lastDay)
             val lastYear = lastDay.year
             if (firstYear == lastYear) {
                 "$firstMonthName\u2013$lastMonthName $firstYear"

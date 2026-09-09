@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -38,6 +40,8 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Stars
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,12 +69,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
 import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
@@ -240,11 +246,15 @@ private fun LocationsSettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        SettingsGroup(stringResource(R.string.settings_group_current_location)) {
         ListItem(
-            headlineContent = { Text("Use Current Location") },
-            supportingContent = { Text("Automatically detect location") },
+            headlineContent = { Text(stringResource(R.string.location_use_current)) },
+            supportingContent = { Text(stringResource(R.string.location_auto_detect)) },
             leadingContent = {
                 Icon(Icons.Filled.GpsFixed, contentDescription = null)
             },
@@ -255,20 +265,21 @@ private fun LocationsSettingsContent(
                 )
             }
         )
+        }
 
         if (useCurrentLocation && gpsLocationName != null) {
+            SettingsGroup(stringResource(R.string.settings_group_active)) {
             ListItem(
                 headlineContent = { Text(gpsLocationName) },
                 leadingContent = {
                     Icon(Icons.Filled.GpsFixed, contentDescription = null)
                 }
             )
+            }
         }
 
         if (savedLocations.isNotEmpty()) {
-            HorizontalDivider()
-            SettingsSectionHeader("Saved Locations")
-
+            SettingsGroup(stringResource(R.string.settings_group_saved_locations)) {
             savedLocations.forEach { saved ->
                 ListItem(
                     headlineContent = { Text(saved.location.name) },
@@ -280,21 +291,23 @@ private fun LocationsSettingsContent(
                     },
                     trailingContent = {
                         IconButton(onClick = { onDelete(saved.id) }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.location_delete))
                         }
                     }
                 )
             }
+            }
         }
 
-        HorizontalDivider()
+        SettingsGroup(stringResource(R.string.settings_group_locations)) {
         ListItem(
-            headlineContent = { Text("Add Location") },
+            headlineContent = { Text(stringResource(R.string.location_add)) },
             leadingContent = {
                 Icon(Icons.Filled.Add, contentDescription = null)
             },
             modifier = Modifier.clickable(onClick = onAddLocation)
         )
+        }
     }
 }
 
@@ -317,11 +330,14 @@ fun SettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // --- Location & System Calendars (no header) ---
+        SettingsGroup(stringResource(R.string.settings_group_calendar)) {
         ListItem(
-            headlineContent = { Text("Location") },
+            headlineContent = { Text(stringResource(R.string.settings_location_label)) },
             supportingContent = {
                 if (state.locationName.isNotEmpty()) Text(state.locationName)
             },
@@ -333,8 +349,9 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onChangeLocation)
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("System Calendars") },
+            headlineContent = { Text(stringResource(R.string.settings_system_calendars_label)) },
             leadingContent = {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
             },
@@ -343,13 +360,12 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onSystemCalendars)
         )
+        }
 
-        HorizontalDivider()
-        SettingsSectionHeader("Calendar Preferences")
-
+        SettingsGroup(stringResource(R.string.settings_group_preferences)) {
         ListItem(
-            headlineContent = { Text("Israel / Diaspora") },
-            supportingContent = { Text("Affects second day Yom Tov and parsha readings") },
+            headlineContent = { Text(stringResource(R.string.settings_israel_diaspora_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_israel_diaspora_description)) },
             leadingContent = {
                 Icon(Icons.Outlined.Public, contentDescription = null)
             },
@@ -360,9 +376,10 @@ fun SettingsContent(
                 )
             }
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("Modern Israeli Holidays") },
-            supportingContent = { Text("Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim") },
+            headlineContent = { Text(stringResource(R.string.settings_modern_holidays_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_modern_holidays_description)) },
             leadingContent = {
                 Icon(Icons.Outlined.Flag, contentDescription = null)
             },
@@ -373,9 +390,10 @@ fun SettingsContent(
                 )
             }
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("Candle Lighting Offset") },
-            supportingContent = { Text("${state.candleLightingOffset.toInt()} min before sunset") },
+            headlineContent = { Text(stringResource(R.string.settings_candle_offset_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_candle_offset_description, state.candleLightingOffset.toInt())) },
             leadingContent = {
                 Icon(Icons.Outlined.WbTwilight, contentDescription = null)
             },
@@ -384,13 +402,12 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showCandleLightingOffsetDialog = true }
         )
-
-        HorizontalDivider()
-        SettingsSectionHeader("Minhag")
+        }
 
         val minhagLabel = state.minhag.name.lowercase().replaceFirstChar { it.uppercase() }
+        SettingsGroup(stringResource(R.string.settings_group_minhag)) {
         ListItem(
-            headlineContent = { Text("Minhag") },
+            headlineContent = { Text(stringResource(R.string.settings_minhag_label)) },
             supportingContent = { Text(minhagLabel) },
             leadingContent = {
                 Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
@@ -400,16 +417,15 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showMinhagDialog = true }
         )
-
-        HorizontalDivider()
-        SettingsSectionHeader("Appearance")
+        }
 
         val appLanguageLabel = when (state.appLanguage) {
-            AppLanguage.SYSTEM -> "System default"
-            AppLanguage.HEBREW -> "Hebrew (עברית)"
+            AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
+            AppLanguage.HEBREW -> stringResource(R.string.settings_language_hebrew)
         }
+        SettingsGroup(stringResource(R.string.settings_group_appearance)) {
         ListItem(
-            headlineContent = { Text("App Language") },
+            headlineContent = { Text(stringResource(R.string.settings_app_language_label)) },
             supportingContent = { Text(appLanguageLabel) },
             leadingContent = {
                 Icon(Icons.Outlined.Language, contentDescription = null)
@@ -419,9 +435,10 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showAppLanguageDialog = true }
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("Holiday Theming") },
-            supportingContent = { Text("Change app colors during holiday periods") },
+            headlineContent = { Text(stringResource(R.string.settings_holiday_theming_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_holiday_theming_description)) },
             leadingContent = {
                 Icon(Icons.Outlined.Palette, contentDescription = null)
             },
@@ -432,10 +449,10 @@ fun SettingsContent(
                 )
             }
         )
-
-        HorizontalDivider()
+        }
 
         val selectedCount = state.selectedZmanim.size
+        SettingsGroup(stringResource(R.string.settings_group_halachic_times)) {
         ListItem(
             headlineContent = { Text("Halachic Times") },
             supportingContent = { Text("$selectedCount shown in day panel") },
@@ -447,18 +464,18 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onHalachicTimesSettings)
         )
+        }
 
-        HorizontalDivider()
-        SettingsSectionHeader("Notifications")
-
+        SettingsGroup(stringResource(R.string.settings_group_notifications)) {
         NotificationsSection(
             state = state,
             onIntent = onIntent,
             onShowModeDialog = { showCandleLightingModeDialog = true }
         )
+        }
 
         if (state.showDeveloperSettings) {
-            HorizontalDivider()
+            SettingsGroup(stringResource(R.string.settings_group_developer)) {
             ListItem(
                 headlineContent = { Text("Developer Settings") },
                 leadingContent = {
@@ -469,10 +486,10 @@ fun SettingsContent(
                 },
                 modifier = Modifier.clickable(onClick = onDeveloperSettings)
             )
+            }
         }
 
-        HorizontalDivider()
-        SettingsSectionHeader("About")
+        SettingsGroup(stringResource(R.string.settings_group_about)) {
         ListItem(
             headlineContent = { Text("About") },
             leadingContent = {
@@ -483,6 +500,7 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onAbout)
         )
+        }
     }
 
     if (showMinhagDialog) {
@@ -528,14 +546,44 @@ fun SettingsContent(
 }
 
 @Composable
+private fun SettingsGroup(label: String, content: @Composable () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SettingsRowDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(start = 16.dp)
+    )
+}
+
+@Composable
 private fun SettingsSectionHeader(text: String) {
     Text(
-        text = text,
+        text = text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+            .padding(start = 12.dp, top = 20.dp, bottom = 6.dp)
     )
 }
 
@@ -711,18 +759,24 @@ internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
     onToggle: (name: String, enabled: Boolean) -> Unit
 ) {
-    ALL_ZMANIM.forEach { name ->
-        val checked = name in selectedZmanim
-        ListItem(
-            headlineContent = { Text(text = name) },
-            trailingContent = {
-                Checkbox(
-                    checked = checked,
-                    onCheckedChange = { onToggle(name, it) }
+    Column(
+        modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(stringResource(R.string.zmanim_selection_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ALL_ZMANIM.forEach { name ->
+            val checked = name in selectedZmanim
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+            ) {
+                ListItem(
+                    headlineContent = { Text(text = name) },
+                    trailingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle(name, it) }) },
+                    modifier = Modifier.clickable { onToggle(name, !checked) }
                 )
-            },
-            modifier = Modifier.clickable { onToggle(name, !checked) }
-        )
+            }
+        }
     }
 }
 

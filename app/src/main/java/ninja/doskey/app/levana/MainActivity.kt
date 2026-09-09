@@ -8,13 +8,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,14 +28,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -45,12 +57,12 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -225,8 +237,8 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
     }
 
     val drawerNavItems = listOf(
-        DrawerNavItem("Calendar", Icons.Filled.CalendarMonth, CalendarRoute),
-        DrawerNavItem("Events", Icons.Filled.Event, PersonalEventsRoute)
+        DrawerNavItem(stringResource(R.string.nav_calendar), Icons.Filled.CalendarMonth, CalendarRoute),
+        DrawerNavItem(stringResource(R.string.design_my_events), Icons.Filled.Event, PersonalEventsRoute)
     )
 
     val showDrawer = hasLocation && backStackEntry?.destination?.let { dest ->
@@ -254,137 +266,127 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         drawerState = drawerState,
         gesturesEnabled = showDrawer,
         drawerContent = {
-            ModalDrawerSheet {
+            var citiesExpanded by remember { mutableStateOf(false) }
+            ModalDrawerSheet(
+                drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
+            ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxHeight()
+                    modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 16.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape),
-                            contentAlignment = Alignment.Center
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    if (hasLocation) {
+                        Surface(
+                            onClick = { citiesExpanded = !citiesExpanded },
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_launcher_foreground),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(14.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(40.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.Filled.LocationOn, contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.design_active_city),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                    Text(locationName, style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                }
+                                Icon(if (citiesExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = stringResource(R.string.design_switch_city))
+                            }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                        AnimatedVisibility(visible = citiesExpanded) {
+                            Column {
+                                val currentPrefs = prefs
+                                if (currentPrefs?.locationMode is LocationMode.Gps) {
+                                    NavigationDrawerItem(
+                                        label = { Text(currentPrefs.gpsLocation?.name ?: stringResource(R.string.design_detecting)) },
+                                        icon = { Icon(Icons.Filled.GpsFixed, contentDescription = null) },
+                                        selected = true,
+                                        onClick = { citiesExpanded = false },
+                                    )
+                                }
+                                currentPrefs?.savedLocations?.forEach { saved ->
+                                    val isActive = (currentPrefs.locationMode as? LocationMode.Saved)?.id == saved.id
+                                    NavigationDrawerItem(
+                                        label = { Text(saved.location.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                        icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
+                                        selected = isActive,
+                                        onClick = {
+                                            scope.launch {
+                                                preferencesRepository.setLocationMode(LocationMode.Saved(saved.id))
+                                                citiesExpanded = false
+                                                drawerState.close()
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        NavigationDrawerItem(
+                            label = { Text(stringResource(R.string.design_manage_cities)) },
+                            icon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(LocationsSettingsRoute) { launchSingleTop = true }
+                            },
                         )
                     }
+                    HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant)
                     drawerNavItems.forEach { item ->
-                        val selected =
-                            backStackEntry?.destination?.hasRoute(item.route::class) == true
+                        val selected = backStackEntry?.destination?.hasRoute(item.route::class) == true
                         NavigationDrawerItem(
-                            label = { Text(item.label) },
-                            icon = { Icon(item.icon, contentDescription = null) },
+                            label = { Text(item.label, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal) },
+                            icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
                             selected = selected,
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            ),
                             onClick = {
                                 scope.launch { drawerState.close() }
                                 navController.navigate(item.route) {
-                                    popUpTo(
-                                        navController.graph.findStartDestination().id
-                                    ) { inclusive = false }
+                                    popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
                                     launchSingleTop = true
                                 }
-                            }
+                            },
                         )
                     }
-
-                    if (hasLocation) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(start = 28.dp, top = 16.dp, bottom = 18.dp, end = 12.dp)
-                        ) {
-                            Text(
-                                text = "Locations",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = {
-                                    scope.launch { drawerState.close() }
-                                    navController.navigate(LocationsSettingsRoute)
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    Icons.Filled.Edit,
-                                    contentDescription = "Manage locations",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-
-                        val currentPrefs = prefs
-                        if (currentPrefs != null) {
-                            // GPS item (shown only if GPS mode is active)
-                            if (currentPrefs.locationMode is LocationMode.Gps) {
-                                val gpsLabel = currentPrefs.gpsLocation?.name ?: "Detecting…"
-                                NavigationDrawerItem(
-                                    label = { Text(gpsLabel) },
-                                    icon = {
-                                        Icon(Icons.Filled.GpsFixed, contentDescription = null)
-                                    },
-                                    selected = true,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                    }
-                                )
-                            }
-
-                            // Saved locations
-                            currentPrefs.savedLocations.forEach { saved ->
-                                val isActive = currentPrefs.locationMode is LocationMode.Saved &&
-                                    currentPrefs.locationMode.id == saved.id
-                                NavigationDrawerItem(
-                                    label = { Text(saved.location.name) },
-                                    icon = {
-                                        Icon(Icons.Filled.LocationOn, contentDescription = null)
-                                    },
-                                    selected = isActive,
-                                    onClick = {
-                                        scope.launch {
-                                            preferencesRepository.setLocationMode(LocationMode.Saved(saved.id))
-                                            drawerState.close()
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
                     NavigationDrawerItem(
-                        label = { Text("Settings") },
-                        icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                        label = { Text(stringResource(R.string.nav_settings)) },
+                        icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(22.dp)) },
                         selected = backStackEntry?.destination?.hasRoute(SettingsRoute::class) == true,
+                        modifier = Modifier.padding(vertical = 2.dp),
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(SettingsRoute) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = false
-                                }
+                                popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
                                 launchSingleTop = true
                             }
-                        }
+                        },
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -394,22 +396,41 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
         Scaffold(
             topBar = {
-                if (!isCalendarRoute) {
-                    CenterAlignedTopAppBar(
+                if (!isCalendarRoute && backStackEntry?.destination?.hasRoute(OnboardingRoute::class) != true) {
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        ),
                         title = {
-                            Text(
-                                if (isZmanimRoute || isHalachicTimesSettingsRoute) "Halachic Times"
-                                else if (isDeveloperSettingsRoute) "Developer Settings"
-                                else if (isAboutRoute) "About"
-                                else stringResource(R.string.app_name)
-                            )
+                            val destination = backStackEntry?.destination
+                            val title = when {
+                                isZmanimRoute -> stringResource(R.string.nav_zmanim)
+                                isHalachicTimesSettingsRoute -> stringResource(R.string.design_halachic_times)
+                                isDeveloperSettingsRoute -> stringResource(R.string.design_developer_settings)
+                                isAboutRoute -> stringResource(R.string.design_about)
+                                destination?.hasRoute(SettingsRoute::class) == true -> stringResource(R.string.nav_settings)
+                                destination?.hasRoute(PersonalEventsRoute::class) == true -> stringResource(R.string.design_my_events)
+                                destination?.hasRoute(CityPickerRoute::class) == true -> stringResource(R.string.design_cities)
+                                destination?.hasRoute(LocationsSettingsRoute::class) == true -> stringResource(R.string.design_cities)
+                                destination?.hasRoute(ManualLocationRoute::class) == true -> stringResource(R.string.design_add_location)
+                                destination?.hasRoute(CalendarSelectionRoute::class) == true -> stringResource(R.string.design_system_calendars)
+                                destination?.hasRoute(AddEditEventRoute::class) == true -> {
+                                    if ((backStackEntry?.toRoute<AddEditEventRoute>()?.eventId ?: 0L) != 0L)
+                                        stringResource(R.string.design_edit_event) else stringResource(R.string.design_add_event)
+                                }
+                                destination?.hasRoute(ContactBirthdayRoute::class) == true -> stringResource(R.string.design_birthday)
+                                else -> stringResource(R.string.app_name)
+                            }
+                            Text(title, style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                         },
                         navigationIcon = {
                             if (showDrawer) {
                                 IconButton(
                                     onClick = { scope.launch { drawerState.open() } }
                                 ) {
-                                    Icon(Icons.Filled.Menu, contentDescription = "Open menu")
+                                    Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.design_open_menu))
                                 }
                             } else if (canGoBack) {
                                 IconButton(
@@ -417,13 +438,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                 ) {
                                     Icon(
                                         Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
+                                        contentDescription = stringResource(R.string.back)
                                     )
                                 }
                             }
                         },
                         actions = {
-                            topBarActionsContent?.invoke()
+                            if (backStackEntry?.destination?.hasRoute(PersonalEventsRoute::class) == true) {
+                                topBarActionsContent?.invoke()
+                            }
                         }
                     )
                 }
@@ -432,7 +455,11 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
             NavHost(
                 navController = navController,
                 startDestination = startDest,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = { fadeIn(tween(220)) },
+                exitTransition = { fadeOut(tween(150)) },
+                popEnterTransition = { fadeIn(tween(220)) },
+                popExitTransition = { fadeOut(tween(150)) },
             ) {
                 composable<OnboardingRoute> {
                     GpsOnboarding(

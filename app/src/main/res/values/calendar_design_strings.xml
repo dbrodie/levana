@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_mode_hebrew">Hebrew</string>
+    <string name="calendar_mode_gregorian">Gregorian</string>
+    <string name="calendar_event_personal">Personal event</string>
+    <string name="calendar_event_system">Calendar event</string>
+    <string name="calendar_event_candles">Candles</string>
+    <string name="calendar_quick_netz">Netz</string>
+    <string name="calendar_quick_shkia">Shkia</string>
+    <string name="calendar_quick_tzeit">Tzeit</string>
+    <string name="calendar_show_details">Show day details</string>
+    <string name="calendar_go_to_date">Go to date</string>
+    <string name="calendar_hebrew_date">Hebrew date</string>
+    <string name="calendar_gregorian_date">Gregorian date</string>
+    <string name="calendar_invalid_date">Invalid date</string>
+    <string name="calendar_day">Day</string>
+    <string name="calendar_month">Month</string>
+    <string name="calendar_year">Year</string>
+    <string name="calendar_cancel">Cancel</string>
+    <string name="calendar_clear">Clear</string>
+    <string name="calendar_today">Today</string>
+</resources>

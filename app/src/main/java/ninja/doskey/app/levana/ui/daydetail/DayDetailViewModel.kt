@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 class DayDetailViewModel(
     private val calendarRepository: CalendarRepository,
@@ -32,6 +33,7 @@ class DayDetailViewModel(
     val state: StateFlow<DayDetailState> = _state.asStateFlow()
 
     private var lastLoadedDate: LocalDate? = null
+    private var loadJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -49,7 +51,8 @@ class DayDetailViewModel(
 
     private fun loadDay(date: LocalDate) {
         lastLoadedDate = date
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
             val location = prefs.activeLocation ?: Location.JERUSALEM
@@ -96,6 +99,7 @@ class DayDetailViewModel(
                 dayInfo = dayInfo.copy(shabbatInfo = shabbatInfo),
                 calendarEvents = calendarEvents,
                 systemEvents = systemEvents,
+                allZmanim = allZmanim,
                 halachicTimes = halachicTimes,
                 isLoading = false
             )

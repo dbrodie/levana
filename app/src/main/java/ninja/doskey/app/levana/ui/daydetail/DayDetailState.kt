@@ -9,6 +9,8 @@ data class DayDetailState(
     val dayInfo: DayInfo? = null,
     val calendarEvents: List<CalendarEvent> = emptyList(),
     val systemEvents: List<SystemCalendarEvent> = emptyList(),
+    /** Full location-derived list; the compact sheet needs reliable sunrise/sunset. */
+    val allZmanim: List<ZmanTime> = emptyList(),
     val halachicTimes: List<ZmanTime> = emptyList(),
     val isLoading: Boolean = true
 )

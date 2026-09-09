@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#EDEAE6; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#3B4A55; text-decoration:none; }
+  a:hover { color:#26333B; text-decoration:underline; }
+  * { text-wrap:pretty; }
+</style>
+</helmet>
+
+<section style="padding:56px 64px 96px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;background:#3B4A55;color:#fff;font-size:12px;font-weight:700;letter-spacing:.06em">1A</span>
+        <span style="font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#45484C">Material 3 · Android</span>
+      </div>
+      <h1 style="margin:0;font-family:'Frank Ruhl Libre',serif;font-size:44px;font-weight:500;color:#1B1C1E;letter-spacing:-0.01em">Levana — Jewish Calendar</h1>
+      <p style="margin:0;max-width:60ch;font-size:15px;line-height:1.6;color:#45484C">Month grid with a draggable day sheet, zmanim for a switchable active city, holidays and Torah readings, and personal events. The first frame is live: switch the primary calendar, tap days, expand the sheet, open the drawer, change city.</p>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start">
+
+    <!-- 1. INTERACTIVE -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:700;color:#1B1C1E">Calendar — interactive</span>
+        <span style="width:7px;height:7px;border-radius:50%;background:#3B4A55"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ replayOnboarding }}" style="border:1px solid #C8C7C4;background:#FAF9F7;color:#45484C;font-family:'Manrope';font-size:12px;font-weight:600;height:32px;padding:0 14px;border-radius:16px;cursor:pointer" style-hover="background:#E5E1DC">Replay onboarding</button>
+        <button onClick="{{ reset }}" style="border:1px solid #C8C7C4;background:#FAF9F7;color:#45484C;font-family:'Manrope';font-size:12px;font-weight:600;height:32px;padding:0 14px;border-radius:16px;cursor:pointer" style-hover="background:#E5E1DC">Reset</button>
+      </div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif">
+
+          <!-- ONBOARDING -->
+          <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+            <div style="height:100%;display:flex;flex-direction:column">
+              <div style="padding:24px 24px 8px">
+                <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#3B4A55">Setup</div>
+                <div style="margin-top:8px;font-family:'Frank Ruhl Libre',serif;font-size:30px;line-height:1.15;color:#1B1C1E">Set up your calendar</div>
+                <div style="margin-top:8px;font-size:14px;line-height:1.5;color:#45484C">You can change any of this later in Settings.</div>
+              </div>
+              <div style="flex:1;overflow:auto;padding:16px 24px 8px;display:flex;flex-direction:column;gap:24px">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="font-size:12px;font-weight:700;color:#45484C;letter-spacing:.04em">LOCATION</div>
+                  <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border:1px solid #767A7E;border-radius:12px;box-sizing:border-box">
+                    <span style="font-family:'Material Symbols Rounded';font-size:18px;color:#3B4A55">location_on</span>
+                    <div style="flex:1">
+                      <div style="font-size:16px;color:#1B1C1E">Jerusalem, Israel</div>
+                      <div style="font-size:12px;color:#45484C">31.78° N, 35.22° E · Asia/Jerusalem</div>
+                    </div>
+                    <span style="font-size:12px;color:#3B4A55;font-weight:700">CHANGE</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="font-size:12px;font-weight:700;color:#45484C;letter-spacing:.04em">HOLIDAY SCHEDULE</div>
+                  <div style="display:flex;height:44px;border:1px solid #767A7E;border-radius:22px;overflow:hidden">
+                    <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#D6E1E8;font-size:14px;font-weight:600;color:#16242C"><span style="font-family:'Material Symbols Rounded';font-size:18px">check</span> Israel</div>
+                    <div style="width:1px;background:#767A7E"></div>
+                    <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;color:#45484C">Diaspora</div>
+                  </div>
+                  <div style="font-size:12px;color:#45484C;padding-left:4px">One day of Yom Tov, Israeli Torah reading cycle.</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="font-size:12px;font-weight:700;color:#45484C;letter-spacing:.04em">NUSACH</div>
+                  <div style="display:flex;align-items:center;gap:14px;height:52px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid #3B4A55;display:flex;align-items:center;justify-content:center"><span style="width:10px;height:10px;border-radius:50%;background:#3B4A55"></span></span><span style="font-size:16px;color:#1B1C1E">Ashkenaz</span></div>
+                  <div style="height:1px;background:#DAD6D1"></div>
+                  <div style="display:flex;align-items:center;gap:14px;height:52px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid #767A7E"></span><span style="font-size:16px;color:#1B1C1E">Sefard</span></div>
+                  <div style="height:1px;background:#DAD6D1"></div>
+                  <div style="display:flex;align-items:center;gap:14px;height:52px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid #767A7E"></span><span style="font-size:16px;color:#1B1C1E">Edot HaMizrach</span></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px">
+                  <div style="font-size:12px;font-weight:700;color:#45484C;letter-spacing:.04em">CANDLE LIGHTING</div>
+                  <div style="position:relative;display:flex;align-items:center;height:56px;padding:0 16px;border:1px solid #767A7E;border-radius:4px;box-sizing:border-box">
+                    <span style="position:absolute;top:-8px;left:12px;padding:0 4px;background:#FAF9F7;font-size:12px;color:#3B4A55">Minutes before sunset</span>
+                    <span style="flex:1;font-size:16px;color:#1B1C1E">40 min · Jerusalem custom</span>
+                    <span style="font-family:'Material Symbols Rounded';font-size:24px;color:#45484C">arrow_drop_down</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="font-size:16px;color:#1B1C1E">Remind me 20 min before</div>
+                    <div style="width:52px;height:32px;border-radius:16px;background:#3B4A55;display:flex;align-items:center;justify-content:flex-end;padding:0 4px;box-sizing:border-box"><span style="width:24px;height:24px;border-radius:12px;background:#fff"></span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:12px 24px 20px;background:#FAF9F7">
+                <button onClick="{{ finishOnboarding }}" style="width:100%;height:48px;border:none;border-radius:24px;background:#3B4A55;color:#fff;font-family:'Manrope';font-size:14px;font-weight:500;letter-spacing:.006em;cursor:pointer" style-hover="background:#26333B">Continue</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- HOME -->
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+            <div style="height:100%;display:flex;flex-direction:column">
+              <!-- app bar -->
+              <div style="padding:4px 4px 0;background:#FAF9F7">
+                <div style="height:56px;display:flex;align-items:center;gap:4px">
+                  <div onClick="{{ openDrawer }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;cursor:pointer" style-hover="background:#E5E1DC">
+                    <span style="font-family:'Material Symbols Rounded';font-size:24px;line-height:1;color:#45484C">menu</span>
+                  </div>
+                  <div onClick="{{ openDatePicker }}" style="flex:1;display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px;cursor:pointer;width:fit-content;flex:0 1 auto" style-hover="background:#E5E1DC">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#1B1C1E">{{ monthTitle }}</span>
+                    <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#45484C">arrow_drop_down</span>
+                  </div>
+                  <div style="flex:1"></div>
+                  <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px;cursor:pointer" style-hover="background:#E5E1DC">search</div>
+                  <div onClick="{{ goToday }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px;cursor:pointer" style-hover="background:#E5E1DC">today</div>
+                  <div style="width:4px"></div>
+                </div>
+              </div>
+              <!-- segmented -->
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+                <span style="font-size:12px;color:#45484C;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ monthSub }}</span>
+                <div style="display:flex;height:30px;border:1px solid #C8C7C4;border-radius:15px;overflow:hidden;flex-shrink:0">
+                  <div onClick="{{ setHebrew }}" style="position:relative;padding:0 13px;display:flex;align-items:center;cursor:pointer">
+                    <sc-if value="{{ isHeb }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;inset:0;background:#D6E1E8"></div></sc-if>
+                    <span style="position:relative;font-size:11.5px;font-weight:600;color:#16242C">Hebrew</span>
+                  </div>
+                  <div style="width:1px;background:#C8C7C4"></div>
+                  <div onClick="{{ setGreg }}" style="position:relative;padding:0 13px;display:flex;align-items:center;cursor:pointer">
+                    <sc-if value="{{ isGreg }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;background:#D6E1E8"></div></sc-if>
+                    <span style="position:relative;font-size:11.5px;font-weight:600;color:#1B1C1E">Gregorian</span>
+                  </div>
+                </div>
+              </div>
+              <!-- weekday header -->
+              <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px">
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">S</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">M</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">W</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#3B4A55">F</div>
+                <div style="text-align:center;font-size:11px;font-weight:700;color:#3B4A55">S</div>
+              </div>
+              <!-- grid -->
+              <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+                <sc-for list="{{ cells }}" as="c" hint-placeholder-count="42">
+                  <div onClick="{{ c.pick }}" style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:3px" style-hover="background:#ECE9E5">
+                    <sc-if value="{{ c.isSel }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#D6E1E8"></div></sc-if>
+                    <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#F3F1ED"></div></sc-if>
+                    <sc-if value="{{ c.isToday }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;border:1.5px solid #3B4A55;box-sizing:border-box"></div></sc-if>
+                    <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                      <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#1B1C1E">{{ c.primary }}</span>
+                      <span style="font-size:9.5px;font-weight:600;color:#45484C;opacity:.72">{{ c.secondary }}</span>
+                    </div>
+                    <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                      <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="2">
+                        <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(245,251,247,.68)"></div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- DAY SHEET -->
+            <div style="position:absolute;left:0;right:0;bottom:0;max-height:96%;overflow:auto;background:#ECE9E5;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+              <div onClick="{{ toggleSheet }}" style="height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+              <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+
+                <sc-if value="{{ d.hasBadge }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <sc-for list="{{ d.badges }}" as="hb" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:{{ hb.bg }}">
+                        <span style="font-family:'Material Symbols Rounded';font-size:15px;color:{{ hb.fg }}">{{ hb.icon }}</span>
+                        <span style="font-size:12.5px;font-weight:600;color:{{ hb.fg }}">{{ hb.title }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                    <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">NETZ</div>
+                    <div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">{{ z.netz }}</div>
+                  </div>
+                  <div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                    <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">SHKIA</div>
+                    <div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">{{ z.shkia }}</div>
+                  </div>
+                  <div style="flex:1;background:#3B4A55;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                    <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#D6E1E8">{{ z.candleLabel }}</div>
+                    <div style="font-size:19px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums">{{ z.candle }}</div>
+                  </div>
+                </div>
+
+                <sc-if value="{{ expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:16px">
+                    <div style="background:#FAF9F7;border-radius:18px;padding:6px 16px 10px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px">
+                        <span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#45484C">ZMANIM</span>
+                      </div>
+                      <sc-for list="{{ zmanimRows }}" as="r" hint-placeholder-count="6">
+                        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:10px 0;border-top:1px solid #DAD6D1">
+                          <span style="font-size:14.5px;color:#1B1C1E">{{ r.name }}</span>
+                          <span style="font-size:16px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">{{ r.time }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="background:#FAF9F7;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                      <span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#45484C">TORAH READING</span>
+                      <div style="display:flex;align-items:baseline;gap:8px">
+                        <span style="font-family:'Frank Ruhl Libre',serif;font-size:20px;color:#1B1C1E">{{ d.parsha }}</span>
+                        <span style="font-size:12px;color:#45484C">{{ d.parshaRef }}</span>
+                      </div>
+                      <span style="font-size:12.5px;color:#45484C">Haftarah · {{ d.haftarah }}</span>
+                    </div>
+
+                    <sc-if value="{{ d.hasOmer }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;gap:14px;background:#F5E0CA;border-radius:18px;padding:14px 16px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                        <span style="font-family:'Frank Ruhl Libre',serif;font-size:26px;color:#2A1806;line-height:1">{{ d.omerNum }}</span>
+                        <div style="display:flex;flex-direction:column">
+                          <span style="font-size:13.5px;font-weight:600;color:#2A1806">{{ d.omerText }}</span>
+                          <span style="font-size:11.5px;color:#2A1806;opacity:.75">Counted after tzeit hakochavim</span>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <div style="background:#FAF9F7;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                      <span style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#45484C">MY EVENTS</span>
+                      <sc-for list="{{ d.events }}" as="e" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:12px">
+                          <span style="width:34px;height:34px;border-radius:17px;background:#E0E5E9;display:flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:19px;color:#1A2226;flex-shrink:0">{{ e.icon }}</span>
+                          <div style="flex:1;min-width:0">
+                            <div style="font-size:14.5px;color:#1B1C1E">{{ e.title }}</div>
+                            <div style="font-size:11.5px;color:#45484C">{{ e.sub }}</div>
+                          </div>
+                        </div>
+                      </sc-for>
+                      <div style="display:flex;gap:8px;padding-top:2px">
+                        <div style="flex:1;height:40px;border-radius:20px;background:#3B4A55;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;letter-spacing:.006em;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:18px">add</span> Add event</div>
+                        <div style="height:40px;padding:0 24px;border-radius:20px;border:1px solid #767A7E;color:#3B4A55;display:flex;align-items:center;font-size:14px;font-weight:500;letter-spacing:.006em;cursor:pointer">Share</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <sc-if value="{{ datePicker }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div onClick="{{ closeDatePicker }}" style="position:absolute;inset:0;background:rgba(27,28,30,.4);cursor:pointer"></div>
+                <div style="position:absolute;left:24px;right:24px;top:96px;background:#F3F1ED;border-radius:28px;padding:24px;box-shadow:0 8px 24px rgba(27,28,30,.22)">
+                  <div style="font-size:12px;font-weight:600;letter-spacing:.04em;color:#45484C">GO TO DATE</div>
+                  <div style="margin-top:14px;display:flex;height:36px;border:1px solid #C8C7C4;border-radius:18px;overflow:hidden;width:fit-content">
+                    <div onClick="{{ pickerHeb }}" style="position:relative;padding:0 16px;display:flex;align-items:center;cursor:pointer">
+                      <sc-if value="{{ pickerIsHeb }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;inset:0;background:#D6E1E8"></div></sc-if>
+                      <span style="position:relative;font-size:12px;font-weight:600;color:#16242C">Hebrew</span>
+                    </div>
+                    <div style="width:1px;background:#C8C7C4"></div>
+                    <div onClick="{{ pickerGreg }}" style="position:relative;padding:0 16px;display:flex;align-items:center;cursor:pointer">
+                      <sc-if value="{{ pickerIsGreg }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;background:#D6E1E8"></div></sc-if>
+                      <span style="position:relative;font-size:12px;font-weight:600;color:#1B1C1E">Gregorian</span>
+                    </div>
+                  </div>
+                  <div style="margin-top:20px;display:flex;gap:10px">
+                    <sc-for list="{{ pickerFields }}" as="p" hint-placeholder-count="3">
+                      <div style="flex:{{ p.flex }};border:1px solid #767A7E;border-radius:8px;padding:8px 12px">
+                        <div style="font-size:10.5px;color:#45484C">{{ p.label }}</div>
+                        <div style="font-size:17px;font-weight:500;color:#1B1C1E">{{ p.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top:24px;display:flex;justify-content:flex-end;gap:8px">
+                    <div onClick="{{ closeDatePicker }}" style="height:40px;padding:0 24px;border-radius:20px;display:flex;align-items:center;font-size:14px;font-weight:500;color:#3B4A55;cursor:pointer" style-hover="background:#E5E1DC">Cancel</div>
+                    <div onClick="{{ closeDatePicker }}" style="height:40px;padding:0 24px;border-radius:20px;background:#3B4A55;color:#fff;display:flex;align-items:center;font-size:14px;font-weight:500;cursor:pointer">Go</div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- NAV DRAWER -->
+            <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(23,29,26,.4);cursor:pointer"></div>
+                <div style="position:absolute;left:0;top:0;bottom:0;width:320px;background:#F3F1ED;border-radius:0 20px 20px 0;overflow:auto;box-shadow:4px 0 24px rgba(0,0,0,.2)">
+                  <div style="padding:22px 20px 10px">
+                    <div style="font-family:'Frank Ruhl Libre',serif;font-size:22px;color:#1B1C1E">Levana</div>
+                  </div>
+                  <div onClick="{{ toggleCity }}" style="margin:4px 12px;padding:12px 14px;border-radius:16px;background:#E0E5E9;display:flex;align-items:center;gap:12px;cursor:pointer">
+                    <span style="font-family:'Material Symbols Rounded';width:36px;height:36px;border-radius:18px;background:#3B4A55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">location_on</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#1A2226;opacity:.7">ACTIVE CITY</div>
+                      <div style="font-size:15.5px;font-weight:600;color:#1A2226">{{ cityName }}</div>
+                    </div>
+                    <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#1A2226">{{ cityChev }}</span>
+                  </div>
+                  <sc-if value="{{ cityOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin:2px 12px 8px;display:flex;flex-direction:column">
+                      <sc-for list="{{ cityList }}" as="ct" hint-placeholder-count="5">
+                        <div onClick="{{ ct.pick }}" style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:23px;cursor:pointer" style-hover="background:#E5E1DC">
+                          <span style="font-family:'Material Symbols Rounded';width:18px;font-size:18px;color:#3B4A55">{{ ct.mark }}</span>
+                          <span style="flex:1;font-size:14.5px;color:#1B1C1E">{{ ct.name }}</span>
+                          <span style="font-size:12.5px;font-weight:600;color:#45484C;font-variant-numeric:tabular-nums">{{ ct.clock }}</span>
+                        </div>
+                      </sc-for>
+                      <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;color:#3B4A55;font-size:13.5px;font-weight:600;cursor:pointer"><span style="font-family:'Material Symbols Rounded';font-size:18px">add</span> Add a city</div>
+                    </div>
+                  </sc-if>
+                  <div style="height:1px;background:#DAD6D1;margin:8px 20px"></div>
+                  <div style="padding:6px 12px 20px;display:flex;flex-direction:column;gap:2px">
+                    <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:26px;background:#E0E5E9"><span style="font-family:'Material Symbols Rounded';font-size:16px">calendar_month</span><span style="font-size:14.5px;font-weight:600;color:#1A2226">Calendar</span></div>
+                    <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:26px;cursor:pointer" style-hover="background:#E5E1DC"><span style="font-family:'Material Symbols Rounded';font-size:16px">cake</span><span style="flex:1;font-size:14.5px;color:#1B1C1E">My events</span></div>
+                    <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:26px;cursor:pointer" style-hover="background:#E5E1DC"><span style="font-family:'Material Symbols Rounded';font-size:16px">location_city</span><span style="flex:1;font-size:14.5px;color:#1B1C1E">Cities</span></div>
+                    <div style="height:1px;background:#DAD6D1;margin:8px 16px"></div>
+                    <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:26px;cursor:pointer" style-hover="background:#E5E1DC"><span style="font-family:'Material Symbols Rounded';font-size:16px">settings</span><span style="font-size:14.5px;color:#1B1C1E">Settings</span></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 5. CITY PICKER -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Cities</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif;display:flex;flex-direction:column">
+          <div style="height:56px;display:flex;align-items:center;gap:8px;padding:0 10px">
+            <span style="font-family:'Material Symbols Rounded';width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#45484C;font-size:18px">arrow_back</span>
+            <span style="flex:1;font-size:19px;font-weight:600;color:#1B1C1E">Cities</span>
+          </div>
+          <div style="flex:1;overflow:auto;padding:8px 16px 92px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#E0E5E9;border-radius:18px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+              <span style="font-family:'Material Symbols Rounded';width:44px;height:44px;border-radius:22px;background:#3B4A55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px">my_location</span>
+              <div style="flex:1">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#1A2226;opacity:.7">CURRENT LOCATION · ACTIVE</div>
+                <div style="font-size:17px;font-weight:600;color:#1A2226">Jerusalem, Israel</div>
+                <div style="font-size:12px;color:#1A2226;opacity:.8">Follows GPS</div>
+              </div>
+              <span style="font-family:'Material Symbols Rounded';font-size:22px;color:#1A2226">check</span>
+            </div>
+            <div>
+              <div style="padding:6px 4px 8px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#45484C">SAVED</div>
+              <div style="background:#F3F1ED;border-radius:18px;overflow:hidden;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px"><div style="flex:1"><div style="font-size:15px;color:#1B1C1E">Tel Aviv-Yafo</div><div style="font-size:11.5px;color:#45484C">Israel · GMT+3</div></div><span style="font-size:15px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">14:12</span></div>
+                <div style="height:1px;background:#DAD6D1;margin-left:16px"></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px"><div style="flex:1"><div style="font-size:15px;color:#1B1C1E">New York</div><div style="font-size:11.5px;color:#45484C">United States · GMT−4</div></div><span style="font-size:15px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">07:12</span></div>
+                <div style="height:1px;background:#DAD6D1;margin-left:16px"></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px"><div style="flex:1"><div style="font-size:15px;color:#1B1C1E">London</div><div style="font-size:11.5px;color:#45484C">United Kingdom · GMT+1</div></div><span style="font-size:15px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">12:12</span></div>
+                <div style="height:1px;background:#DAD6D1;margin-left:16px"></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px"><div style="flex:1"><div style="font-size:15px;color:#1B1C1E">Melbourne</div><div style="font-size:11.5px;color:#45484C">Australia · GMT+11</div></div><span style="font-size:15px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">22:12</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;right:16px;bottom:16px;height:56px;padding:0 20px;border-radius:16px;background:#D6E1E8;color:#16242C;display:flex;align-items:center;gap:12px;box-shadow:0 3px 6px rgba(27,28,30,.15),0 1px 3px rgba(27,28,30,.12)"><span style="font-family:'Material Symbols Rounded';font-size:24px">add</span><span style="font-size:14px;font-weight:600;letter-spacing:.01em">Add city</span></div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 6. SETTINGS -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Settings</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif;display:flex;flex-direction:column">
+          <div style="padding:4px 4px 0">
+            <div style="height:56px;display:flex;align-items:center;gap:8px;padding:0 6px"><span style="font-family:'Material Symbols Rounded';width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#45484C;font-size:18px">arrow_back</span></div>
+            <div style="padding:4px 20px 18px;font-family:'Frank Ruhl Libre',serif;font-size:30px;color:#1B1C1E">Settings</div>
+          </div>
+          <div style="flex:1;overflow:auto;padding:0 16px 20px;display:flex;flex-direction:column;gap:16px">
+            <div style="background:#F3F1ED;border-radius:18px;padding:6px 16px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+              <div style="padding:12px 0 2px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#3B4A55">HALACHA</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Nusach</div><div style="font-size:11.5px;color:#45484C">Affects tefillah notes and zmanim labels</div></div><span style="font-size:14px;font-weight:600;color:#3B4A55">Ashkenaz</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Holiday schedule</div><div style="font-size:11.5px;color:#45484C">One day of Yom Tov</div></div><span style="font-size:14px;font-weight:600;color:#3B4A55">Israel</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Zmanim opinion</div><div style="font-size:11.5px;color:#45484C">Shema, tefilla, plag</div></div><span style="font-size:14px;font-weight:600;color:#3B4A55">GRA</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Tzeit hakochavim</div><div style="font-size:11.5px;color:#45484C">Degrees below horizon</div></div><span style="font-size:14px;font-weight:600;color:#3B4A55">8.5°</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Candle lighting offset</div><div style="font-size:11.5px;color:#45484C">Before sunset</div></div><span style="font-size:14px;font-weight:600;color:#3B4A55">40 min</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Use elevation</div><div style="font-size:11.5px;color:#45484C">In sunrise and sunset</div></div><div style="width:44px;height:26px;border-radius:13px;background:#C8C7C4;display:flex;align-items:center;padding:0 3px;box-sizing:border-box"><span style="width:20px;height:20px;border-radius:10px;background:#FAF9F7"></span></div></div>
+            </div>
+            <div style="background:#F3F1ED;border-radius:18px;padding:6px 16px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+              <div style="padding:12px 0 2px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#3B4A55">CALENDAR</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div style="font-size:15px;color:#1B1C1E">Primary calendar</div><span style="font-size:14px;font-weight:600;color:#3B4A55">Hebrew</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div style="font-size:15px;color:#1B1C1E">Hebrew numerals for days</div><div style="width:44px;height:26px;border-radius:13px;background:#3B4A55;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><span style="width:20px;height:20px;border-radius:10px;background:#fff"></span></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Show Daf Yomi</div><div style="font-size:11.5px;color:#45484C">In the day sheet</div></div><div style="width:44px;height:26px;border-radius:13px;background:#C8C7C4;display:flex;align-items:center;padding:0 3px;box-sizing:border-box"><span style="width:20px;height:20px;border-radius:10px;background:#FAF9F7"></span></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div style="font-size:15px;color:#1B1C1E">Week starts on</div><span style="font-size:14px;font-weight:600;color:#3B4A55">Sunday</span></div>
+            </div>
+            <div style="background:#F3F1ED;border-radius:18px;padding:6px 16px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)">
+              <div style="padding:12px 0 2px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#3B4A55">APPEARANCE</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div style="font-size:15px;color:#1B1C1E">Theme</div><span style="font-size:14px;font-weight:600;color:#3B4A55">System</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #DAD6D1"><div><div style="font-size:15px;color:#1B1C1E">Holiday accents</div><div style="font-size:11.5px;color:#45484C">Recolour the app during chagim</div></div><div style="width:44px;height:26px;border-radius:13px;background:#3B4A55;display:flex;align-items:center;justify-content:flex-end;padding:0 3px;box-sizing:border-box"><span style="width:20px;height:20px;border-radius:10px;background:#fff"></span></div></div>
+              <div style="display:flex;gap:8px;padding:12px 0 4px;border-top:1px solid #DAD6D1">
+                <span style="width:32px;height:32px;border-radius:16px;background:#3B4A55;border:2px solid #1B1C1E;box-sizing:border-box"></span>
+                <span style="width:32px;height:32px;border-radius:16px;background:#8A5B00"></span>
+                <span style="width:32px;height:32px;border-radius:16px;background:#4F6B12"></span>
+                <span style="width:32px;height:32px;border-radius:16px;background:#8E3E86"></span>
+                <span style="width:32px;height:32px;border-radius:16px;background:#2C4B8F"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 7. DARK -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Calendar — dark</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" bg="#131416" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#131416;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="height:56px;display:flex;align-items:center;gap:10px;padding:0 14px">
+              <span style="font-family:'Material Symbols Rounded';font-size:24px;line-height:1;color:#C8C7C4">menu</span>
+              <div style="display:flex;align-items:center;gap:2px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;color:#DAD6D1">ניסן ה׳תשפ״ו</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#C8C7C4">arrow_drop_down</span></div>
+              <div style="flex:1"></div>
+              <span style="font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">search</span><span style="font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">today</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#C8C7C4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">March – April 2026</span>
+              <div style="display:flex;height:30px;border:1px solid #4C5054;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#33424B"><span style="font-size:11.5px;font-weight:600;color:#D6E1E8">Hebrew</span></div>
+                <div style="width:1px;background:#4C5054"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#C8C7C4">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px">
+              <div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#A8C7DA">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#A8C7DA">S</div>
+            </div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ darkCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.isSel }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#33424B"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#1F2123"></div></sc-if>
+                  <sc-if value="{{ c.isToday }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;border:1.5px solid #A8C7DA;box-sizing:border-box"></div></sc-if>
+                    <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#DAD6D1">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#C8C7C4;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.darkBars }}" as="b" hint-placeholder-count="2">
+                        <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                      </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(15,21,18,.66)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#1F2123;border-radius:28px 28px 0 0;padding-bottom:20px">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:0 20px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;color:#C8C7C4">NETZ</div><div style="font-size:19px;font-weight:600;color:#DAD6D1">6:26</div></div>
+                <div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;color:#C8C7C4">SHKIA</div><div style="font-size:19px;font-weight:600;color:#DAD6D1">19:07</div></div>
+                <div style="flex:1;background:#A8C7DA;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;color:#16242C">CANDLES FRI</div><div style="font-size:19px;font-weight:600;color:#16242C">18:53</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 8. WIDGET -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Lock screen</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" bg="#17181A" hint-size="412px,892px">
+        <div style="height:828px;background:#17181A;font-family:'Manrope',sans-serif;display:flex;flex-direction:column;align-items:center;padding:0 18px;box-sizing:border-box">
+          <div style="margin-top:26px;text-align:center">
+            <div style="font-size:15px;color:#C8C7C4;letter-spacing:.02em">Monday, 30 March</div>
+            <div style="font-family:'Frank Ruhl Libre',serif;font-size:76px;line-height:1;color:#EFEDEA;margin-top:2px">14:12</div>
+            <div style="font-family:'Frank Ruhl Libre',serif;font-size:22px;color:#A8C7DA;margin-top:6px">י״ב ניסן ה׳תשפ״ו</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="display:flex;gap:52px;padding-bottom:26px"><span style="font-family:'Material Symbols Rounded';width:48px;height:48px;border-radius:24px;background:rgba(255,255,255,.1);color:#EFEDEA;font-size:24px;display:flex;align-items:center;justify-content:center">call</span><span style="font-family:'Material Symbols Rounded';width:48px;height:48px;border-radius:24px;background:rgba(255,255,255,.1);color:#EFEDEA;font-size:24px;display:flex;align-items:center;justify-content:center">photo_camera</span></div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 9-11. HOLIDAY ACCENT SKINS -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Rosh Hashanah</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#1B1C1E">תשרי ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#45484C">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#45484C">September – October 2026</span>
+              <div style="display:flex;height:30px;border:1px solid #C8C7C4;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#FFDEA6"><span style="font-size:11.5px;font-weight:600;color:#2B1A00">Hebrew</span></div>
+                <div style="width:1px;background:#C8C7C4"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#1B1C1E">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#8A5B00">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#8A5B00">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ rhCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#FFDEA6"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#F3F1ED"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#1B1C1E">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#45484C;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(250,249,247,.68)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#ECE9E5;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#FFDEA6"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#2B1A00">celebration</span><span style="font-size:12.5px;font-weight:600;color:#2B1A00">Rosh Hashanah I</span></div><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#FFDEA6"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#2B1A00">brightness_3</span><span style="font-size:12.5px;font-weight:600;color:#2B1A00">Shabbat</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">NETZ</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">6:26</div></div><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">SHKIA</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">18:47</div></div><div style="flex:1;background:#8A5B00;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#FFDEA6">TZEIT</div><div style="font-size:19px;font-weight:600;color:#FFFFFF;font-variant-numeric:tabular-nums">19:04</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Sukkot</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#1B1C1E">תשרי ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#45484C">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#45484C">September – October 2026</span>
+              <div style="display:flex;height:30px;border:1px solid #C8C7C4;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#D5EFA0"><span style="font-size:11.5px;font-weight:600;color:#1B2A00">Hebrew</span></div>
+                <div style="width:1px;background:#C8C7C4"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#1B1C1E">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#4F6B12">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#4F6B12">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ skCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#D5EFA0"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#F3F1ED"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#1B1C1E">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#45484C;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(250,249,247,.68)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#ECE9E5;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#D5EFA0"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#1B2A00">celebration</span><span style="font-size:12.5px;font-weight:600;color:#1B2A00">Chol HaMoed Sukkot</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">NETZ</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">6:38</div></div><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">SHKIA</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">18:27</div></div><div style="flex:1;background:#4F6B12;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#D5EFA0">CANDLES FRI</div><div style="font-size:19px;font-weight:600;color:#FFFFFF;font-variant-numeric:tabular-nums">18:05</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Purim</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" bg="#FAF9F7" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#FAF9F7;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#1B1C1E">אדר ב׳ ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#45484C">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#45484C;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#45484C">March – April 2027</span>
+              <div style="display:flex;height:30px;border:1px solid #C8C7C4;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#FFD7F4"><span style="font-size:11.5px;font-weight:600;color:#3A0034">Hebrew</span></div>
+                <div style="width:1px;background:#C8C7C4"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#1B1C1E">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#45484C">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#8E3E86">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#8E3E86">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ prCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#FFD7F4"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#F3F1ED"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#1B1C1E">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#45484C;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(250,249,247,.68)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#ECE9E5;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#FFD7F4"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#3A0034">celebration</span><span style="font-size:12.5px;font-weight:600;color:#3A0034">Purim</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">NETZ</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">5:52</div></div><div style="flex:1;background:#FAF9F7;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#45484C">SHKIA</div><div style="font-size:19px;font-weight:600;color:#1B1C1E;font-variant-numeric:tabular-nums">18:00</div></div><div style="flex:1;background:#8E3E86;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#FFD7F4">CANDLES FRI</div><div style="font-size:19px;font-weight:600;color:#FFFFFF;font-variant-numeric:tabular-nums">17:42</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Rosh Hashanah · dark</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" bg="#131416" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#131416;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#DAD6D1">תשרי ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#C8C7C4">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#C8C7C4">September – October 2026</span>
+              <div style="display:flex;height:30px;border:1px solid #4C5054;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#664000"><span style="font-size:11.5px;font-weight:600;color:#FFDEA6">Hebrew</span></div>
+                <div style="width:1px;background:#4C5054"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#DAD6D1">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#F5BE48">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#F5BE48">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ rhCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#664000"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#1F2123"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#DAD6D1">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#C8C7C4;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.darkBars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(19,20,22,.66)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#1F2123;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#664000"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#FFDEA6">celebration</span><span style="font-size:12.5px;font-weight:600;color:#FFDEA6">Rosh Hashanah I</span></div><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#664000"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#FFDEA6">brightness_3</span><span style="font-size:12.5px;font-weight:600;color:#FFDEA6">Shabbat</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">NETZ</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">6:26</div></div><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">SHKIA</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">18:47</div></div><div style="flex:1;background:#F5BE48;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#664000">TZEIT</div><div style="font-size:19px;font-weight:600;color:#432C00;font-variant-numeric:tabular-nums">19:04</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Sukkot · dark</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" bg="#131416" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#131416;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#DAD6D1">תשרי ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#C8C7C4">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#C8C7C4">September – October 2026</span>
+              <div style="display:flex;height:30px;border:1px solid #4C5054;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#384E00"><span style="font-size:11.5px;font-weight:600;color:#D5EFA0">Hebrew</span></div>
+                <div style="width:1px;background:#4C5054"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#DAD6D1">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#B8D873">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#B8D873">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ skCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#384E00"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#1F2123"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#DAD6D1">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#C8C7C4;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.darkBars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(19,20,22,.66)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#1F2123;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#384E00"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#D5EFA0">celebration</span><span style="font-size:12.5px;font-weight:600;color:#D5EFA0">Chol HaMoed Sukkot</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">NETZ</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">6:38</div></div><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">SHKIA</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">18:27</div></div><div style="flex:1;background:#B8D873;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#384E00">CANDLES FRI</div><div style="font-size:19px;font-weight:600;color:#253600;font-variant-numeric:tabular-nums">18:05</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Holiday accent — Purim · dark</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" bg="#131416" hint-size="412px,892px">
+        <div style="position:relative;height:828px;overflow:hidden;background:#131416;font-family:'Manrope',sans-serif">
+          <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:4px 4px 0">
+              <div style="height:56px;display:flex;align-items:center;gap:4px">
+                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:24px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">menu</div>
+                <div style="display:flex;align-items:center;gap:2px;height:40px;padding:0 8px 0 4px;border-radius:20px"><span style="font-family:'Frank Ruhl Libre',serif;font-size:21px;line-height:1.1;color:#DAD6D1">אדר ב׳ ה׳תשפ״ז</span><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#C8C7C4">arrow_drop_down</span></div>
+                <div style="flex:1"></div>
+                <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">search</div><div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:22px;font-family:'Material Symbols Rounded';color:#C8C7C4;font-size:24px">today</div>
+                <div style="width:4px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 10px">
+              <span style="font-size:12px;color:#C8C7C4">March – April 2027</span>
+              <div style="display:flex;height:30px;border:1px solid #4C5054;border-radius:15px;overflow:hidden;flex-shrink:0">
+                <div style="padding:0 13px;display:flex;align-items:center;background:#722B6C"><span style="font-size:11.5px;font-weight:600;color:#FFD7F4">Hebrew</span></div>
+                <div style="width:1px;background:#4C5054"></div>
+                <div style="padding:0 13px;display:flex;align-items:center;font-size:11.5px;font-weight:600;color:#DAD6D1">Gregorian</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:0 10px 6px"><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">S</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">M</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">W</div><div style="text-align:center;font-size:11px;font-weight:700;color:#C8C7C4">T</div><div style="text-align:center;font-size:11px;font-weight:700;color:#FFACE9">F</div><div style="text-align:center;font-size:11px;font-weight:700;color:#FFACE9">S</div></div>
+            <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:2px;padding:0 7px 196px;box-sizing:border-box">
+              <sc-for list="{{ prCells }}" as="c" hint-placeholder-count="42">
+                <div style="position:relative;min-width:0;min-height:50px;border-radius:12px;padding:5px 5px 0;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;gap:3px">
+                  <sc-if value="{{ c.hi }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#722B6C"></div></sc-if>
+                  <sc-if value="{{ c.isShabbat }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:#1F2123"></div></sc-if>
+                  <div style="position:relative;display:flex;align-items:baseline;justify-content:space-between;padding:0 2px">
+                    <span style="font-family:'Frank Ruhl Libre',serif;font-size:18px;line-height:1.1;color:#DAD6D1">{{ c.primary }}</span>
+                    <span style="font-size:9.5px;font-weight:600;color:#C8C7C4;opacity:.72">{{ c.secondary }}</span>
+                  </div>
+                  <div style="position:relative;display:flex;flex-direction:column;gap:3px;padding:1px 1px 0">
+                    <sc-for list="{{ c.darkBars }}" as="b" hint-placeholder-count="2">
+                      <div style="border-radius:4px;padding:1px 3px;font-size:8px;line-height:1.4;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ b.fg }};background:{{ b.bg }}">{{ b.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ c.out }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;border-radius:12px;background:rgba(19,20,22,.66)"></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:#1F2123;border-radius:28px 28px 0 0;box-shadow:0 -1px 3px rgba(27,28,30,.12),0 -8px 24px rgba(27,28,30,.16)">
+            <div style="height:26px;display:flex;align-items:center;justify-content:center"><div style="width:36px;height:4px;border-radius:2px;background:#767A7E"></div></div>
+            <div style="padding:2px 20px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:#722B6C"><span style="font-family:'Material Symbols Rounded';font-size:15px;color:#FFD7F4">celebration</span><span style="font-size:12.5px;font-weight:600;color:#FFD7F4">Purim</span></div></div>
+              <div style="display:flex;gap:8px"><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">NETZ</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">5:52</div></div><div style="flex:1;background:#2A2C2F;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#C8C7C4">SHKIA</div><div style="font-size:19px;font-weight:600;color:#DAD6D1;font-variant-numeric:tabular-nums">18:00</div></div><div style="flex:1;background:#FFACE9;border-radius:14px;padding:11px 12px;box-shadow:0 1px 3px rgba(27,28,30,.13),0 1px 2px rgba(27,28,30,.08)"><div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#722B6C">CANDLES FRI</div><div style="font-size:19px;font-weight:600;color:#571350;font-variant-numeric:tabular-nums">17:42</div></div></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- 12. THEMING SPEC -->
+    <div style="display:flex;flex-direction:column;gap:14px;width:520px">
+      <span style="font-size:13px;font-weight:700;color:#1B1C1E">Theming system</span>
+      <div style="background:#FAF9F7;border:1px solid #C8C7C4;border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:22px">
+        <p style="margin:0;font-size:13.5px;line-height:1.6;color:#45484C">One Material 3 scheme drives the app. A holiday skin swaps only primary and its container, each with a light and a dark tone pair (M3 tone 40/90 in light, 80/30 in dark). Surfaces stay neutral; type, spacing, elevation and layout never change.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#45484C">SWAPPED ROLES</div>
+          <div style="display:grid;grid-template-columns:118px repeat(4,1fr);gap:6px;align-items:center">
+            <span style="font-size:11px;color:#45484C">theme</span>
+            <span style="font-size:11px;font-weight:700;color:#1B1C1E">primary</span>
+            <span style="font-size:11px;font-weight:700;color:#1B1C1E">container</span>
+            <span style="font-size:11px;font-weight:700;color:#1B1C1E">primary · dark</span>
+            <span style="font-size:11px;font-weight:700;color:#1B1C1E">container · dark</span>
+            <span style="font-size:12px;font-weight:600;color:#1B1C1E">Base</span><span style="height:34px;border-radius:8px;background:#3B4A55"></span><span style="height:34px;border-radius:8px;background:#D6E1E8"></span><span style="height:34px;border-radius:8px;background:#A8C7DA"></span><span style="height:34px;border-radius:8px;background:#33424B"></span>
+            <span style="font-size:12px;font-weight:600;color:#1B1C1E">Rosh Hashanah</span><span style="height:34px;border-radius:8px;background:#8A5B00"></span><span style="height:34px;border-radius:8px;background:#FFDEA6"></span><span style="height:34px;border-radius:8px;background:#F5BE48"></span><span style="height:34px;border-radius:8px;background:#664000"></span>
+            <span style="font-size:12px;font-weight:600;color:#1B1C1E">Sukkot</span><span style="height:34px;border-radius:8px;background:#4F6B12"></span><span style="height:34px;border-radius:8px;background:#D5EFA0"></span><span style="height:34px;border-radius:8px;background:#B8D873"></span><span style="height:34px;border-radius:8px;background:#384E00"></span>
+            <span style="font-size:12px;font-weight:600;color:#1B1C1E">Purim</span><span style="height:34px;border-radius:8px;background:#8E3E86"></span><span style="height:34px;border-radius:8px;background:#FFD7F4"></span><span style="height:34px;border-radius:8px;background:#FFACE9"></span><span style="height:34px;border-radius:8px;background:#722B6C"></span>
+            <span style="font-size:12px;font-weight:600;color:#1B1C1E">Pesach</span><span style="height:34px;border-radius:8px;background:#2C4B8F"></span><span style="height:34px;border-radius:8px;background:#DCE3FF"></span><span style="height:34px;border-radius:8px;background:#B3C5FF"></span><span style="height:34px;border-radius:8px;background:#0F3170"></span>
+          </div>
+        </div>
+        <div style="height:1px;background:#DAD6D1"></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#45484C">FIXED ACROSS THEMES</div>
+          <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;color:#1B1C1E">
+            <div style="display:flex;justify-content:space-between"><span>Display / Hebrew dates</span><span style="font-family:'Frank Ruhl Libre',serif;font-size:15px">Frank Ruhl Libre 500</span></div>
+            <div style="display:flex;justify-content:space-between"><span>UI &amp; numerals</span><span style="font-weight:600">Manrope 400 / 600</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Corner radii</span><span style="font-weight:600">12 · 18 · 28 (sheet)</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Day cell</span><span style="font-weight:600">2 px gutter, 2 event chips max</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Touch targets</span><span style="font-weight:600">≥ 48 dp</span></div>
+          </div>
+        </div>
+        <div style="height:1px;background:#DAD6D1"></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#45484C">EVENT CHIP SEMANTICS</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:58px;text-align:center;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;letter-spacing:-.02em;background:#D6E1E8;color:#16242C">Pesach I</span><span style="font-size:13px;color:#1B1C1E">Yom Tov · Rosh Chodesh</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:58px;text-align:center;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;letter-spacing:-.02em;background:#F5E0CA;color:#2A1806">Chol HaM</span><span style="font-size:13px;color:#1B1C1E">Chol HaMoed · minor holiday</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:58px;text-align:center;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;letter-spacing:-.02em;background:#E5E1DC;color:#45484C">Shabbat</span><span style="font-size:13px;color:#1B1C1E">Shabbat · parsha</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:58px;text-align:center;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;letter-spacing:-.02em;background:#F9DEDC;color:#410E0B">Ta. Bech.</span><span style="font-size:13px;color:#1B1C1E">Fast day</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:58px;text-align:center;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;letter-spacing:-.02em;background:#E7E4DF;color:#5A6570">Yahrzeit</span><span style="font-size:13px;color:#1B1C1E">Personal event · yahrzeit</span></div>
+          </div>
+        </div>
+        <p style="margin:0;font-size:11.5px;line-height:1.5;color:#767A7E">Zmanim, parshiyot and dates shown are sample data for layout review, not a halachic source.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;schedule&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;diaspora&quot;,&quot;israel&quot;],&quot;default&quot;:&quot;diaspora&quot;,&quot;tsType&quot;:&quot;'diaspora' | 'israel'&quot;,&quot;section&quot;:&quot;Halacha&quot;},&quot;showOmer&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Calendar&quot;}}">
+const ONES = ['','א','ב','ג','ד','ה','ו','ז','ח','ט'];
+const TENS = ['','י','כ','ל'];
+const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const HEB_MON = { adar:'אדר', nisan:'ניסן', iyar:'אייר' };
+const HEB_LAT = { adar:'Adar', nisan:'Nisan', iyar:'Iyar' };
+
+const KIND_COLOR = { yomtov:'#3B4A55', holiday:'#7A5B3A', shabbat:'#5A6570', fast:'#B3261E', personal:'#767A7E' };
+const KIND_DARK  = { yomtov:'#A8C7DA', holiday:'#D4A96C', shabbat:'#A6ADB5', fast:'#FFB4AB', personal:'#8E9296' };
+const CHIP = {
+  yomtov:{ bg:'#D6E1E8', fg:'#16242C' }, holiday:{ bg:'#F5E0CA', fg:'#2A1806' },
+  shabbat:{ bg:'#E5E1DC', fg:'#45484C' }, fast:{ bg:'#F9DEDC', fg:'#410E0B' },
+  personal:{ bg:'#E7E4DF', fg:'#5A6570' }
+};
+const CHIP_DARK = {
+  yomtov:{ bg:'#33424B', fg:'#D6E1E8' }, holiday:{ bg:'#463525', fg:'#F5E0CA' },
+  shabbat:{ bg:'#2A2C2F', fg:'#C8C7C4' }, fast:{ bg:'#5A2A26', fg:'#FFB4AB' },
+  personal:{ bg:'#26292C', fg:'#A6ADB5' }
+};
+const SHORT = {
+  'Rosh Chodesh Nisan':'R.Chod.', 'Rosh Chodesh Iyar':'R.Chod.', 'Rosh Chodesh Cheshvan':'R.Chod.',
+  'Yahrzeit — Sara bat Moshe':'Yahrzeit', 'Dina — birthday':'Dina', 'Shabbat HaGadol':'HaGadol',
+  'Erev Pesach':'Erev Pes.', 'Taanit Bechorim':'Ta. Bech.', 'Chol HaMoed Pesach':'Chol HaMoed',
+  'Chol HaMoed Sukkot':'Chol HaMoed', "Shvi'i shel Pesach":"Shvi'i", 'Acharon shel Pesach':'Acharon',
+  'Yom HaShoah':'HaShoah', 'Erev Rosh Hashanah':'Erev RH', 'Rosh Hashanah I':'RH I',
+  'Rosh Hashanah II':'RH II', 'Tzom Gedalia':'Tz.Ged.', 'Shabbat Teshuvah':'Teshuvah',
+  'Erev Yom Kippur':'Erev YK', 'Yom Kippur':'Kippur', 'Erev Sukkot':'Erev Suk.',
+  'Hoshana Rabba':'Hosh. R.', 'Shmini Atzeret':'Sh.Atz.', 'Simchat Torah':'S. Torah',
+  'Taanit Esther':'Ta.Esther', 'Shushan Purim':'Shush. P.', 'Shabbat HaChodesh':'HaChodesh',
+  'Parashat Tazria-Metzora':'Tazria', 'Rosh Chodesh Adar II':'R.Chod.', 'Shabbat Zachor':'Zachor', 'Yom HaZikaron':'HaZikaron', 'Yom HaAtzmaut':'Atzmaut', 'Parashat Achrei Mot':'Achrei Mot', 'Lag BaOmer':'Lag BaOmer'
+};
+function shortName(t) {
+  if (SHORT[t]) return SHORT[t];
+  if (t.indexOf('Parashat ') === 0) return t.slice(9);
+  return t;
+}
+
+const EVENTS = {
+  '2026-03-19': [['Rosh Chodesh Nisan','yomtov']],
+  '2026-03-21': [['Parashat Vayikra','shabbat']],
+  '2026-03-27': [['Yahrzeit — Sara bat Moshe','personal']],
+  '2026-03-28': [['Shabbat HaGadol','holiday'],['Parashat Tzav','shabbat']],
+  '2026-03-30': [['Dina — birthday','personal']],
+  '2026-04-01': [['Erev Pesach','holiday'],['Taanit Bechorim','fast']],
+  '2026-04-02': [['Pesach I','yomtov']],
+  '2026-04-03': [['Pesach II','yomtov']],
+  '2026-04-04': [['Chol HaMoed Pesach','holiday']],
+  '2026-04-05': [['Chol HaMoed Pesach','holiday']],
+  '2026-04-06': [['Chol HaMoed Pesach','holiday']],
+  '2026-04-07': [['Chol HaMoed Pesach','holiday']],
+  '2026-04-08': [["Shvi'i shel Pesach",'yomtov']],
+  '2026-04-09': [['Acharon shel Pesach','yomtov']],
+  '2026-04-11': [['Parashat Shemini','shabbat']],
+  '2026-04-14': [['Yom HaShoah','holiday']],
+  '2026-04-17': [['Rosh Chodesh Iyar','yomtov']],
+  '2026-04-18': [['Parashat Tazria-Metzora','shabbat']],
+  '2026-04-21': [['Yom HaZikaron','holiday']],
+  '2026-04-22': [['Yom HaAtzmaut','yomtov']],
+  '2026-04-25': [['Parashat Achrei Mot','shabbat']],
+  '2026-05-02': [['Parashat Kedoshim','shabbat']],
+  '2026-05-05': [["Lag BaOmer",'holiday']],
+  '2026-05-09': [['Parashat Emor','shabbat']]
+};
+
+const CITIES = [
+  { id:'jerusalem', name:'Jerusalem, Israel', short:'Jerusalem', clock:'14:12',
+    z:{ alot:'4:53', misheyakir:'5:19', netz:'6:26', shema:'9:39', tefilla:'10:44', chatzot:'12:47', minchaG:'13:19', plag:'17:45', shkia:'19:07', tzeit:'19:25', candle:'18:53' } },
+  { id:'telaviv', name:'Tel Aviv-Yafo, Israel', short:'Tel Aviv', clock:'14:12',
+    z:{ alot:'4:55', misheyakir:'5:21', netz:'6:28', shema:'9:41', tefilla:'10:46', chatzot:'12:49', minchaG:'13:21', plag:'17:47', shkia:'19:09', tzeit:'19:27', candle:'18:52' } },
+  { id:'newyork', name:'New York, USA', short:'New York', clock:'07:12',
+    z:{ alot:'5:07', misheyakir:'5:38', netz:'6:38', shema:'9:53', tefilla:'10:59', chatzot:'12:59', minchaG:'13:30', plag:'18:05', shkia:'19:19', tzeit:'19:39', candle:'19:11' } },
+  { id:'london', name:'London, UK', short:'London', clock:'12:12',
+    z:{ alot:'4:55', misheyakir:'5:32', netz:'6:37', shema:'9:59', tefilla:'11:07', chatzot:'13:09', minchaG:'13:33', plag:'18:22', shkia:'19:41', tzeit:'20:06', candle:'19:31' } },
+  { id:'melbourne', name:'Melbourne, Australia', short:'Melbourne', clock:'22:12',
+    z:{ alot:'5:32', misheyakir:'6:01', netz:'6:58', shema:'9:59', tefilla:'10:57', chatzot:'12:53', minchaG:'13:22', shkia:'18:47', plag:'17:32', tzeit:'19:06', candle:'18:29' } }
+];
+
+const D0 = Date.UTC(2026, 2, 15);
+const D0_GREG = Date.UTC(2026, 2, 29);
+const NISAN1 = Date.UTC(2026, 2, 19);
+const TODAY = '2026-03-30';
+const OMER_START = Date.UTC(2026, 3, 3);
+
+function gem(n) {
+  if (n === 15) return 'ט״ו';
+  if (n === 16) return 'ט״ז';
+  const t = Math.floor(n / 10), o = n % 10;
+  const s = (t ? TENS[t] : '') + ONES[o];
+  return s.length === 1 ? s + '׳' : s.slice(0, -1) + '״' + s.slice(-1);
+}
+function iso(ms) {
+  const d = new Date(ms);
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return d.getUTCFullYear() + '-' + m + '-' + String(d.getUTCDate()).padStart(2, '0');
+}
+
+class Component extends DCLogic {
+  state = { primary:'hebrew', sel:TODAY, expanded:false, drawer:false, cityOpen:false, city:'jerusalem', screen:'home' };
+
+  hebOf(ms) {
+    const hd = Math.round((ms - NISAN1) / 86400000) + 1;
+    if (hd < 1) return { mon:'adar', day:29 + hd, out:true };
+    if (hd > 30) return { mon:'iyar', day:hd - 30, out:true };
+    return { mon:'nisan', day:hd, out:false };
+  }
+
+  eventsFor(key, dow) {
+    const schedule = this.props.schedule || 'diaspora';
+    let list = (EVENTS[key] || []).map(e => ({ title:e[0], kind:e[1] }));
+    if (schedule === 'israel') {
+      list = list.map(e => {
+        if (e.title === 'Pesach II') return { title:'Chol HaMoed Pesach', kind:'holiday' };
+        if (e.title === 'Acharon shel Pesach') return { title:'Isru Chag', kind:'holiday' };
+        return e;
+      });
+    }
+    if (dow === 6 && !list.some(e => e.kind === 'shabbat')) list.push({ title:'Shabbat', kind:'shabbat' });
+    return list;
+  }
+
+  buildCells() {
+    const isHeb = this.state.primary === 'hebrew';
+    const base = isHeb ? D0 : D0_GREG;
+    const out = [];
+    for (let i = 0; i < 42; i++) {
+      const ms = base + i * 86400000;
+      const d = new Date(ms);
+      const key = iso(ms);
+      const h = this.hebOf(ms);
+      const dow = d.getUTCDay();
+      const ev = this.eventsFor(key, dow);
+      const hebStr = gem(h.day);
+      const gregStr = d.getUTCDate() === 1 || i === 0 ? d.getUTCDate() + ' ' + MONS[d.getUTCMonth()] : String(d.getUTCDate());
+      const hebSecondary = h.day === 1 || i === 0 ? gem(h.day) + ' ' + HEB_LAT[h.mon] : gem(h.day);
+      const outside = isHeb ? h.out : d.getUTCMonth() !== 3;
+      const chips = ev;
+      out.push({
+        key, iso:key,
+        primary: isHeb ? hebStr : String(d.getUTCDate()),
+        secondary: isHeb ? gregStr : hebSecondary,
+        bars: chips.slice(0, 2).map((e, n) => ({ key:key + n, label:shortName(e.title), bg:CHIP[e.kind].bg, fg:CHIP[e.kind].fg })),
+        darkBars: chips.slice(0, 2).map((e, n) => ({ key:key + n, label:shortName(e.title), bg:CHIP_DARK[e.kind].bg, fg:CHIP_DARK[e.kind].fg })),
+        isSel: key === this.state.sel,
+        isToday: key === TODAY && key !== this.state.sel,
+        isShabbat: dow === 6 && key !== this.state.sel,
+        out: outside,
+        pick: () => this.setState({ sel:key })
+      });
+    }
+    return out;
+  }
+
+  dayInfo() {
+    const sel = this.state.sel;
+    const parts = sel.split('-').map(Number);
+    const ms = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+    const d = new Date(ms);
+    const h = this.hebOf(ms);
+    const ev = this.eventsFor(sel, d.getUTCDay());
+    const ICON = { yomtov:'celebration', holiday:'celebration', fast:'water_drop', shabbat:'brightness_3' };
+    const badges = ev.filter(e => e.kind !== 'personal').map((e, n) => ({
+      key:'b' + n, title:e.title, icon:ICON[e.kind], bg:CHIP[e.kind].bg, fg:CHIP[e.kind].fg
+    }));
+    const badge = badges.length ? badges[0].title : '';
+    const personal = ev.filter(e => e.kind === 'personal');
+    const events = personal.length ? personal.map((e, n) => ({
+      key:'e' + n, icon: e.title.indexOf('Yahrzeit') === 0 ? 'local_fire_department' : 'cake',
+      title:e.title, sub: e.title.indexOf('Yahrzeit') === 0 ? 'Recurs on 7 Nisan · candle at tzeit' : 'Hebrew date · 12 Nisan'
+    })) : [{ key:'e0', icon:'event_busy', title:'No personal events', sub:'Nothing saved for this day' }];
+
+    const omerDay = Math.round((ms - OMER_START) / 86400000) + 1;
+    const showOmer = (this.props.showOmer !== false) && omerDay >= 1 && omerDay <= 49;
+
+    const shabbatOffset = (6 - d.getUTCDay() + 7) % 7;
+    const shabbatKey = iso(ms + shabbatOffset * 86400000);
+    const PAR = {
+      '2026-03-21': ['Parashat Vayikra','Vayikra 1:1–5:26','Yeshayahu 43:21–44:23'],
+      '2026-03-28': ['Parashat Tzav','Vayikra 6:1–8:36','Malachi 3:4–24'],
+      '2026-04-04': ['Chol HaMoed Pesach','Shemot 33:12–34:26','Yechezkel 37:1–14'],
+      '2026-04-11': ['Parashat Shemini','Vayikra 9:1–11:47','Shmuel II 6:1–7:17'],
+      '2026-04-18': ['Parashat Tazria-Metzora','Vayikra 12:1–15:33','Melachim II 7:3–20']
+    };
+    const par = PAR[shabbatKey] || PAR['2026-03-28'];
+
+    return {
+      gregLong: DAYS[d.getUTCDay()] + ', ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(),
+      gregShort: DAYS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MONS[d.getUTCMonth()],
+      hebLong: gem(h.day) + ' ' + HEB_MON[h.mon] + ' ה׳תשפ״ו',
+      hebLat: h.day + ' ' + HEB_LAT[h.mon] + ' 5786',
+      badge, badges, hasBadge: badges.length > 0,
+      chev: this.state.expanded ? 'keyboard_arrow_down' : 'keyboard_arrow_up',
+      events,
+      parsha: par[0], parshaRef: par[1], haftarah: par[2],
+      hasOmer: showOmer,
+      omerNum: showOmer ? gem(omerDay) : '',
+      omerText: showOmer ? 'Day ' + omerDay + ' of the Omer' : ''
+    };
+  }
+
+  renderVals() {
+    const isHeb = this.state.primary === 'hebrew';
+    const city = CITIES.filter(c => c.id === this.state.city)[0] || CITIES[0];
+    const z = city.z;
+    const selDow = new Date(Date.UTC.apply(null, this.state.sel.split('-').map((v, i) => i === 1 ? Number(v) - 1 : Number(v)))).getUTCDay();
+    return {
+      cells: this.buildCells(),
+      darkCells: this.buildCells(),
+      rhCells: this.miniCells('rh'),
+      skCells: this.miniCells('sk'),
+      prCells: this.miniCells('pr'),
+      rhUp: this.upcoming('rh'),
+      skUp: this.upcoming('sk'),
+      prUp: this.upcoming('pr'),
+      monthTitle: isHeb ? 'ניסן ה׳תשפ״ו' : 'April 2026',
+      monthSub: isHeb ? 'March – April 2026' : 'Nisan – Iyar 5786',
+      isHeb, isGreg: !isHeb,
+      setHebrew: () => this.setState({ primary:'hebrew' }),
+      setGreg: () => this.setState({ primary:'gregorian' }),
+      toggleSheet: () => this.setState(s => ({ expanded: !s.expanded })),
+      expanded: this.state.expanded,
+      openDrawer: () => this.setState({ drawer:true }),
+      closeDrawer: () => this.setState({ drawer:false, cityOpen:false }),
+      drawer: this.state.drawer,
+      cityOpen: this.state.cityOpen,
+      toggleCity: () => this.setState(s => ({ cityOpen: !s.cityOpen })),
+      cityChev: this.state.cityOpen ? 'arrow_drop_up' : 'arrow_drop_down',
+      cityName: city.name,
+      cityShort: city.short.toUpperCase(),
+      cityList: CITIES.map(c => ({
+        key:c.id, name:c.name, clock:c.clock,
+        mark: c.id === this.state.city ? 'check' : '',
+        pick: () => this.setState({ city:c.id })
+      })),
+      d: this.dayInfo(),
+      z: {
+        netz:z.netz, shkia:z.shkia, candle:z.candle,
+        candleLabel: selDow === 5 ? 'CANDLES' : 'CANDLES FRI'
+      },
+      zmanimRows: [
+        { key:'a', name:'Netz — sunrise', time:z.netz },
+        { key:'b', name:'Sof Zman Shema', time:z.shema },
+        { key:'c', name:'Mincha Gedola', time:z.minchaG },
+        { key:'d', name:'Plag Hamincha', time:z.plag },
+        { key:'e', name:'Shkia — sunset', time:z.shkia },
+        { key:'f', name:'Candle lighting', time:z.candle }
+      ],
+      goToday: () => this.setState({ sel:TODAY, datePicker:false }),
+      openDatePicker: () => this.setState({ datePicker:true, pickerMode:this.state.primary }),
+      closeDatePicker: () => this.setState({ datePicker:false }),
+      datePicker: !!this.state.datePicker,
+      pickerIsHeb: (this.state.pickerMode || this.state.primary) === 'hebrew',
+      pickerIsGreg: (this.state.pickerMode || this.state.primary) !== 'hebrew',
+      pickerHeb: () => this.setState({ pickerMode:'hebrew' }),
+      pickerGreg: () => this.setState({ pickerMode:'gregorian' }),
+      pickerFields: (this.state.pickerMode || this.state.primary) === 'hebrew'
+        ? [{ key:'d', label:'Day', value:'י״ב', flex:'0 0 74px' }, { key:'m', label:'Month', value:'ניסן', flex:'1' }, { key:'y', label:'Year', value:'ה׳תשפ״ו', flex:'0 0 106px' }]
+        : [{ key:'d', label:'Day', value:'30', flex:'0 0 74px' }, { key:'m', label:'Month', value:'March', flex:'1' }, { key:'y', label:'Year', value:'2026', flex:'0 0 84px' }],
+      isOnboarding: this.state.screen === 'onboarding',
+      isHome: this.state.screen === 'home',
+      replayOnboarding: () => this.setState({ screen:'onboarding', drawer:false }),
+      finishOnboarding: () => this.setState({ screen:'home' }),
+      reset: () => this.setState({ primary:'hebrew', sel:TODAY, expanded:false, drawer:false, cityOpen:false, city:'jerusalem', screen:'home', datePicker:false })
+    };
+  }
+
+  miniCells(which) {
+    const SETS = {
+      rh: { start:Date.UTC(2026, 8, 6), hebStart:24, monLens:[29, 30, 29], mainMon:1, today:'2026-09-12',
+            light:{ bg:'#FFDEA6', fg:'#2B1A00' }, dark:{ bg:'#664000', fg:'#FFDEA6' },
+            ev:{ '2026-09-11':[['Erev Rosh Hashanah','holiday']], '2026-09-12':[['Rosh Hashanah I','yomtov']], '2026-09-13':[['Rosh Hashanah II','yomtov']], '2026-09-14':[['Tzom Gedalia','fast']], '2026-09-19':[['Shabbat Teshuvah','shabbat']], '2026-09-20':[['Erev Yom Kippur','holiday']], '2026-09-21':[['Yom Kippur','fast']], '2026-09-25':[['Erev Sukkot','holiday']], '2026-09-26':[['Sukkot I','yomtov']], '2026-09-27':[['Chol HaMoed Sukkot','holiday']], '2026-09-28':[['Chol HaMoed Sukkot','holiday']], '2026-09-29':[['Chol HaMoed Sukkot','holiday']], '2026-09-30':[['Chol HaMoed Sukkot','holiday']], '2026-10-01':[['Chol HaMoed Sukkot','holiday']], '2026-10-02':[['Hoshana Rabba','holiday']], '2026-10-03':[['Shmini Atzeret','yomtov']], '2026-10-04':[['Simchat Torah','yomtov']], '2026-10-10':[['Parashat Bereshit','shabbat']], '2026-10-11':[['Rosh Chodesh Cheshvan','yomtov']], '2026-10-12':[['Rosh Chodesh Cheshvan','yomtov']], '2026-10-17':[['Parashat Noach','shabbat']] } },
+      sk: { start:Date.UTC(2026, 8, 6), hebStart:24, monLens:[29, 30, 29], mainMon:1, today:'2026-09-28',
+            light:{ bg:'#D5EFA0', fg:'#1B2A00' }, dark:{ bg:'#384E00', fg:'#D5EFA0' },
+            ev:null },
+      pr: { start:Date.UTC(2027, 2, 7), hebStart:28, monLens:[30, 29, 30], mainMon:1, today:'2027-03-23',
+            light:{ bg:'#FFD7F4', fg:'#3A0034' }, dark:{ bg:'#722B6C', fg:'#FFD7F4' },
+            ev:{ '2027-03-09':[['Rosh Chodesh Adar II','yomtov']], '2027-03-10':[['Rosh Chodesh Adar II','yomtov']], '2027-03-13':[['Parashat Terumah','shabbat']], '2027-03-20':[['Shabbat Zachor','holiday'],['Parashat Tetzaveh','shabbat']], '2027-03-22':[['Taanit Esther','fast']], '2027-03-23':[['Purim','yomtov']], '2027-03-24':[['Shushan Purim','holiday']], '2027-03-27':[['Parashat Ki Tisa','shabbat']], '2027-04-03':[['Shabbat HaChodesh','holiday'],['Parashat Vayikra','shabbat']], '2027-04-08':[['Rosh Chodesh Nisan','yomtov']], '2027-04-10':[['Parashat Tzav','shabbat']] } }
+    };
+    SETS.sk.ev = SETS.rh.ev;
+    const s = SETS[which];
+    const SHAB_L = { bg:'#E5E1DC', fg:'#45484C' }, SHAB_D = { bg:'#2A2C2F', fg:'#C8C7C4' };
+    const FAST_L = { bg:'#F9DEDC', fg:'#410E0B' }, FAST_D = { bg:'#5A2A26', fg:'#FFB4AB' };
+    const out = [];
+    for (let i = 0; i < 42; i++) {
+      const ms = s.start + i * 86400000;
+      const d = new Date(ms);
+      const key = iso(ms);
+      let day = s.hebStart + i, mon = 0;
+      while (day > s.monLens[mon]) { day -= s.monLens[mon]; mon++; }
+      const ev = (s.ev[key] || []).slice();
+      if (d.getUTCDay() === 6 && !ev.some(e => e[1] === 'shabbat')) ev.push(['Shabbat','shabbat']);
+      const pal = (e, mode) => e[1] === 'shabbat' ? (mode === 'd' ? SHAB_D : SHAB_L) : e[1] === 'fast' ? (mode === 'd' ? FAST_D : FAST_L) : (mode === 'd' ? s.dark : s.light);
+      out.push({
+        key,
+        primary: gem(day),
+        secondary: d.getUTCDate() === 1 || i === 0 ? d.getUTCDate() + ' ' + MONS[d.getUTCMonth()] : String(d.getUTCDate()),
+        bars: ev.slice(0, 2).map((e, n) => ({ key:key + n, label:shortName(e[0]), bg:pal(e, 'l').bg, fg:pal(e, 'l').fg })),
+        darkBars: ev.slice(0, 2).map((e, n) => ({ key:key + n, label:shortName(e[0]), bg:pal(e, 'd').bg, fg:pal(e, 'd').fg })),
+        hi: key === s.today,
+        isShabbat: d.getUTCDay() === 6 && key !== s.today,
+        out: mon !== s.mainMon
+      });
+    }
+    return out;
+  }
+
+  upcoming(which) {
+    const L = {
+      rh: [['Tzom Gedalia','3 Tishrei · Mon 14 Sep','fast'],['Yom Kippur','10 Tishrei · Mon 21 Sep','fast'],['Erev Sukkot','14 Tishrei · Fri 25 Sep','holiday']],
+      sk: [['Hoshana Rabba','21 Tishrei · Fri 2 Oct','holiday'],['Shmini Atzeret','22 Tishrei · Sat 3 Oct','yomtov'],['Simchat Torah','23 Tishrei · Sun 4 Oct','yomtov']],
+      pr: [['Shushan Purim','15 Adar II · Wed 24 Mar','holiday'],['Shabbat HaChodesh','25 Adar II · Sat 3 Apr','holiday'],['Rosh Chodesh Nisan','1 Nisan · Thu 8 Apr','yomtov']]
+    };
+    return L[which].map((r, n) => ({ key:'u' + n, title:r[0], sub:r[1], color:KIND_COLOR[r[2]] }));
+  }
+}
+</script>
+</body>
+</html>

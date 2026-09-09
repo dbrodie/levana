@@ -28,10 +28,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+import ninja.doskey.app.levana.R
 import java.time.LocalDate
 import java.time.Month
 import java.time.format.TextStyle
@@ -95,7 +98,7 @@ fun GoToDateDialog(
 
     val hebrewSection: @Composable () -> Unit = {
         Text(
-            text = "Hebrew Date",
+            text = stringResource(R.string.calendar_hebrew_date),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -113,7 +116,7 @@ fun GoToDateDialog(
 
     val gregorianSection: @Composable () -> Unit = {
         Text(
-            text = "Gregorian Date",
+            text = stringResource(R.string.calendar_gregorian_date),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -131,7 +134,7 @@ fun GoToDateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Go to Date") },
+        title = { Text(stringResource(R.string.calendar_go_to_date)) },
         text = {
             Column {
                 if (calendarHebrewMode) {
@@ -150,7 +153,7 @@ fun GoToDateDialog(
                 if (hebrewError || gregorianError) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Invalid date",
+                        text = stringResource(R.string.calendar_invalid_date),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -168,17 +171,17 @@ fun GoToDateDialog(
                     } catch (_: Exception) { }
                 }
             ) {
-                Text("Go to Date")
+                Text(stringResource(R.string.calendar_go_to_date))
             }
         },
         dismissButton = {
             if (onClear != null) {
                 TextButton(onClick = { onClear(); onDismiss() }) {
-                    Text("Clear")
+                    Text(stringResource(R.string.calendar_clear))
                 }
             } else {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.calendar_cancel))
                 }
             }
         }
@@ -204,7 +207,7 @@ private fun HebrewPickerRow(
     } catch (_: Exception) {
         false
     }
-    val months = buildHebrewMonthList(isLeapYear)
+    val months = buildHebrewMonthList(hebrewYear, isLeapYear)
     val daysInMonth = try {
         JewishDate(hebrewYear, hebrewMonth, 1).daysInJewishMonth
     } catch (_: Exception) {
@@ -216,7 +219,7 @@ private fun HebrewPickerRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Day", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_day), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = hebrewDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
@@ -226,7 +229,7 @@ private fun HebrewPickerRow(
             )
         }
         Column(modifier = Modifier.weight(2f)) {
-            Text("Month", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_month), style = MaterialTheme.typography.labelMedium)
             HebrewMonthDropdown(
                 selectedMonth = hebrewMonth,
                 months = months,
@@ -235,7 +238,7 @@ private fun HebrewPickerRow(
             )
         }
         Column(modifier = Modifier.weight(1.2f)) {
-            Text("Year", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_year), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = hebrewYear,
                 range = 5700..5900,
@@ -272,7 +275,7 @@ private fun GregorianPickerRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Day", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_day), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = gregDay.coerceIn(1, daysInMonth),
                 range = 1..daysInMonth,
@@ -282,7 +285,7 @@ private fun GregorianPickerRow(
             )
         }
         Column(modifier = Modifier.weight(2f)) {
-            Text("Month", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_month), style = MaterialTheme.typography.labelMedium)
             GregorianMonthDropdown(
                 selectedMonth = gregMonth,
                 onMonthChange = onMonthChange,
@@ -290,7 +293,7 @@ private fun GregorianPickerRow(
             )
         }
         Column(modifier = Modifier.weight(1.2f)) {
-            Text("Year", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.calendar_year), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = gregYear,
                 range = 1940..2140,
@@ -304,24 +307,28 @@ private fun GregorianPickerRow(
 
 private data class HebrewMonthOption(val jewishDateMonth: Int, val displayName: String)
 
-private fun buildHebrewMonthList(isLeapYear: Boolean): List<HebrewMonthOption> = buildList {
-    add(HebrewMonthOption(JewishDate.TISHREI, "Tishrei"))
-    add(HebrewMonthOption(JewishDate.CHESHVAN, "Cheshvan"))
-    add(HebrewMonthOption(JewishDate.KISLEV, "Kislev"))
-    add(HebrewMonthOption(JewishDate.TEVES, "Teves"))
-    add(HebrewMonthOption(JewishDate.SHEVAT, "Shevat"))
-    if (isLeapYear) {
-        add(HebrewMonthOption(JewishDate.ADAR, "Adar I"))
-        add(HebrewMonthOption(JewishDate.ADAR_II, "Adar II"))
-    } else {
-        add(HebrewMonthOption(JewishDate.ADAR, "Adar"))
+private fun buildHebrewMonthList(hebrewYear: Int, isLeapYear: Boolean): List<HebrewMonthOption> = buildList {
+    val formatter = HebrewDateFormatter().apply {
+        isHebrewFormat = Locale.getDefault().language in setOf("he", "iw")
     }
-    add(HebrewMonthOption(JewishDate.NISSAN, "Nissan"))
-    add(HebrewMonthOption(JewishDate.IYAR, "Iyar"))
-    add(HebrewMonthOption(JewishDate.SIVAN, "Sivan"))
-    add(HebrewMonthOption(JewishDate.TAMMUZ, "Tammuz"))
-    add(HebrewMonthOption(JewishDate.AV, "Av"))
-    add(HebrewMonthOption(JewishDate.ELUL, "Elul"))
+    fun option(month: Int) = HebrewMonthOption(month, formatter.formatMonth(JewishDate(hebrewYear, month, 1)))
+    add(option(JewishDate.TISHREI))
+    add(option(JewishDate.CHESHVAN))
+    add(option(JewishDate.KISLEV))
+    add(option(JewishDate.TEVES))
+    add(option(JewishDate.SHEVAT))
+    if (isLeapYear) {
+        add(option(JewishDate.ADAR))
+        add(option(JewishDate.ADAR_II))
+    } else {
+        add(option(JewishDate.ADAR))
+    }
+    add(option(JewishDate.NISSAN))
+    add(option(JewishDate.IYAR))
+    add(option(JewishDate.SIVAN))
+    add(option(JewishDate.TAMMUZ))
+    add(option(JewishDate.AV))
+    add(option(JewishDate.ELUL))
 }
 
 @Composable

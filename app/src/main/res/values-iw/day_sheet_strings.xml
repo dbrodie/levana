@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sheet_netz">הנץ</string>
+    <string name="sheet_shkia">שקיעה</string>
+    <string name="sheet_candles">נרות</string>
+    <string name="sheet_tzeit">צאת</string>
+    <string name="sheet_zmanim">זמני היום</string>
+    <string name="sheet_shabbat_mevarchim">שבת מברכים</string>
+    <string name="sheet_calendar_events">אירועים מהיומן</string>
+    <string name="sheet_yahrzeit">יארצייט</string>
+    <string name="sheet_shabbat">שבת</string>
+    <string name="sheet_expand">הרחבת פרטי היום</string>
+    <string name="sheet_collapse">צמצום פרטי היום</string>
+    <string name="sheet_more_times">כל זמני היום</string>
+    <string name="sheet_all_day">כל היום</string>
+</resources>
