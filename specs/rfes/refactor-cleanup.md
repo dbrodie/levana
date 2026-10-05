@@ -1,7 +1,7 @@
 # Spec: Refactor & Edge Case Fixes
 
 **Branch:** `refactor-cleanup`
-**Status:** In progress
+**Status:** Merged to master
 
 ## Context
 

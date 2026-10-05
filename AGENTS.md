@@ -26,7 +26,7 @@ Do not substitute these — they are architectural commitments.
 
 ```
 levana/
-├── app/src/main/java/com/levana/app/
+├── app/src/main/java/ninja/doskey/app/levana/
 │   ├── ui/                  # Compose screens — each screen has State, Intent, ViewModel, Screen files
 │   ├── domain/model/        # Domain models (DayInfo, HebrewDay, Holiday, ZmanTime, etc.)
 │   ├── data/                # Repositories, Room DB (LevanaDatabase, PersonalEventDao), HolidayMapper

@@ -1,6 +1,6 @@
 ---
 title: Stitch UI Redesign
-status: in-progress
+status: merged
 ---
 
 # Stitch UI Redesign
