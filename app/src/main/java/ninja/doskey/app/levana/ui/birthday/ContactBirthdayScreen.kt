@@ -231,7 +231,7 @@ fun ContactBirthdayScreen(
             enabled = !state.isSaving &&
                 state.contactLookupKey.isNotBlank()
         ) {
-            Text(if (state.isEditing) "Update" else "Save")
+            Text(stringResource(if (state.isEditing) R.string.event_update else R.string.event_save))
         }
     }
 }
