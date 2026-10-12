@@ -44,6 +44,34 @@ class HebrewDateMatcherTest {
     }
 
     @Test
+    fun hebrewYearOfFollowsRoshHashana() {
+        // 1 Tishrei 5787 = 12 September 2026
+        assertEquals(5786, HebrewDateMatcher.hebrewYearOf(java.time.LocalDate.of(2026, 9, 11)))
+        assertEquals(5787, HebrewDateMatcher.hebrewYearOf(java.time.LocalDate.of(2026, 9, 12)))
+    }
+
+    @Test
+    fun editorDateShowsUnknownYearsOnTheCurrentYear() {
+        val adar = JewishDate.ADAR
+        val adar2 = JewishDate.ADAR_II
+        // Known year: as stored
+        assertEquals(adar to 5784, HebrewDateMatcher.editorDate(adar, 5784, false, 5787))
+        assertEquals(JewishDate.KISLEV to 5700, HebrewDateMatcher.editorDate(JewishDate.KISLEV, 5700, false, 5787))
+        // Known regular year stored with Adar II: shown as Adar
+        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar2, 5785, false, 5787))
+        // Unknown year: current year, month where it falls this year
+        for (unknown in listOf(0, 1, -1, 3761, 10000)) {
+            for (yahrzeit in listOf(false, true)) {
+                assertEquals(JewishDate.KISLEV to 5787, HebrewDateMatcher.editorDate(JewishDate.KISLEV, unknown, yahrzeit, 5787))
+                assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar, unknown, yahrzeit, 5787))
+                assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, unknown, yahrzeit, 5787))
+                assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar, unknown, yahrzeit, 5786))
+                assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar2, unknown, yahrzeit, 5786))
+            }
+        }
+    }
+
+    @Test
     fun knownYearLeapMatchesKosherJava() {
         assertTrue(HebrewDateMatcher.isEventLeapYear(5784))
         assertFalse(HebrewDateMatcher.isEventLeapYear(5785))

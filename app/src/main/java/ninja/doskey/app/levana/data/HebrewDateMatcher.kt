@@ -1,6 +1,8 @@
 package ninja.doskey.app.levana.data
 
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import java.time.LocalDate
+import java.util.GregorianCalendar
 
 object HebrewDateMatcher {
 
@@ -34,6 +36,37 @@ object HebrewDateMatcher {
             JewishDate.ADAR
         } else {
             hebrewMonth
+        }
+
+    /** The Hebrew year a Gregorian date falls in. */
+    fun hebrewYearOf(date: LocalDate): Int =
+        JewishDate(
+            GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
+        ).jewishYear
+
+    /**
+     * The month and year an editor shows for a stored date, as (month, year).
+     *
+     * A known year is shown as stored. An unknown year is shown as
+     * [currentYear], with the month the date falls in that year, so saving
+     * without touching anything does not move an unknown-year Adar from
+     * Adar II to Adar I.
+     */
+    fun editorDate(
+        hebrewMonth: Int,
+        hebrewYear: Int,
+        useYahrzeitRules: Boolean,
+        currentYear: Int
+    ): Pair<Int, Int> =
+        if (isKnownYear(hebrewYear)) {
+            monthForYear(hebrewMonth, hebrewYear) to hebrewYear
+        } else {
+            resolveMonth(
+                hebrewMonth,
+                hebrewYear,
+                useYahrzeitRules,
+                targetIsLeapYear = isEventLeapYear(currentYear)
+            ) to currentYear
         }
 
     /**

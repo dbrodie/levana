@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
+import ninja.doskey.app.levana.data.TodayProvider
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,11 +14,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddEditEventViewModel(
-    private val repository: PersonalEventRepository
+    private val repository: PersonalEventRepository,
+    private val todayProvider: TodayProvider
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddEditEventState())
     val state: StateFlow<AddEditEventState> = _state.asStateFlow()
+
+    // The app's current Hebrew year (honours the developer date override),
+    // resolved once when the editor opens
+    private val currentYear: Deferred<Int> = viewModelScope.async {
+        HebrewDateMatcher.hebrewYearOf(todayProvider.today())
+    }
+
+    // True once the year came from the user, a prefill or a stored item, so
+    // the default year no longer applies
+    private var yearChosen = false
+
+    init {
+        viewModelScope.launch {
+            val year = currentYear.await()
+            if (!yearChosen) setDate(year = year, chosen = false)
+        }
+    }
 
     fun onIntent(intent: AddEditEventIntent) {
         when (intent) {
@@ -50,8 +71,10 @@ class AddEditEventViewModel(
      */
     private fun setDate(
         month: Int = _state.value.hebrewMonth,
-        year: Int = _state.value.hebrewYear
+        year: Int = _state.value.hebrewYear,
+        chosen: Boolean = true
     ) {
+        if (chosen) yearChosen = true
         val safeYear = year.coerceIn(
             HebrewDateMatcher.MIN_KNOWN_YEAR,
             HebrewDateMatcher.MAX_KNOWN_YEAR
@@ -65,13 +88,22 @@ class AddEditEventViewModel(
     private fun loadEvent(eventId: Long) {
         viewModelScope.launch {
             val event = repository.getById(eventId) ?: return@launch
+            // An event stored without a usable year (imported with year 0)
+            // opens on the current Hebrew year
+            val (month, year) = HebrewDateMatcher.editorDate(
+                event.hebrewMonth,
+                event.hebrewYear,
+                event.useYahrzeitRules,
+                currentYear = currentYear.await()
+            )
+            yearChosen = true
             _state.value = AddEditEventState(
                 isEditing = true,
                 eventId = event.id,
                 title = event.title,
                 hebrewDay = event.hebrewDay,
-                hebrewMonth = event.hebrewMonth,
-                hebrewYear = event.hebrewYear,
+                hebrewMonth = month,
+                hebrewYear = year,
                 notes = event.notes,
                 useYahrzeitRules = event.useYahrzeitRules
             )

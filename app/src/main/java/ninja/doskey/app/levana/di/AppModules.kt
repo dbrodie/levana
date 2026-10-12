@@ -7,6 +7,8 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.data.PreferencesTodayProvider
+import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
@@ -37,6 +39,7 @@ val dataModule = module {
     single { CalendarRepository() }
     single { CityRepository(get()) }
     single { PreferencesRepository(get()) }
+    single<TodayProvider> { PreferencesTodayProvider(get()) }
     single { LocationService(get()) }
     single { ZmanimRepository() }
     single { PersonalEventRepository(get()) }
@@ -53,8 +56,8 @@ val viewModelModule = module {
     viewModel { ZmanimViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), androidContext()) }
     viewModel { EventsViewModel(get(), get()) }
-    viewModel { AddEditEventViewModel(get()) }
-    viewModel { ContactBirthdayViewModel(get()) }
+    viewModel { AddEditEventViewModel(get(), get()) }
+    viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }
 }
 

@@ -4,17 +4,38 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
+import ninja.doskey.app.levana.data.TodayProvider
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ContactBirthdayViewModel(
-    private val repository: ContactBirthdayRepository
+    private val repository: ContactBirthdayRepository,
+    private val todayProvider: TodayProvider
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContactBirthdayState())
     val state: StateFlow<ContactBirthdayState> = _state.asStateFlow()
+
+    // The app's current Hebrew year (honours the developer date override),
+    // resolved once when the editor opens
+    private val currentYear: Deferred<Int> = viewModelScope.async {
+        HebrewDateMatcher.hebrewYearOf(todayProvider.today())
+    }
+
+    // True once the year came from the user, a prefill or a stored item, so
+    // the default year no longer applies
+    private var yearChosen = false
+
+    init {
+        viewModelScope.launch {
+            val year = currentYear.await()
+            if (!yearChosen) setDate(year = year, chosen = false)
+        }
+    }
 
     fun onIntent(intent: ContactBirthdayIntent) {
         when (intent) {
@@ -44,8 +65,10 @@ class ContactBirthdayViewModel(
      */
     private fun setDate(
         month: Int = _state.value.hebrewMonth,
-        year: Int = _state.value.hebrewYear
+        year: Int = _state.value.hebrewYear,
+        chosen: Boolean = true
     ) {
+        if (chosen) yearChosen = true
         val safeYear = year.coerceIn(
             HebrewDateMatcher.MIN_KNOWN_YEAR,
             HebrewDateMatcher.MAX_KNOWN_YEAR
@@ -61,20 +84,23 @@ class ContactBirthdayViewModel(
             val birthday =
                 repository.getBirthdayForContact(contactLookupKey)
             if (birthday != null) {
+                // A birthday stored without a usable year opens on the
+                // current Hebrew year
+                val (month, year) = HebrewDateMatcher.editorDate(
+                    birthday.hebrewMonth,
+                    birthday.hebrewYear,
+                    useYahrzeitRules = false,
+                    currentYear = currentYear.await()
+                )
+                yearChosen = true
                 _state.value = ContactBirthdayState(
                     isEditing = true,
                     contactLookupKey = birthday.contactLookupKey,
                     contactName = birthday.contactName,
                     contactPhotoUri = birthday.contactPhotoUri,
                     hebrewDay = birthday.hebrewDay,
-                    hebrewMonth = birthday.hebrewMonth,
-                    hebrewYear = if (
-                        HebrewDateMatcher.isKnownYear(birthday.hebrewYear)
-                    ) {
-                        birthday.hebrewYear
-                    } else {
-                        DEFAULT_BIRTHDAY_YEAR
-                    }
+                    hebrewMonth = month,
+                    hebrewYear = year
                 )
             }
         }
