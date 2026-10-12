@@ -13,9 +13,6 @@ import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -220,11 +217,9 @@ class CalendarViewModel(
 
         loadJob = viewModelScope.launch {
             val markedDays = loadMonthDaysOnly(yearMonth)
-            val hebrewMonthHeader = buildHebrewMonthHeader(markedDays)
             _state.value = _state.value.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
-                hebrewMonthHeader = hebrewMonthHeader,
                 isLoading = false,
                 gregorianMonthCache = mapOf(yearMonth to markedDays)
             )
@@ -306,14 +301,9 @@ class CalendarViewModel(
 
         loadJob = viewModelScope.launch {
             val markedDays = loadHebrewMonthDaysOnly(hym)
-            val hebrewMonthName = calendarRepository.getHebrewMonthName(hym)
-            val hebrewHeader = "$hebrewMonthName ${hym.year}"
-            val gregHeader = buildGregorianRange(markedDays)
             _state.value = _state.value.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
-                hebrewMonthHeader = hebrewHeader,
-                gregorianHeader = gregHeader,
                 isLoading = false,
                 hebrewMonthCache = mapOf(hym to markedDays)
             )
@@ -333,51 +323,6 @@ class CalendarViewModel(
                         next to nextDays
                     )
                 )
-            }
-        }
-    }
-
-    private fun buildGregorianRange(days: List<HebrewDay>): String {
-        if (days.isEmpty()) return ""
-        val first = days.first().gregorianDate
-        val last = days.last().gregorianDate
-        val fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        return if (first.month == last.month &&
-            first.year == last.year
-        ) {
-            first.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-        } else {
-            "${first.format(fmt)} \u2013 ${last.format(fmt)}"
-        }
-    }
-
-    private fun buildHebrewMonthHeader(days: List<HebrewDay>): String {
-        if (days.isEmpty()) return ""
-        val firstDay = days.first()
-        val lastDay = days.last()
-        val useHebrewNames = Locale.getDefault().language in setOf("he", "iw")
-
-        fun monthName(day: HebrewDay): String = if (useHebrewNames) {
-            calendarRepository.getHebrewMonthName(
-                HebrewYearMonth(day.year, day.month, day.month.jewishDateValue)
-            )
-        } else {
-            day.month.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")
-        }
-
-        val firstMonthName = monthName(firstDay)
-        val firstYear = firstDay.year
-
-        return if (firstDay.month == lastDay.month) {
-            "$firstMonthName $firstYear"
-        } else {
-            val lastMonthName = monthName(lastDay)
-            val lastYear = lastDay.year
-            if (firstYear == lastYear) {
-                "$firstMonthName\u2013$lastMonthName $firstYear"
-            } else {
-                "$firstMonthName $firstYear \u2013 " +
-                    "$lastMonthName $lastYear"
             }
         }
     }

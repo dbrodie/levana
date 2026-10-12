@@ -1,5 +1,7 @@
 package ninja.doskey.app.levana.ui.calendarselection
 
+import ninja.doskey.app.levana.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,7 +82,7 @@ fun CalendarSelectionContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No calendars found on this device",
+                    text = stringResource(R.string.calendar_selection_none),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -116,11 +118,10 @@ private fun PermissionRequest(onPermissionGranted: () -> Unit, modifier: Modifie
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Bring in your plans", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.calendar_selection_permission_title), style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Levana needs permission to read your calendars " +
-                "to display your events on the Hebrew calendar.",
+            text = stringResource(R.string.calendar_selection_permission_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -130,7 +131,7 @@ private fun PermissionRequest(onPermissionGranted: () -> Unit, modifier: Modifie
                 permissionLauncher.launch(Manifest.permission.READ_CALENDAR)
             }
         ) {
-            Text("Grant Permission")
+            Text(stringResource(R.string.common_grant_permission))
         }
     }
 }
@@ -150,7 +151,7 @@ private fun CalendarList(
     ) {
         item {
             Text(
-                text = "Select calendars to display in Levana",
+                text = stringResource(R.string.calendar_selection_prompt),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)

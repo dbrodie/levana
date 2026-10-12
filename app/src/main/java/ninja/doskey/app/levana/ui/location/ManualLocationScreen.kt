@@ -55,7 +55,7 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Location name") },
+            label = { Text(stringResource(R.string.manual_location_name)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -65,7 +65,7 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
         OutlinedTextField(
             value = latitude,
             onValueChange = { latitude = it },
-            label = { Text("Latitude") },
+            label = { Text(stringResource(R.string.manual_location_latitude)) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal
@@ -78,7 +78,7 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
         OutlinedTextField(
             value = longitude,
             onValueChange = { longitude = it },
-            label = { Text("Longitude") },
+            label = { Text(stringResource(R.string.manual_location_longitude)) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal
@@ -91,7 +91,7 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
         OutlinedTextField(
             value = timezone,
             onValueChange = { timezone = it },
-            label = { Text("Timezone (e.g. America/New_York)") },
+            label = { Text(stringResource(R.string.manual_location_timezone)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -107,16 +107,19 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val latitudeError = stringResource(R.string.manual_location_error_latitude)
+        val longitudeError = stringResource(R.string.manual_location_error_longitude)
+        val nameError = stringResource(R.string.manual_location_error_name)
         Button(
             onClick = {
                 val lat = latitude.toDoubleOrNull()
                 val lon = longitude.toDoubleOrNull()
                 if (lat == null || lat !in -90.0..90.0) {
-                    error = "Latitude must be between -90 and 90"
+                    error = latitudeError
                 } else if (lon == null || lon !in -180.0..180.0) {
-                    error = "Longitude must be between -180 and 180"
+                    error = longitudeError
                 } else if (name.isBlank()) {
-                    error = "Please enter a location name"
+                    error = nameError
                 } else {
                     error = null
                     onSave(
@@ -131,7 +134,7 @@ fun ManualLocationScreen(onSave: (Location) -> Unit, modifier: Modifier = Modifi
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Save Location")
+            Text(stringResource(R.string.manual_location_save))
         }
             }
         }
