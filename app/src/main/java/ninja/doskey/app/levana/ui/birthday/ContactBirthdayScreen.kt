@@ -245,19 +245,13 @@ private fun BirthdayDatePicker(
     onMonthChange: (Int) -> Unit,
     onYearChange: (Int) -> Unit
 ) {
-    // Use year=0 to mean "unknown year"; for the picker, use a
-    // reference year for leap-year month list
-    val pickerYear = if (year == 0) 5784 else year
-
     HebrewDatePicker(
         day = day,
         month = month,
-        year = pickerYear,
+        year = year,
         onDayChange = onDayChange,
         onMonthChange = onMonthChange,
-        onYearChange = { newYear ->
-            onYearChange(newYear)
-        }
+        onYearChange = onYearChange
     )
 }
 

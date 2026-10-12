@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.ui.birthday
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,13 @@ class ContactBirthdayViewModel(
                     contactPhotoUri = birthday.contactPhotoUri,
                     hebrewDay = birthday.hebrewDay,
                     hebrewMonth = birthday.hebrewMonth,
-                    hebrewYear = birthday.hebrewYear
+                    hebrewYear = if (
+                        HebrewDateMatcher.isKnownYear(birthday.hebrewYear)
+                    ) {
+                        birthday.hebrewYear
+                    } else {
+                        DEFAULT_BIRTHDAY_YEAR
+                    }
                 )
             }
         }
