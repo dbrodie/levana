@@ -53,4 +53,16 @@
     <string name="back">חזרה</string>
     <string name="change_location">שנה מיקום</string>
     <string name="not_set">לא נקבע</string>
+
+    <!-- Developer settings: Force Holiday Theme options -->
+    <string name="holiday_theme_none">ללא</string>
+    <string name="holiday_theme_chanukah">חנוכה</string>
+    <string name="holiday_theme_sukkot">סוכות</string>
+    <string name="holiday_theme_pesach">פסח</string>
+    <string name="holiday_theme_purim">פורים</string>
+    <string name="holiday_theme_rosh_hashanah">ראש השנה</string>
+    <string name="holiday_theme_yom_kippur">יום כיפור</string>
+    <string name="holiday_theme_shavuot">שבועות</string>
+    <string name="holiday_theme_fast_day">יום צום</string>
+    <string name="holiday_theme_shemini_atzeret">שמיני עצרת</string>
 </resources>

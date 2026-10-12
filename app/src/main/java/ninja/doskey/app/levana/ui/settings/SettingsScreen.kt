@@ -1293,8 +1293,9 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
 @Composable
 private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("None") + HolidayTheme.entries.map { it.name }
-    val displayValue = selected ?: "None"
+    val options: List<HolidayTheme?> = listOf(null) + HolidayTheme.entries
+    val selectedTheme = selected?.let { name -> HolidayTheme.entries.firstOrNull { it.name == name } }
+    val displayValue = holidayThemeLabel(selectedTheme)
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -1317,9 +1318,9 @@ private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(holidayThemeLabel(option)) },
                     onClick = {
-                        onSelect(if (option == "None") null else option)
+                        onSelect(option?.name)
                         expanded = false
                     }
                 )
@@ -1327,6 +1328,10 @@ private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
         }
     }
 }
+
+@Composable
+private fun holidayThemeLabel(theme: HolidayTheme?): String =
+    stringResource(theme?.labelRes ?: R.string.holiday_theme_none)
 
 @Composable
 fun AboutScreen(
