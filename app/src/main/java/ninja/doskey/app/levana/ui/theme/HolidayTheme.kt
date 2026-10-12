@@ -1,8 +1,10 @@
 package ninja.doskey.app.levana.ui.theme
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import ninja.doskey.app.levana.R
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
@@ -23,6 +25,21 @@ enum class HolidayTheme(
     SHAVUOT(Color(0xFF4F6B12), Color(0xFFD5EFA0), Color(0xFFB8D873), Color(0xFF384E00), Color(0xFF182500)),
     FAST_DAY(Color(0xFF5B6065), Color(0xFFE0E3E7), Color(0xFFC3C7CC), Color(0xFF43474C), Color(0xFF1B1C1E)),
     SHMINI_ATZERET(Color(0xFF64518C), Color(0xFFEBDCFF), Color(0xFFCFBCF8), Color(0xFF4C396F), Color(0xFF211039));
+
+    /** Human-readable, localized name (the persisted value remains [name]). */
+    @get:StringRes
+    val labelRes: Int
+        get() = when (this) {
+            CHANUKAH -> R.string.holiday_theme_chanukah
+            SUKKOT -> R.string.holiday_theme_sukkot
+            PESACH -> R.string.holiday_theme_pesach
+            PURIM -> R.string.holiday_theme_purim
+            ROSH_HASHANAH -> R.string.holiday_theme_rosh_hashanah
+            YOM_KIPPUR -> R.string.holiday_theme_yom_kippur
+            SHAVUOT -> R.string.holiday_theme_shavuot
+            FAST_DAY -> R.string.holiday_theme_fast_day
+            SHMINI_ATZERET -> R.string.holiday_theme_shemini_atzeret
+        }
 
     fun lightScheme(): ColorScheme = LightColorScheme.copy(
         primary = lightPrimary,
