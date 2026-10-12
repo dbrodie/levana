@@ -34,7 +34,8 @@ object CalendarHeaderFormatter {
     }
 
     /**
-     * Hebrew month span of a Gregorian month, e.g. "Tishrei–Cheshvan 5787" (English) /
+     * Hebrew month span of a Gregorian month, e.g. "Tishrei–Cheshvan 5787" or
+     * "Adar I–Adar II 5787" (English) /
      * "תשרי–חשון תשפ״ז" (Hebrew).
      */
     fun hebrewMonthRange(days: List<HebrewDay>, locale: Locale): String {
@@ -46,7 +47,7 @@ object CalendarHeaderFormatter {
         fun monthName(day: HebrewDay): String = if (hebrew) {
             hebrewMonthName(day.year, day.month.jewishDateValue)
         } else {
-            day.month.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")
+            day.month.englishName
         }
 
         val firstMonthName = monthName(firstDay)

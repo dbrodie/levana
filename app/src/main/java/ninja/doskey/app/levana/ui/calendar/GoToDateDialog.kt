@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import ninja.doskey.app.levana.R
 import java.time.LocalDate
@@ -308,10 +309,16 @@ private fun GregorianPickerRow(
 private data class HebrewMonthOption(val jewishDateMonth: Int, val displayName: String)
 
 private fun buildHebrewMonthList(hebrewYear: Int, isLeapYear: Boolean): List<HebrewMonthOption> = buildList {
-    val formatter = HebrewDateFormatter().apply {
-        isHebrewFormat = Locale.getDefault().language in setOf("he", "iw")
-    }
-    fun option(month: Int) = HebrewMonthOption(month, formatter.formatMonth(JewishDate(hebrewYear, month, 1)))
+    val hebrew = Locale.getDefault().language in setOf("he", "iw")
+    val formatter = HebrewDateFormatter().apply { isHebrewFormat = true }
+    fun option(month: Int) = HebrewMonthOption(
+        month,
+        if (hebrew) {
+            formatter.formatMonth(JewishDate(hebrewYear, month, 1))
+        } else {
+            HebrewMonth.englishName(month, isLeapYear)
+        }
+    )
     add(option(JewishDate.TISHREI))
     add(option(JewishDate.CHESHVAN))
     add(option(JewishDate.KISLEV))
