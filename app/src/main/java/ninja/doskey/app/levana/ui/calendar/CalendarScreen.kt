@@ -270,8 +270,14 @@ private fun HebrewCalendarContent(
         onShowZmanim = onShowZmanim,
         modifier = modifier,
         header = {
+            val locale = LocalConfiguration.current.locales[0]
             HebrewMonthHeader(
-                hebrewHeader = state.hebrewMonthHeader, gregorianHeader = state.gregorianHeader,
+                hebrewHeader = remember(state.hebrewYearMonth, locale) {
+                    CalendarHeaderFormatter.hebrewMonthTitle(state.hebrewYearMonth, locale)
+                },
+                gregorianHeader = remember(state.monthDays, locale) {
+                    CalendarHeaderFormatter.gregorianRange(state.monthDays, locale)
+                },
                 onOpenDrawer = onOpenDrawer,
                 onGoToToday = { onIntent(CalendarIntent.GoToToday) },
                 onGoToDate = { onIntent(CalendarIntent.OpenGoToDateDialog) },
@@ -308,9 +314,11 @@ private fun GregorianMonthHeader(
     onToggleMode: () -> Unit,
     onAddEvent: () -> Unit
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     CalendarMonthHeader(
-        title = state.currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " " + state.currentMonth.year,
-        subtitle = state.hebrewMonthHeader, selectedHebrew = false,
+        title = state.currentMonth.month.getDisplayName(TextStyle.FULL, locale) + " " + state.currentMonth.year,
+        subtitle = remember(state.monthDays, locale) { CalendarHeaderFormatter.hebrewMonthRange(state.monthDays, locale) },
+        selectedHebrew = false,
         onOpenDrawer = onOpenDrawer, onGoToToday = onGoToToday, onGoToDate = onGoToDate,
         onToggleMode = onToggleMode, onAddEvent = onAddEvent
     )
@@ -382,7 +390,7 @@ private fun GregorianMonthGrid(
     val allCells: List<HebrewDay?> = List(leadingEmptyCells) { null } + monthDays
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-        DayHeaderRow(Locale.getDefault())
+        DayHeaderRow(LocalConfiguration.current.locales[0])
         allCells.chunked(7).forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 row.forEach { day ->

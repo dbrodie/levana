@@ -63,12 +63,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.domain.model.ContactBirthday
@@ -120,9 +122,9 @@ fun EventsScreen(
             outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
-            "Exported ${state.customEvents.size} event(s)"
+            context.getString(R.string.events_exported, state.customEvents.size)
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            context.getString(R.string.events_export_failed, e.message.orEmpty())
         }
         viewModel.onIntent(EventsIntent.ShowExportResult(message))
     }
@@ -138,9 +140,9 @@ fun EventsScreen(
             outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
-            "Exported ${state.customEvents.size} event(s)"
+            context.getString(R.string.events_exported, state.customEvents.size)
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            context.getString(R.string.events_export_failed, e.message.orEmpty())
         }
         viewModel.onIntent(EventsIntent.ShowExportResult(message))
     }
@@ -154,7 +156,7 @@ fun EventsScreen(
                 stream.readBytes().toString(Charsets.UTF_8)
             } ?: run {
                 viewModel.onIntent(
-                    EventsIntent.ShowExportResult("Import failed: could not read file")
+                    EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed_read))
                 )
                 return@rememberLauncherForActivityResult
             }
@@ -162,7 +164,7 @@ fun EventsScreen(
             viewModel.onIntent(EventsIntent.ImportEvents(content, isCsv))
         } catch (e: Exception) {
             viewModel.onIntent(
-                EventsIntent.ShowExportResult("Import failed: ${e.message}")
+                EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed, e.message.orEmpty()))
             )
         }
     }
@@ -176,28 +178,28 @@ fun EventsScreen(
         onRegisterTopBarActions {
             if (pagerState.currentPage == 1) Box {
                 IconButton(onClick = { showOverflowMenuState.value = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.events_more_options))
                 }
                 DropdownMenu(
                     expanded = showOverflowMenuState.value,
                     onDismissRequest = { showOverflowMenuState.value = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Export as JSON") },
+                        text = { Text(stringResource(R.string.events_export_json)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             exportJsonLauncher.launch("levana_events.json")
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Export as CSV") },
+                        text = { Text(stringResource(R.string.events_export_csv)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             exportCsvLauncher.launch("levana_events.csv")
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Import events") },
+                        text = { Text(stringResource(R.string.events_import)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             importLauncher.launch(
@@ -227,24 +229,24 @@ fun EventsScreen(
     state.importResult?.let { result ->
         AlertDialog(
             onDismissRequest = { viewModel.onIntent(EventsIntent.DismissImportResult) },
-            title = { Text(if (result.error != null) "Import Failed" else "Import Complete") },
+            title = { Text(stringResource(if (result.error != null) R.string.events_import_failed_title else R.string.events_import_complete_title)) },
             text = {
                 Text(
                     if (result.error != null) {
                         result.error
                     } else {
-                        buildString {
-                            append("Imported ${result.imported} event(s)")
+                        stringResource(R.string.events_imported, result.imported) +
                             if (result.skipped > 0) {
-                                append(", skipped ${result.skipped} duplicate(s)")
+                                stringResource(R.string.events_import_skipped, result.skipped)
+                            } else {
+                                ""
                             }
-                        }
                     }
                 )
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.onIntent(EventsIntent.DismissImportResult) }) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             }
         )
@@ -273,7 +275,7 @@ fun EventsScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.events_add))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -286,14 +288,14 @@ fun EventsScreen(
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(0) }
                     },
-                    text = { Text("Birthdays") }
+                    text = { Text(stringResource(R.string.events_tab_birthdays)) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(1) }
                     },
-                    text = { Text("Events") }
+                    text = { Text(stringResource(R.string.events_tab_events)) }
                 )
             }
 
@@ -369,20 +371,19 @@ private fun BirthdaysTab(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Contacts permission required",
+                    text = stringResource(R.string.events_contacts_permission_title),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Grant permission to manage Hebrew birthdays " +
-                        "on your contacts",
+                    text = stringResource(R.string.events_contacts_permission_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = onRequestPermission) {
-                    Text("Grant Permission")
+                    Text(stringResource(R.string.common_grant_permission))
                 }
             }
         }
@@ -396,13 +397,13 @@ private fun BirthdaysTab(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "No birthdays yet",
+                    text = stringResource(R.string.events_no_birthdays),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap + to add a Hebrew birthday to a contact",
+                    text = stringResource(R.string.events_no_birthdays_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -436,10 +437,10 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Remove Birthday") },
+            title = { Text(stringResource(R.string.events_remove_birthday_title)) },
             text = {
                 Text(
-                    "Remove Hebrew birthday for ${birthday.contactName}?"
+                    stringResource(R.string.events_remove_birthday_message, birthday.contactName)
                 )
             },
             confirmButton = {
@@ -447,12 +448,12 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
                     showDeleteDialog = false
                     onDelete()
                 }) {
-                    Text("Remove")
+                    Text(stringResource(R.string.events_remove))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -517,7 +518,7 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Birthday",
+                    text = stringResource(R.string.design_birthday),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -525,7 +526,7 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -547,13 +548,13 @@ private fun CustomEventsTab(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "No custom events yet",
+                    text = stringResource(R.string.events_no_custom),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap + to add a custom event",
+                    text = stringResource(R.string.events_no_custom_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -587,19 +588,19 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Event") },
-            text = { Text("Delete \"${event.title}\"?") },
+            title = { Text(stringResource(R.string.events_delete_title)) },
+            text = { Text(stringResource(R.string.events_delete_message, event.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
                     onDelete()
                 }) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -645,7 +646,7 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
                 )
                 if (event.useYahrzeitRules) {
                     Text(
-                        text = "Yahrzeit rules",
+                        text = stringResource(R.string.events_yahrzeit_rules),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -654,7 +655,7 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }

@@ -168,7 +168,7 @@ fun ContactBirthdayScreen(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Pick Contact")
+                Text(stringResource(R.string.birthday_pick_contact))
             }
         }
 
@@ -176,7 +176,7 @@ fun ContactBirthdayScreen(
 
         Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-        Text("Hebrew date", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.calendar_hebrew_date), style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(12.dp))
 
         BirthdayDatePicker(
