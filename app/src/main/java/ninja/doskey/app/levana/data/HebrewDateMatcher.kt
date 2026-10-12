@@ -11,7 +11,30 @@ object HebrewDateMatcher {
      */
     const val MIN_KNOWN_YEAR = 3762
 
-    fun isKnownYear(hebrewYear: Int): Boolean = hebrewYear >= MIN_KNOWN_YEAR
+    /**
+     * Largest year KosherJava can write as a Hebrew numeral
+     * (HebrewDateFormatter.formatHebrewNumber rejects anything above it).
+     * Stored years above this are treated as an unknown year too.
+     */
+    const val MAX_KNOWN_YEAR = 9999
+
+    /** Years the date pickers (editors, Go to date, date override) accept. */
+    val EDITABLE_YEARS = 5700..5900
+
+    fun isKnownYear(hebrewYear: Int): Boolean =
+        hebrewYear in MIN_KNOWN_YEAR..MAX_KNOWN_YEAR
+
+    /**
+     * A month number that exists in [hebrewYear]: Adar II of a regular year
+     * becomes Adar. Used by the editors so a date is never saved with a month
+     * its year does not have.
+     */
+    fun monthForYear(hebrewMonth: Int, hebrewYear: Int): Int =
+        if (hebrewMonth == JewishDate.ADAR_II && !isEventLeapYear(hebrewYear)) {
+            JewishDate.ADAR
+        } else {
+            hebrewMonth
+        }
 
     /**
      * Whether the year an event was recorded in is a leap year. Never throws:

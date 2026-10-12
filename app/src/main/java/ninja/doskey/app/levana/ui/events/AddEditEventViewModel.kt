@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.ui.events
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,23 +25,41 @@ class AddEditEventViewModel(
             is AddEditEventIntent.SetHebrewDay ->
                 _state.value = _state.value.copy(hebrewDay = intent.day)
             is AddEditEventIntent.SetHebrewMonth ->
-                _state.value = _state.value.copy(hebrewMonth = intent.month)
+                setDate(month = intent.month)
             is AddEditEventIntent.SetHebrewYear ->
-                _state.value = _state.value.copy(hebrewYear = intent.year)
+                setDate(year = intent.year)
             is AddEditEventIntent.SetNotes ->
                 _state.value = _state.value.copy(notes = intent.notes)
             is AddEditEventIntent.SetUseYahrzeitRules ->
                 _state.value = _state.value.copy(
                     useYahrzeitRules = intent.enabled
                 )
-            is AddEditEventIntent.PreFillDate ->
-                _state.value = _state.value.copy(
-                    hebrewDay = intent.day,
-                    hebrewMonth = intent.month,
-                    hebrewYear = intent.year
-                )
+            is AddEditEventIntent.PreFillDate -> {
+                _state.value = _state.value.copy(hebrewDay = intent.day)
+                setDate(month = intent.month, year = intent.year)
+            }
             is AddEditEventIntent.Save -> save()
         }
+    }
+
+    /**
+     * Sets the editor's date. The year is kept inside the range the calendar
+     * library handles, and the month is one that year has (Adar II becomes
+     * Adar when the year is stepped to a regular year), so a date that cannot
+     * exist is never held in state or saved.
+     */
+    private fun setDate(
+        month: Int = _state.value.hebrewMonth,
+        year: Int = _state.value.hebrewYear
+    ) {
+        val safeYear = year.coerceIn(
+            HebrewDateMatcher.MIN_KNOWN_YEAR,
+            HebrewDateMatcher.MAX_KNOWN_YEAR
+        )
+        _state.value = _state.value.copy(
+            hebrewMonth = HebrewDateMatcher.monthForYear(month, safeYear),
+            hebrewYear = safeYear
+        )
     }
 
     private fun loadEvent(eventId: Long) {

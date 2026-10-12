@@ -73,6 +73,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.db.PersonalEvent
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -663,22 +664,50 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
     }
 }
 
+/**
+ * A stored recurring date in Hebrew, e.g. "י׳ כסלו תשפ״ד". Any year the
+ * calendar library cannot handle (0, 1, -1, …) is an unknown year and gives
+ * the year-less form "י׳ כסלו", never raw numbers.
+ */
 internal fun formatHebrewDate(day: Int, month: Int, year: Int): String {
-    if (year == 0) {
-        // Unknown year — format just day/month
-        return try {
-            val jd = JewishDate(5784, month, day)
-            val formatted = hebrewFormatter.format(jd)
-            // Remove the year part (last word)
-            formatted.substringBeforeLast(" ")
+    val yearKnown = HebrewDateMatcher.isKnownYear(year)
+    if (yearKnown) {
+        try {
+            return hebrewFormatter.format(JewishDate(year, month, day))
         } catch (_: Exception) {
-            "$day/$month"
+            // A day or month that year does not have: build it from parts below
         }
     }
     return try {
-        val jd = JewishDate(year, month, day)
-        hebrewFormatter.format(jd)
+        require(day in 1..30)
+        val dayAndMonth =
+            "${hebrewFormatter.formatHebrewNumber(day)} ${hebrewMonthName(month, year)}"
+        if (yearKnown) {
+            "$dayAndMonth ${hebrewFormatter.formatHebrewNumber(year)}"
+        } else {
+            dayAndMonth
+        }
     } catch (_: Exception) {
-        "$day/$month/$year"
+        if (yearKnown) "$day/$month/$year" else "$day/$month"
     }
+}
+
+// Reference years for month names only: 5785 is a regular year, 5784 a leap year
+private const val REGULAR_REFERENCE_YEAR = 5785
+private const val LEAP_REFERENCE_YEAR = 5784
+
+/**
+ * Month name for a stored date. With an unknown or regular year, month 12 is
+ * plain "אדר"; only a known leap year makes it "אדר א׳". Month 13 is always
+ * "אדר ב׳".
+ */
+private fun hebrewMonthName(month: Int, year: Int): String {
+    val referenceYear = if (
+        month == JewishDate.ADAR_II || HebrewDateMatcher.isEventLeapYear(year)
+    ) {
+        LEAP_REFERENCE_YEAR
+    } else {
+        REGULAR_REFERENCE_YEAR
+    }
+    return hebrewFormatter.formatMonth(JewishDate(referenceYear, month, 1))
 }

@@ -29,13 +29,31 @@ class ContactBirthdayViewModel(
             is ContactBirthdayIntent.SetHebrewDay ->
                 _state.value = _state.value.copy(hebrewDay = intent.day)
             is ContactBirthdayIntent.SetHebrewMonth ->
-                _state.value = _state.value.copy(
-                    hebrewMonth = intent.month
-                )
+                setDate(month = intent.month)
             is ContactBirthdayIntent.SetHebrewYear ->
-                _state.value = _state.value.copy(hebrewYear = intent.year)
+                setDate(year = intent.year)
             is ContactBirthdayIntent.Save -> save()
         }
+    }
+
+    /**
+     * Sets the editor's date. The year is kept inside the range the calendar
+     * library handles, and the month is one that year has (Adar II becomes
+     * Adar when the year is stepped to a regular year), so a date that cannot
+     * exist is never held in state or saved.
+     */
+    private fun setDate(
+        month: Int = _state.value.hebrewMonth,
+        year: Int = _state.value.hebrewYear
+    ) {
+        val safeYear = year.coerceIn(
+            HebrewDateMatcher.MIN_KNOWN_YEAR,
+            HebrewDateMatcher.MAX_KNOWN_YEAR
+        )
+        _state.value = _state.value.copy(
+            hebrewMonth = HebrewDateMatcher.monthForYear(month, safeYear),
+            hebrewYear = safeYear
+        )
     }
 
     private fun loadBirthday(contactLookupKey: String) {

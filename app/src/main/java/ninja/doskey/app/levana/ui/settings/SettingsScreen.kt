@@ -76,6 +76,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
@@ -1267,27 +1268,35 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
             Text("Clear")
         }
         TextButton(onClick = {
-            try {
-                val y = yearText.toInt()
-                val m = monthText.toInt()
-                val d = dayText.toInt()
-                val jd = JewishDate(y, m, d)
-                val gc = jd.gregorianCalendar
-                onDateChange(
-                    LocalDate.of(
-                        gc.get(GregorianCalendar.YEAR),
-                        gc.get(GregorianCalendar.MONTH) + 1,
-                        gc.get(GregorianCalendar.DAY_OF_MONTH)
-                    )
-                )
-            } catch (_: Exception) {
-                // Invalid input, ignore
-            }
+            // Invalid input is ignored
+            parseHebrewDateOverride(yearText, monthText, dayText)?.let(onDateChange)
         }) {
             Text("Apply")
         }
     }
 }
+
+/**
+ * The Gregorian date for a Hebrew date typed into the Date Override fields,
+ * or null when it is not a real date. The year must be one the date pickers
+ * accept: an override far outside that range makes the app's "today" a date
+ * the calendar cannot render, and the override persists across restarts.
+ */
+internal fun parseHebrewDateOverride(yearText: String, monthText: String, dayText: String): LocalDate? =
+    try {
+        val y = yearText.trim().toInt()
+        val m = monthText.trim().toInt()
+        val d = dayText.trim().toInt()
+        require(y in HebrewDateMatcher.EDITABLE_YEARS)
+        val gc = JewishDate(y, m, d).gregorianCalendar
+        LocalDate.of(
+            gc.get(GregorianCalendar.YEAR),
+            gc.get(GregorianCalendar.MONTH) + 1,
+            gc.get(GregorianCalendar.DAY_OF_MONTH)
+        )
+    } catch (_: Exception) {
+        null
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

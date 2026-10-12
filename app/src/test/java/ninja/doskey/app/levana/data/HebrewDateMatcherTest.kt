@@ -17,6 +17,33 @@ class HebrewDateMatcherTest {
     }
 
     @Test
+    fun absurdlyLargeYearIsUnknownAndDoesNotThrow() {
+        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.MIN_KNOWN_YEAR))
+        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.MAX_KNOWN_YEAR))
+        for (year in listOf(10000, 99999, Int.MAX_VALUE, Int.MIN_VALUE)) {
+            assertFalse(HebrewDateMatcher.isKnownYear(year))
+            assertFalse(HebrewDateMatcher.isEventLeapYear(year))
+            // Still matches as an unknown-year date
+            assertTrue(birthdayMatches(10, JewishDate.KISLEV, year, JewishDate.KISLEV, 10, false))
+            assertTrue(birthdayMatches(14, JewishDate.ADAR, year, JewishDate.ADAR_II, 14, true))
+        }
+    }
+
+    @Test
+    fun pickerYearsAreAllKnown() {
+        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.EDITABLE_YEARS.first))
+        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.EDITABLE_YEARS.last))
+    }
+
+    @Test
+    fun monthForYearDropsAdarIIFromRegularYears() {
+        assertEquals(JewishDate.ADAR, HebrewDateMatcher.monthForYear(JewishDate.ADAR_II, 5785))
+        assertEquals(JewishDate.ADAR_II, HebrewDateMatcher.monthForYear(JewishDate.ADAR_II, 5784))
+        assertEquals(JewishDate.ADAR, HebrewDateMatcher.monthForYear(JewishDate.ADAR, 5784))
+        assertEquals(JewishDate.KISLEV, HebrewDateMatcher.monthForYear(JewishDate.KISLEV, 5785))
+    }
+
+    @Test
     fun knownYearLeapMatchesKosherJava() {
         assertTrue(HebrewDateMatcher.isEventLeapYear(5784))
         assertFalse(HebrewDateMatcher.isEventLeapYear(5785))

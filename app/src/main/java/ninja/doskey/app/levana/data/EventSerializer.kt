@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.data
 
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.domain.model.PersonalEventDto
 import kotlinx.serialization.encodeToString
@@ -18,7 +19,7 @@ object EventSerializer {
 
     fun fromJson(content: String): List<PersonalEvent> {
         val dtos = json.decodeFromString<List<PersonalEventDto>>(content)
-        return dtos.map { it.toEntity() }
+        return dtos.map { it.toEntity() }.onEach(::validate)
     }
 
     // ── CSV ──────────────────────────────────────────────────────────────────
@@ -48,7 +49,30 @@ object EventSerializer {
             "Unexpected CSV header: $header"
         }
 
-        return rows.drop(1).map { parseCsvRow(it) }
+        return rows.drop(1).map { parseCsvRow(it) }.onEach(::validate)
+    }
+
+    // ── Validation ───────────────────────────────────────────────────────────
+
+    /**
+     * Rejects dates the calendar could never show. Year 0 means "unknown" and
+     * is allowed; any other year must be one the calendar library handles.
+     * Throws IllegalArgumentException, which the importer reports as a failed
+     * import, so nothing from a bad file is stored.
+     */
+    private fun validate(event: PersonalEvent) {
+        val name = "\"${event.title}\""
+        require(event.hebrewYear == 0 || HebrewDateMatcher.isKnownYear(event.hebrewYear)) {
+            "Invalid Hebrew year ${event.hebrewYear} for event $name " +
+                "(expected 0 for unknown, or " +
+                "${HebrewDateMatcher.MIN_KNOWN_YEAR}–${HebrewDateMatcher.MAX_KNOWN_YEAR})"
+        }
+        require(event.hebrewMonth in JewishDate.NISSAN..JewishDate.ADAR_II) {
+            "Invalid Hebrew month ${event.hebrewMonth} for event $name (expected 1–13)"
+        }
+        require(event.hebrewDay in 1..30) {
+            "Invalid Hebrew day ${event.hebrewDay} for event $name (expected 1–30)"
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
