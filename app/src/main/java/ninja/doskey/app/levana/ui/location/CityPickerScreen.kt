@@ -23,9 +23,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ninja.doskey.app.levana.R
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 
@@ -36,6 +40,18 @@ fun CityPickerScreen(
     viewModel: CityPickerViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val dismissKeyboard = {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
+
+    // Navigating away (city selected, back arrow, system back) pauses this entry
+    // immediately, so the keyboard is gone before the next screen appears.
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        dismissKeyboard()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -70,7 +86,10 @@ fun CityPickerScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth().clickable { viewModel.onIntent(CityPickerIntent.SelectCity(city)) }
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        dismissKeyboard()
+                        viewModel.onIntent(CityPickerIntent.SelectCity(city))
+                    }
                 ) {
                     ListItem(
                         headlineContent = { Text(city.name, style = MaterialTheme.typography.titleSmall) },
