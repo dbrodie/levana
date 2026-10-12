@@ -5,6 +5,25 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 object HebrewDateMatcher {
 
     /**
+     * Earliest Hebrew year KosherJava accepts for 1 Tishrei. Stored years
+     * below this (0 = unknown, missing, or garbage from other apps) are
+     * treated as an unknown year.
+     */
+    const val MIN_KNOWN_YEAR = 3762
+
+    fun isKnownYear(hebrewYear: Int): Boolean = hebrewYear >= MIN_KNOWN_YEAR
+
+    /**
+     * Whether the year an event was recorded in is a leap year. Never throws:
+     * an unknown or out-of-range year counts as a non-leap year, so a stored
+     * Adar is treated as plain Adar.
+     */
+    fun isEventLeapYear(hebrewYear: Int): Boolean {
+        if (!isKnownYear(hebrewYear)) return false
+        return (7 * hebrewYear + 1) % 19 < 7
+    }
+
+    /**
      * Simple month resolution for birthdays and custom events.
      * For Adar: map to whichever Adar exists in the target year.
      */
@@ -75,8 +94,7 @@ object HebrewDateMatcher {
         targetIsLeapYear: Boolean
     ): Boolean {
         if (hebrewDay != targetDay) return false
-        val eventIsLeapYear =
-            JewishDate(hebrewYear, JewishDate.TISHREI, 1).isJewishLeapYear
+        val eventIsLeapYear = isEventLeapYear(hebrewYear)
         val resolvedMonth = if (useYahrzeitRules) {
             resolveYahrzeitMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
         } else {

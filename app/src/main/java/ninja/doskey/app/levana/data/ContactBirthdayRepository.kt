@@ -101,7 +101,7 @@ class ContactBirthdayRepository(private val context: Context) {
             HebrewDateMatcher.matchesDate(
                 bday.hebrewDay,
                 bday.hebrewMonth,
-                bday.hebrewYear.coerceAtLeast(1),
+                bday.hebrewYear,
                 useYahrzeitRules = false,
                 targetMonth,
                 targetDay,
@@ -119,15 +119,8 @@ class ContactBirthdayRepository(private val context: Context) {
         val days = mutableSetOf<Int>()
 
         for (bday in getAll()) {
-            val eventIsLeapYear = if (bday.hebrewYear > 0) {
-                JewishDate(
-                    bday.hebrewYear,
-                    JewishDate.TISHREI,
-                    1
-                ).isJewishLeapYear
-            } else {
-                false
-            }
+            val eventIsLeapYear =
+                HebrewDateMatcher.isEventLeapYear(bday.hebrewYear)
             val resolvedMonth = HebrewDateMatcher.resolveSimpleMonth(
                 bday.hebrewMonth,
                 eventIsLeapYear,
@@ -159,7 +152,7 @@ class ContactBirthdayRepository(private val context: Context) {
                     HebrewDateMatcher.matchesDate(
                         bday.hebrewDay,
                         bday.hebrewMonth,
-                        bday.hebrewYear.coerceAtLeast(1),
+                        bday.hebrewYear,
                         useYahrzeitRules = false,
                         targetMonth,
                         targetDay,
