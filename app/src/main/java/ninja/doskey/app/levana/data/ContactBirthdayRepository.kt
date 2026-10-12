@@ -119,12 +119,11 @@ class ContactBirthdayRepository(private val context: Context) {
         val days = mutableSetOf<Int>()
 
         for (bday in getAll()) {
-            val eventIsLeapYear =
-                HebrewDateMatcher.isEventLeapYear(bday.hebrewYear)
-            val resolvedMonth = HebrewDateMatcher.resolveSimpleMonth(
+            val resolvedMonth = HebrewDateMatcher.resolveMonth(
                 bday.hebrewMonth,
-                eventIsLeapYear,
-                isLeapYear
+                bday.hebrewYear,
+                useYahrzeitRules = false,
+                targetIsLeapYear = isLeapYear
             )
             if (resolvedMonth == month) {
                 days.add(bday.hebrewDay)

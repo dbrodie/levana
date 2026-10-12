@@ -24,8 +24,12 @@ object HebrewDateMatcher {
     }
 
     /**
-     * Simple month resolution for birthdays and custom events.
-     * For Adar: map to whichever Adar exists in the target year.
+     * Month resolution for birthdays and custom events (no yahrzeit rule).
+     *
+     * In a leap target year anything recorded in Adar falls in Adar II. The
+     * one exception is a date the user explicitly recorded in Adar I (month
+     * 12 of a known leap year), which stays in Adar I. In a regular target
+     * year Adar, Adar I and Adar II all fall in Adar.
      */
     fun resolveSimpleMonth(
         eventMonth: Int,
@@ -44,7 +48,9 @@ object HebrewDateMatcher {
 
         // Target IS leap year
         return when {
-            eventMonth == JewishDate.ADAR && !eventIsLeapYear -> JewishDate.ADAR
+            // Adar of a regular or unknown year -> Adar II
+            eventMonth == JewishDate.ADAR && !eventIsLeapYear -> JewishDate.ADAR_II
+            // Explicitly recorded Adar I -> Adar I
             eventMonth == JewishDate.ADAR && eventIsLeapYear -> JewishDate.ADAR
             eventMonth == JewishDate.ADAR_II -> JewishDate.ADAR_II
             else -> eventMonth
@@ -84,6 +90,26 @@ object HebrewDateMatcher {
         }
     }
 
+    /**
+     * The month (KosherJava numbering) in which a stored recurring date falls
+     * in a target year. Every mapping of a stored date onto a year goes
+     * through here so the calendar, the day panel, lists and notifications
+     * cannot disagree.
+     */
+    fun resolveMonth(
+        hebrewMonth: Int,
+        hebrewYear: Int,
+        useYahrzeitRules: Boolean,
+        targetIsLeapYear: Boolean
+    ): Int {
+        val eventIsLeapYear = isEventLeapYear(hebrewYear)
+        return if (useYahrzeitRules) {
+            resolveYahrzeitMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
+        } else {
+            resolveSimpleMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
+        }
+    }
+
     fun matchesDate(
         hebrewDay: Int,
         hebrewMonth: Int,
@@ -94,12 +120,7 @@ object HebrewDateMatcher {
         targetIsLeapYear: Boolean
     ): Boolean {
         if (hebrewDay != targetDay) return false
-        val eventIsLeapYear = isEventLeapYear(hebrewYear)
-        val resolvedMonth = if (useYahrzeitRules) {
-            resolveYahrzeitMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
-        } else {
-            resolveSimpleMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
-        }
-        return resolvedMonth == targetMonth
+        return resolveMonth(hebrewMonth, hebrewYear, useYahrzeitRules, targetIsLeapYear) ==
+            targetMonth
     }
 }

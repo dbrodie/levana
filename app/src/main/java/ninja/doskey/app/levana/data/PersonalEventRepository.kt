@@ -56,21 +56,12 @@ class PersonalEventRepository(private val dao: PersonalEventDao) {
         val days = mutableSetOf<Int>()
 
         for (event in allEvents) {
-            val eventIsLeapYear =
-                HebrewDateMatcher.isEventLeapYear(event.hebrewYear)
-            val resolvedMonth = if (event.useYahrzeitRules) {
-                HebrewDateMatcher.resolveYahrzeitMonth(
-                    event.hebrewMonth,
-                    eventIsLeapYear,
-                    isLeapYear
-                )
-            } else {
-                HebrewDateMatcher.resolveSimpleMonth(
-                    event.hebrewMonth,
-                    eventIsLeapYear,
-                    isLeapYear
-                )
-            }
+            val resolvedMonth = HebrewDateMatcher.resolveMonth(
+                event.hebrewMonth,
+                event.hebrewYear,
+                event.useYahrzeitRules,
+                isLeapYear
+            )
             if (resolvedMonth == hebrewMonth) {
                 days.add(event.hebrewDay)
             }
