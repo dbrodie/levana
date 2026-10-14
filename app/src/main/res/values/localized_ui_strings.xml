@@ -112,4 +112,16 @@
     <string name="occurrence_adar_ii">Adar II</string>
     <string name="occurrence_shevat_30">30 Shevat</string>
     <string name="occurrence_nisan_1">1 Nissan</string>
+    <string name="settings_yahrzeit_missing_day_label">Yahrzeit on 30 Cheshvan or 30 Kislev</string>
+    <string name="settings_yahrzeit_missing_day_description">When a yahrzeit is on 30 Cheshvan or 30 Kislev and that month has only 29 days this year, observe it:</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary">Based on the first anniversary (common practice): on the 29th if the month had 29 days in the year after the death, otherwise on Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh">Always on Rosh Chodesh (1 Kislev / 1 Teves)</string>
+    <string name="settings_yahrzeit_missing_day_both">On both the 29th and Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary_short">Based on the first anniversary</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh_short">Always on Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_both_short">Both dates</string>
+    <string name="occurrence_cheshvan_29">29 Cheshvan</string>
+    <string name="occurrence_kislev_1">1 Kislev</string>
+    <string name="occurrence_kislev_29">29 Kislev</string>
+    <string name="occurrence_teves_1">1 Teves</string>
 </resources>

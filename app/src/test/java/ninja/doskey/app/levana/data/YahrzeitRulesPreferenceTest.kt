@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.data
 
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -18,16 +19,17 @@ class YahrzeitRulesPreferenceTest {
 
     @Test
     fun unrecognisedValuesFallBackToTheDefaults() {
-        assertEquals(YahrzeitRules(), parseYahrzeitRules("ADAR_III", "SOMETIMES", null))
+        assertEquals(YahrzeitRules(), parseYahrzeitRules("ADAR_III", "SOMETIMES", null, "NEVER"))
+        assertEquals(YahrzeitMissingDay.FIRST_ANNIVERSARY, YahrzeitRules().missingDay)
     }
 
     @Test
     fun everyStoredValueRoundTrips() {
         for (leap in YahrzeitLeapYearAdar.entries) for (first in YahrzeitFirstYear.entries) {
-            for (nisan in listOf(false, true)) {
+            for (nisan in listOf(false, true)) for (missing in YahrzeitMissingDay.entries) {
                 assertEquals(
-                    YahrzeitRules(leap, first, nisan),
-                    parseYahrzeitRules(leap.name, first.name, nisan)
+                    YahrzeitRules(leap, first, nisan, missing),
+                    parseYahrzeitRules(leap.name, first.name, nisan, missing.name)
                 )
             }
         }

@@ -7,6 +7,7 @@ import ninja.doskey.app.levana.domain.model.Occurrence
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 
 object HebrewDateMatcher {
@@ -175,6 +176,9 @@ object HebrewDateMatcher {
         targetIsLeapYear: Boolean,
         rules: YahrzeitRules
     ): List<Occurrence> {
+        if (day == 30 && (month == JewishDate.CHESHVAN || month == JewishDate.KISLEV)) {
+            return day30CheshvanKislevOccurrences(month, deathYear, targetYear, rules)
+        }
         if (month != JewishDate.ADAR && month != JewishDate.ADAR_II) {
             return listOf(Occurrence(month, day))
         }
@@ -220,6 +224,52 @@ object HebrewDateMatcher {
             )
         }
     }
+
+    /**
+     * Spec section 1c: a yahrzeit on 30 Cheshvan or 30 Kislev. Each year is
+     * computed from the death date alone, never from an earlier recurrence.
+     */
+    private fun day30CheshvanKislevOccurrences(
+        month: Int,
+        deathYear: Int,
+        targetYear: Int,
+        rules: YahrzeitRules
+    ): List<Occurrence> {
+        // The date exists this year: always the original date
+        if (daysInMonth(targetYear, month) == 30) return listOf(Occurrence(month, 30))
+
+        val nextMonth = month + 1 // Cheshvan -> Kislev, Kislev -> Teves
+        val roshChodesh = Occurrence(nextMonth, 1)
+        val day29 = Occurrence(month, 29)
+        return when (rules.missingDay) {
+            YahrzeitMissingDay.ROSH_CHODESH -> listOf(roshChodesh)
+            YahrzeitMissingDay.BOTH -> if (month == JewishDate.CHESHVAN) {
+                listOf(
+                    day29.copy(label = OccurrenceLabel.CHESHVAN_29),
+                    roshChodesh.copy(label = OccurrenceLabel.KISLEV_1)
+                )
+            } else {
+                listOf(
+                    day29.copy(label = OccurrenceLabel.KISLEV_29),
+                    roshChodesh.copy(label = OccurrenceLabel.TEVES_1)
+                )
+            }
+            YahrzeitMissingDay.FIRST_ANNIVERSARY -> {
+                // Unknown death year: no first anniversary, fall back to Rosh Chodesh
+                val firstAnniversary = deathYear + 1
+                if (isKnownYear(deathYear) && isKnownYear(firstAnniversary) &&
+                    daysInMonth(firstAnniversary, month) == 29
+                ) {
+                    listOf(day29)
+                } else {
+                    listOf(roshChodesh)
+                }
+            }
+        }
+    }
+
+    private fun daysInMonth(year: Int, month: Int): Int =
+        JewishDate(year, month, 1).daysInJewishMonth
 
     /** The occurrence of a stored date on a target Hebrew day, or null. */
     fun occurrenceOn(

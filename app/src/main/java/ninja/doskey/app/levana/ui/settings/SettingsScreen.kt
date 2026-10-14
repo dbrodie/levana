@@ -84,6 +84,7 @@ import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
@@ -329,6 +330,7 @@ fun SettingsContent(
     var showMinhagDialog by remember { mutableStateOf(false) }
     var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
     var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
+    var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
     var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
     var showCandleLightingModeDialog by remember { mutableStateOf(false) }
@@ -462,6 +464,18 @@ fun SettingsContent(
                 )
             }
         )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_missing_day_label)) },
+            supportingContent = { Text(yahrzeitMissingDayShortLabel(state.yahrzeitRules.missingDay)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitMissingDayDialog = true }
+        )
         }
 
         val appLanguageLabel = when (state.appLanguage) {
@@ -575,6 +589,21 @@ fun SettingsContent(
                 showYahrzeitFirstYearDialog = false
             },
             onDismiss = { showYahrzeitFirstYearDialog = false }
+        )
+    }
+
+    if (showYahrzeitMissingDayDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_missing_day_label),
+            description = stringResource(R.string.settings_yahrzeit_missing_day_description),
+            options = YahrzeitMissingDay.entries,
+            selected = state.yahrzeitRules.missingDay,
+            label = { yahrzeitMissingDayLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitMissingDay(it))
+                showYahrzeitMissingDayDialog = false
+            },
+            onDismiss = { showYahrzeitMissingDayDialog = false }
         )
     }
 
@@ -767,6 +796,24 @@ private fun yahrzeitFirstYearLabel(value: YahrzeitFirstYear): String = stringRes
         YahrzeitFirstYear.FOLLOW_ANNUAL -> R.string.settings_yahrzeit_first_year_follow
         YahrzeitFirstYear.ADAR_I -> R.string.settings_yahrzeit_first_year_adar_i
         YahrzeitFirstYear.BOTH -> R.string.settings_yahrzeit_first_year_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayShortLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary_short
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh_short
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both_short
     }
 )
 

@@ -112,4 +112,16 @@
     <string name="occurrence_adar_ii">אדר ב׳</string>
     <string name="occurrence_shevat_30">ל׳ שבט</string>
     <string name="occurrence_nisan_1">א׳ ניסן</string>
+    <string name="settings_yahrzeit_missing_day_label">יארצייט בל׳ חשון או בל׳ כסלו</string>
+    <string name="settings_yahrzeit_missing_day_description">כאשר יארצייט חל בל׳ חשון או בל׳ כסלו ובשנה זו יש בחודש רק 29 ימים, לציין אותו:</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary">לפי היארצייט הראשון (המנהג הנפוץ): בכ״ט אם בשנה שאחרי הפטירה היו בחודש 29 ימים, ואחרת בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh">תמיד בראש חודש (א׳ כסלו / א׳ טבת)</string>
+    <string name="settings_yahrzeit_missing_day_both">גם בכ״ט וגם בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary_short">לפי היארצייט הראשון</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh_short">תמיד בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_both_short">שני התאריכים</string>
+    <string name="occurrence_cheshvan_29">כ״ט חשון</string>
+    <string name="occurrence_kislev_1">א׳ כסלו</string>
+    <string name="occurrence_kislev_29">כ״ט כסלו</string>
+    <string name="occurrence_teves_1">א׳ טבת</string>
 </resources>

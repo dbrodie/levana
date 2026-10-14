@@ -13,6 +13,10 @@ fun OccurrenceLabel.stringRes(): Int = when (this) {
     OccurrenceLabel.ADAR_II -> R.string.occurrence_adar_ii
     OccurrenceLabel.SHEVAT_30 -> R.string.occurrence_shevat_30
     OccurrenceLabel.NISAN_1 -> R.string.occurrence_nisan_1
+    OccurrenceLabel.CHESHVAN_29 -> R.string.occurrence_cheshvan_29
+    OccurrenceLabel.KISLEV_1 -> R.string.occurrence_kislev_1
+    OccurrenceLabel.KISLEV_29 -> R.string.occurrence_kislev_29
+    OccurrenceLabel.TEVES_1 -> R.string.occurrence_teves_1
 }
 
 /** "Title (Adar I)" when the event occurs twice this year, otherwise the title. */

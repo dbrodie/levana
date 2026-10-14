@@ -10,6 +10,7 @@ import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -151,6 +152,29 @@ class PersonalEventRepositoryAdarTest {
             checked
         )
         assertOccursOn(on, 5787, mapOf((JewishDate.ADAR to 30) to null), checked + (JewishDate.ADAR to 30))
+    }
+
+    @Test
+    fun day30CheshvanObserveBothIsTwoLabelledOccurrencesOnEveryPath() {
+        // A target year whose Cheshvan has 29 days, found through KosherJava
+        val target = (5780..5800).first { JewishDate(it, JewishDate.CHESHVAN, 1).daysInJewishMonth == 29 }
+        val event = event("Yahrzeit", JewishDate.CHESHVAN, 5780, yahrzeit = true).copy(hebrewDay = 30)
+        val checked = listOf(JewishDate.CHESHVAN to 29, JewishDate.KISLEV to 1)
+        val both = PersonalEventRepository(FakeDao(listOf(event))) {
+            YahrzeitRules(missingDay = YahrzeitMissingDay.BOTH)
+        }
+        assertOccursOn(
+            both, target,
+            mapOf(
+                (JewishDate.CHESHVAN to 29) to OccurrenceLabel.CHESHVAN_29,
+                (JewishDate.KISLEV to 1) to OccurrenceLabel.KISLEV_1
+            ),
+            checked
+        )
+        val roshChodesh = PersonalEventRepository(FakeDao(listOf(event))) {
+            YahrzeitRules(missingDay = YahrzeitMissingDay.ROSH_CHODESH)
+        }
+        assertOccursOn(roshChodesh, target, mapOf((JewishDate.KISLEV to 1) to null), checked)
     }
 
     @Test

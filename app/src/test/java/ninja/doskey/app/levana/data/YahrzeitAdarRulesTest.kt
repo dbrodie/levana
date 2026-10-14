@@ -5,6 +5,7 @@ import ninja.doskey.app.levana.domain.model.Occurrence
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,11 +21,15 @@ import org.junit.Test
 class YahrzeitAdarRulesTest {
 
     companion object {
-        /** Every combination of the three settings (3 x 3 x 2 = 18). */
+        /** Every combination of the four settings (3 x 3 x 2 x 3 = 54). */
         val allRules: List<YahrzeitRules> =
             YahrzeitLeapYearAdar.entries.flatMap { leap ->
                 YahrzeitFirstYear.entries.flatMap { first ->
-                    listOf(false, true).map { nisan -> YahrzeitRules(leap, first, nisan) }
+                    listOf(false, true).flatMap { nisan ->
+                        YahrzeitMissingDay.entries.map { missing ->
+                            YahrzeitRules(leap, first, nisan, missing)
+                        }
+                    }
                 }
             }
 
@@ -56,9 +61,14 @@ class YahrzeitAdarRulesTest {
 
     @Test
     fun settingsAreIndependentAndCoverEveryValue() {
-        assertEquals(18, allRules.toSet().size)
+        assertEquals(54, allRules.toSet().size)
         assertEquals(
-            YahrzeitRules(YahrzeitLeapYearAdar.ADAR_II, YahrzeitFirstYear.FOLLOW_ANNUAL, false),
+            YahrzeitRules(
+                YahrzeitLeapYearAdar.ADAR_II,
+                YahrzeitFirstYear.FOLLOW_ANNUAL,
+                false,
+                YahrzeitMissingDay.FIRST_ANNIVERSARY
+            ),
             YahrzeitRules()
         )
     }
@@ -189,15 +199,19 @@ class YahrzeitAdarRulesTest {
     }
 
     @Test
-    fun day30OnlyGetsSpecialHandlingInAdarI() {
+    fun day30OfAdarOtherThanAdarIIsNotSpecialAndCheshvanKislevIgnoreAdarSettings() {
         // Unknown-year Adar 30 is not Adar I: no Shevat/Nisan substitution
         for (rules in allRules) for (target in ORDINARY_TARGETS) {
             assertEquals(one(ADAR, 30), yahrzeit(30, ADAR, 0, target, rules))
         }
-        // 30 Cheshvan / 30 Kislev are unchanged under every setting
-        for (rules in allRules) for (month in listOf(JewishDate.CHESHVAN, JewishDate.KISLEV)) {
+        // 30 Cheshvan / 30 Kislev (section 1c) are unaffected by the Adar settings
+        for (month in listOf(JewishDate.CHESHVAN, JewishDate.KISLEV)) {
             for (target in ORDINARY_TARGETS + LEAP_TARGETS) {
-                assertEquals(one(month, 30), yahrzeit(30, month, 5784, target, rules))
+                for (missing in YahrzeitMissingDay.entries) {
+                    val results = allRules.filter { it.missingDay == missing }
+                        .map { yahrzeit(30, month, 5784, target, it) }.toSet()
+                    assertEquals(1, results.size)
+                }
             }
         }
     }

@@ -92,6 +92,8 @@ class SettingsViewModel(
                     preferencesRepository.saveYahrzeitFirstYear(intent.value)
                 is SettingsIntent.SetYahrzeitAdarI30AlsoNisan1 ->
                     preferencesRepository.saveYahrzeitAdarI30AlsoNisan1(intent.enabled)
+                is SettingsIntent.SetYahrzeitMissingDay ->
+                    preferencesRepository.saveYahrzeitMissingDay(intent.value)
                 is SettingsIntent.ToggleZman -> {
                     val current = _state.value.selectedZmanim.toMutableSet()
                     if (intent.enabled) current.add(intent.name) else current.remove(intent.name)

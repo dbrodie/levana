@@ -16,6 +16,7 @@ import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
@@ -92,6 +93,8 @@ class PreferencesRepository(private val context: Context) {
             stringPreferencesKey("yahrzeit_first_year")
         val YAHRZEIT_ADAR_I_30_NISAN_1 =
             booleanPreferencesKey("yahrzeit_adar_i_30_nisan_1")
+        val YAHRZEIT_MISSING_DAY =
+            stringPreferencesKey("yahrzeit_missing_day")
 
         // Internal update-checker state — NOT part of UserPreferences
         val LAST_NOTIFIED_UPDATE_VERSION =
@@ -163,7 +166,8 @@ class PreferencesRepository(private val context: Context) {
             yahrzeitRules = parseYahrzeitRules(
                 prefs[Keys.YAHRZEIT_LEAP_YEAR_ADAR],
                 prefs[Keys.YAHRZEIT_FIRST_YEAR],
-                prefs[Keys.YAHRZEIT_ADAR_I_30_NISAN_1]
+                prefs[Keys.YAHRZEIT_ADAR_I_30_NISAN_1],
+                prefs[Keys.YAHRZEIT_MISSING_DAY]
             )
         )
     }
@@ -179,6 +183,12 @@ class PreferencesRepository(private val context: Context) {
     suspend fun saveYahrzeitFirstYear(value: YahrzeitFirstYear) {
         context.dataStore.edit { prefs ->
             prefs[Keys.YAHRZEIT_FIRST_YEAR] = value.name
+        }
+    }
+
+    suspend fun saveYahrzeitMissingDay(value: YahrzeitMissingDay) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.YAHRZEIT_MISSING_DAY] = value.name
         }
     }
 
@@ -395,7 +405,8 @@ class PreferencesRepository(private val context: Context) {
 internal fun parseYahrzeitRules(
     leapYearAdar: String?,
     firstYear: String?,
-    adarI30AlsoNisan1: Boolean?
+    adarI30AlsoNisan1: Boolean?,
+    missingDay: String? = null
 ): YahrzeitRules {
     val defaults = YahrzeitRules()
     return YahrzeitRules(
@@ -403,6 +414,8 @@ internal fun parseYahrzeitRules(
             ?: defaults.leapYearAdar,
         firstYear = YahrzeitFirstYear.entries.firstOrNull { it.name == firstYear }
             ?: defaults.firstYear,
-        adarI30AlsoNisan1 = adarI30AlsoNisan1 ?: defaults.adarI30AlsoNisan1
+        adarI30AlsoNisan1 = adarI30AlsoNisan1 ?: defaults.adarI30AlsoNisan1,
+        missingDay = YahrzeitMissingDay.entries.firstOrNull { it.name == missingDay }
+            ?: defaults.missingDay
     )
 }
