@@ -42,7 +42,7 @@
     <string name="event_title_example">לדוגמה: יארצייט של אבא, יום נישואין</string>
     <string name="event_hebrew_date_label">תאריך עברי</string>
     <string name="event_yahrzeit_rules">החלת כללי יארצייט באדר</string>
-    <string name="event_yahrzeit_rules_description">אדר בשנה שאינה מעוברת חל באדר ב׳ בשנה מעוברת. אדר א׳ ואדר ב׳ נשארים נפרדים.</string>
+    <string name="event_yahrzeit_rules_description">תאריכי אדר נקבעים לפי הגדרות היארצייט בהגדרות ← מנהג. אדר א׳ ואדר ב׳ נשארים נפרדים.</string>
     <string name="event_notes_optional">הערות (רשות)</string>
     <string name="event_date_picker_day">יום</string>
     <string name="event_date_picker_month">חודש</string>
