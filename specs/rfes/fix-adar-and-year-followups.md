@@ -137,6 +137,74 @@ unknown death year, and checks that non-yahrzeit events are unaffected by
 every setting. Repository tests for both "both" cases across the three
 lookups and the labels. Preference round trip for the three settings.
 
+## 1c. Yahrzeits on 30 Cheshvan / 30 Kislev
+
+Owner-specified rules for events with "Use yahrzeit Adar rules" on whose
+stored date is day 30 of Cheshvan (8) or Kislev (9). Both months have 29 or
+30 days depending on the year. Everything in 1b stays as is.
+
+### Rules
+
+1. If the date exists in the target year (that month has 30 days that year),
+   observe it on the original date, 30 Cheshvan or 30 Kislev, whatever the
+   setting.
+2. If the target month has only 29 days, a new global setting, the
+   missing-date minhag, decides:
+
+| Setting | Death on 30 Cheshvan | Death on 30 Kislev |
+|---|---|---|
+| First-anniversary-based (common practice), **the default** | 29 Cheshvan if Cheshvan had 29 days in the first anniversary year; otherwise 1 Kislev | 29 Kislev if Kislev had 29 days in the first anniversary year; otherwise 1 Teves |
+| Always follow Rosh Chodesh | 1 Kislev | 1 Teves |
+| Observe both when missing | 29 Cheshvan and 1 Kislev | 29 Kislev and 1 Teves |
+
+Owner's developer notes:
+
+- First anniversary year = Hebrew year of death + 1.
+- The length checked is that specific month's length in that year.
+- The first-anniversary rule only matters in years where the original date is
+  missing; if day 30 exists, it is always used.
+- Each recurrence is calculated from the original death date, never from the
+  previous recurrence.
+
+### Interpretations (owner: correct these if wrong)
+
+- The setting is global, stored in DataStore like the three Adar settings,
+  and shown with them in Settings (Minhag group), with English and Hebrew
+  strings and an explanation in its dialog.
+- "Observe both" produces two separate occurrences, labelled like the Adar
+  "Both" case: "(29 Cheshvan)" / "(1 Kislev)" and "(29 Kislev)" /
+  "(1 Teves)", localized ("(כ״ט חשון)" / "(א׳ כסלו)", "(כ״ט כסלו)" /
+  "(א׳ טבת)"). Each is marked separately on the calendar in both month
+  modes, listed separately in the day panel, and gets its own notification.
+  A single occurrence has no label.
+- English uses "Teves", the app's shared English spelling (see section 3),
+  for the month the owner wrote as "Tevet".
+- Unknown death year (fails `isKnownYear`): the first-anniversary rule cannot
+  be computed, so under that setting it falls back to Rosh Chodesh (1 Kislev /
+  1 Teves). The other two settings work as usual.
+- Applies to every target year, including years before the death year,
+  consistent with the Adar rules. A year before the death year still uses
+  death year + 1 as the first anniversary year.
+- Birthdays and custom events with the yahrzeit switch off are not affected by
+  this setting and keep their current day-30 behaviour: they are observed on
+  day 30 only in years when that month has 30 days, and are not shown or
+  notified at all in years when it has 29.
+- Day 30 of other months is unchanged. The 30 Adar I rule from 1b is separate
+  and unchanged.
+- Default behaviour changes for these yahrzeits: before, a 30 Cheshvan /
+  30 Kislev yahrzeit was not shown at all in a year with a 29-day month; with
+  the default it is now shown on 29 or on Rosh Chodesh.
+- All paths go through `HebrewDateMatcher.occurrences`.
+
+### Tests
+
+Each setting × target year with Cheshvan / Kislev of 29 vs 30 days × first
+anniversary year with 29 vs 30 days, with concrete years found by asking
+KosherJava for month lengths in the test. Also: unknown death year, a target
+year before the death year, a recurrence that does not depend on the previous
+year's result, non-yahrzeit events ignoring the setting, labels through the
+repository lookups, and the preference round trip.
+
 ## 2. Bad years
 
 ### 2a. Creating or storing a bad year
