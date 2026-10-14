@@ -178,11 +178,15 @@ class DailyNotificationWorker(
         }
 
         val birthdays = contactBirthdayRepository.getBirthdaysForDate(today)
-        for (birthday in birthdays) {
+        for (occurrence in birthdays) {
             NotificationPoster.postPersonalEvent(
                 applicationContext,
                 today,
-                "${birthday.contactName}'s Hebrew Birthday"
+                occurrenceTitle(
+                    applicationContext,
+                    "${occurrence.birthday.contactName}'s Hebrew Birthday",
+                    occurrence.label
+                )
             )
         }
     }

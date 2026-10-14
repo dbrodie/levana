@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.data
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import java.util.GregorianCalendar
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.Occurrence
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
@@ -161,6 +162,21 @@ object HebrewDateMatcher {
                 isEventLeapYear(hebrewYear),
                 targetIsLeapYear
             )
+            // Spec 1d: a day 30 the month lacks this year moves to the 1st of
+            // the following month, so the date is never dropped
+            if (hebrewDay == 30 && isValidMonth(month) && daysInMonth(targetYear, month) == 29) {
+                val storedMonth = HebrewMonth.from(
+                    hebrewMonth,
+                    isLeapYear = hebrewMonth == JewishDate.ADAR_II || isEventLeapYear(hebrewYear)
+                )
+                return listOf(
+                    Occurrence(
+                        followingMonth(month, targetIsLeapYear),
+                        1,
+                        OccurrenceLabel.DelayedFrom30(storedMonth)
+                    )
+                )
+            }
             return listOf(Occurrence(month, hebrewDay))
         }
         return yahrzeitOccurrences(
@@ -266,6 +282,20 @@ object HebrewDateMatcher {
                 }
             }
         }
+    }
+
+    private fun isValidMonth(month: Int) = month in JewishDate.NISSAN..JewishDate.ADAR_II
+
+    /**
+     * The month after [month] in the calendar order of the year: Adar (or
+     * Adar II) -> Nisan, Elul -> Tishrei. A 1 Tishrei result is observed on
+     * 1 Tishrei of the target year, i.e. right after the previous year's Elul.
+     */
+    private fun followingMonth(month: Int, isLeapYear: Boolean): Int = when (month) {
+        JewishDate.ADAR -> if (isLeapYear) JewishDate.ADAR_II else JewishDate.NISSAN
+        JewishDate.ADAR_II -> JewishDate.NISSAN
+        JewishDate.ELUL -> JewishDate.TISHREI
+        else -> month + 1
     }
 
     private fun daysInMonth(year: Int, month: Int): Int =

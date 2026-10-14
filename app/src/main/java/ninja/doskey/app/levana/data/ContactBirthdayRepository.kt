@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.BirthdayOccurrence
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import java.time.LocalDate
 import java.util.GregorianCalendar
@@ -89,10 +90,11 @@ class ContactBirthdayRepository(private val context: Context) {
     // Birthdays never use the yahrzeit rule, so the yahrzeit settings do
     // not apply; the matching still goes through HebrewDateMatcher.occurrences.
 
-    fun getBirthdaysForDate(date: LocalDate): List<ContactBirthday> {
+    /** Birthdays observed on [date], each with its occurrence label (day panel, notifications). */
+    fun getBirthdaysForDate(date: LocalDate): List<BirthdayOccurrence> {
         val jd = jewishDate(date)
-        return getAll().filter { bday ->
-            HebrewDateMatcher.matchesDate(
+        return getAll().mapNotNull { bday ->
+            HebrewDateMatcher.occurrenceOn(
                 bday.hebrewDay,
                 bday.hebrewMonth,
                 bday.hebrewYear,
@@ -100,7 +102,7 @@ class ContactBirthdayRepository(private val context: Context) {
                 jd.jewishYear,
                 jd.jewishMonth,
                 jd.jewishDayOfMonth
-            )
+            )?.let { BirthdayOccurrence(bday, it.label) }
         }
     }
 

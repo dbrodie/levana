@@ -124,4 +124,5 @@
     <string name="occurrence_kislev_1">1 Kislev</string>
     <string name="occurrence_kislev_29">29 Kislev</string>
     <string name="occurrence_teves_1">1 Teves</string>
+    <string name="occurrence_delayed_from_30">delayed from 30 %1$s</string>
 </resources>

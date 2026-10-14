@@ -36,10 +36,22 @@ data class YahrzeitRules(
     val missingDay: YahrzeitMissingDay = YahrzeitMissingDay.FIRST_ANNIVERSARY
 )
 
-/** Why an occurrence is there, shown when a date occurs twice in a year. */
-enum class OccurrenceLabel {
-    ADAR_I, ADAR_II, SHEVAT_30, NISAN_1,
-    CHESHVAN_29, KISLEV_1, KISLEV_29, TEVES_1
+/**
+ * Why an occurrence is there: which of two dates it is when a date occurs
+ * twice in a year, or that it was moved from a day 30 the month lacks.
+ */
+sealed interface OccurrenceLabel {
+    data object ADAR_I : OccurrenceLabel
+    data object ADAR_II : OccurrenceLabel
+    data object SHEVAT_30 : OccurrenceLabel
+    data object NISAN_1 : OccurrenceLabel
+    data object CHESHVAN_29 : OccurrenceLabel
+    data object KISLEV_1 : OccurrenceLabel
+    data object KISLEV_29 : OccurrenceLabel
+    data object TEVES_1 : OccurrenceLabel
+
+    /** A birthday / custom event moved to the 1st because [month] has no day 30 this year. */
+    data class DelayedFrom30(val month: HebrewMonth) : OccurrenceLabel
 }
 
 /** One day (KosherJava month numbering) on which a stored date is observed. */

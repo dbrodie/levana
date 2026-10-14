@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.data
 
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.Occurrence
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -187,16 +188,21 @@ class YahrzeitMissingDayTest {
     fun nonYahrzeitEventsIgnoreTheSetting() {
         for (month in listOf(cheshvan, kislev)) for (stored in listOf(0, 5770, 5771, 5780)) {
             for (target in 5780..5800) for (missing in YahrzeitMissingDay.entries) {
-                // Current behaviour: day 30 only. A 29-day month has no day 30 for
-                // the calendar to ask about, so nothing is shown that year.
+                // Spec 1d, not 1c: day 30 when it exists, otherwise the 1st of the
+                // next month (never the 29th), whatever this setting says
+                val expected = if (days(target, month) == 30) {
+                    listOf(Occurrence(month, 30))
+                } else {
+                    val from = if (month == cheshvan) HebrewMonth.CHESHVAN else HebrewMonth.KISLEV
+                    listOf(Occurrence(nextMonth(month), 1, OccurrenceLabel.DelayedFrom30(from)))
+                }
                 assertEquals(
-                    listOf(Occurrence(month, 30)),
+                    expected,
                     HebrewDateMatcher.occurrences(30, month, stored, false, target, rules(missing))
                 )
                 assertEquals(
                     false,
-                    HebrewDateMatcher.matchesDate(30, month, stored, false, target, month, 29, rules(missing)) ||
-                        HebrewDateMatcher.matchesDate(30, month, stored, false, target, nextMonth(month), 1, rules(missing))
+                    HebrewDateMatcher.matchesDate(30, month, stored, false, target, month, 29, rules(missing))
                 )
             }
         }

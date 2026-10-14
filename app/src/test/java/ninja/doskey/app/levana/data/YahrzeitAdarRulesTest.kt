@@ -238,6 +238,8 @@ class YahrzeitAdarRulesTest {
                             val defaults = HebrewDateMatcher.occurrences(day, month, stored, false, target)
                             assertEquals(defaults, withRules)
                             assertEquals(1, withRules.size)
+                            // A missing day 30 moves to the 1st (spec 1d, Day30BirthdaysAndEventsTest)
+                            if (day == 30 && withRules.single().day == 1) continue
                             assertEquals(null, withRules.single().label)
                             assertEquals(day, withRules.single().day)
                             assertEquals(

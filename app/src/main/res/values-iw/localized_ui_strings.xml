@@ -124,4 +124,5 @@
     <string name="occurrence_kislev_1">א׳ כסלו</string>
     <string name="occurrence_kislev_29">כ״ט כסלו</string>
     <string name="occurrence_teves_1">א׳ טבת</string>
+    <string name="occurrence_delayed_from_30">נדחה מל׳ %1$s</string>
 </resources>

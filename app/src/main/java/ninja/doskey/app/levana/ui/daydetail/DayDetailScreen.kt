@@ -497,7 +497,7 @@ private fun PersonalEventsSection(events: List<CalendarEvent>) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = event.title,
+                                    text = occurrenceTitle(event.title, event.label),
                                     style = MaterialTheme.typography
                                         .bodyLarge
                                 )

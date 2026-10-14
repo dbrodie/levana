@@ -77,7 +77,7 @@ class DayDetailViewModel(
 
             val calendarEvents = mutableListOf<CalendarEvent>()
             contactBirthdays.forEach {
-                calendarEvents.add(CalendarEvent.Birthday(it))
+                calendarEvents.add(CalendarEvent.Birthday(it.birthday, it.label))
             }
             personalEvents.forEach {
                 calendarEvents.add(CalendarEvent.CustomEvent(it.event, it.label))
