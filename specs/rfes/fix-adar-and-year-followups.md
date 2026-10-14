@@ -264,6 +264,44 @@ always-29-day months; the label; yahrzeit events unaffected; the repository
 lookups and labels. The test that pinned "day 30 is dropped in short years"
 is updated.
 
+## 1e. Editor day clamp
+
+### Problem
+
+In the birthday editor and the Add/Edit event editor, picking day 30 and then
+changing the month or year so the month has only 29 days makes the editor
+display 29 (a display-only clamp in the picker) while the state, and so the
+saved value, stays 30.
+
+### Behaviour
+
+- The view models clamp the day whenever the month or year changes, using
+  the real length of the selected month in the selected year (KosherJava):
+  day 30 becomes 29 when the month has 29 days. State, display and saved
+  value are always the same; the picker no longer clamps on its own.
+- Stepping back to a 30-day month does not restore 30; the day stays 29
+  until the user changes it, as the stepper shows.
+- Opening an existing item does not silently rewrite it. A stored day 30 is
+  shown and kept when the stored month has day 30 in the stored year. When it
+  genuinely does not (bad imported data, e.g. 30 Iyar or 30 Cheshvan of a
+  year with a 29-day Cheshvan), the editor shows 29, and Save stores 29.
+  Leaving without saving changes nothing.
+- An item with an unknown year opens on a year chosen by the existing rules
+  (section 4 and 1b). For a stored 30 Cheshvan / 30 Kislev the shown year is
+  the latest year up to the current one in which that day exists, so the
+  day is kept (for a yahrzeit, also one whose following year has day 30, so
+  the 1c first-anniversary rule gives the same result as the unknown year).
+  An unknown-year date in a month that never has day 30 (Adar of an
+  ordinary or unknown year, Adar II, Iyar, Tammuz, Elul, Teves) shows 29.
+
+### Tests
+
+View-model tests for both editors: day 30 then a 29-day month (short
+Cheshvan / Kislev, Adar II, an always-29-day month); a year change that
+shortens the month; 30 Adar I then an ordinary year; stepping back to a
+30-day month; opening a stored day-30 item where the day exists and where it
+does not.
+
 ## 2. Bad years
 
 ### 2a. Creating or storing a bad year
