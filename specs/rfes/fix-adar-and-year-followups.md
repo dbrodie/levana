@@ -82,7 +82,9 @@ to that first target year. Setting with three values:
 
 - Defaults: annual setting = Adar II (today's behaviour); first-year setting
   = Follow annual minhag; 1 Nisan option = off. With the defaults the
-  observed dates are the same as before this change.
+  observed dates are the same as before this change, except 30 Adar I of a
+  leap-year death in an ordinary year: it used to map to a non-existent
+  30 Adar (never marked) and is now 30 Shevat, as section 1 requires.
 - The three settings are global (not per event), stored in DataStore with
   the other preferences, and shown in Settings in the Minhag group under the
   Minhag row. They are independent of the Minhag (Ashkenazi / Sephardi / …)
