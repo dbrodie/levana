@@ -15,7 +15,11 @@ sealed interface CalendarEvent {
         override val hebrewYear = birthday.hebrewYear
     }
 
-    data class CustomEvent(val event: PersonalEvent) : CalendarEvent {
+    /** [label] is set when the event is observed twice this year (e.g. both Adars). */
+    data class CustomEvent(
+        val event: PersonalEvent,
+        val label: OccurrenceLabel? = null
+    ) : CalendarEvent {
         override val title = event.title
         override val hebrewDay = event.hebrewDay
         override val hebrewMonth = event.hebrewMonth

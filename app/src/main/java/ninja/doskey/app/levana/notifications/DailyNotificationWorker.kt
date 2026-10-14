@@ -11,6 +11,7 @@ import androidx.work.WorkerParameters
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.PersonalEventRepository
+import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.HolidayCategory
@@ -168,11 +169,11 @@ class DailyNotificationWorker(
 
     private suspend fun handlePersonalEvents(today: LocalDate) {
         val events = personalEventRepository.getEventsForDate(today)
-        for (event in events) {
+        for (occurrence in events) {
             NotificationPoster.postPersonalEvent(
                 applicationContext,
                 today,
-                event.title
+                occurrenceTitle(applicationContext, occurrence.event.title, occurrence.label)
             )
         }
 

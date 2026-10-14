@@ -114,10 +114,10 @@ class AddEditEventViewModelTest {
         vm.onIntent(AddEditEventIntent.Save)
 
         val saved = dao.events.single()
-        for (targetLeap in listOf(true, false)) {
+        for (target in 5780..5800) {
             assertEquals(
-                HebrewDateMatcher.resolveMonth(JewishDate.ADAR, 0, false, targetLeap),
-                HebrewDateMatcher.resolveMonth(saved.hebrewMonth, saved.hebrewYear, false, targetLeap)
+                HebrewDateMatcher.occurrences(14, JewishDate.ADAR, 0, false, target),
+                HebrewDateMatcher.occurrences(saved.hebrewDay, saved.hebrewMonth, saved.hebrewYear, false, target)
             )
         }
     }

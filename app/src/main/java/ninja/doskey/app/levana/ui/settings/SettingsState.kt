@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.ui.settings
 import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.SavedLocation
+import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import java.time.LocalDate
 
 
@@ -32,5 +33,6 @@ data class SettingsState(
     val notifyOmerTzait: Boolean = true,
     val notifyOmerMorning: Boolean = false,
     val notifyOmerMorningTime: Int = 420,
-    val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall")
+    val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall"),
+    val yahrzeitRules: YahrzeitRules = YahrzeitRules()
 )

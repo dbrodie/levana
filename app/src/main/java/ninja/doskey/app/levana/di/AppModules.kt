@@ -42,7 +42,10 @@ val dataModule = module {
     single<TodayProvider> { PreferencesTodayProvider(get()) }
     single { LocationService(get()) }
     single { ZmanimRepository() }
-    single { PersonalEventRepository(get()) }
+    single {
+        val preferences = get<PreferencesRepository>()
+        PersonalEventRepository(get()) { preferences.yahrzeitRules() }
+    }
     single { ContactBirthdayRepository(androidContext()) }
     single { SystemCalendarRepository(androidContext()) }
     single { NotificationAlarmScheduler(androidContext()) }

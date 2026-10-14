@@ -1,6 +1,8 @@
 package ninja.doskey.app.levana.ui.settings
 
 import ninja.doskey.app.levana.domain.model.Minhag
+import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import java.time.LocalDate
 
 
@@ -25,5 +27,8 @@ sealed interface SettingsIntent {
     data class SetNotifyOmerTzait(val enabled: Boolean) : SettingsIntent
     data class SetNotifyOmerMorning(val enabled: Boolean) : SettingsIntent
     data class SetNotifyOmerMorningTime(val minutes: Int) : SettingsIntent
+    data class SetYahrzeitLeapYearAdar(val value: YahrzeitLeapYearAdar) : SettingsIntent
+    data class SetYahrzeitFirstYear(val value: YahrzeitFirstYear) : SettingsIntent
+    data class SetYahrzeitAdarI30AlsoNisan1(val enabled: Boolean) : SettingsIntent
     data class ToggleZman(val name: String, val enabled: Boolean) : SettingsIntent
 }

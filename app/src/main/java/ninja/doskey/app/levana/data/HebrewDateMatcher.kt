@@ -3,6 +3,11 @@ package ninja.doskey.app.levana.data
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import java.util.GregorianCalendar
+import ninja.doskey.app.levana.domain.model.Occurrence
+import ninja.doskey.app.levana.domain.model.OccurrenceLabel
+import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitRules
 
 object HebrewDateMatcher {
 
@@ -51,28 +56,44 @@ object HebrewDateMatcher {
      * [currentYear], with the month the date falls in that year, so saving
      * without touching anything does not move an unknown-year Adar from
      * Adar II to Adar I.
+     *
+     * A yahrzeit in Adar with an unknown year is the exception: no single
+     * date in the current year behaves like it under every yahrzeit setting,
+     * so it is shown on the latest year that does (an ordinary year followed
+     * by an ordinary year for Adar, a leap year for Adar II).
      */
     fun editorDate(
         hebrewMonth: Int,
         hebrewYear: Int,
         useYahrzeitRules: Boolean,
         currentYear: Int
-    ): Pair<Int, Int> =
-        if (isKnownYear(hebrewYear)) {
-            monthForYear(hebrewMonth, hebrewYear) to hebrewYear
-        } else {
-            resolveMonth(
-                hebrewMonth,
-                hebrewYear,
-                useYahrzeitRules,
-                targetIsLeapYear = isEventLeapYear(currentYear)
-            ) to currentYear
+    ): Pair<Int, Int> {
+        if (isKnownYear(hebrewYear)) return monthForYear(hebrewMonth, hebrewYear) to hebrewYear
+        if (useYahrzeitRules) {
+            when (hebrewMonth) {
+                JewishDate.ADAR -> return hebrewMonth to latestYearUpTo(currentYear) {
+                    !isEventLeapYear(it) && !isEventLeapYear(it + 1)
+                }
+                JewishDate.ADAR_II -> return hebrewMonth to latestYearUpTo(currentYear) {
+                    isEventLeapYear(it)
+                }
+            }
         }
+        val month = resolveSimpleMonth(
+            hebrewMonth,
+            eventIsLeapYear = false,
+            targetIsLeapYear = isEventLeapYear(currentYear)
+        )
+        return month to currentYear
+    }
+
+    private fun latestYearUpTo(year: Int, predicate: (Int) -> Boolean): Int =
+        generateSequence(year) { it - 1 }.first(predicate)
 
     /**
-     * Whether the year an event was recorded in is a leap year. Never throws:
-     * an unknown or out-of-range year counts as a non-leap year, so a stored
-     * Adar is treated as plain Adar.
+     * Whether a year is a leap year. Never throws: an unknown or out-of-range
+     * year counts as a non-leap year, so a stored Adar is treated as plain
+     * Adar.
      */
     fun isEventLeapYear(hebrewYear: Int): Boolean {
         if (!isKnownYear(hebrewYear)) return false
@@ -114,69 +135,117 @@ object HebrewDateMatcher {
     }
 
     /**
-     * Yahrzeit Adar rules per Shulchan Aruch:
-     * - Death in Adar of non-leap year -> observe in Adar II of leap year
-     * - Death in Adar I of leap year -> observe in Adar I
-     * - Death in Adar II of leap year -> observe in Adar II
+     * Every day on which a stored recurring date is observed in [targetYear]
+     * (a Hebrew year). This is the one resolver behind the calendar markers
+     * (both modes), the day panel, notifications and both repositories.
+     *
+     * Without the yahrzeit rule there is always exactly one occurrence
+     * ([resolveSimpleMonth]) and [rules] are ignored. With it, the owner's
+     * yahrzeit Adar rules apply (see specs/rfes/fix-adar-and-year-followups.md,
+     * "Yahrzeit Adar rules"); some settings give two occurrences, each
+     * labelled.
      */
-    fun resolveYahrzeitMonth(
-        eventMonth: Int,
-        eventIsLeapYear: Boolean,
-        targetIsLeapYear: Boolean
-    ): Int {
-        if (!targetIsLeapYear) {
-            return if (eventMonth == JewishDate.ADAR ||
-                eventMonth == JewishDate.ADAR_II
-            ) {
-                JewishDate.ADAR
-            } else {
-                eventMonth
-            }
-        }
-
-        // Target IS leap year
-        return when {
-            // Death in Adar of non-leap year -> Adar II
-            eventMonth == JewishDate.ADAR && !eventIsLeapYear -> JewishDate.ADAR_II
-            // Death in Adar I (stored as ADAR in leap year) -> Adar I
-            eventMonth == JewishDate.ADAR && eventIsLeapYear -> JewishDate.ADAR
-            // Death in Adar II -> Adar II
-            eventMonth == JewishDate.ADAR_II -> JewishDate.ADAR_II
-            else -> eventMonth
-        }
-    }
-
-    /**
-     * The month (KosherJava numbering) in which a stored recurring date falls
-     * in a target year. Every mapping of a stored date onto a year goes
-     * through here so the calendar, the day panel, lists and notifications
-     * cannot disagree.
-     */
-    fun resolveMonth(
+    fun occurrences(
+        hebrewDay: Int,
         hebrewMonth: Int,
         hebrewYear: Int,
         useYahrzeitRules: Boolean,
-        targetIsLeapYear: Boolean
-    ): Int {
-        val eventIsLeapYear = isEventLeapYear(hebrewYear)
-        return if (useYahrzeitRules) {
-            resolveYahrzeitMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
-        } else {
-            resolveSimpleMonth(hebrewMonth, eventIsLeapYear, targetIsLeapYear)
+        targetYear: Int,
+        rules: YahrzeitRules = YahrzeitRules()
+    ): List<Occurrence> {
+        val targetIsLeapYear = isEventLeapYear(targetYear)
+        if (!useYahrzeitRules) {
+            val month = resolveSimpleMonth(
+                hebrewMonth,
+                isEventLeapYear(hebrewYear),
+                targetIsLeapYear
+            )
+            return listOf(Occurrence(month, hebrewDay))
+        }
+        return yahrzeitOccurrences(
+            hebrewDay, hebrewMonth, hebrewYear, targetYear, targetIsLeapYear, rules
+        )
+    }
+
+    private fun yahrzeitOccurrences(
+        day: Int,
+        month: Int,
+        deathYear: Int,
+        targetYear: Int,
+        targetIsLeapYear: Boolean,
+        rules: YahrzeitRules
+    ): List<Occurrence> {
+        if (month != JewishDate.ADAR && month != JewishDate.ADAR_II) {
+            return listOf(Occurrence(month, day))
+        }
+
+        // Section 1, Adar II. Also a stored Adar II with an unknown year.
+        if (month == JewishDate.ADAR_II) {
+            val target = if (targetIsLeapYear) JewishDate.ADAR_II else JewishDate.ADAR
+            return listOf(Occurrence(target, day))
+        }
+
+        // Section 1, Adar I: month 12 of a known leap year
+        if (isEventLeapYear(deathYear)) {
+            return when {
+                targetIsLeapYear -> listOf(Occurrence(JewishDate.ADAR, day))
+                day == 30 && rules.adarI30AlsoNisan1 -> listOf(
+                    Occurrence(JewishDate.SHEVAT, 30, OccurrenceLabel.SHEVAT_30),
+                    Occurrence(JewishDate.NISSAN, 1, OccurrenceLabel.NISAN_1)
+                )
+                day == 30 -> listOf(Occurrence(JewishDate.SHEVAT, 30))
+                else -> listOf(Occurrence(JewishDate.ADAR, day))
+            }
+        }
+
+        // Sections 2 and 3: Adar of an ordinary year, or an unknown death year
+        if (!targetIsLeapYear) return listOf(Occurrence(JewishDate.ADAR, day))
+
+        // Section 3 applies only to the year right after a known death year
+        // (that year is a leap year here, since the target is)
+        val isFirstYear = isKnownYear(deathYear) && targetYear == deathYear + 1
+        val choice = when {
+            isFirstYear && rules.firstYear == YahrzeitFirstYear.ADAR_I ->
+                YahrzeitLeapYearAdar.ADAR_I
+            isFirstYear && rules.firstYear == YahrzeitFirstYear.BOTH ->
+                YahrzeitLeapYearAdar.BOTH
+            else -> rules.leapYearAdar
+        }
+        return when (choice) {
+            YahrzeitLeapYearAdar.ADAR_I -> listOf(Occurrence(JewishDate.ADAR, day))
+            YahrzeitLeapYearAdar.ADAR_II -> listOf(Occurrence(JewishDate.ADAR_II, day))
+            YahrzeitLeapYearAdar.BOTH -> listOf(
+                Occurrence(JewishDate.ADAR, day, OccurrenceLabel.ADAR_I),
+                Occurrence(JewishDate.ADAR_II, day, OccurrenceLabel.ADAR_II)
+            )
         }
     }
+
+    /** The occurrence of a stored date on a target Hebrew day, or null. */
+    fun occurrenceOn(
+        hebrewDay: Int,
+        hebrewMonth: Int,
+        hebrewYear: Int,
+        useYahrzeitRules: Boolean,
+        targetYear: Int,
+        targetMonth: Int,
+        targetDay: Int,
+        rules: YahrzeitRules = YahrzeitRules()
+    ): Occurrence? =
+        occurrences(hebrewDay, hebrewMonth, hebrewYear, useYahrzeitRules, targetYear, rules)
+            .firstOrNull { it.month == targetMonth && it.day == targetDay }
 
     fun matchesDate(
         hebrewDay: Int,
         hebrewMonth: Int,
         hebrewYear: Int,
         useYahrzeitRules: Boolean,
+        targetYear: Int,
         targetMonth: Int,
         targetDay: Int,
-        targetIsLeapYear: Boolean
-    ): Boolean {
-        if (hebrewDay != targetDay) return false
-        return resolveMonth(hebrewMonth, hebrewYear, useYahrzeitRules, targetIsLeapYear) ==
-            targetMonth
-    }
+        rules: YahrzeitRules = YahrzeitRules()
+    ): Boolean = occurrenceOn(
+        hebrewDay, hebrewMonth, hebrewYear, useYahrzeitRules,
+        targetYear, targetMonth, targetDay, rules
+    ) != null
 }

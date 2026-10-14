@@ -63,10 +63,39 @@ class HebrewDateMatcherTest {
         for (unknown in listOf(0, 1, -1, 3761, 10000)) {
             for (yahrzeit in listOf(false, true)) {
                 assertEquals(JewishDate.KISLEV to 5787, HebrewDateMatcher.editorDate(JewishDate.KISLEV, unknown, yahrzeit, 5787))
-                assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar, unknown, yahrzeit, 5787))
-                assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, unknown, yahrzeit, 5787))
-                assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar, unknown, yahrzeit, 5786))
-                assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar2, unknown, yahrzeit, 5786))
+            }
+            assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar, unknown, false, 5787))
+            assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, unknown, false, 5787))
+            assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar, unknown, false, 5786))
+            assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar2, unknown, false, 5786))
+        }
+    }
+
+    @Test
+    fun editorDateForUnknownYearYahrzeitInAdarKeepsTheSameRules() {
+        val adar = JewishDate.ADAR
+        val adar2 = JewishDate.ADAR_II
+        // 5784 leap, 5785 and 5786 ordinary, 5787 leap
+        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar, 0, true, 5787))
+        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar, 0, true, 5786))
+        assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, 0, true, 5787))
+        assertEquals(adar2 to 5784, HebrewDateMatcher.editorDate(adar2, 0, true, 5786))
+
+        // The shown date behaves like the unknown year under every setting, in every year
+        for (current in 5780..5800) {
+            for (storedMonth in listOf(adar, adar2)) {
+                val (month, year) = HebrewDateMatcher.editorDate(storedMonth, 0, true, current)
+                for (rules in YahrzeitAdarRulesTest.allRules) {
+                    for (target in 5770..5810) {
+                        for (day in listOf(1, 15, 29, 30)) {
+                            assertEquals(
+                                "current=$current stored=$storedMonth target=$target $rules",
+                                HebrewDateMatcher.occurrences(day, storedMonth, 0, true, target, rules),
+                                HebrewDateMatcher.occurrences(day, month, year, true, target, rules)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -155,17 +184,9 @@ class HebrewDateMatcherTest {
             for (storedYear in storedYears) {
                 for (yahrzeit in listOf(false, true)) {
                     val label = "month=$storedMonth year=$storedYear yahrzeit=$yahrzeit"
-                    assertEquals(
-                        "$label, regular target",
-                        adar,
-                        HebrewDateMatcher.resolveMonth(storedMonth, storedYear, yahrzeit, false)
-                    )
-                    assertEquals(
-                        "$label, leap target",
-                        expectedInLeap,
-                        HebrewDateMatcher.resolveMonth(storedMonth, storedYear, yahrzeit, true)
-                    )
-                    // matchesDate agrees with resolveMonth for both Adars
+                    assertEquals("$label, regular target", adar, month(storedMonth, storedYear, yahrzeit, false))
+                    assertEquals("$label, leap target", expectedInLeap, month(storedMonth, storedYear, yahrzeit, true))
+                    // matchesDate agrees for both Adars
                     for (targetLeap in listOf(false, true)) {
                         val expected = if (targetLeap) expectedInLeap else adar
                         for (targetMonth in listOf(adar, adar2)) {
@@ -174,7 +195,7 @@ class HebrewDateMatcherTest {
                                 targetMonth == expected,
                                 HebrewDateMatcher.matchesDate(
                                     7, storedMonth, storedYear, yahrzeit,
-                                    targetMonth, 7, targetLeap
+                                    targetYear(targetLeap), targetMonth, 7
                                 )
                             )
                         }
@@ -191,28 +212,11 @@ class HebrewDateMatcherTest {
             for (storedYear in listOf(0, 1, 5784, 5785)) {
                 for (yahrzeit in listOf(false, true)) {
                     for (targetLeap in listOf(false, true)) {
-                        assertEquals(
-                            month,
-                            HebrewDateMatcher.resolveMonth(month, storedYear, yahrzeit, targetLeap)
-                        )
+                        assertEquals(month, month(month, storedYear, yahrzeit, targetLeap))
                     }
                 }
             }
         }
-    }
-
-    /** The yahrzeit rule itself is unchanged by the birthday/custom-event fix. */
-    @Test
-    fun yahrzeitRuleIsUnchanged() {
-        val adar = JewishDate.ADAR
-        val adar2 = JewishDate.ADAR_II
-        assertEquals(adar2, HebrewDateMatcher.resolveYahrzeitMonth(adar, false, true))
-        assertEquals(adar, HebrewDateMatcher.resolveYahrzeitMonth(adar, true, true))
-        assertEquals(adar2, HebrewDateMatcher.resolveYahrzeitMonth(adar2, true, true))
-        assertEquals(adar2, HebrewDateMatcher.resolveYahrzeitMonth(adar2, false, true))
-        assertEquals(adar, HebrewDateMatcher.resolveYahrzeitMonth(adar, false, false))
-        assertEquals(adar, HebrewDateMatcher.resolveYahrzeitMonth(adar, true, false))
-        assertEquals(adar, HebrewDateMatcher.resolveYahrzeitMonth(adar2, true, false))
     }
 
     @Test
@@ -239,7 +243,7 @@ class HebrewDateMatcherTest {
         targetIsLeapYear: Boolean
     ) = HebrewDateMatcher.matchesDate(
         day, month, year, useYahrzeitRules = false,
-        targetMonth, targetDay, targetIsLeapYear
+        targetYear(targetIsLeapYear), targetMonth, targetDay
     )
 
     private fun yahrzeitMatches(
@@ -251,6 +255,14 @@ class HebrewDateMatcherTest {
         targetIsLeapYear: Boolean
     ) = HebrewDateMatcher.matchesDate(
         day, month, year, useYahrzeitRules = true,
-        targetMonth, targetDay, targetIsLeapYear
+        targetYear(targetIsLeapYear), targetMonth, targetDay
     )
+
+    /** 5790 is a leap year, 5788 an ordinary year; neither is the year after a test death year. */
+    private fun targetYear(leap: Boolean) = if (leap) 5790 else 5788
+
+    /** The single month a stored day-7 date falls in, with default yahrzeit settings. */
+    private fun month(storedMonth: Int, storedYear: Int, yahrzeit: Boolean, targetLeap: Boolean): Int =
+        HebrewDateMatcher.occurrences(7, storedMonth, storedYear, yahrzeit, targetYear(targetLeap))
+            .single().month
 }

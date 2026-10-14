@@ -80,7 +80,7 @@ class DayDetailViewModel(
                 calendarEvents.add(CalendarEvent.Birthday(it))
             }
             personalEvents.forEach {
-                calendarEvents.add(CalendarEvent.CustomEvent(it))
+                calendarEvents.add(CalendarEvent.CustomEvent(it.event, it.label))
             }
 
             val systemEvents = try {

@@ -86,84 +86,58 @@ class ContactBirthdayRepository(private val context: Context) {
         return birthdays
     }
 
-    fun getBirthdaysForDate(date: LocalDate): List<ContactBirthday> {
-        val gc = GregorianCalendar(
-            date.year,
-            date.monthValue - 1,
-            date.dayOfMonth
-        )
-        val jd = JewishDate(gc)
-        val targetMonth = jd.jewishMonth
-        val targetDay = jd.jewishDayOfMonth
-        val targetIsLeapYear = jd.isJewishLeapYear
+    // Birthdays never use the yahrzeit rule, so the yahrzeit settings do
+    // not apply; the matching still goes through HebrewDateMatcher.occurrences.
 
+    fun getBirthdaysForDate(date: LocalDate): List<ContactBirthday> {
+        val jd = jewishDate(date)
         return getAll().filter { bday ->
             HebrewDateMatcher.matchesDate(
                 bday.hebrewDay,
                 bday.hebrewMonth,
                 bday.hebrewYear,
                 useYahrzeitRules = false,
-                targetMonth,
-                targetDay,
-                targetIsLeapYear
+                jd.jewishYear,
+                jd.jewishMonth,
+                jd.jewishDayOfMonth
             )
         }
     }
 
-    fun getBirthdayDaysForHebrewMonth(year: Int, month: Int): Set<Int> {
-        val isLeapYear = JewishDate(
-            year,
-            JewishDate.TISHREI,
-            1
-        ).isJewishLeapYear
-        val days = mutableSetOf<Int>()
-
-        for (bday in getAll()) {
-            val resolvedMonth = HebrewDateMatcher.resolveMonth(
+    fun getBirthdayDaysForHebrewMonth(year: Int, month: Int): Set<Int> =
+        getAll().flatMap { bday ->
+            HebrewDateMatcher.occurrences(
+                bday.hebrewDay,
                 bday.hebrewMonth,
                 bday.hebrewYear,
                 useYahrzeitRules = false,
-                targetIsLeapYear = isLeapYear
-            )
-            if (resolvedMonth == month) {
-                days.add(bday.hebrewDay)
-            }
-        }
-        return days
-    }
+                targetYear = year
+            ).filter { it.month == month }.map { it.day }
+        }.toSet()
 
     fun getBirthdayDatesForGregorianMonth(year: Int, month: Int): Set<LocalDate> {
         val allBirthdays = getAll()
         if (allBirthdays.isEmpty()) return emptySet()
-
-        val dates = mutableSetOf<LocalDate>()
         val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
 
-        for (dayOfMonth in 1..daysInMonth) {
-            val date = LocalDate.of(year, month, dayOfMonth)
-            val gc = GregorianCalendar(year, month - 1, dayOfMonth)
-            val jd = JewishDate(gc)
-            val targetMonth = jd.jewishMonth
-            val targetDay = jd.jewishDayOfMonth
-            val targetIsLeapYear = jd.isJewishLeapYear
-
-            if (allBirthdays.any { bday ->
-                    HebrewDateMatcher.matchesDate(
-                        bday.hebrewDay,
-                        bday.hebrewMonth,
-                        bday.hebrewYear,
-                        useYahrzeitRules = false,
-                        targetMonth,
-                        targetDay,
-                        targetIsLeapYear
-                    )
-                }
-            ) {
-                dates.add(date)
+        return (1..daysInMonth).map { LocalDate.of(year, month, it) }.filter { date ->
+            val jd = jewishDate(date)
+            allBirthdays.any { bday ->
+                HebrewDateMatcher.matchesDate(
+                    bday.hebrewDay,
+                    bday.hebrewMonth,
+                    bday.hebrewYear,
+                    useYahrzeitRules = false,
+                    jd.jewishYear,
+                    jd.jewishMonth,
+                    jd.jewishDayOfMonth
+                )
             }
-        }
-        return dates
+        }.toSet()
     }
+
+    private fun jewishDate(date: LocalDate) =
+        JewishDate(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
 
     fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
         val rawContactId = getRawContactId(contactLookupKey) ?: return

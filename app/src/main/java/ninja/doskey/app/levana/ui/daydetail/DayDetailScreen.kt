@@ -57,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ninja.doskey.app.levana.domain.model.CalendarEvent
+import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
@@ -526,7 +527,7 @@ private fun PersonalEventsSection(events: List<CalendarEvent>) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = event.title,
+                                    text = occurrenceTitle(event.title, event.label),
                                     style = MaterialTheme.typography
                                         .bodyLarge
                                 )

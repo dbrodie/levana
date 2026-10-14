@@ -86,6 +86,12 @@ class SettingsViewModel(
                     preferencesRepository.saveNotifyOmerMorning(intent.enabled)
                 is SettingsIntent.SetNotifyOmerMorningTime ->
                     preferencesRepository.saveNotifyOmerMorningTime(intent.minutes)
+                is SettingsIntent.SetYahrzeitLeapYearAdar ->
+                    preferencesRepository.saveYahrzeitLeapYearAdar(intent.value)
+                is SettingsIntent.SetYahrzeitFirstYear ->
+                    preferencesRepository.saveYahrzeitFirstYear(intent.value)
+                is SettingsIntent.SetYahrzeitAdarI30AlsoNisan1 ->
+                    preferencesRepository.saveYahrzeitAdarI30AlsoNisan1(intent.enabled)
                 is SettingsIntent.ToggleZman -> {
                     val current = _state.value.selectedZmanim.toMutableSet()
                     if (intent.enabled) current.add(intent.name) else current.remove(intent.name)
@@ -123,7 +129,8 @@ class SettingsViewModel(
                     notifyOmerTzait = prefs.notifyOmerTzait,
                     notifyOmerMorning = prefs.notifyOmerMorning,
                     notifyOmerMorningTime = prefs.notifyOmerMorningTime,
-                    selectedZmanim = prefs.selectedZmanim
+                    selectedZmanim = prefs.selectedZmanim,
+                    yahrzeitRules = prefs.yahrzeitRules
                 )
             }
         }

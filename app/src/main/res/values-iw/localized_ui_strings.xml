@@ -93,4 +93,23 @@
     <string name="about_version">גרסה</string>
     <string name="about_install_source">מקור ההתקנה</string>
     <string name="about_install_source_unknown">לא ידוע</string>
+
+    <!-- Yahrzeit Adar rules -->
+    <string name="settings_yahrzeit_leap_label">יארצייט של אדר בשנה מעוברת</string>
+    <string name="settings_yahrzeit_leap_description">כאשר הפטירה הייתה באדר של שנה פשוטה, לציין את היארצייט בשנה מעוברת ב:</string>
+    <string name="settings_yahrzeit_leap_adar_i">אדר א׳</string>
+    <string name="settings_yahrzeit_leap_adar_ii">אדר ב׳</string>
+    <string name="settings_yahrzeit_leap_both">שני האדרים</string>
+    <string name="settings_yahrzeit_first_year_label">יארצייט ראשון בשנה מעוברת</string>
+    <string name="settings_yahrzeit_first_year_description">כאשר הפטירה הייתה באדר של שנה פשוטה והשנה שאחריה מעוברת, היארצייט הראשון:</string>
+    <string name="settings_yahrzeit_first_year_follow">לפי המנהג השנתי</string>
+    <string name="settings_yahrzeit_first_year_adar_i">ציון ראשון באדר א׳</string>
+    <string name="settings_yahrzeit_first_year_both">לסמן את שני התאריכים בשנה הראשונה</string>
+    <string name="settings_yahrzeit_nisan_label">לסמן גם את א׳ ניסן</string>
+    <string name="settings_yahrzeit_nisan_description">ליארצייט בל׳ אדר א׳, לסמן גם את א׳ ניסן בשנים פשוטות</string>
+    <string name="occurrence_title_format">%1$s (%2$s)</string>
+    <string name="occurrence_adar_i">אדר א׳</string>
+    <string name="occurrence_adar_ii">אדר ב׳</string>
+    <string name="occurrence_shevat_30">ל׳ שבט</string>
+    <string name="occurrence_nisan_1">א׳ ניסן</string>
 </resources>
