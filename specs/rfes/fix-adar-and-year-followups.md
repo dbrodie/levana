@@ -205,6 +205,65 @@ year before the death year, a recurrence that does not depend on the previous
 year's result, non-yahrzeit events ignoring the setting, labels through the
 repository lookups, and the preference round trip.
 
+## 1d. Day-30 birthdays and events
+
+Owner's decision for birthdays, and custom events with the yahrzeit switch
+off, stored on day 30 of a month. There is no setting. The yahrzeit rules
+(1b, 1c) are unaffected.
+
+### Problem
+
+Today such a date is observed only on day 30. In a year where that month has
+29 days it is not shown anywhere (no marker, no day-panel entry, no
+notification).
+
+### Rule
+
+After the existing Adar mapping (section 1), if the month the date falls in
+has only 29 days in the target year, the date is observed on the 1st of the
+following month instead. When day 30 exists it stays on day 30.
+
+- 30 Cheshvan → 1 Kislev in years with a 29-day Cheshvan.
+- 30 Kislev → 1 Teves in years with a 29-day Kislev.
+- 30 Adar I (month 12 of a known leap year) → 1 Nisan in ordinary years, where
+  Adar has 29 days. In leap years it stays on 30 Adar I.
+- The same fallback applies to any stored day 30 the target month lacks, so
+  no date is ever silently dropped. Months that always have 29 days (Iyar,
+  Tammuz, Elul, Teves, Adar II, and Adar of an ordinary year) therefore
+  always move: 30 Iyar → 1 Sivan, 30 Tammuz → 1 Av, 30 Teves → 1 Shevat,
+  30 Adar (ordinary or unknown year) and 30 Adar II → 1 Nisan, and 30 Elul →
+  1 Tishrei. The editors normally cap the day at the month's length, but
+  such dates can come from an import, from contacts written by other apps,
+  or from the editor keeping day 30 when the month is changed.
+
+### Interpretations (owner: correct these if wrong)
+
+- "The following month" is the next month in the target year's calendar:
+  Adar (ordinary year) and Adar II → Nisan. 30 Elul → 1 Tishrei: Elul always
+  has 29 days, so the date is observed on 1 Tishrei every year (in the
+  calendar's terms, 1 Tishrei of each Hebrew year).
+- The moved occurrence is labelled "(delayed from 30 Cheshvan)", in Hebrew
+  "(נדחה מל׳ חשון)". The month named is the month as stored: "30 Adar I" for
+  a date recorded in Adar I, "30 Adar" for an Adar of an ordinary or unknown
+  year, "30 Adar II" for Adar II. The English month name comes from the
+  shared source (section 3), and the Hebrew from KosherJava. An unmoved
+  occurrence has no label.
+- Calendar chips show only a generic "Personal event" / birthday marker, never
+  titles or labels, so chips are unaffected. The full label appears in the
+  day panel (birthdays and custom events) and in notifications.
+- Applies to every target year, like everything else; the stored year only
+  matters through the Adar mapping.
+- Goes through `HebrewDateMatcher.occurrences`, so the calendar markers (both
+  month modes), the day panel and notifications agree.
+
+### Tests
+
+Each of the three named cases with the target month 29 vs 30 days (years
+found through KosherJava), for birthdays and custom events; the generic
+always-29-day months; the label; yahrzeit events unaffected; the repository
+lookups and labels. The test that pinned "day 30 is dropped in short years"
+is updated.
+
 ## 2. Bad years
 
 ### 2a. Creating or storing a bad year
