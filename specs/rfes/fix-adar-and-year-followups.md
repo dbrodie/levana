@@ -30,10 +30,7 @@ Interpretation implemented (owner: correct this if it is wrong):
 | 12 (Adar I) | known leap year — the user explicitly recorded Adar I | Adar | Adar I (unchanged) |
 | 13 (Adar II) | any | Adar | Adar II (unchanged) |
 
-With this interpretation the simple rule and the yahrzeit rule give the same
-month in every case. Both stay as separate entry points so that a later
-change to one does not silently change the other, and the yahrzeit code is
-not touched.
+The yahrzeit rule is specified separately; see "Yahrzeit Adar rules" below.
 
 ### Consistency
 
@@ -42,6 +39,101 @@ one function, `HebrewDateMatcher.resolveMonth(month, year, useYahrzeitRules,
 targetIsLeapYear)`: calendar day markers (Gregorian and Hebrew mode), the day
 panel, notifications, contact birthdays and personal events. The audit result
 is recorded in the hand-back report.
+
+## 1b. Yahrzeit Adar rules
+
+Owner-specified rules for events with "Use yahrzeit Adar rules" on. They
+replace the previous yahrzeit behaviour. Birthdays and custom events without
+the yahrzeit rule keep the rule in section 1 and are unaffected by every
+setting below. "Death year" is the stored event year; "target year" is the
+Hebrew year being displayed.
+
+### Section 1: death in a leap year (no setting involved except the 1 Nisan option)
+
+| Date of death | Target year ordinary | Target year leap |
+|---|---|---|
+| 1–29 Adar I | same day in Adar | same day in Adar I |
+| 1–29 Adar II | same day in Adar | same day in Adar II |
+| 30 Adar I | 30 Shevat | 30 Adar I |
+
+Setting (off by default): "For a yahrzeit on 30 Adar I, also mark 1 Nisan in
+ordinary years". When on, an ordinary target year has both 30 Shevat and
+1 Nisan marked.
+
+### Section 2: death in Adar of an ordinary year
+
+- Target ordinary → same day in Adar.
+- Target leap → annual setting with three values: Adar I (same day in
+  Adar I) / Adar II (same day in Adar II) / Both Adars (same day in both).
+
+### Section 3: first-year exception
+
+Applies only when the death was in an ordinary year's Adar and the
+immediately following Hebrew year (death year + 1) is a leap year, and only
+to that first target year. Setting with three values:
+
+- Follow annual minhag → section 2.
+- First observance in Adar I → same day in Adar I in that first year only;
+  later leap years use section 2.
+- Mark both first-year dates → same day in both Adar I and Adar II in that
+  first year; later leap years use section 2.
+
+### Defaults and interpretations
+
+- Defaults: annual setting = Adar II (today's behaviour); first-year setting
+  = Follow annual minhag; 1 Nisan option = off. With the defaults the
+  observed dates are the same as before this change.
+- The three settings are global (not per event), stored in DataStore with
+  the other preferences, and shown in Settings in the Minhag group under the
+  Minhag row. They are independent of the Minhag (Ashkenazi / Sephardi / …)
+  setting; no default is derived from it. All labels and option names are
+  string resources with English and Hebrew translations.
+- Unknown death year (fails `isKnownYear`): a stored month 12 is treated as
+  an ordinary year's Adar (section 2; the first-year exception cannot apply
+  because there is no death year to add 1 to). A stored month 13 is treated
+  as Adar II of a leap year (section 1, row 2).
+- A stored month 13 with a known ordinary death year (inconsistent data the
+  editors can no longer create) is also treated as section 1, row 2.
+- Only 30 Adar I gets special handling. Other day-30 dates (30 Cheshvan,
+  30 Kislev) behave as before: they are marked only in years where that
+  month has 30 days.
+- The rules are applied to every target year, including years before the
+  death year, as the matcher always has.
+
+### Occurrences, labels, display and notifications
+
+- One resolver, `HebrewDateMatcher.occurrences(day, month, year,
+  useYahrzeitRules, targetYear, rules)`, returns the list of occurrences
+  (month, day, optional label) of a stored date in a target Hebrew year.
+  `matchesDate`, the Hebrew-month day lookups and the Gregorian-month date
+  lookups of both repositories, the day panel and notifications all use it.
+- When a date has two occurrences in a year (both Adars, or 30 Shevat +
+  1 Nisan), each occurrence is marked separately on the calendar (Gregorian
+  and Hebrew modes) and listed separately in the day panel, and each gets a
+  label so a user looking at either day understands why it is there: the
+  event title plus "(Adar I)" / "(Adar II)" or "(30 Shevat)" / "(1 Nissan)",
+  localized ("(אדר א׳)", "(אדר ב׳)", "(ל׳ שבט)", "(א׳ ניסן)"). A single
+  occurrence is not labelled.
+- A notification is posted for each occurrence, with the same label.
+- Changing a setting refreshes the calendar markers.
+
+### Editors
+
+Opening a yahrzeit event whose death year is unknown cannot show "the current
+year" for an Adar date without changing which rules apply once saved. The
+editor instead shows the most recent year, up to the current one, for which
+the stored date behaves identically: for month 12 an ordinary year that is
+followed by an ordinary year (so section 2 applies and the first-year
+exception never does), for month 13 a leap year. Other months still open on
+the current year.
+
+### Tests
+
+The matrix: sections 1–3 × ordinary/leap target × each setting value × first
+year vs. later years, including 30 Adar I with the 1 Nisan option off/on,
+unknown death year, and checks that non-yahrzeit events are unaffected by
+every setting. Repository tests for both "both" cases across the three
+lookups and the labels. Preference round trip for the three settings.
 
 ## 2. Bad years
 
@@ -116,6 +208,7 @@ Unit tests (`./gradlew :app:testDebugUnitTest`):
   Hebrew output unchanged.
 - `HebrewDateFormatTest`: years 1, -1, 0 give the same year-less date; no raw
   numbers; year-less Adar names.
+- Yahrzeit matrix and repository occurrence tests (section 1b).
 - View model tests: new birthday/event defaults to the current Hebrew year
   (with and without date override); unknown stored year opens as the current
   year; year clamping; Adar II → Adar when the year becomes regular.
