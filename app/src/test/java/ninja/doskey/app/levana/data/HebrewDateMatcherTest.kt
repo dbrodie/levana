@@ -55,19 +55,19 @@ class HebrewDateMatcherTest {
         val adar = JewishDate.ADAR
         val adar2 = JewishDate.ADAR_II
         // Known year: as stored
-        assertEquals(adar to 5784, HebrewDateMatcher.editorDate(adar, 5784, false, 5787))
-        assertEquals(JewishDate.KISLEV to 5700, HebrewDateMatcher.editorDate(JewishDate.KISLEV, 5700, false, 5787))
+        assertEquals(adar to 5784, editorMonthYear(adar, 5784, false, 5787))
+        assertEquals(JewishDate.KISLEV to 5700, editorMonthYear(JewishDate.KISLEV, 5700, false, 5787))
         // Known regular year stored with Adar II: shown as Adar
-        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar2, 5785, false, 5787))
+        assertEquals(adar to 5785, editorMonthYear(adar2, 5785, false, 5787))
         // Unknown year: current year, month where it falls this year
         for (unknown in listOf(0, 1, -1, 3761, 10000)) {
             for (yahrzeit in listOf(false, true)) {
-                assertEquals(JewishDate.KISLEV to 5787, HebrewDateMatcher.editorDate(JewishDate.KISLEV, unknown, yahrzeit, 5787))
+                assertEquals(JewishDate.KISLEV to 5787, editorMonthYear(JewishDate.KISLEV, unknown, yahrzeit, 5787))
             }
-            assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar, unknown, false, 5787))
-            assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, unknown, false, 5787))
-            assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar, unknown, false, 5786))
-            assertEquals(adar to 5786, HebrewDateMatcher.editorDate(adar2, unknown, false, 5786))
+            assertEquals(adar2 to 5787, editorMonthYear(adar, unknown, false, 5787))
+            assertEquals(adar2 to 5787, editorMonthYear(adar2, unknown, false, 5787))
+            assertEquals(adar to 5786, editorMonthYear(adar, unknown, false, 5786))
+            assertEquals(adar to 5786, editorMonthYear(adar2, unknown, false, 5786))
         }
     }
 
@@ -76,15 +76,15 @@ class HebrewDateMatcherTest {
         val adar = JewishDate.ADAR
         val adar2 = JewishDate.ADAR_II
         // 5784 leap, 5785 and 5786 ordinary, 5787 leap
-        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar, 0, true, 5787))
-        assertEquals(adar to 5785, HebrewDateMatcher.editorDate(adar, 0, true, 5786))
-        assertEquals(adar2 to 5787, HebrewDateMatcher.editorDate(adar2, 0, true, 5787))
-        assertEquals(adar2 to 5784, HebrewDateMatcher.editorDate(adar2, 0, true, 5786))
+        assertEquals(adar to 5785, editorMonthYear(adar, 0, true, 5787))
+        assertEquals(adar to 5785, editorMonthYear(adar, 0, true, 5786))
+        assertEquals(adar2 to 5787, editorMonthYear(adar2, 0, true, 5787))
+        assertEquals(adar2 to 5784, editorMonthYear(adar2, 0, true, 5786))
 
         // The shown date behaves like the unknown year under every setting, in every year
         for (current in 5780..5800) {
             for (storedMonth in listOf(adar, adar2)) {
-                val (month, year) = HebrewDateMatcher.editorDate(storedMonth, 0, true, current)
+                val (_, month, year) = HebrewDateMatcher.editorDate(15, storedMonth, 0, true, current)
                 for (rules in YahrzeitAdarRulesTest.allRules) {
                     for (target in 5770..5810) {
                         for (day in listOf(1, 15, 29, 30)) {
@@ -257,6 +257,42 @@ class HebrewDateMatcherTest {
         day, month, year, useYahrzeitRules = true,
         targetYear(targetIsLeapYear), targetMonth, targetDay
     )
+
+    /** The (month, year) the editor shows for a mid-month stored date. */
+    private fun editorMonthYear(month: Int, year: Int, yahrzeit: Boolean, current: Int): Pair<Int, Int> =
+        HebrewDateMatcher.editorDate(15, month, year, yahrzeit, current).let { it.second to it.third }
+
+    @Test
+    fun editorDateKeepsAStoredDay30WhereTheMonthHasIt() {
+        val cheshvan = JewishDate.CHESHVAN
+        val kislev = JewishDate.KISLEV
+        fun days(y: Int, m: Int) = JewishDate(y, m, 1).daysInJewishMonth
+        // Known year with day 30: unchanged
+        val full = (5780..5800).first { days(it, cheshvan) == 30 }
+        assertEquals(Triple(30, cheshvan, full), HebrewDateMatcher.editorDate(30, cheshvan, full, false, 5787))
+        // Known year without day 30 (bad data): shown as 29
+        val short = (5780..5800).first { days(it, cheshvan) == 29 }
+        assertEquals(Triple(29, cheshvan, short), HebrewDateMatcher.editorDate(30, cheshvan, short, false, 5787))
+        assertEquals(Triple(29, JewishDate.IYAR, 5785), HebrewDateMatcher.editorDate(30, JewishDate.IYAR, 5785, false, 5787))
+        // Unknown year: a year in which the day exists, so day 30 is kept
+        for (current in 5780..5800) for (month in listOf(cheshvan, kislev)) for (yahrzeit in listOf(false, true)) {
+            val (day, shownMonth, year) = HebrewDateMatcher.editorDate(30, month, 0, yahrzeit, current)
+            assertEquals(30, day)
+            assertEquals(month, shownMonth)
+            assertTrue(year <= current)
+            assertEquals(30, days(year, month))
+            // Behaves exactly like the unknown year under every setting
+            for (rules in YahrzeitAdarRulesTest.allRules) for (target in 5770..5810) {
+                assertEquals(
+                    HebrewDateMatcher.occurrences(30, month, 0, yahrzeit, target, rules),
+                    HebrewDateMatcher.occurrences(day, shownMonth, year, yahrzeit, target, rules)
+                )
+            }
+        }
+        // Unknown-year Adar day 30 has no day 30 to keep: shown as 29
+        assertEquals(29, HebrewDateMatcher.editorDate(30, JewishDate.ADAR, 0, false, 5787).first)
+        assertEquals(29, HebrewDateMatcher.editorDate(30, JewishDate.ADAR, 0, false, 5786).first)
+    }
 
     /** 5790 is a leap year, 5788 an ordinary year; neither is the year after a test death year. */
     private fun targetYear(leap: Boolean) = if (leap) 5790 else 5788

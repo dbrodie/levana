@@ -9,6 +9,7 @@ import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
+import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -139,5 +140,95 @@ class AddEditEventViewModelTest {
         vm.onIntent(AddEditEventIntent.SetHebrewMonth(JewishDate.ADAR_II))
         vm.onIntent(AddEditEventIntent.SetHebrewYear(5788))
         assertEquals(JewishDate.ADAR, vm.state.value.hebrewMonth)
+    }
+
+    // ── Spec 1e: day clamp ──────────────────────────────────────────────────
+
+    private fun editor(vm: AddEditEventViewModel = viewModel()) = object : EditorDayClampCases.Editor {
+        override fun setDay(day: Int) = vm.onIntent(AddEditEventIntent.SetHebrewDay(day))
+        override fun setMonth(month: Int) = vm.onIntent(AddEditEventIntent.SetHebrewMonth(month))
+        override fun setYear(year: Int) = vm.onIntent(AddEditEventIntent.SetHebrewYear(year))
+        override val day get() = vm.state.value.hebrewDay
+        override val month get() = vm.state.value.hebrewMonth
+        override val year get() = vm.state.value.hebrewYear
+    }
+
+    @Test
+    fun day30ThenA29DayMonthIs29() = EditorDayClampCases.switchingToA29DayMonthClampsTo29 { editor() }
+
+    @Test
+    fun yearChangeThatShortensTheMonthClamps() = EditorDayClampCases.yearChangeThatShortensTheMonthClamps { editor() }
+
+    @Test
+    fun adarI30ThenAnOrdinaryYear() = EditorDayClampCases.adarI30ThenAnOrdinaryYear { editor() }
+
+    @Test
+    fun steppingBackDoesNotRestore30() = EditorDayClampCases.steppingBackToA30DayMonthDoesNotRestore30 { editor() }
+
+    @Test
+    fun dayCanNeverExceedTheMonth() = EditorDayClampCases.dayCanNeverExceedTheMonth { editor() }
+
+    @Test
+    fun savedDayIsTheShownDay() {
+        val dao = FakeDao()
+        val vm = viewModel(dao)
+        vm.onIntent(AddEditEventIntent.SetTitle("New"))
+        vm.onIntent(AddEditEventIntent.SetHebrewYear(EditorDayClampCases.ordinaryYear))
+        vm.onIntent(AddEditEventIntent.SetHebrewDay(30))
+        vm.onIntent(AddEditEventIntent.SetHebrewMonth(JewishDate.IYAR))
+        vm.onIntent(AddEditEventIntent.Save)
+        assertEquals(29, dao.events.single().hebrewDay)
+    }
+
+    @Test
+    fun prefilledDayIsClamped() {
+        val vm = viewModel()
+        vm.onIntent(AddEditEventIntent.PreFillDate(30, JewishDate.IYAR, 5785))
+        assertEquals(29, vm.state.value.hebrewDay)
+    }
+
+    private fun storedDay30(month: Int, year: Int) = stored(month, year).copy(hebrewDay = 30)
+
+    @Test
+    fun openingAStoredDay30ThatExistsKeepsIt() {
+        val full = EditorDayClampCases.fullYear(JewishDate.CHESHVAN)
+        val dao = FakeDao(listOf(storedDay30(JewishDate.CHESHVAN, full)))
+        val vm = viewModel(dao, leapToday)
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        assertEquals(30, vm.state.value.hebrewDay)
+        assertEquals(full, vm.state.value.hebrewYear)
+        vm.onIntent(AddEditEventIntent.Save)
+        assertEquals(30, dao.events.single().hebrewDay)
+
+        // 30 Adar I of a leap year
+        val leap = EditorDayClampCases.leapYear
+        val vm2 = viewModel(FakeDao(listOf(storedDay30(JewishDate.ADAR, leap))), leapToday)
+        vm2.onIntent(AddEditEventIntent.LoadEvent(1))
+        assertEquals(30, vm2.state.value.hebrewDay)
+    }
+
+    @Test
+    fun openingAStoredDay30ThatDoesNotExistShows29AndSaves29() {
+        val short = EditorDayClampCases.shortYear(JewishDate.CHESHVAN)
+        for (stored in listOf(storedDay30(JewishDate.CHESHVAN, short), storedDay30(JewishDate.IYAR, 5785))) {
+            val dao = FakeDao(listOf(stored))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            assertEquals(29, vm.state.value.hebrewDay)
+            assertEquals(stored.hebrewMonth, vm.state.value.hebrewMonth)
+            assertEquals(stored.hebrewYear, vm.state.value.hebrewYear)
+            // Nothing is written until Save; Save stores what is shown
+            assertEquals(30, dao.events.single().hebrewDay)
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals(29, dao.events.single().hebrewDay)
+        }
+    }
+
+    @Test
+    fun openingAnUnknownYearDay30CheshvanKeepsDay30() {
+        val vm = viewModel(FakeDao(listOf(storedDay30(JewishDate.CHESHVAN, 0))), leapToday)
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        assertEquals(30, vm.state.value.hebrewDay)
+        assertEquals(30, EditorDayClampCases.days(vm.state.value.hebrewYear, JewishDate.CHESHVAN))
     }
 }

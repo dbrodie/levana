@@ -48,7 +48,7 @@ class ContactBirthdayViewModel(
                     contactPhotoUri = intent.photoUri
                 )
             is ContactBirthdayIntent.SetHebrewDay ->
-                _state.value = _state.value.copy(hebrewDay = intent.day)
+                setDate(day = intent.day)
             is ContactBirthdayIntent.SetHebrewMonth ->
                 setDate(month = intent.month)
             is ContactBirthdayIntent.SetHebrewYear ->
@@ -61,9 +61,11 @@ class ContactBirthdayViewModel(
      * Sets the editor's date. The year is kept inside the range the calendar
      * library handles, and the month is one that year has (Adar II becomes
      * Adar when the year is stepped to a regular year), so a date that cannot
-     * exist is never held in state or saved.
+     * exist is never held in state or saved. The day is clamped to the
+     * month's length in that year (spec 1e).
      */
     private fun setDate(
+        day: Int = _state.value.hebrewDay,
         month: Int = _state.value.hebrewMonth,
         year: Int = _state.value.hebrewYear,
         chosen: Boolean = true
@@ -73,8 +75,12 @@ class ContactBirthdayViewModel(
             HebrewDateMatcher.MIN_KNOWN_YEAR,
             HebrewDateMatcher.MAX_KNOWN_YEAR
         )
+        val safeMonth = HebrewDateMatcher.monthForYear(month, safeYear)
         _state.value = _state.value.copy(
-            hebrewMonth = HebrewDateMatcher.monthForYear(month, safeYear),
+            // Day 30 becomes 29 when that month has 29 days in that year, so
+            // what the editor shows is what gets saved. Not restored later.
+            hebrewDay = HebrewDateMatcher.clampDay(day, safeMonth, safeYear),
+            hebrewMonth = safeMonth,
             hebrewYear = safeYear
         )
     }
@@ -86,7 +92,8 @@ class ContactBirthdayViewModel(
             if (birthday != null) {
                 // A birthday stored without a usable year opens on the
                 // current Hebrew year
-                val (month, year) = HebrewDateMatcher.editorDate(
+                val (day, month, year) = HebrewDateMatcher.editorDate(
+                    birthday.hebrewDay,
                     birthday.hebrewMonth,
                     birthday.hebrewYear,
                     useYahrzeitRules = false,
@@ -98,7 +105,7 @@ class ContactBirthdayViewModel(
                     contactLookupKey = birthday.contactLookupKey,
                     contactName = birthday.contactName,
                     contactPhotoUri = birthday.contactPhotoUri,
-                    hebrewDay = birthday.hebrewDay,
+                    hebrewDay = day,
                     hebrewMonth = month,
                     hebrewYear = year
                 )

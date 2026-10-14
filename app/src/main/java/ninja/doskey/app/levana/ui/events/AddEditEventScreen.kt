@@ -222,11 +222,7 @@ internal fun HebrewDatePicker(
     }
 
     val months = buildMonthList(isLeapYear)
-    val daysInMonth = try {
-        JewishDate(year, month, 1).daysInJewishMonth
-    } catch (_: Exception) {
-        30
-    }
+    val daysInMonth = HebrewDateMatcher.daysInMonth(year, month)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -240,8 +236,9 @@ internal fun HebrewDatePicker(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+            // The view model keeps the day within the month (spec 1e)
             NumberPicker(
-                value = day.coerceIn(1, daysInMonth),
+                value = day,
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
                 controlName = stringResource(R.string.event_date_picker_day),

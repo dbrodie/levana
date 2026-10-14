@@ -11,7 +11,7 @@ import ninja.doskey.app.levana.domain.model.ContactBirthday
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
-class ContactBirthdayRepository(private val context: Context) {
+open class ContactBirthdayRepository(private val context: Context) {
 
     companion object {
         const val MIME_TYPE =
@@ -141,7 +141,7 @@ class ContactBirthdayRepository(private val context: Context) {
     private fun jewishDate(date: LocalDate) =
         JewishDate(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
 
-    fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
+    open fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
         val rawContactId = getRawContactId(contactLookupKey) ?: return
 
         // Check if a row already exists
@@ -205,7 +205,7 @@ class ContactBirthdayRepository(private val context: Context) {
         context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
     }
 
-    fun getBirthdayForContact(contactLookupKey: String): ContactBirthday? {
+    open fun getBirthdayForContact(contactLookupKey: String): ContactBirthday? {
         if (!hasContactsPermission()) return null
 
         val projection = arrayOf(

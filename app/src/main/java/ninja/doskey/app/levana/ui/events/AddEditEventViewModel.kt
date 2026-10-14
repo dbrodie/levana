@@ -44,7 +44,7 @@ class AddEditEventViewModel(
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
             is AddEditEventIntent.SetHebrewDay ->
-                _state.value = _state.value.copy(hebrewDay = intent.day)
+                setDate(day = intent.day)
             is AddEditEventIntent.SetHebrewMonth ->
                 setDate(month = intent.month)
             is AddEditEventIntent.SetHebrewYear ->
@@ -55,10 +55,8 @@ class AddEditEventViewModel(
                 _state.value = _state.value.copy(
                     useYahrzeitRules = intent.enabled
                 )
-            is AddEditEventIntent.PreFillDate -> {
-                _state.value = _state.value.copy(hebrewDay = intent.day)
-                setDate(month = intent.month, year = intent.year)
-            }
+            is AddEditEventIntent.PreFillDate ->
+                setDate(day = intent.day, month = intent.month, year = intent.year)
             is AddEditEventIntent.Save -> save()
         }
     }
@@ -67,9 +65,11 @@ class AddEditEventViewModel(
      * Sets the editor's date. The year is kept inside the range the calendar
      * library handles, and the month is one that year has (Adar II becomes
      * Adar when the year is stepped to a regular year), so a date that cannot
-     * exist is never held in state or saved.
+     * exist is never held in state or saved. The day is clamped to the
+     * month's length in that year (spec 1e).
      */
     private fun setDate(
+        day: Int = _state.value.hebrewDay,
         month: Int = _state.value.hebrewMonth,
         year: Int = _state.value.hebrewYear,
         chosen: Boolean = true
@@ -79,8 +79,12 @@ class AddEditEventViewModel(
             HebrewDateMatcher.MIN_KNOWN_YEAR,
             HebrewDateMatcher.MAX_KNOWN_YEAR
         )
+        val safeMonth = HebrewDateMatcher.monthForYear(month, safeYear)
         _state.value = _state.value.copy(
-            hebrewMonth = HebrewDateMatcher.monthForYear(month, safeYear),
+            // Day 30 becomes 29 when that month has 29 days in that year, so
+            // what the editor shows is what gets saved. Not restored later.
+            hebrewDay = HebrewDateMatcher.clampDay(day, safeMonth, safeYear),
+            hebrewMonth = safeMonth,
             hebrewYear = safeYear
         )
     }
@@ -90,7 +94,8 @@ class AddEditEventViewModel(
             val event = repository.getById(eventId) ?: return@launch
             // An event stored without a usable year (imported with year 0)
             // opens on the current Hebrew year
-            val (month, year) = HebrewDateMatcher.editorDate(
+            val (day, month, year) = HebrewDateMatcher.editorDate(
+                event.hebrewDay,
                 event.hebrewMonth,
                 event.hebrewYear,
                 event.useYahrzeitRules,
@@ -101,7 +106,7 @@ class AddEditEventViewModel(
                 isEditing = true,
                 eventId = event.id,
                 title = event.title,
-                hebrewDay = event.hebrewDay,
+                hebrewDay = day,
                 hebrewMonth = month,
                 hebrewYear = year,
                 notes = event.notes,

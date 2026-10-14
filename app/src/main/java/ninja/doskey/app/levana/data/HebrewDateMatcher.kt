@@ -52,19 +52,39 @@ object HebrewDateMatcher {
         ).jewishYear
 
     /**
-     * The month and year an editor shows for a stored date, as (month, year).
+     * The date an editor shows for a stored date, as (day, month, year).
      *
      * A known year is shown as stored. An unknown year is shown as
      * [currentYear], with the month the date falls in that year, so saving
      * without touching anything does not move an unknown-year Adar from
      * Adar II to Adar I.
      *
-     * A yahrzeit in Adar with an unknown year is the exception: no single
-     * date in the current year behaves like it under every yahrzeit setting,
-     * so it is shown on the latest year that does (an ordinary year followed
-     * by an ordinary year for Adar, a leap year for Adar II).
+     * Where no date in the current year behaves like the unknown year, the
+     * latest earlier year that does is shown instead:
+     * - a yahrzeit in Adar: an ordinary year followed by an ordinary year;
+     *   in Adar II: a leap year (spec 1b);
+     * - day 30 of Cheshvan / Kislev: a year in which that day exists, and for
+     *   a yahrzeit also exists in the following year (spec 1c, 1e).
+     *
+     * The day is then clamped to the shown month's length (spec 1e), so a
+     * stored day 30 is kept wherever that month has it and shown as 29 where
+     * it genuinely does not.
      */
     fun editorDate(
+        hebrewDay: Int,
+        hebrewMonth: Int,
+        hebrewYear: Int,
+        useYahrzeitRules: Boolean,
+        currentYear: Int
+    ): Triple<Int, Int, Int> {
+        val (month, year) = editorMonthAndYear(
+            hebrewDay, hebrewMonth, hebrewYear, useYahrzeitRules, currentYear
+        )
+        return Triple(clampDay(hebrewDay, month, year), month, year)
+    }
+
+    private fun editorMonthAndYear(
+        day: Int,
         hebrewMonth: Int,
         hebrewYear: Int,
         useYahrzeitRules: Boolean,
@@ -81,6 +101,12 @@ object HebrewDateMatcher {
                 }
             }
         }
+        if (day == 30 && (hebrewMonth == JewishDate.CHESHVAN || hebrewMonth == JewishDate.KISLEV)) {
+            return hebrewMonth to latestYearUpTo(currentYear) {
+                daysInMonth(it, hebrewMonth) == 30 &&
+                    (!useYahrzeitRules || daysInMonth(it + 1, hebrewMonth) == 30)
+            }
+        }
         val month = resolveSimpleMonth(
             hebrewMonth,
             eventIsLeapYear = false,
@@ -89,8 +115,13 @@ object HebrewDateMatcher {
         return month to currentYear
     }
 
+    /** [day] limited to the length of [month] in [year] (1..29 or 1..30). */
+    fun clampDay(day: Int, month: Int, year: Int): Int =
+        day.coerceIn(1, daysInMonth(year, month))
+
+    /** The latest year up to [year] matching [predicate]; [year] itself if none does. */
     private fun latestYearUpTo(year: Int, predicate: (Int) -> Boolean): Int =
-        generateSequence(year) { it - 1 }.first(predicate)
+        (year downTo MIN_KNOWN_YEAR).firstOrNull(predicate) ?: year
 
     /**
      * Whether a year is a leap year. Never throws: an unknown or out-of-range
@@ -298,8 +329,12 @@ object HebrewDateMatcher {
         else -> month + 1
     }
 
-    private fun daysInMonth(year: Int, month: Int): Int =
+    /** Length of [month] in [year]; 29 for a month the year does not have. */
+    fun daysInMonth(year: Int, month: Int): Int = try {
         JewishDate(year, month, 1).daysInJewishMonth
+    } catch (_: Exception) {
+        29
+    }
 
     /** The occurrence of a stored date on a target Hebrew day, or null. */
     fun occurrenceOn(
