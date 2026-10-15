@@ -64,7 +64,8 @@ ordinary years". When on, an ordinary target year has both 30 Shevat and
 
 - Target ordinary → same day in Adar.
 - Target leap → annual setting with three values: Adar I (same day in
-  Adar I) / Adar II (same day in Adar II) / Both Adars (same day in both).
+  Adar I) / Adar II (same day in Adar II) / Both Adars (same day in both,
+  the default).
 
 ### Section 3: first-year exception
 
@@ -80,11 +81,18 @@ to that first target year. Setting with three values:
 
 ### Defaults and interpretations
 
-- Defaults: annual setting = Adar II (today's behaviour); first-year setting
-  = Follow annual minhag; 1 Nisan option = off. With the defaults the
-  observed dates are the same as before this change, except 30 Adar I of a
-  leap-year death in an ordinary year: it used to map to a non-existent
-  30 Adar (never marked) and is now 30 Shevat, as section 1 requires.
+- Defaults (confirmed by the owner): annual setting = **Both Adars**;
+  first-year setting = Follow annual minhag; 1 Nisan option = off; and the
+  30 Cheshvan / 30 Kislev setting (1c) = first-anniversary-based. An
+  unrecognised stored value falls back to these defaults.
+- The defaults do **not** reproduce the previous yahrzeit behaviour. Before
+  this change, a yahrzeit from an ordinary year's Adar was shown only in
+  Adar II of a leap year. With Both Adars as the default, for users who
+  never chose a value it is now shown on both Adar I and Adar II in a leap
+  year, as two occurrences labelled "(Adar I)" / "(Adar II)". (Also changed:
+  30 Adar I of a leap-year death in an ordinary year used to map to a
+  non-existent 30 Adar and was never marked; it is now 30 Shevat, as
+  section 1 requires.)
 - The three settings are global (not per event), stored in DataStore with
   the other preferences, and shown in Settings in the Minhag group under the
   Minhag row. They are independent of the Minhag (Ashkenazi / Sephardi / …)
