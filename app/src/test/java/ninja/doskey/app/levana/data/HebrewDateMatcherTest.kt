@@ -1,6 +1,8 @@
 package ninja.doskey.app.levana.data
 
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -195,7 +197,7 @@ class HebrewDateMatcherTest {
                                 targetMonth == expected,
                                 HebrewDateMatcher.matchesDate(
                                     7, storedMonth, storedYear, yahrzeit,
-                                    targetYear(targetLeap), targetMonth, 7
+                                    targetYear(targetLeap), targetMonth, 7, adarIIRules
                                 )
                             )
                         }
@@ -221,9 +223,14 @@ class HebrewDateMatcherTest {
 
     @Test
     fun unknownYearAdarYahrzeitFollowsNonLeapRule() {
+        // Default annual setting is both Adars: Adar I and Adar II in leap years
         assertTrue(yahrzeitMatches(7, JewishDate.ADAR, 0, JewishDate.ADAR_II, 7, true))
-        assertFalse(yahrzeitMatches(7, JewishDate.ADAR, 0, JewishDate.ADAR, 7, true))
+        assertTrue(yahrzeitMatches(7, JewishDate.ADAR, 0, JewishDate.ADAR, 7, true))
         assertTrue(yahrzeitMatches(7, JewishDate.ADAR, 0, JewishDate.ADAR, 7, false))
+        // With the Adar II setting, only Adar II
+        assertFalse(
+            HebrewDateMatcher.matchesDate(7, JewishDate.ADAR, 0, true, targetYear(true), JewishDate.ADAR, 7, adarIIRules)
+        )
     }
 
     @Test
@@ -298,7 +305,14 @@ class HebrewDateMatcherTest {
     private fun targetYear(leap: Boolean) = if (leap) 5790 else 5788
 
     /** The single month a stored day-7 date falls in, with default yahrzeit settings. */
+    /**
+     * The yahrzeit cases in this file pin the "Adar II" annual setting, which
+     * gives one month per year like the simple rule. The default (both
+     * Adars) is covered in YahrzeitAdarRulesTest.
+     */
+    private val adarIIRules = YahrzeitRules(leapYearAdar = YahrzeitLeapYearAdar.ADAR_II)
+
     private fun month(storedMonth: Int, storedYear: Int, yahrzeit: Boolean, targetLeap: Boolean): Int =
-        HebrewDateMatcher.occurrences(7, storedMonth, storedYear, yahrzeit, targetYear(targetLeap))
+        HebrewDateMatcher.occurrences(7, storedMonth, storedYear, yahrzeit, targetYear(targetLeap), adarIIRules)
             .single().month
 }

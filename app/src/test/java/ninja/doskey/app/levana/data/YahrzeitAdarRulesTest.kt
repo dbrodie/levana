@@ -64,7 +64,7 @@ class YahrzeitAdarRulesTest {
         assertEquals(54, allRules.toSet().size)
         assertEquals(
             YahrzeitRules(
-                YahrzeitLeapYearAdar.ADAR_II,
+                YahrzeitLeapYearAdar.BOTH,
                 YahrzeitFirstYear.FOLLOW_ANNUAL,
                 false,
                 YahrzeitMissingDay.FIRST_ANNIVERSARY
@@ -259,9 +259,28 @@ class YahrzeitAdarRulesTest {
 
     // ── Defaults ─────────────────────────────────────────────────────────────
 
-    /** With default settings, every case except 30 Adar I keeps the pre-settings yahrzeit rule. */
+    /** The default annual setting is both Adars: two labelled occurrences in a leap year. */
     @Test
-    fun defaultsKeepThePreviousYahrzeitBehaviour() {
+    fun defaultIsBothAdarsWithTwoLabelledOccurrencesInALeapYear() {
+        assertEquals(YahrzeitLeapYearAdar.BOTH, YahrzeitRules().leapYearAdar)
+        for (death in listOf(0, 5785, 5786)) for (target in LEAP_TARGETS) {
+            if (death == 5786 && target == 5787) continue // first year: FOLLOW_ANNUAL gives the same
+            assertEquals(bothAdars(15), yahrzeit(15, ADAR, death, target, YahrzeitRules()))
+        }
+        // First year with the default first-year setting follows the annual setting
+        assertEquals(bothAdars(15), yahrzeit(15, ADAR, 5786, 5787, YahrzeitRules()))
+        // Ordinary years: one unlabelled Adar
+        for (target in ORDINARY_TARGETS) {
+            assertEquals(one(ADAR, 15), yahrzeit(15, ADAR, 5785, target, YahrzeitRules()))
+        }
+        // Leap-year deaths are unaffected by the annual setting
+        assertEquals(one(ADAR, 15), yahrzeit(15, ADAR, 5784, 5787, YahrzeitRules()))
+        assertEquals(one(ADAR_II, 15), yahrzeit(15, ADAR_II, 5784, 5787, YahrzeitRules()))
+    }
+
+    /** The "Adar II" annual setting keeps the pre-settings yahrzeit rule (except 30 Adar I). */
+    @Test
+    fun adarIISettingKeepsThePreviousYahrzeitBehaviour() {
         fun previousRule(month: Int, deathLeap: Boolean, targetLeap: Boolean): Int = when {
             !targetLeap && (month == ADAR || month == ADAR_II) -> ADAR
             month == ADAR && !deathLeap -> ADAR_II
@@ -276,7 +295,10 @@ class YahrzeitAdarRulesTest {
                         HebrewDateMatcher.isEventLeapYear(death),
                         HebrewDateMatcher.isEventLeapYear(target)
                     )
-                    assertEquals(one(expected, day), yahrzeit(day, month, death, target, YahrzeitRules()))
+                    assertEquals(
+                        one(expected, day),
+                        yahrzeit(day, month, death, target, YahrzeitRules(leapYearAdar = YahrzeitLeapYearAdar.ADAR_II))
+                    )
                 }
             }
         }

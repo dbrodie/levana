@@ -44,8 +44,12 @@ class PersonalEventRepositoryAdarTest {
         )
     }
 
+    // These single-month cases pin the "Adar II" annual setting for yahrzeits;
+    // the default (both Adars) is checked separately
     private fun assertFallsIn(event: PersonalEvent, targetYear: Int, expectedMonth: Int) = runBlocking {
-        val repository = PersonalEventRepository(FakeDao(listOf(event)))
+        val repository = PersonalEventRepository(FakeDao(listOf(event))) {
+            YahrzeitRules(leapYearAdar = YahrzeitLeapYearAdar.ADAR_II)
+        }
         val candidates = if (JewishDate(targetYear, JewishDate.TISHREI, 1).isJewishLeapYear) {
             listOf(JewishDate.ADAR, JewishDate.ADAR_II)
         } else {
@@ -133,7 +137,31 @@ class PersonalEventRepositoryAdarTest {
         ) { rules }
         val adarDays = listOf(JewishDate.ADAR to 7, JewishDate.ADAR_II to 7)
         assertOccursOn(repository, 5787, mapOf((JewishDate.ADAR to 7) to null), adarDays)
-        assertOccursOn(repository, 5790, mapOf((JewishDate.ADAR_II to 7) to null), adarDays)
+        // Later leap years follow the annual setting, which defaults to both Adars
+        assertOccursOn(
+            repository, 5790,
+            mapOf(
+                (JewishDate.ADAR to 7) to OccurrenceLabel.ADAR_I,
+                (JewishDate.ADAR_II to 7) to OccurrenceLabel.ADAR_II
+            ),
+            adarDays
+        )
+    }
+
+    @Test
+    fun defaultSettingsShowAnOrdinaryYearAdarYahrzeitOnBothAdars() {
+        // No rules provider argument: the repository's default settings
+        val repository = PersonalEventRepository(
+            FakeDao(listOf(event("Yahrzeit", JewishDate.ADAR, 5785, yahrzeit = true)))
+        )
+        assertOccursOn(
+            repository, 5787,
+            mapOf(
+                (JewishDate.ADAR to 7) to OccurrenceLabel.ADAR_I,
+                (JewishDate.ADAR_II to 7) to OccurrenceLabel.ADAR_II
+            ),
+            listOf(JewishDate.ADAR to 7, JewishDate.ADAR_II to 7)
+        )
     }
 
     @Test

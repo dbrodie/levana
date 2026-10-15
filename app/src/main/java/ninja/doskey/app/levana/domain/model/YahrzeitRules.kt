@@ -24,11 +24,12 @@ enum class YahrzeitMissingDay {
 }
 
 /**
- * Global yahrzeit Adar settings. The defaults reproduce the app's behaviour
- * before these settings existed. Independent of [Minhag].
+ * Global yahrzeit settings, independent of [Minhag]. Defaults confirmed by
+ * the owner: both Adars in a leap year, first year follows the annual
+ * setting, no extra 1 Nisan, first-anniversary rule for 30 Cheshvan/Kislev.
  */
 data class YahrzeitRules(
-    val leapYearAdar: YahrzeitLeapYearAdar = YahrzeitLeapYearAdar.ADAR_II,
+    val leapYearAdar: YahrzeitLeapYearAdar = YahrzeitLeapYearAdar.BOTH,
     val firstYear: YahrzeitFirstYear = YahrzeitFirstYear.FOLLOW_ANNUAL,
     /** For a yahrzeit on 30 Adar I, also mark 1 Nisan in ordinary years. */
     val adarI30AlsoNisan1: Boolean = false,

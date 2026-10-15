@@ -12,7 +12,7 @@ class YahrzeitRulesPreferenceTest {
     @Test
     fun missingValuesGiveTheDefaults() {
         assertEquals(YahrzeitRules(), parseYahrzeitRules(null, null, null))
-        assertEquals(YahrzeitLeapYearAdar.ADAR_II, YahrzeitRules().leapYearAdar)
+        assertEquals(YahrzeitLeapYearAdar.BOTH, YahrzeitRules().leapYearAdar)
         assertEquals(YahrzeitFirstYear.FOLLOW_ANNUAL, YahrzeitRules().firstYear)
         assertEquals(false, YahrzeitRules().adarI30AlsoNisan1)
     }
@@ -20,6 +20,7 @@ class YahrzeitRulesPreferenceTest {
     @Test
     fun unrecognisedValuesFallBackToTheDefaults() {
         assertEquals(YahrzeitRules(), parseYahrzeitRules("ADAR_III", "SOMETIMES", null, "NEVER"))
+        assertEquals(YahrzeitLeapYearAdar.BOTH, parseYahrzeitRules("ADAR_III", null, null).leapYearAdar)
         assertEquals(YahrzeitMissingDay.FIRST_ANNIVERSARY, YahrzeitRules().missingDay)
     }
 
