@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
@@ -257,18 +258,14 @@ private fun LocationsSettingsContent(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         SettingsGroup(stringResource(R.string.settings_group_current_location)) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.location_use_current)) },
-            supportingContent = { Text(stringResource(R.string.location_auto_detect)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.location_use_current),
+            description = stringResource(R.string.location_auto_detect),
             leadingContent = {
                 Icon(Icons.Filled.GpsFixed, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = useCurrentLocation,
-                    onCheckedChange = onToggleGps
-                )
-            }
+            checked = useCurrentLocation,
+            onCheckedChange = onToggleGps
         )
         }
 
@@ -371,32 +368,24 @@ fun SettingsContent(
         }
 
         SettingsGroup(stringResource(R.string.settings_group_preferences)) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_israel_diaspora_label)) },
-            supportingContent = { Text(stringResource(R.string.settings_israel_diaspora_description)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_israel_diaspora_label),
+            description = stringResource(R.string.settings_israel_diaspora_description),
             leadingContent = {
                 Icon(Icons.Outlined.Public, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.isInIsrael,
-                    onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
-                )
-            }
+            checked = state.isInIsrael,
+            onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
         )
         SettingsRowDivider()
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_modern_holidays_label)) },
-            supportingContent = { Text(stringResource(R.string.settings_modern_holidays_description)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_modern_holidays_label),
+            description = stringResource(R.string.settings_modern_holidays_description),
             leadingContent = {
                 Icon(Icons.Outlined.Flag, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.showModernIsraeliHolidays,
-                    onCheckedChange = { onIntent(SettingsIntent.SetShowModernIsraeli(it)) }
-                )
-            }
+            checked = state.showModernIsraeliHolidays,
+            onCheckedChange = { onIntent(SettingsIntent.SetShowModernIsraeli(it)) }
         )
         SettingsRowDivider()
         ListItem(
@@ -451,18 +440,14 @@ fun SettingsContent(
             modifier = Modifier.clickable { showYahrzeitFirstYearDialog = true }
         )
         SettingsRowDivider()
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_nisan_label)) },
-            supportingContent = { Text(stringResource(R.string.settings_yahrzeit_nisan_description)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_yahrzeit_nisan_label),
+            description = stringResource(R.string.settings_yahrzeit_nisan_description),
             leadingContent = {
                 Icon(Icons.Outlined.WbTwilight, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.yahrzeitRules.adarI30AlsoNisan1,
-                    onCheckedChange = { onIntent(SettingsIntent.SetYahrzeitAdarI30AlsoNisan1(it)) }
-                )
-            }
+            checked = state.yahrzeitRules.adarI30AlsoNisan1,
+            onCheckedChange = { onIntent(SettingsIntent.SetYahrzeitAdarI30AlsoNisan1(it)) }
         )
         SettingsRowDivider()
         ListItem(
@@ -495,18 +480,14 @@ fun SettingsContent(
             modifier = Modifier.clickable { showAppLanguageDialog = true }
         )
         SettingsRowDivider()
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_holiday_theming_label)) },
-            supportingContent = { Text(stringResource(R.string.settings_holiday_theming_description)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_holiday_theming_label),
+            description = stringResource(R.string.settings_holiday_theming_description),
             leadingContent = {
                 Icon(Icons.Outlined.Palette, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.dynamicHolidayTheme,
-                    onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
-                )
-            }
+            checked = state.dynamicHolidayTheme,
+            onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
         )
         }
 
@@ -668,6 +649,34 @@ private fun SettingsGroup(label: String, content: @Composable () -> Unit) {
             content()
         }
     }
+}
+
+/**
+ * A settings row with a trailing switch. The whole row is one toggleable element
+ * (Role.Switch), so a tap anywhere toggles it once and TalkBack reads one switch
+ * with its label. The Switch itself only displays the state.
+ */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    leadingContent: @Composable () -> Unit,
+    description: String? = null
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = description?.let { { Text(it) } },
+        leadingContent = leadingContent,
+        trailingContent = {
+            Switch(checked = checked, onCheckedChange = null)
+        },
+        modifier = Modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange
+        )
+    )
 }
 
 @Composable
@@ -1034,24 +1043,20 @@ private fun NotificationsSection(
     }
 
     // Candle Lighting
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_notify_candle_lighting)) },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_candle_lighting),
         leadingContent = {
             Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyCandleLighting,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyCandleLighting(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyCandleLighting(false))
-                    }
+        checked = state.notifyCandleLighting,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                ensurePermissionThenEnable {
+                    onIntent(SettingsIntent.SetNotifyCandleLighting(true))
                 }
-            )
+            } else {
+                onIntent(SettingsIntent.SetNotifyCandleLighting(false))
+            }
         }
     )
 
@@ -1157,24 +1162,20 @@ private fun NotificationsSection(
     }
 
     // Holidays
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_notify_holidays)) },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_holidays),
         leadingContent = {
             Icon(Icons.Outlined.Event, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyHolidays,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyHolidays(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyHolidays(false))
-                    }
+        checked = state.notifyHolidays,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                ensurePermissionThenEnable {
+                    onIntent(SettingsIntent.SetNotifyHolidays(true))
                 }
-            )
+            } else {
+                onIntent(SettingsIntent.SetNotifyHolidays(false))
+            }
         }
     )
 
@@ -1217,92 +1218,72 @@ private fun NotificationsSection(
     }
 
     // Fasts
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_notify_fasts)) },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_fasts),
         leadingContent = {
             Icon(Icons.Outlined.NoFood, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyFasts,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyFasts(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyFasts(false))
-                    }
+        checked = state.notifyFasts,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                ensurePermissionThenEnable {
+                    onIntent(SettingsIntent.SetNotifyFasts(true))
                 }
-            )
+            } else {
+                onIntent(SettingsIntent.SetNotifyFasts(false))
+            }
         }
     )
 
     // Personal Events
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_notify_personal_events)) },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_personal_events),
         leadingContent = {
             Icon(Icons.Outlined.Person, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyPersonalEvents,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
-                    }
+        checked = state.notifyPersonalEvents,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                ensurePermissionThenEnable {
+                    onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
                 }
-            )
+            } else {
+                onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
+            }
         }
     )
 
     // Omer
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_notify_omer)) },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_omer),
         leadingContent = {
             Icon(Icons.Outlined.Stars, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyOmer,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyOmer(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyOmer(false))
-                    }
+        checked = state.notifyOmer,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                ensurePermissionThenEnable {
+                    onIntent(SettingsIntent.SetNotifyOmer(true))
                 }
-            )
+            } else {
+                onIntent(SettingsIntent.SetNotifyOmer(false))
+            }
         }
     )
 
     if (state.notifyOmer) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_omer_at_tzait)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_omer_at_tzait),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-            trailingContent = {
-                Switch(
-                    checked = state.notifyOmerTzait,
-                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerTzait(it)) }
-                )
-            }
+            checked = state.notifyOmerTzait,
+            onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerTzait(it)) }
         )
 
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_omer_morning_reminder)) },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_omer_morning_reminder),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-            trailingContent = {
-                Switch(
-                    checked = state.notifyOmerMorning,
-                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerMorning(it)) }
-                )
-            }
+            checked = state.notifyOmerMorning,
+            onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerMorning(it)) }
         )
 
         if (state.notifyOmerMorning) {
