@@ -3,8 +3,6 @@ package ninja.doskey.app.levana.ui.events
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
-import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
@@ -40,11 +38,5 @@ fun occurrenceTitle(context: Context, title: String, label: OccurrenceLabel?): S
 private fun isHebrew(context: Context): Boolean =
     context.resources.configuration.locales[0].language in setOf("he", "iw")
 
-private val hebrewFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
-
-// Reference years for month names only: 5785 is an ordinary year, 5784 a leap year
-private fun monthName(month: HebrewMonth, hebrew: Boolean): String {
-    if (!hebrew) return month.englishName
-    val referenceYear = if (month == HebrewMonth.ADAR_I || month == HebrewMonth.ADAR_II) 5784 else 5785
-    return hebrewFormatter.formatMonth(JewishDate(referenceYear, month.jewishDateValue, 1))
-}
+private fun monthName(month: HebrewMonth, hebrew: Boolean): String =
+    if (hebrew) month.hebrewName else month.englishName
