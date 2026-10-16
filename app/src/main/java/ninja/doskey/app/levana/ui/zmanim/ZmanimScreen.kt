@@ -26,9 +26,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import org.koin.androidx.compose.koinViewModel
@@ -66,7 +68,14 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, formatter: DateTimeFormatter) {
-    val label = when (category) { ZmanCategory.MORNING -> "Morning"; ZmanCategory.AFTERNOON -> "Afternoon"; ZmanCategory.EVENING -> "Evening"; ZmanCategory.NIGHT -> "Night" }
+    val label = stringResource(
+        when (category) {
+            ZmanCategory.MORNING -> R.string.zmanim_category_morning
+            ZmanCategory.AFTERNOON -> R.string.zmanim_category_afternoon
+            ZmanCategory.EVENING -> R.string.zmanim_category_evening
+            ZmanCategory.NIGHT -> R.string.zmanim_category_night
+        }
+    )
     Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
             Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 10.dp))
