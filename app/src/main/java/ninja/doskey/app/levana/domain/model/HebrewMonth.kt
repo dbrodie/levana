@@ -1,11 +1,16 @@
 package ninja.doskey.app.levana.domain.model
 
+import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 
 /**
  * [englishName] is the single source of English Hebrew-month names for the
  * app's own UI. It matches KosherJava's transliterated formatter, which
  * produces the full English date strings (see HebrewMonthTest).
+ *
+ * [hebrewName] is the single source of Hebrew month names for the app's own
+ * UI. It comes from KosherJava's Hebrew formatter, which produces the full
+ * Hebrew date strings, so the spellings ("חשון", "סיון", "אדר א׳") always match.
  */
 enum class HebrewMonth(val jewishDateValue: Int, val englishName: String) {
     TISHREI(JewishDate.TISHREI, "Tishrei"),
@@ -23,7 +28,17 @@ enum class HebrewMonth(val jewishDateValue: Int, val englishName: String) {
     AV(JewishDate.AV, "Av"),
     ELUL(JewishDate.ELUL, "Elul");
 
+    /** Hebrew name as KosherJava's Hebrew formatter spells it, e.g. "חשון", "אדר א׳". */
+    val hebrewName: String
+        get() {
+            // Reference years for month names only: 5785 is an ordinary year, 5784 a leap year
+            val referenceYear = if (this == ADAR_I || this == ADAR_II) 5784 else 5785
+            return hebrewFormatter.formatMonth(JewishDate(referenceYear, jewishDateValue, 1))
+        }
+
     companion object {
+        private val hebrewFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
+
         fun from(jewishDateMonth: Int, isLeapYear: Boolean): HebrewMonth = when (jewishDateMonth) {
             JewishDate.TISHREI -> TISHREI
             JewishDate.CHESHVAN -> CHESHVAN
@@ -44,5 +59,9 @@ enum class HebrewMonth(val jewishDateValue: Int, val englishName: String) {
         /** English name of a KosherJava month number: "Adar I" / "Adar II" in a leap year. */
         fun englishName(jewishDateMonth: Int, isLeapYear: Boolean): String =
             from(jewishDateMonth, isLeapYear).englishName
+
+        /** Hebrew name of a KosherJava month number: "אדר א׳" / "אדר ב׳" in a leap year. */
+        fun hebrewName(jewishDateMonth: Int, isLeapYear: Boolean): String =
+            from(jewishDateMonth, isLeapYear).hebrewName
     }
 }

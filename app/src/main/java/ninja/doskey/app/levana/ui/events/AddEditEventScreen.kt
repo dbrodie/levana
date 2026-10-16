@@ -282,33 +282,33 @@ internal fun HebrewDatePicker(
     }
 }
 
-private data class MonthOption(
+internal data class MonthOption(
     val jewishDateMonth: Int,
     val displayName: String,
     val hebrewDisplayName: String
 )
 
-private fun buildMonthList(isLeapYear: Boolean): List<MonthOption> = buildList {
-    // English names come from the shared HebrewMonth source
-    fun add(month: Int, hebrewName: String) =
-        add(MonthOption(month, HebrewMonth.englishName(month, isLeapYear), hebrewName))
-    add(JewishDate.TISHREI, "תשרי")
-    add(JewishDate.CHESHVAN, "חשוון")
-    add(JewishDate.KISLEV, "כסלו")
-    add(JewishDate.TEVES, "טבת")
-    add(JewishDate.SHEVAT, "שבט")
-    if (isLeapYear) {
-        add(JewishDate.ADAR, "אדר א׳")
-        add(JewishDate.ADAR_II, "אדר ב׳")
-    } else {
-        add(JewishDate.ADAR, "אדר")
+/** Months of the year in order; both names come from the shared HebrewMonth source. */
+internal fun buildMonthList(isLeapYear: Boolean): List<MonthOption> {
+    val months = buildList {
+        add(JewishDate.TISHREI)
+        add(JewishDate.CHESHVAN)
+        add(JewishDate.KISLEV)
+        add(JewishDate.TEVES)
+        add(JewishDate.SHEVAT)
+        add(JewishDate.ADAR)
+        if (isLeapYear) add(JewishDate.ADAR_II)
+        add(JewishDate.NISSAN)
+        add(JewishDate.IYAR)
+        add(JewishDate.SIVAN)
+        add(JewishDate.TAMMUZ)
+        add(JewishDate.AV)
+        add(JewishDate.ELUL)
     }
-    add(JewishDate.NISSAN, "ניסן")
-    add(JewishDate.IYAR, "אייר")
-    add(JewishDate.SIVAN, "סיוון")
-    add(JewishDate.TAMMUZ, "תמוז")
-    add(JewishDate.AV, "אב")
-    add(JewishDate.ELUL, "אלול")
+    return months.map { month ->
+        val shared = HebrewMonth.from(month, isLeapYear)
+        MonthOption(month, shared.englishName, shared.hebrewName)
+    }
 }
 
 @Composable
