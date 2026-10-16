@@ -5,7 +5,7 @@ Adapt the existing native Compose / Material 3 app to the user's Claude Design p
 
 ## Design context and reuse manifest
 - Reference layouts and inline styles: adapt to native Compose. Ivory #FAF9F7, slate #3B4A55, ink #1B1C1E, muted #45484C, blue-gray selection #D6E1E8, warm sheet #ECE9E5, divider #DAD6D1.
-- Typography: adapt Manrope body and Frank Ruhl Libre display typography, using bundled offline fonts where available and sensible Hebrew support.
+- Typography: use the platform default font for all text, keeping the redesign's type scale. Bundled Manrope and Frank Ruhl Libre were dropped because Manrope has no Hebrew, which broke Hebrew weights (see `system-font.md`).
 - Reference components: adapt calendar, day sheet, drawer, event and settings groups to existing Material 3 primitives; HTML components cannot be imported into Android.
 - AndroidDevice frame/support.js: not applicable to native implementation; presentation scaffolding only.
 - Existing MVI, Koin, KosherJava, Room/DataStore and notifications: preserve. No fabricated calendar facts or inert decorative controls.
