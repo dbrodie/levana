@@ -1,6 +1,6 @@
 # System Font Across the App
 
-**Status:** Prototype for owner review (not approved)
+**Status:** Approved by the owner after a side-by-side review (English and Hebrew)
 
 ## Problem
 
@@ -10,8 +10,10 @@ The redesign bundles two fonts: Frank Ruhl Libre (display) and Manrope (body). M
 
 Use the platform default font (`FontFamily.Default`) for all text, display and body, instead of the bundled fonts. Android pairs its default Latin font with a matching-weight Hebrew font, so weights and mixed-script lines render consistently, and the app respects device and user font choices.
 
-- `LevanaDisplayFontFamily` and `LevanaBodyFontFamily` become `FontFamily.Default`. The typography scale (sizes, line heights, weights) is unchanged.
-- The bundled font files stay in the tree for this prototype so the change is easy to compare and revert. If approved, a follow-up removes `res/font/` and the font licenses, and updates `claude-design-refresh.md`'s typography line.
+- All text uses the platform default font. The typography scale (sizes, line heights, weights) is unchanged.
+- `LevanaDisplayFontFamily` and `LevanaBodyFontFamily` are removed, along with the explicit font family on the calendar's day numbers.
+- The bundled fonts (`res/font/frank_ruhl_libre.ttf`, `res/font/manrope.ttf`) and their OFL license files (`assets/licenses/`) are removed. Nothing else referenced them.
+- `claude-design-refresh.md`'s typography line is updated to match.
 
 ## Review plan
 
