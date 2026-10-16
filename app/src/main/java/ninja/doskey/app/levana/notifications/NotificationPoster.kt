@@ -10,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.update.GITHUB_RELEASES_PAGE
 import java.time.LocalDate
 import java.time.LocalTime
@@ -119,6 +120,27 @@ object NotificationPoster {
             notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + eventTitle.hashCode() % 1000,
             "Personal Event",
             "Today is $eventTitle",
+            date
+        )
+    }
+
+    /** Posts a Hebrew birthday; [context] should already carry the app language. */
+    fun postBirthday(
+        context: Context,
+        date: LocalDate,
+        contactName: String,
+        label: OccurrenceLabel?
+    ) {
+        val text = birthdayNotificationText(context, contactName, label)
+        // Keyed on the contact and label, not the localized text, so a language change
+        // replaces the notification instead of adding a second one
+        val key = "birthday|$contactName|$label"
+        post(
+            context,
+            NotificationChannels.PERSONAL_EVENTS,
+            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + key.hashCode() % 1000,
+            text.title,
+            text.body,
             date
         )
     }

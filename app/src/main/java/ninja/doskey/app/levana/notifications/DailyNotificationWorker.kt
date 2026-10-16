@@ -168,25 +168,25 @@ class DailyNotificationWorker(
     }
 
     private suspend fun handlePersonalEvents(today: LocalDate) {
+        // Notification text follows Settings → App language, not just the device locale
+        val localized = applicationContext.withAppLocale()
+
         val events = personalEventRepository.getEventsForDate(today)
         for (occurrence in events) {
             NotificationPoster.postPersonalEvent(
-                applicationContext,
+                localized,
                 today,
-                occurrenceTitle(applicationContext, occurrence.event.title, occurrence.label)
+                occurrenceTitle(localized, occurrence.event.title, occurrence.label)
             )
         }
 
         val birthdays = contactBirthdayRepository.getBirthdaysForDate(today)
         for (occurrence in birthdays) {
-            NotificationPoster.postPersonalEvent(
-                applicationContext,
+            NotificationPoster.postBirthday(
+                localized,
                 today,
-                occurrenceTitle(
-                    applicationContext,
-                    "${occurrence.birthday.contactName}'s Hebrew Birthday",
-                    occurrence.label
-                )
+                occurrence.birthday.contactName,
+                occurrence.label
             )
         }
     }

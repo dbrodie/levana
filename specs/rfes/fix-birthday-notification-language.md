@@ -21,11 +21,19 @@ default on a Hebrew device.
    locale stored by the platform: `SettingsViewModel` writes
    `LocaleManager.applicationLocales` (`iw` for Hebrew, empty list for System
    default); `locales_config.xml` lists `en` and `iw`. There is no app-level
-   copy of the setting and nothing in the app re-applies it. Activities get it
-   from the framework, but the worker just uses `applicationContext` and relies
-   on the process-level configuration having the per-app locale merged in. That
-   is not guaranteed for a process started in the background for a job, or
-   right after the setting changes in a running process.
+   copy of the setting and nothing in the app re-applies it. The worker just
+   uses `applicationContext` and relies on the platform having merged the
+   per-app locale into the process configuration.
+
+   Checked on the emulator (API 34+, the app's minSdk is 34) with the code before
+   this fix: with App language = Hebrew, the worker posted
+   "Personal Event" / "Today is X's Hebrew Birthday (נדחה מל׳ אייר)". The
+   resource-based label was Hebrew, so the platform does give the worker's
+   `applicationContext` the per-app locale, even when the process starts in the
+   background for the job. The English output comes from cause 1. Cause 2 is a
+   weak point rather than the bug: the worker doesn't resolve the language
+   itself. The fix resolves it explicitly so notification text doesn't depend
+   on the process configuration.
 
 ## Fix
 
@@ -48,6 +56,9 @@ default on a Hebrew device.
   | `notification_birthday_event` | %1$s's Hebrew Birthday | יום ההולדת העברי של %1$s |
 
   The occurrence label keeps using the existing `occurrence_*` resources.
+- The birthday notification id is keyed on contact name and label, not on the
+  localized text, so a language change replaces the notification instead of
+  posting a second one.
 - Out of scope: other notification text that is still hardcoded English
   (candle lighting, holiday, fast, personal event title/body, Omer, update
   available). They are left as is.
