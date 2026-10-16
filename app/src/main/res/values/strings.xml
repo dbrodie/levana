@@ -65,4 +65,10 @@
     <string name="holiday_theme_shavuot">Shavuot</string>
     <string name="holiday_theme_fast_day">Fast day</string>
     <string name="holiday_theme_shemini_atzeret">Shemini Atzeret</string>
+
+    <!-- Zmanim screen section headers -->
+    <string name="zmanim_category_morning">Morning</string>
+    <string name="zmanim_category_afternoon">Afternoon</string>
+    <string name="zmanim_category_evening">Evening</string>
+    <string name="zmanim_category_night">Night</string>
 </resources>

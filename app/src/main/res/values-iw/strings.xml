@@ -65,4 +65,10 @@
     <string name="holiday_theme_shavuot">שבועות</string>
     <string name="holiday_theme_fast_day">יום צום</string>
     <string name="holiday_theme_shemini_atzeret">שמיני עצרת</string>
+
+    <!-- Zmanim screen section headers -->
+    <string name="zmanim_category_morning">בוקר</string>
+    <string name="zmanim_category_afternoon">צהריים</string>
+    <string name="zmanim_category_evening">ערב</string>
+    <string name="zmanim_category_night">לילה</string>
 </resources>
