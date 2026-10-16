@@ -66,6 +66,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1019,25 +1020,27 @@ private fun NotificationsSection(
     onShowModeDialog: () -> Unit
 ) {
     val context = LocalContext.current
-    var hasNotificationPermission by remember {
-        mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        )
-    }
+
+    // The switch the user tried to turn on while the permission dialog is showing.
+    // Saved by name so it survives configuration changes (e.g. rotation).
+    var pendingSwitchName by rememberSaveable { mutableStateOf<String?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        hasNotificationPermission = granted
+        notificationPermissionResultIntent(pendingSwitchName, granted)?.let(onIntent)
+        pendingSwitchName = null
     }
 
-    fun ensurePermissionThenEnable(onGranted: () -> Unit) {
-        if (hasNotificationPermission) {
-            onGranted()
+    fun setNotificationSwitch(switch: NotificationSwitch, enabled: Boolean) {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!enabled || granted) {
+            onIntent(switch.intent(enabled))
         } else {
+            pendingSwitchName = switch.name
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -1049,15 +1052,7 @@ private fun NotificationsSection(
             Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
         },
         checked = state.notifyCandleLighting,
-        onCheckedChange = { enabled ->
-            if (enabled) {
-                ensurePermissionThenEnable {
-                    onIntent(SettingsIntent.SetNotifyCandleLighting(true))
-                }
-            } else {
-                onIntent(SettingsIntent.SetNotifyCandleLighting(false))
-            }
-        }
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.CandleLighting, it) }
     )
 
     if (state.notifyCandleLighting) {
@@ -1168,15 +1163,7 @@ private fun NotificationsSection(
             Icon(Icons.Outlined.Event, contentDescription = null)
         },
         checked = state.notifyHolidays,
-        onCheckedChange = { enabled ->
-            if (enabled) {
-                ensurePermissionThenEnable {
-                    onIntent(SettingsIntent.SetNotifyHolidays(true))
-                }
-            } else {
-                onIntent(SettingsIntent.SetNotifyHolidays(false))
-            }
-        }
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Holidays, it) }
     )
 
     if (state.notifyHolidays) {
@@ -1224,15 +1211,7 @@ private fun NotificationsSection(
             Icon(Icons.Outlined.NoFood, contentDescription = null)
         },
         checked = state.notifyFasts,
-        onCheckedChange = { enabled ->
-            if (enabled) {
-                ensurePermissionThenEnable {
-                    onIntent(SettingsIntent.SetNotifyFasts(true))
-                }
-            } else {
-                onIntent(SettingsIntent.SetNotifyFasts(false))
-            }
-        }
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Fasts, it) }
     )
 
     // Personal Events
@@ -1242,15 +1221,7 @@ private fun NotificationsSection(
             Icon(Icons.Outlined.Person, contentDescription = null)
         },
         checked = state.notifyPersonalEvents,
-        onCheckedChange = { enabled ->
-            if (enabled) {
-                ensurePermissionThenEnable {
-                    onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
-                }
-            } else {
-                onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
-            }
-        }
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.PersonalEvents, it) }
     )
 
     // Omer
@@ -1260,15 +1231,7 @@ private fun NotificationsSection(
             Icon(Icons.Outlined.Stars, contentDescription = null)
         },
         checked = state.notifyOmer,
-        onCheckedChange = { enabled ->
-            if (enabled) {
-                ensurePermissionThenEnable {
-                    onIntent(SettingsIntent.SetNotifyOmer(true))
-                }
-            } else {
-                onIntent(SettingsIntent.SetNotifyOmer(false))
-            }
-        }
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Omer, it) }
     )
 
     if (state.notifyOmer) {
@@ -1276,14 +1239,14 @@ private fun NotificationsSection(
             title = stringResource(R.string.settings_omer_at_tzait),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
             checked = state.notifyOmerTzait,
-            onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerTzait(it)) }
+            onCheckedChange = { setNotificationSwitch(NotificationSwitch.OmerTzait, it) }
         )
 
         SettingsSwitchRow(
             title = stringResource(R.string.settings_omer_morning_reminder),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
             checked = state.notifyOmerMorning,
-            onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerMorning(it)) }
+            onCheckedChange = { setNotificationSwitch(NotificationSwitch.OmerMorning, it) }
         )
 
         if (state.notifyOmerMorning) {
