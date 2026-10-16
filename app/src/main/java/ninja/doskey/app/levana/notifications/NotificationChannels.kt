@@ -3,6 +3,8 @@ package ninja.doskey.app.levana.notifications
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import androidx.annotation.StringRes
+import ninja.doskey.app.levana.R
 
 object NotificationChannels {
 
@@ -13,54 +15,67 @@ object NotificationChannels {
     const val OMER = "omer"
     const val UPDATE_AVAILABLE = "update_available"
 
-    fun createAll(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java)
+    private class Spec(
+        val id: String,
+        @StringRes val name: Int,
+        @StringRes val description: Int,
+        val importance: Int
+    )
 
-        val channels = listOf(
-            NotificationChannel(
-                CANDLE_LIGHTING,
-                "Candle Lighting",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Candle lighting time reminders"
-            },
-            NotificationChannel(
-                HOLIDAYS,
-                "Holidays",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Holiday reminders"
-            },
-            NotificationChannel(
-                FASTS,
-                "Fasts",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Fast day reminders"
-            },
-            NotificationChannel(
-                PERSONAL_EVENTS,
-                "Personal Events",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Personal event and birthday reminders"
-            },
-            NotificationChannel(
-                OMER,
-                "Omer",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Sefirat HaOmer reminders"
-            },
-            NotificationChannel(
-                UPDATE_AVAILABLE,
-                "App Updates",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifications when a new version of Levana is available"
-            }
+    private val specs = listOf(
+        Spec(
+            CANDLE_LIGHTING,
+            R.string.channel_candle_lighting_name,
+            R.string.channel_candle_lighting_description,
+            NotificationManager.IMPORTANCE_HIGH
+        ),
+        Spec(
+            HOLIDAYS,
+            R.string.channel_holidays_name,
+            R.string.channel_holidays_description,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ),
+        Spec(
+            FASTS,
+            R.string.channel_fasts_name,
+            R.string.channel_fasts_description,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ),
+        Spec(
+            PERSONAL_EVENTS,
+            R.string.channel_personal_events_name,
+            R.string.channel_personal_events_description,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ),
+        Spec(
+            OMER,
+            R.string.channel_omer_name,
+            R.string.channel_omer_description,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ),
+        Spec(
+            UPDATE_AVAILABLE,
+            R.string.channel_updates_name,
+            R.string.channel_updates_description,
+            NotificationManager.IMPORTANCE_DEFAULT
         )
+    )
 
+    /**
+     * Creates the channels, or renames existing ones, in the app language.
+     *
+     * Android keeps a channel's name and description until the app creates the channel
+     * again with the same id, so call this whenever the language may have changed. The
+     * user's importance and other channel settings are kept.
+     */
+    fun createAll(context: Context) {
+        val localized = context.withAppLocale()
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val channels = specs.map { spec ->
+            NotificationChannel(spec.id, localized.getString(spec.name), spec.importance).apply {
+                description = localized.getString(spec.description)
+            }
+        }
         manager.createNotificationChannels(channels)
     }
 }
