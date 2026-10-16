@@ -76,11 +76,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
 import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
+import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
@@ -324,6 +328,9 @@ fun SettingsContent(
     modifier: Modifier = Modifier
 ) {
     var showMinhagDialog by remember { mutableStateOf(false) }
+    var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
+    var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
+    var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
     var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
     var showCandleLightingModeDialog by remember { mutableStateOf(false) }
@@ -418,6 +425,57 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showMinhagDialog = true }
         )
+        // Yahrzeit Adar rules: global, and independent of the Minhag above
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_leap_label)) },
+            supportingContent = { Text(yahrzeitLeapLabel(state.yahrzeitRules.leapYearAdar)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitLeapDialog = true }
+        )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_first_year_label)) },
+            supportingContent = { Text(yahrzeitFirstYearLabel(state.yahrzeitRules.firstYear)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitFirstYearDialog = true }
+        )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_nisan_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_yahrzeit_nisan_description)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Switch(
+                    checked = state.yahrzeitRules.adarI30AlsoNisan1,
+                    onCheckedChange = { onIntent(SettingsIntent.SetYahrzeitAdarI30AlsoNisan1(it)) }
+                )
+            }
+        )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_missing_day_label)) },
+            supportingContent = { Text(yahrzeitMissingDayShortLabel(state.yahrzeitRules.missingDay)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitMissingDayDialog = true }
+        )
         }
 
         val appLanguageLabel = when (state.appLanguage) {
@@ -502,6 +560,51 @@ fun SettingsContent(
             modifier = Modifier.clickable(onClick = onAbout)
         )
         }
+    }
+
+    if (showYahrzeitLeapDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_leap_label),
+            description = stringResource(R.string.settings_yahrzeit_leap_description),
+            options = YahrzeitLeapYearAdar.entries,
+            selected = state.yahrzeitRules.leapYearAdar,
+            label = { yahrzeitLeapLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitLeapYearAdar(it))
+                showYahrzeitLeapDialog = false
+            },
+            onDismiss = { showYahrzeitLeapDialog = false }
+        )
+    }
+
+    if (showYahrzeitFirstYearDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_first_year_label),
+            description = stringResource(R.string.settings_yahrzeit_first_year_description),
+            options = YahrzeitFirstYear.entries,
+            selected = state.yahrzeitRules.firstYear,
+            label = { yahrzeitFirstYearLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitFirstYear(it))
+                showYahrzeitFirstYearDialog = false
+            },
+            onDismiss = { showYahrzeitFirstYearDialog = false }
+        )
+    }
+
+    if (showYahrzeitMissingDayDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_missing_day_label),
+            description = stringResource(R.string.settings_yahrzeit_missing_day_description),
+            options = YahrzeitMissingDay.entries,
+            selected = state.yahrzeitRules.missingDay,
+            label = { yahrzeitMissingDayLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitMissingDay(it))
+                showYahrzeitMissingDayDialog = false
+            },
+            onDismiss = { showYahrzeitMissingDayDialog = false }
+        )
     }
 
     if (showMinhagDialog) {
@@ -627,6 +730,92 @@ private fun MinhagDialog(
         }
     )
 }
+
+/** Single-choice dialog with an explanation above the options. */
+@Composable
+private fun <T> OptionDialog(
+    title: String,
+    description: String,
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = option == selected,
+                                onClick = { onSelect(option) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = option == selected, onClick = null)
+                        Text(
+                            text = label(option),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@Composable
+private fun yahrzeitLeapLabel(value: YahrzeitLeapYearAdar): String = stringResource(
+    when (value) {
+        YahrzeitLeapYearAdar.ADAR_I -> R.string.settings_yahrzeit_leap_adar_i
+        YahrzeitLeapYearAdar.ADAR_II -> R.string.settings_yahrzeit_leap_adar_ii
+        YahrzeitLeapYearAdar.BOTH -> R.string.settings_yahrzeit_leap_both
+    }
+)
+
+@Composable
+private fun yahrzeitFirstYearLabel(value: YahrzeitFirstYear): String = stringResource(
+    when (value) {
+        YahrzeitFirstYear.FOLLOW_ANNUAL -> R.string.settings_yahrzeit_first_year_follow
+        YahrzeitFirstYear.ADAR_I -> R.string.settings_yahrzeit_first_year_adar_i
+        YahrzeitFirstYear.BOTH -> R.string.settings_yahrzeit_first_year_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayShortLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary_short
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh_short
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both_short
+    }
+)
 
 @Composable
 private fun AppLanguageDialog(
@@ -1267,27 +1456,35 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
             Text("Clear")
         }
         TextButton(onClick = {
-            try {
-                val y = yearText.toInt()
-                val m = monthText.toInt()
-                val d = dayText.toInt()
-                val jd = JewishDate(y, m, d)
-                val gc = jd.gregorianCalendar
-                onDateChange(
-                    LocalDate.of(
-                        gc.get(GregorianCalendar.YEAR),
-                        gc.get(GregorianCalendar.MONTH) + 1,
-                        gc.get(GregorianCalendar.DAY_OF_MONTH)
-                    )
-                )
-            } catch (_: Exception) {
-                // Invalid input, ignore
-            }
+            // Invalid input is ignored
+            parseHebrewDateOverride(yearText, monthText, dayText)?.let(onDateChange)
         }) {
             Text("Apply")
         }
     }
 }
+
+/**
+ * The Gregorian date for a Hebrew date typed into the Date Override fields,
+ * or null when it is not a real date. The year must be one the date pickers
+ * accept: an override far outside that range makes the app's "today" a date
+ * the calendar cannot render, and the override persists across restarts.
+ */
+internal fun parseHebrewDateOverride(yearText: String, monthText: String, dayText: String): LocalDate? =
+    try {
+        val y = yearText.trim().toInt()
+        val m = monthText.trim().toInt()
+        val d = dayText.trim().toInt()
+        require(y in HebrewDateMatcher.EDITABLE_YEARS)
+        val gc = JewishDate(y, m, d).gregorianCalendar
+        LocalDate.of(
+            gc.get(GregorianCalendar.YEAR),
+            gc.get(GregorianCalendar.MONTH) + 1,
+            gc.get(GregorianCalendar.DAY_OF_MONTH)
+        )
+    } catch (_: Exception) {
+        null
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

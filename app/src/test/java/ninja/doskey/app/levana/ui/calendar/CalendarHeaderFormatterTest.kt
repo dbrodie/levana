@@ -35,6 +35,36 @@ class CalendarHeaderFormatterTest {
     }
 
     @Test
+    fun `leap year adar months read Adar I and Adar II in english`() {
+        // March 2027 spans Adar I and Adar II of leap year 5787
+        val march2027 = repository.getMonthDays(YearMonth.of(2027, 3))
+        assertEquals(
+            "Adar I–Adar II 5787",
+            CalendarHeaderFormatter.hebrewMonthRange(march2027, english)
+        )
+        val february2027 = repository.getMonthDays(YearMonth.of(2027, 2))
+        assertEquals(
+            "Shevat–Adar I 5787",
+            CalendarHeaderFormatter.hebrewMonthRange(february2027, english)
+        )
+        // Regular year: plain Adar
+        val march2026 = repository.getMonthDays(YearMonth.of(2026, 3))
+        assertEquals(
+            "Adar–Nissan 5786",
+            CalendarHeaderFormatter.hebrewMonthRange(march2026, english)
+        )
+    }
+
+    @Test
+    fun `leap year adar months are unchanged in hebrew`() {
+        val march2027 = repository.getMonthDays(YearMonth.of(2027, 3))
+        assertEquals(
+            "אדר א׳–אדר ב׳ תשפ״ז",
+            CalendarHeaderFormatter.hebrewMonthRange(march2027, hebrew)
+        )
+    }
+
+    @Test
     fun `hebrew month range across years shows both years`() {
         val september2026 = repository.getMonthDays(YearMonth.of(2026, 9))
         assertEquals(

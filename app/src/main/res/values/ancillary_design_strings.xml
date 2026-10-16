@@ -42,7 +42,7 @@
     <string name="event_title_example">e.g., Dad’s yahrzeit, anniversary</string>
     <string name="event_hebrew_date_label">Hebrew date</string>
     <string name="event_yahrzeit_rules">Use yahrzeit Adar rules</string>
-    <string name="event_yahrzeit_rules_description">Adar of a non-leap year maps to Adar II in leap years. Adar I and II remain separate.</string>
+    <string name="event_yahrzeit_rules_description">Adar dates follow the yahrzeit settings under Settings → Minhag. Adar I and II remain separate.</string>
     <string name="event_notes_optional">Notes (optional)</string>
     <string name="event_date_picker_day">Day</string>
     <string name="event_date_picker_month">Month</string>

@@ -2,7 +2,11 @@ package ninja.doskey.app.levana.ui.events
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
+import ninja.doskey.app.levana.data.TodayProvider
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,11 +14,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AddEditEventViewModel(
-    private val repository: PersonalEventRepository
+    private val repository: PersonalEventRepository,
+    private val todayProvider: TodayProvider
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddEditEventState())
     val state: StateFlow<AddEditEventState> = _state.asStateFlow()
+
+    // The app's current Hebrew year (honours the developer date override),
+    // resolved once when the editor opens
+    private val currentYear: Deferred<Int> = viewModelScope.async {
+        HebrewDateMatcher.hebrewYearOf(todayProvider.today())
+    }
+
+    // True once the year came from the user, a prefill or a stored item, so
+    // the default year no longer applies
+    private var yearChosen = false
+
+    init {
+        viewModelScope.launch {
+            val year = currentYear.await()
+            if (!yearChosen) setDate(year = year, chosen = false)
+        }
+    }
 
     fun onIntent(intent: AddEditEventIntent) {
         when (intent) {
@@ -22,11 +44,11 @@ class AddEditEventViewModel(
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
             is AddEditEventIntent.SetHebrewDay ->
-                _state.value = _state.value.copy(hebrewDay = intent.day)
+                setDate(day = intent.day)
             is AddEditEventIntent.SetHebrewMonth ->
-                _state.value = _state.value.copy(hebrewMonth = intent.month)
+                setDate(month = intent.month)
             is AddEditEventIntent.SetHebrewYear ->
-                _state.value = _state.value.copy(hebrewYear = intent.year)
+                setDate(year = intent.year)
             is AddEditEventIntent.SetNotes ->
                 _state.value = _state.value.copy(notes = intent.notes)
             is AddEditEventIntent.SetUseYahrzeitRules ->
@@ -34,25 +56,59 @@ class AddEditEventViewModel(
                     useYahrzeitRules = intent.enabled
                 )
             is AddEditEventIntent.PreFillDate ->
-                _state.value = _state.value.copy(
-                    hebrewDay = intent.day,
-                    hebrewMonth = intent.month,
-                    hebrewYear = intent.year
-                )
+                setDate(day = intent.day, month = intent.month, year = intent.year)
             is AddEditEventIntent.Save -> save()
         }
+    }
+
+    /**
+     * Sets the editor's date. The year is kept inside the range the calendar
+     * library handles, and the month is one that year has (Adar II becomes
+     * Adar when the year is stepped to a regular year), so a date that cannot
+     * exist is never held in state or saved. The day is clamped to the
+     * month's length in that year (spec 1e).
+     */
+    private fun setDate(
+        day: Int = _state.value.hebrewDay,
+        month: Int = _state.value.hebrewMonth,
+        year: Int = _state.value.hebrewYear,
+        chosen: Boolean = true
+    ) {
+        if (chosen) yearChosen = true
+        val safeYear = year.coerceIn(
+            HebrewDateMatcher.MIN_KNOWN_YEAR,
+            HebrewDateMatcher.MAX_KNOWN_YEAR
+        )
+        val safeMonth = HebrewDateMatcher.monthForYear(month, safeYear)
+        _state.value = _state.value.copy(
+            // Day 30 becomes 29 when that month has 29 days in that year, so
+            // what the editor shows is what gets saved. Not restored later.
+            hebrewDay = HebrewDateMatcher.clampDay(day, safeMonth, safeYear),
+            hebrewMonth = safeMonth,
+            hebrewYear = safeYear
+        )
     }
 
     private fun loadEvent(eventId: Long) {
         viewModelScope.launch {
             val event = repository.getById(eventId) ?: return@launch
+            // An event stored without a usable year (imported with year 0)
+            // opens on the current Hebrew year
+            val (day, month, year) = HebrewDateMatcher.editorDate(
+                event.hebrewDay,
+                event.hebrewMonth,
+                event.hebrewYear,
+                event.useYahrzeitRules,
+                currentYear = currentYear.await()
+            )
+            yearChosen = true
             _state.value = AddEditEventState(
                 isEditing = true,
                 eventId = event.id,
                 title = event.title,
-                hebrewDay = event.hebrewDay,
-                hebrewMonth = event.hebrewMonth,
-                hebrewYear = event.hebrewYear,
+                hebrewDay = day,
+                hebrewMonth = month,
+                hebrewYear = year,
                 notes = event.notes,
                 useYahrzeitRules = event.useYahrzeitRules
             )

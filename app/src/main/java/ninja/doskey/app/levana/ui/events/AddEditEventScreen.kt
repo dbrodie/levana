@@ -33,6 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.data.HebrewDateMatcher
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.R
 import org.koin.androidx.compose.koinViewModel
 
@@ -220,11 +222,7 @@ internal fun HebrewDatePicker(
     }
 
     val months = buildMonthList(isLeapYear)
-    val daysInMonth = try {
-        JewishDate(year, month, 1).daysInJewishMonth
-    } catch (_: Exception) {
-        30
-    }
+    val daysInMonth = HebrewDateMatcher.daysInMonth(year, month)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -238,8 +236,9 @@ internal fun HebrewDatePicker(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+            // The view model keeps the day within the month (spec 1e)
             NumberPicker(
-                value = day.coerceIn(1, daysInMonth),
+                value = day,
                 range = 1..daysInMonth,
                 onValueChange = onDayChange,
                 controlName = stringResource(R.string.event_date_picker_day),
@@ -274,7 +273,7 @@ internal fun HebrewDatePicker(
             )
             NumberPicker(
                 value = year,
-                range = 5700..5900,
+                range = HebrewDateMatcher.EDITABLE_YEARS,
                 onValueChange = onYearChange,
                 controlName = stringResource(R.string.event_date_picker_year),
                 modifier = Modifier.fillMaxWidth()
@@ -290,23 +289,26 @@ private data class MonthOption(
 )
 
 private fun buildMonthList(isLeapYear: Boolean): List<MonthOption> = buildList {
-    add(MonthOption(JewishDate.TISHREI, "Tishrei", "תשרי"))
-    add(MonthOption(JewishDate.CHESHVAN, "Cheshvan", "חשוון"))
-    add(MonthOption(JewishDate.KISLEV, "Kislev", "כסלו"))
-    add(MonthOption(JewishDate.TEVES, "Teves", "טבת"))
-    add(MonthOption(JewishDate.SHEVAT, "Shevat", "שבט"))
+    // English names come from the shared HebrewMonth source
+    fun add(month: Int, hebrewName: String) =
+        add(MonthOption(month, HebrewMonth.englishName(month, isLeapYear), hebrewName))
+    add(JewishDate.TISHREI, "תשרי")
+    add(JewishDate.CHESHVAN, "חשוון")
+    add(JewishDate.KISLEV, "כסלו")
+    add(JewishDate.TEVES, "טבת")
+    add(JewishDate.SHEVAT, "שבט")
     if (isLeapYear) {
-        add(MonthOption(JewishDate.ADAR, "Adar I", "אדר א׳"))
-        add(MonthOption(JewishDate.ADAR_II, "Adar II", "אדר ב׳"))
+        add(JewishDate.ADAR, "אדר א׳")
+        add(JewishDate.ADAR_II, "אדר ב׳")
     } else {
-        add(MonthOption(JewishDate.ADAR, "Adar", "אדר"))
+        add(JewishDate.ADAR, "אדר")
     }
-    add(MonthOption(JewishDate.NISSAN, "Nissan", "ניסן"))
-    add(MonthOption(JewishDate.IYAR, "Iyar", "אייר"))
-    add(MonthOption(JewishDate.SIVAN, "Sivan", "סיוון"))
-    add(MonthOption(JewishDate.TAMMUZ, "Tammuz", "תמוז"))
-    add(MonthOption(JewishDate.AV, "Av", "אב"))
-    add(MonthOption(JewishDate.ELUL, "Elul", "אלול"))
+    add(JewishDate.NISSAN, "ניסן")
+    add(JewishDate.IYAR, "אייר")
+    add(JewishDate.SIVAN, "סיוון")
+    add(JewishDate.TAMMUZ, "תמוז")
+    add(JewishDate.AV, "אב")
+    add(JewishDate.ELUL, "אלול")
 }
 
 @Composable
