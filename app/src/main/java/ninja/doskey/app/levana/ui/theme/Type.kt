@@ -2,22 +2,16 @@ package ninja.doskey.app.levana.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// The platform font pairs Latin with a matching-weight Hebrew font and follows the device's font choice.
-val LevanaDisplayFontFamily = FontFamily.Default
-val LevanaBodyFontFamily = FontFamily.Default
-
+// Text uses the platform font, which pairs Latin with a matching-weight Hebrew font and follows the device's font choice.
 private fun display(size: Int, line: Int) = TextStyle(
-    fontFamily = LevanaDisplayFontFamily,
     fontWeight = FontWeight.Medium,
     fontSize = size.sp,
     lineHeight = line.sp,
 )
 private fun body(size: Int, line: Int, weight: FontWeight = FontWeight.Normal) = TextStyle(
-    fontFamily = LevanaBodyFontFamily,
     fontWeight = weight,
     fontSize = size.sp,
     lineHeight = line.sp,

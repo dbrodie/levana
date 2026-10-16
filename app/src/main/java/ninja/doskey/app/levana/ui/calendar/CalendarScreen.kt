@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.R
-import ninja.doskey.app.levana.ui.theme.LevanaDisplayFontFamily
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.ui.daydetail.DayDetailIntent
@@ -508,7 +507,6 @@ private fun DayCell(
                 Text(
                     text = day.hebrewDayOfMonthFormatted,
                     style = MaterialTheme.typography.titleMedium,
-                    fontFamily = LevanaDisplayFontFamily,
                     fontSize = 18.sp,
                     fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = primaryTextColor
@@ -527,7 +525,6 @@ private fun DayCell(
                 Text(
                     text = day.gregorianDate.dayOfMonth.toString(),
                     style = MaterialTheme.typography.titleMedium,
-                    fontFamily = LevanaDisplayFontFamily,
                     fontSize = 18.sp,
                     fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = primaryTextColor
