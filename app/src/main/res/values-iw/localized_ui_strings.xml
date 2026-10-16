@@ -125,4 +125,8 @@
     <string name="occurrence_kislev_29">כ״ט כסלו</string>
     <string name="occurrence_teves_1">א׳ טבת</string>
     <string name="occurrence_delayed_from_30">נדחה מל׳ %1$s</string>
+    <!-- Birthday notification -->
+    <string name="notification_birthday_title">אירוע אישי</string>
+    <string name="notification_birthday_body">היום %1$s</string>
+    <string name="notification_birthday_event">יום ההולדת העברי של %1$s</string>
 </resources>

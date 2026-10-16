@@ -125,4 +125,8 @@
     <string name="occurrence_kislev_29">29 Kislev</string>
     <string name="occurrence_teves_1">1 Teves</string>
     <string name="occurrence_delayed_from_30">delayed from 30 %1$s</string>
+    <!-- Birthday notification -->
+    <string name="notification_birthday_title">Personal Event</string>
+    <string name="notification_birthday_body">Today is %1$s</string>
+    <string name="notification_birthday_event">%1$s\'s Hebrew Birthday</string>
 </resources>
