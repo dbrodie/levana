@@ -61,7 +61,10 @@ import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
+import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
+import ninja.doskey.app.levana.domain.model.displayName
+import ninja.doskey.app.levana.data.ZmanimRepository
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -130,19 +133,11 @@ fun DayDetailContent(
                     // Shabbat / Yom Tov times
                     dayInfo.shabbatInfo?.let { info ->
                         if (info.showCandleLighting) {
-                            ShabbatTimeCard(
-                                "Candle Lighting",
-                                "\u05d4\u05d3\u05dc\u05e7\u05ea \u05e0\u05e8\u05d5\u05ea",
-                                info.candleLightingTime
-                            )
+                            ShabbatTimeCard(ZmanimRepository.CANDLE_LIGHTING, info.candleLightingTime)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                         if (info.showHavdalah) {
-                            ShabbatTimeCard(
-                                "Havdalah",
-                                "\u05d4\u05d1\u05d3\u05dc\u05d4",
-                                info.havdalahTime
-                            )
+                            ShabbatTimeCard(ZmanimRepository.HAVDALAH, info.havdalahTime)
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -196,12 +191,9 @@ private fun DaySheetBadges(dayInfo: DayInfo) {
 private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) {
     val context = LocalContext.current
     val formatter = if (DateFormat.is24HourFormat(context)) TIME_24H else TIME_12H
-    val sunrise = times.firstOrNull {
-        it.name.contains("sunrise", ignoreCase = true) || it.name.contains("netz", ignoreCase = true)
-    }?.time
-    val sunset = times.firstOrNull {
-        it.name.contains("sunset", ignoreCase = true) || it.name.contains("shkia", ignoreCase = true)
-    }?.time
+    // Labels are the short NETZ / SHKIA / TZEIT strings; times are looked up by zman key
+    val sunrise = times.firstOrNull { it.name == ZmanimRepository.SUNRISE.english }?.time
+    val sunset = times.firstOrNull { it.name == ZmanimRepository.SUNSET.english }?.time
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -210,9 +202,9 @@ private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) 
         QuickZmanCard(stringResource(R.string.sheet_shkia), sunset?.format(formatter) ?: "--:--", false, Modifier.weight(1f))
         QuickZmanCard(
             stringResource(if (candleLighting != null) R.string.sheet_candles else R.string.sheet_tzeit),
-            candleLighting?.format(formatter) ?: times.firstOrNull {
-                it.name.contains("tzeit", true) || it.name.contains("nightfall", true)
-            }?.time?.format(formatter) ?: "--:--",
+            candleLighting?.format(formatter)
+                ?: times.firstOrNull { it.name == ZmanimRepository.NIGHTFALL.english }?.time?.format(formatter)
+                ?: "--:--",
             true,
             Modifier.weight(1f)
         )
@@ -270,6 +262,7 @@ private fun HalachicTimesSection(
             if (times.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 times.forEach { zman ->
+                    val name = zman.displayName(isHebrewUi())
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -279,11 +272,11 @@ private fun HalachicTimesSection(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (isHebrewUi()) zman.hebrewName else zman.name,
+                                text = name.primary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = if (isHebrewUi()) zman.name else zman.hebrewName,
+                                text = name.secondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -379,7 +372,8 @@ private fun MoladSection(molad: String) {
 }
 
 @Composable
-private fun ShabbatTimeCard(title: String, hebrewTitle: String, time: LocalTime?) {
+private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
+    val name = zmanName.displayName(isHebrewUi())
     val context = androidx.compose.ui.platform.LocalContext.current
     val is24Hour = DateFormat.is24HourFormat(context)
     val formatter = if (is24Hour) TIME_24H else TIME_12H
@@ -393,12 +387,12 @@ private fun ShabbatTimeCard(title: String, hebrewTitle: String, time: LocalTime?
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = if (isHebrewUi()) hebrewTitle else title,
+                text = name.primary,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (isHebrewUi()) title else hebrewTitle,
+                text = name.secondary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

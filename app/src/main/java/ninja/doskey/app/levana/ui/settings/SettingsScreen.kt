@@ -78,6 +78,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
@@ -960,32 +962,6 @@ private fun minhagLabel(minhag: Minhag): String = stringResource(
     }
 )
 
-/** Hebrew display names for the zman keys below (keys are persisted, so they stay English). */
-private val ZMAN_HEBREW_NAMES = mapOf(
-    "Alot HaShachar" to "עלות השחר",
-    "Misheyakir" to "משיכיר",
-    "Sunrise" to "הנץ החמה",
-    "Sof Zman Shema (GRA)" to "סוף זמן שמע (גר״א)",
-    "Sof Zman Shema (MGA)" to "סוף זמן שמע (מג״א)",
-    "Sof Zman Tefillah" to "סוף זמן תפילה",
-    "Chatzot" to "חצות היום",
-    "Mincha Gedolah" to "מנחה גדולה",
-    "Mincha Ketanah" to "מנחה קטנה",
-    "Plag HaMincha" to "פלג המנחה",
-    "Candle Lighting" to "הדלקת נרות",
-    "Sunset" to "שקיעה",
-    "Nightfall" to "צאת הכוכבים",
-    "Havdalah" to "הבדלה",
-    "Chatzot HaLaylah" to "חצות הלילה"
-)
-
-private val ALL_ZMANIM = listOf(
-    "Alot HaShachar", "Misheyakir", "Sunrise",
-    "Sof Zman Shema (GRA)", "Sof Zman Shema (MGA)", "Sof Zman Tefillah",
-    "Chatzot", "Mincha Gedolah", "Mincha Ketanah", "Plag HaMincha",
-    "Candle Lighting", "Sunset", "Nightfall", "Havdalah", "Chatzot HaLaylah"
-)
-
 @Composable
 internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
@@ -997,14 +973,16 @@ internal fun HalachicTimesSection(
     ) {
         Text(stringResource(R.string.zmanim_selection_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val hebrewUi = LocalConfiguration.current.locales[0].language in setOf("he", "iw")
-        ALL_ZMANIM.forEach { name ->
+        // Single line: the name in the app language. Keys are the English names
+        ZmanimRepository.ZMAN_NAMES.forEach { zmanName ->
+            val name = zmanName.english
             val checked = name in selectedZmanim
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 ListItem(
-                    headlineContent = { Text(text = if (hebrewUi) ZMAN_HEBREW_NAMES[name] ?: name else name) },
+                    headlineContent = { Text(text = zmanName.displayName(hebrewUi).primary) },
                     trailingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle(name, it) }) },
                     modifier = Modifier.clickable { onToggle(name, !checked) }
                 )
