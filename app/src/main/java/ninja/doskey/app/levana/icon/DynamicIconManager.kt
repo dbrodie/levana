@@ -14,12 +14,32 @@ import java.util.GregorianCalendar
  * declares 30 <activity-alias> entries (MainActivityDay01..MainActivityDay30), each carrying
  * its own pre-baked icon. This object enables the correct alias and disables all others.
  *
- * The default component (MainActivity) carries the fallback icon (א / day 1) and starts
- * enabled; update() replaces it with the correct day alias on first run.
+ * The default component (LauncherActivity) carries the fallback icon (א / day 1) and starts
+ * enabled; update() replaces it with the correct day alias on first run. MainActivity is never
+ * toggled: Android finishes activities started through a component when it is disabled, so
+ * toggling the UI activity would close the app.
  *
  * Call sites: MainActivity (onResume), BootReceiver, DateChangeReceiver.
  */
 object DynamicIconManager {
+
+    /**
+     * Older versions toggled MainActivity itself, so upgraded installs may have it saved as
+     * disabled — which would make every launch fail. Call before anything starts MainActivity.
+     */
+    fun restoreMainActivity(context: Context) {
+        val mainActivity = ComponentName(context.packageName, "${context.packageName}.MainActivity")
+        val pm = context.packageManager
+        if (pm.getComponentEnabledSetting(mainActivity) !=
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+        ) {
+            pm.setComponentEnabledSetting(
+                mainActivity,
+                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+                PackageManager.DONT_KILL_APP
+            )
+        }
+    }
 
     fun update(context: Context, devDateOverride: LocalDate? = null) {
         val today = devDateOverride ?: LocalDate.now()
@@ -31,7 +51,7 @@ object DynamicIconManager {
         val pkg = context.packageName
         val pm = context.packageManager
 
-        val defaultComponent = ComponentName(pkg, "$pkg.MainActivity")
+        val defaultComponent = ComponentName(pkg, "$pkg.LauncherActivity")
         val dayAliases = (1..30).map { d ->
             ComponentName(pkg, "$pkg.MainActivityDay${d.toString().padStart(2, '0')}")
         }

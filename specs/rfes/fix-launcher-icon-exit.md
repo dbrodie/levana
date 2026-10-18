@@ -26,12 +26,19 @@ Separate the launcher entry from the UI activity:
 - New `LauncherActivity` — the default launcher component. It forwards its intent (action, data,
   extras, flags) to `MainActivity` and finishes in `onCreate`.
 - All 30 `MainActivityDayNN` aliases target `LauncherActivity`.
-- `LauncherActivity` uses `taskAffinity=""`, `noHistory` and `excludeFromRecents`, so the
+- `LauncherActivity` uses `taskAffinity=""` and `noHistory`, so the
   forwarded launch (which keeps the launcher's `NEW_TASK` flag) lands in `MainActivity`'s own
   task, whose root is `MainActivity` — not a toggled component.
-- `MainActivity` is a plain exported activity with no launcher filter, never toggled.
+- `MainActivity` is a non-exported activity with no launcher filter, never toggled.
   `DynamicIconManager` toggles `LauncherActivity` + aliases only.
-- Notification and Quick Settings intents keep targeting `MainActivity` directly.
+- Notification and Quick Settings intents keep targeting `MainActivity` directly (via the
+  app's own `PendingIntent`s, so non-exported is fine).
+- **Upgrade:** older versions saved `MainActivity` as DISABLED, which persists across updates
+  and would make every launch throw `ActivityNotFoundException`.
+  `LevanaApplication.onCreate` calls `DynamicIconManager.restoreMainActivity()` to reset it to
+  its default state before anything can start it. (The abandoned branch lacked this.)
+- No `excludeFromRecents` on `LauncherActivity`: Android puts that flag on its intent, the
+  forwarded launch copies it, and `MainActivity`'s task would vanish from recents.
 
 The alias names stay `MainActivityDayNN` so existing users' enabled-alias state carries over.
 
@@ -44,6 +51,14 @@ The alias names stay `MainActivityDayNN` so existing users' enabled-alias state 
 ## Verification
 
 - Robolectric: `LauncherActivity` forwards intent + finishes; `DynamicIconManager` never
-  touches `MainActivity`; aliases target `LauncherActivity`.
-- Emulator: repeat the day-override repro → app stays in the foreground. Launch from icon,
-  relaunch while running (no duplicate instance), notification / Quick Settings still open.
+  touches `MainActivity`; aliases target `LauncherActivity`; a disabled `MainActivity` is restored.
+- Emulator: upgrade over a disabled `MainActivity` launches; repeat the day-override repro →
+  app stays in the foreground on the same instance; relaunch from the icon while running
+  resumes the same instance; the app keeps a single task in recents.
+
+## Known limitation (not addressed)
+
+Disabling an alias makes Pixel Launcher delete items pointing at it from its database
+(`ModelWriter: removing items … removedComponents=[…MainActivityDayNN]`), which suggests a
+home-screen shortcut to Levana disappears when the Hebrew day changes. Not yet verified on an
+actual home screen; if true it is inherent to alias-based icon switching.
