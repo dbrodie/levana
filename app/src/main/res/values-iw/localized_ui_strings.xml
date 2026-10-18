@@ -172,4 +172,10 @@
     <string name="channel_omer_description">תזכורות לספירת העומר</string>
     <string name="channel_updates_name">עדכוני האפליקציה</string>
     <string name="channel_updates_description">התראות כשגרסה חדשה של לבנה זמינה</string>
+    <!-- Crash report dialog -->
+    <string name="crash_dialog_title">לבנה קרסה</string>
+    <string name="crash_dialog_text">מצטערים, משהו השתבש. אפשר לשלוח למפתח דוח קריסה במייל כדי לעזור לתקן את הבעיה. הדוח כולל את פרטי השגיאה, גרסת האפליקציה ודגם המכשיר, ואפשר לעבור עליו לפני השליחה.</string>
+    <string name="crash_dialog_send">שליחת דוח</string>
+    <string name="crash_dialog_dont_send">לא לשלוח</string>
+    <string name="crash_report_subject">דוח קריסה של לבנה (%1$s)</string>
 </resources>

@@ -14,7 +14,7 @@ Google Play requires a privacy policy at a public URL. Levana collects no user d
 
 ## Facts the policy relies on (checked in the code)
 
-- No analytics, advertising, crash-reporting or account SDKs. The only network code is `update/UpdateChecker.kt`, which calls the GitHub releases API, and only when the app was not installed from Google Play or F-Droid.
+- No analytics, advertising or account SDKs. Crash reporting is ACRA with only its dialog and email plugins (see `crash-report-email.md`): the user reviews and sends the report from their own mail app, so the app transmits nothing itself. The only network code is `update/UpdateChecker.kt`, which calls the GitHub releases API, and only when the app was not installed from Google Play or F-Droid.
 - Location comes from Google Play services' fused location provider, and the city name from Android's `Geocoder`. Results stay on the device.
 - Contacts: Hebrew birthdays are read from and written to the device's contacts. Calendars: system calendars are read to show events. Nothing leaves the device.
 - Exported files (JSON/CSV) are written only where the user chooses.

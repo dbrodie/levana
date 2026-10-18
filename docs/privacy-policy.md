@@ -10,7 +10,7 @@ Levana is a free, open-source Hebrew calendar app for Android. This policy expla
 
 ## The short version
 
-**Levana does not collect, store, sell or share any personal information.** It has no accounts, no analytics, no advertising and no crash reporting. Everything you enter stays on your device, and the developer never receives any of it.
+**Levana does not collect, store, sell or share any personal information.** It has no accounts, no analytics and no advertising, and it never sends crash reports on its own. Everything you enter stays on your device, and the developer never receives any of it.
 
 ## Information that stays on your device
 
@@ -29,6 +29,10 @@ You can revoke any permission at any time in your device's settings. Uninstallin
 Levana sends nothing about you to the developer or to any analytics, advertising or tracking service.
 
 The only network connection Levana itself makes is an **update check**, and only if you installed the app from its GitHub releases page rather than from Google Play. That check asks GitHub's public API for the latest version number. The request contains no personal information, but like any web request, GitHub can see your IP address. It is covered by [GitHub's Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Copies installed from Google Play never make this request.
+
+## Crash reports
+
+If Levana crashes, it asks whether you want to email a crash report to the developer. Nothing is sent unless you choose **Send report**, which opens your own email app with the report filled in so you can read it and decide whether to send it. The report contains the error details (stack trace), the time of the crash, the app version, the Android version and your device brand and model. It does not include your events, locations, contacts or settings. If you send it, the developer receives it as an ordinary email, including your email address, and uses it only to fix the bug.
 
 ## Exporting your events
 

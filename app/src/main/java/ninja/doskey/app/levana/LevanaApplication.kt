@@ -1,7 +1,9 @@
 package ninja.doskey.app.levana
 
 import android.app.Application
+import android.content.Context
 import android.content.res.Configuration
+import ninja.doskey.app.levana.crash.CrashReporting
 import ninja.doskey.app.levana.di.allModules
 import ninja.doskey.app.levana.notifications.DailyNotificationWorker
 import ninja.doskey.app.levana.notifications.NotificationChannels
@@ -12,8 +14,15 @@ import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 
 class LevanaApplication : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        CrashReporting.init(this)
+    }
+
     override fun onCreate() {
         super.onCreate()
+        // ACRA shows the crash dialog in its own process; don't start the app there
+        if (CrashReporting.isReporterProcess()) return
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@LevanaApplication)

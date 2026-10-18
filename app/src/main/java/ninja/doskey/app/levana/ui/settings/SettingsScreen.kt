@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -180,6 +181,17 @@ fun DeveloperSettingsScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        ListItem(
+            headlineContent = { Text("Test crash") },
+            supportingContent = { Text("Crash the app to check the crash report dialog") },
+            leadingContent = {
+                Icon(Icons.Outlined.BugReport, contentDescription = null)
+            },
+            modifier = Modifier.clickable {
+                throw RuntimeException("Test crash from Developer Settings")
+            }
+        )
     }
 
     if (showDateDialog) {
