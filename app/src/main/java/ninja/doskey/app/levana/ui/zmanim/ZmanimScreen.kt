@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanTime
+import ninja.doskey.app.levana.domain.model.displayName
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -76,15 +78,17 @@ private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, formatter:
             ZmanCategory.NIGHT -> R.string.zmanim_category_night
         }
     )
+    val hebrewUi = LocalConfiguration.current.locales[0].language in setOf("he", "iw")
     Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
             Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 10.dp))
             zmanim.forEachIndexed { index, zman ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.fillMaxWidth().padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val name = zman.displayName(hebrewUi)
                     Column(Modifier.weight(1f)) {
-                        Text(zman.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(zman.hebrewName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(name.primary, style = MaterialTheme.typography.bodyLarge)
+                        Text(name.secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(formatTime(zman.time, formatter), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

@@ -6,6 +6,7 @@ import com.kosherjava.zmanim.util.GeoLocation
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.ShabbatInfo
 import ninja.doskey.app.levana.domain.model.ZmanCategory
+import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -73,119 +74,25 @@ class ZmanimRepository {
             candleLightingOffset
         )
         return buildList {
-            add(
-                zman(
-                    "Alot HaShachar",
-                    "עלות השחר",
-                    czc.alosHashachar,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Misheyakir",
-                    "משיכיר",
-                    czc.misheyakir11Degrees,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Sunrise",
-                    "הנץ החמה",
-                    czc.seaLevelSunrise,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Sof Zman Shema (GRA)",
-                    "סוף זמן שמע (גר״א)",
-                    czc.sofZmanShmaGRA,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Sof Zman Shema (MGA)",
-                    "סוף זמן שמע (מג״א)",
-                    czc.sofZmanShmaMGA,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Sof Zman Tefillah",
-                    "סוף זמן תפילה",
-                    czc.sofZmanTfilaGRA,
-                    ZmanCategory.MORNING,
-                    location
-                )
-            )
-            add(zman("Chatzot", "חצות היום", czc.chatzos, ZmanCategory.AFTERNOON, location))
-            add(
-                zman(
-                    "Mincha Gedolah",
-                    "מנחה גדולה",
-                    czc.minchaGedola,
-                    ZmanCategory.AFTERNOON,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Mincha Ketanah",
-                    "מנחה קטנה",
-                    czc.minchaKetana,
-                    ZmanCategory.AFTERNOON,
-                    location
-                )
-            )
-            add(
-                zman(
-                    "Plag HaMincha",
-                    "פלג המנחה",
-                    czc.plagHamincha,
-                    ZmanCategory.AFTERNOON,
-                    location
-                )
-            )
+            add(zman(ALOT_HASHACHAR, czc.alosHashachar, ZmanCategory.MORNING, location))
+            add(zman(MISHEYAKIR, czc.misheyakir11Degrees, ZmanCategory.MORNING, location))
+            add(zman(SUNRISE, czc.seaLevelSunrise, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_SHEMA_GRA, czc.sofZmanShmaGRA, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_SHEMA_MGA, czc.sofZmanShmaMGA, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_TEFILLAH, czc.sofZmanTfilaGRA, ZmanCategory.MORNING, location))
+            add(zman(CHATZOT, czc.chatzos, ZmanCategory.AFTERNOON, location))
+            add(zman(MINCHA_GEDOLAH, czc.minchaGedola, ZmanCategory.AFTERNOON, location))
+            add(zman(MINCHA_KETANAH, czc.minchaKetana, ZmanCategory.AFTERNOON, location))
+            add(zman(PLAG_HAMINCHA, czc.plagHamincha, ZmanCategory.AFTERNOON, location))
             if (shabbatInfo.showCandleLighting) {
-                add(
-                    ZmanTime(
-                        "Candle Lighting",
-                        "הדלקת נרות",
-                        shabbatInfo.candleLightingTime,
-                        ZmanCategory.EVENING
-                    )
-                )
+                add(zmanTime(CANDLE_LIGHTING, shabbatInfo.candleLightingTime, ZmanCategory.EVENING))
             }
-            add(
-                zman(
-                    "Sunset",
-                    "שקיעה",
-                    czc.seaLevelSunset,
-                    ZmanCategory.EVENING,
-                    location
-                )
-            )
-            add(zman("Nightfall", "צאת הכוכבים", czc.tzais, ZmanCategory.EVENING, location))
+            add(zman(SUNSET, czc.seaLevelSunset, ZmanCategory.EVENING, location))
+            add(zman(NIGHTFALL, czc.tzais, ZmanCategory.EVENING, location))
             if (shabbatInfo.showHavdalah) {
-                add(
-                    ZmanTime(
-                        "Havdalah",
-                        "הבדלה",
-                        shabbatInfo.havdalahTime,
-                        ZmanCategory.EVENING
-                    )
-                )
+                add(zmanTime(HAVDALAH, shabbatInfo.havdalahTime, ZmanCategory.EVENING))
             }
-            add(midnight(czc, location))
+            add(zman(CHATZOT_HALAYLAH, czc.solarMidnight, ZmanCategory.NIGHT, location))
         }
     }
 
@@ -261,19 +168,41 @@ class ZmanimRepository {
     }
 
     private fun zman(
-        name: String,
-        hebrew: String,
+        name: ZmanName,
         date: Date?,
         category: ZmanCategory,
         location: Location
-    ): ZmanTime {
-        val time = date?.toInstant()
-            ?.atZone(ZoneId.of(location.timezoneId))
-            ?.toLocalTime()
-        return ZmanTime(name, hebrew, time, category)
-    }
+    ): ZmanTime = zmanTime(name, toLocalTime(date, location), category)
 
-    private fun midnight(czc: ComplexZmanimCalendar, location: Location): ZmanTime {
-        return ZmanTime("Chatzot HaLaylah", "חצות הלילה", toLocalTime(czc.solarMidnight, location), ZmanCategory.NIGHT)
+    private fun zmanTime(name: ZmanName, time: LocalTime?, category: ZmanCategory): ZmanTime =
+        ZmanTime(name.english, name.hebrew, time, category)
+
+    companion object {
+        val ALOT_HASHACHAR = ZmanName("Alot HaShachar", "עלות השחר")
+        val MISHEYAKIR = ZmanName("Misheyakir", "משיכיר")
+        val SUNRISE = ZmanName("Sunrise", "הנץ החמה")
+        val SOF_ZMAN_SHEMA_GRA = ZmanName("Sof Zman Shema (GRA)", "סוף זמן שמע (גר״א)")
+        val SOF_ZMAN_SHEMA_MGA = ZmanName("Sof Zman Shema (MGA)", "סוף זמן שמע (מג״א)")
+        val SOF_ZMAN_TEFILLAH = ZmanName("Sof Zman Tefillah", "סוף זמן תפילה")
+        val CHATZOT = ZmanName("Chatzot", "חצות היום")
+        val MINCHA_GEDOLAH = ZmanName("Mincha Gedolah", "מנחה גדולה")
+        val MINCHA_KETANAH = ZmanName("Mincha Ketanah", "מנחה קטנה")
+        val PLAG_HAMINCHA = ZmanName("Plag HaMincha", "פלג המנחה")
+        val CANDLE_LIGHTING = ZmanName("Candle Lighting", "הדלקת נרות")
+        val SUNSET = ZmanName("Sunset", "שקיעה")
+        val NIGHTFALL = ZmanName("Nightfall", "צאת הכוכבים")
+        val HAVDALAH = ZmanName("Havdalah", "הבדלה")
+        val CHATZOT_HALAYLAH = ZmanName("Chatzot HaLaylah", "חצות הלילה")
+
+        /**
+         * Every zman name, in display order. The single source for zman names: the zmanim
+         * screen, the day panel and Settings → Halachic Times all read from here.
+         */
+        val ZMAN_NAMES: List<ZmanName> = listOf(
+            ALOT_HASHACHAR, MISHEYAKIR, SUNRISE,
+            SOF_ZMAN_SHEMA_GRA, SOF_ZMAN_SHEMA_MGA, SOF_ZMAN_TEFILLAH,
+            CHATZOT, MINCHA_GEDOLAH, MINCHA_KETANAH, PLAG_HAMINCHA,
+            CANDLE_LIGHTING, SUNSET, NIGHTFALL, HAVDALAH, CHATZOT_HALAYLAH
+        )
     }
 }

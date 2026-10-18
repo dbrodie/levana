@@ -129,4 +129,49 @@
     <string name="notification_birthday_title">Personal Event</string>
     <string name="notification_birthday_body">Today is %1$s</string>
     <string name="notification_birthday_event">%1$s\'s Hebrew Birthday</string>
+    <!-- Other notifications (see notifications/NotificationTexts.kt) -->
+    <string name="notification_candle_lighting_title">Candle Lighting</string>
+    <string name="notification_candle_lighting_body">Candle Lighting at %1$s</string>
+    <string name="notification_candle_lighting_body_with_end">Candle Lighting at %1$s \u00b7 Shabbat ends %2$s</string>
+    <string name="notification_holiday_title">Holiday</string>
+    <string name="notification_holiday_today">Today is %1$s</string>
+    <string name="notification_holiday_tomorrow">%1$s begins tomorrow</string>
+    <plurals name="notification_holiday_in_days">
+        <item quantity="one">%1$s begins in %2$d day</item>
+        <item quantity="other">%1$s begins in %2$d days</item>
+    </plurals>
+    <string name="notification_fast_title">Fast Day</string>
+    <string name="notification_fast_begins">Begins %1$s</string>
+    <string name="notification_fast_ends">Ends %1$s</string>
+    <string name="notification_personal_event_title">Personal Event</string>
+    <string name="notification_personal_event_body">Today is %1$s</string>
+    <string name="notification_omer_title">Sefirat HaOmer</string>
+    <string name="notification_omer_tonight">Tonight is day %1$s of the Omer</string>
+    <string name="notification_omer_tonight_with_weeks">Tonight is day %1$s of the Omer (%2$s)</string>
+    <string name="notification_omer_today">Today is day %1$s of the Omer</string>
+    <string name="notification_omer_today_with_weeks">Today is day %1$s of the Omer (%2$s)</string>
+    <plurals name="notification_omer_weeks">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+    <plurals name="notification_omer_and_days">
+        <item quantity="one">and %d day</item>
+        <item quantity="other">and %d days</item>
+    </plurals>
+    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="notification_update_title">Update Available</string>
+    <string name="notification_update_body">Levana v%1$s is available \u2014 tap to download</string>
+    <!-- Notification channels (shown in system settings) -->
+    <string name="channel_candle_lighting_name">Candle Lighting</string>
+    <string name="channel_candle_lighting_description">Candle lighting time reminders</string>
+    <string name="channel_holidays_name">Holidays</string>
+    <string name="channel_holidays_description">Holiday reminders</string>
+    <string name="channel_fasts_name">Fasts</string>
+    <string name="channel_fasts_description">Fast day reminders</string>
+    <string name="channel_personal_events_name">Personal Events</string>
+    <string name="channel_personal_events_description">Personal event and birthday reminders</string>
+    <string name="channel_omer_name">Omer</string>
+    <string name="channel_omer_description">Sefirat HaOmer reminders</string>
+    <string name="channel_updates_name">App Updates</string>
+    <string name="channel_updates_description">Notifications when a new version of Levana is available</string>
 </resources>

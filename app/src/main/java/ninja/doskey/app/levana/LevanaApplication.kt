@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana
 
 import android.app.Application
+import android.content.res.Configuration
 import ninja.doskey.app.levana.di.allModules
 import ninja.doskey.app.levana.notifications.DailyNotificationWorker
 import ninja.doskey.app.levana.notifications.NotificationChannels
@@ -21,5 +22,12 @@ class LevanaApplication : Application() {
         NotificationChannels.createAll(this)
         DailyNotificationWorker.enqueueDaily(this)
         UpdateCheckWorker.enqueueDaily(this)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Changing Settings → App language (or the device language) arrives here; rename
+        // the notification channels so system settings show them in the new language
+        NotificationChannels.createAll(this)
     }
 }
