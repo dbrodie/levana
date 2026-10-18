@@ -134,6 +134,8 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
 
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.acra.mail)
+    implementation(libs.acra.dialog)
     implementation(libs.datastore.preferences)
     implementation(libs.play.services.location)
     implementation(libs.compose.material.icons.extended)

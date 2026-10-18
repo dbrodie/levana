@@ -44,7 +44,9 @@ Logcat is **not** included: it can contain event names or locations.
 - `LevanaApplication.attachBaseContext()` calls `CrashReporting.init(this)`. ACRA requires init this early so crashes during `onCreate` are caught.
 - `LevanaApplication.onCreate()` returns early in ACRA's `:acra` process (`ACRA.isACRASenderServiceProcess()`), so Koin, notification channels and workers are not started a second time there.
 - Developer Settings gets a **Test crash** row that throws a `RuntimeException`, to check the flow by hand.
+- The dialog is a plain framework Activity, so it gets `Theme.Levana.CrashDialog` (`values/themes.xml` + `values-night/themes.xml`), a DeviceDefault alert theme that follows light/dark mode instead of ACRA's default Holo look.
 - ACRA ships its own consumer ProGuard rules, so no R8 changes are needed.
+- ACRA is pinned to 5.13.1: 5.14.x requires compileSdk 37, and Levana is on 36 (AGP 8.13 supports up to 36).
 
 ## Privacy
 
@@ -54,6 +56,7 @@ Reports leave the device only when the user taps **Send report** and then sends 
 
 **New:**
 - `app/src/main/java/ninja/doskey/app/levana/crash/CrashReporting.kt`
+- `app/src/main/res/values/themes.xml`, `values-night/themes.xml`
 
 **Modified:**
 - `gradle/libs.versions.toml`, `app/build.gradle.kts` (ACRA mail + dialog)

@@ -174,4 +174,10 @@
     <string name="channel_omer_description">Sefirat HaOmer reminders</string>
     <string name="channel_updates_name">App Updates</string>
     <string name="channel_updates_description">Notifications when a new version of Levana is available</string>
+    <!-- Crash report dialog -->
+    <string name="crash_dialog_title">Levana crashed</string>
+    <string name="crash_dialog_text">Sorry, something went wrong. You can email a crash report to the developer to help fix it. It contains the error details, the app version and your device model, and you can review it before sending.</string>
+    <string name="crash_dialog_send">Send report</string>
+    <string name="crash_dialog_dont_send">Don\'t send</string>
+    <string name="crash_report_subject">Levana crash report (%1$s)</string>
 </resources>
