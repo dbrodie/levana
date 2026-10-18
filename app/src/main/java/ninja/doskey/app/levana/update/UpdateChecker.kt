@@ -23,10 +23,11 @@ class UpdateChecker(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun detectUpdateSource(): UpdateSource {
-        val info = context.packageManager.getInstallSourceInfo(context.packageName)
-        return UpdateSource.fromInstaller(info.installingPackageName)
-    }
+    /** The package that installed this app, or null if none (e.g. `adb install`). */
+    fun installerPackageName(): String? =
+        context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+
+    fun detectUpdateSource(): UpdateSource = UpdateSource.fromInstaller(installerPackageName())
 
     fun currentVersionName(): String =
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
