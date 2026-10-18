@@ -43,12 +43,12 @@ fun signingProp(envKey: String, propKey: String): String? {
 
 android {
     namespace = "ninja.doskey.app.levana"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "ninja.doskey.app.levana"
         minSdk = 34
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionNameRelease
     }
