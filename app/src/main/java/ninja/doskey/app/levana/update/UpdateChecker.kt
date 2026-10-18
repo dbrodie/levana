@@ -16,9 +16,6 @@ private const val GITHUB_RELEASES_URL =
 const val GITHUB_RELEASES_PAGE =
     "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases"
 
-private const val INSTALLER_PLAY_STORE = "com.android.vending"
-private const val INSTALLER_FDROID = "org.fdroid.fdroid"
-
 @Serializable
 private data class GitHubRelease(@SerialName("tag_name") val tagName: String)
 
@@ -28,12 +25,7 @@ class UpdateChecker(private val context: Context) {
 
     fun detectUpdateSource(): UpdateSource {
         val info = context.packageManager.getInstallSourceInfo(context.packageName)
-        return when (info.installingPackageName) {
-            INSTALLER_PLAY_STORE -> UpdateSource.PlayStore
-            INSTALLER_FDROID -> UpdateSource.FDroid
-            null -> UpdateSource.GitHubRelease
-            else -> UpdateSource.Unknown
-        }
+        return UpdateSource.fromInstaller(info.installingPackageName)
     }
 
     fun currentVersionName(): String =

@@ -1462,7 +1462,6 @@ fun AboutScreen(
         UpdateSource.PlayStore -> "Google Play"
         UpdateSource.FDroid -> "F-Droid"
         UpdateSource.GitHubRelease -> "GitHub Release"
-        UpdateSource.Unknown -> stringResource(R.string.about_install_source_unknown)
     }
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ListItem(

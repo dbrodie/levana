@@ -13,10 +13,9 @@ Now that the release pipeline is in place, users who installed the APK directly 
 - Runs once per day via WorkManager (periodic, 1-day interval).
 - On first run after app install or device boot, the worker is scheduled (but does not run immediately at boot — urgency is low).
 - Detects the installation source:
-  - **Null / ADB** → sideloaded APK → checks GitHub Releases API.
   - **`com.android.vending`** (Google Play) → Play handles updates; skip.
   - **`org.fdroid.fdroid`** (F-Droid) → F-Droid handles updates; skip (future: F-Droid API).
-  - **Other** → unknown installer; skip conservatively.
+  - **Anything else, or null** (system package installer, browser, file manager, ADB, …) → sideloaded GitHub APK → checks GitHub Releases API. See `fix-install-source.md`.
 - Skips silently for dev builds (versionName contains `-dev`).
 - On network failure or non-200 response: returns success and retries tomorrow.
 - Posts a notification when a newer version is found.
@@ -59,7 +58,7 @@ Two new keys in `PreferencesRepository` (not in `UserPreferences`):
 ## Architecture
 
 ```
-UpdateSource          (sealed interface — GitHubRelease, PlayStore, FDroid, Unknown)
+UpdateSource          (sealed interface — GitHubRelease, PlayStore, FDroid)
 UpdateChecker         (Koin singleton — detects source, fetches API, compares semver)
 UpdateCheckWorker     (WorkManager CoroutineWorker + KoinComponent — orchestrates the daily check)
 ```

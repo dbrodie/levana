@@ -92,7 +92,6 @@
     <!-- About -->
     <string name="about_version">Version</string>
     <string name="about_install_source">Install Source</string>
-    <string name="about_install_source_unknown">Unknown</string>
 
     <!-- Yahrzeit Adar rules -->
     <string name="settings_yahrzeit_leap_label">Yahrzeit for Adar in a leap year</string>
