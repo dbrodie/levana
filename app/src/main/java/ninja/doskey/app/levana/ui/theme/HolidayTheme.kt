@@ -1,104 +1,62 @@
 package ninja.doskey.app.levana.ui.theme
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import ninja.doskey.app.levana.R
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
+/** Holiday accents adapt the Claude Design tone pairs; surfaces remain neutral. */
 enum class HolidayTheme(
     val lightPrimary: Color,
-    val lightSecondary: Color,
-    val lightTertiary: Color,
+    val lightContainer: Color,
     val darkPrimary: Color,
-    val darkSecondary: Color,
-    val darkTertiary: Color
+    val darkContainer: Color,
+    val accentInk: Color,
 ) {
-    CHANUKAH(
-        lightPrimary = Color(0xFF1565C0),
-        lightSecondary = Color(0xFF90CAF9),
-        lightTertiary = Color(0xFFC0C0C0),
-        darkPrimary = Color(0xFF90CAF9),
-        darkSecondary = Color(0xFF42A5F5),
-        darkTertiary = Color(0xFFE0E0E0)
-    ),
-    SUKKOT(
-        lightPrimary = Color(0xFF2E7D32),
-        lightSecondary = Color(0xFF81C784),
-        lightTertiary = Color(0xFF4CAF50),
-        darkPrimary = Color(0xFF81C784),
-        darkSecondary = Color(0xFF66BB6A),
-        darkTertiary = Color(0xFFA5D6A7)
-    ),
-    PESACH(
-        lightPrimary = Color(0xFFBF360C),
-        lightSecondary = Color(0xFFFF8A65),
-        lightTertiary = Color(0xFFE64A19),
-        darkPrimary = Color(0xFFFF8A65),
-        darkSecondary = Color(0xFFFF7043),
-        darkTertiary = Color(0xFFFFAB91)
-    ),
-    PURIM(
-        lightPrimary = Color(0xFF7B1FA2),
-        lightSecondary = Color(0xFFCE93D8),
-        lightTertiary = Color(0xFF9C27B0),
-        darkPrimary = Color(0xFFCE93D8),
-        darkSecondary = Color(0xFFBA68C8),
-        darkTertiary = Color(0xFFE1BEE7)
-    ),
-    ROSH_HASHANAH(
-        lightPrimary = Color(0xFFF9A825),
-        lightSecondary = Color(0xFFFFF176),
-        lightTertiary = Color(0xFFFBC02D),
-        darkPrimary = Color(0xFFFFF176),
-        darkSecondary = Color(0xFFFFEE58),
-        darkTertiary = Color(0xFFFFF59D)
-    ),
-    YOM_KIPPUR(
-        lightPrimary = Color(0xFF795548),
-        lightSecondary = Color(0xFFBCAAA4),
-        lightTertiary = Color(0xFF8D6E63),
-        darkPrimary = Color(0xFFBCAAA4),
-        darkSecondary = Color(0xFFA1887F),
-        darkTertiary = Color(0xFFD7CCC8)
-    ),
-    SHAVUOT(
-        lightPrimary = Color(0xFF558B2F),
-        lightSecondary = Color(0xFFAED581),
-        lightTertiary = Color(0xFF689F38),
-        darkPrimary = Color(0xFFAED581),
-        darkSecondary = Color(0xFF9CCC65),
-        darkTertiary = Color(0xFFC5E1A5)
-    ),
-    FAST_DAY(
-        lightPrimary = Color(0xFF616161),
-        lightSecondary = Color(0xFFBDBDBD),
-        lightTertiary = Color(0xFF757575),
-        darkPrimary = Color(0xFFBDBDBD),
-        darkSecondary = Color(0xFF9E9E9E),
-        darkTertiary = Color(0xFFE0E0E0)
-    ),
-    SHMINI_ATZERET(
-        lightPrimary = Color(0xFF4527A0),
-        lightSecondary = Color(0xFFB39DDB),
-        lightTertiary = Color(0xFF5E35B1),
-        darkPrimary = Color(0xFFB39DDB),
-        darkSecondary = Color(0xFF9575CD),
-        darkTertiary = Color(0xFFD1C4E9)
-    );
+    CHANUKAH(Color(0xFF2C4B8F), Color(0xFFDCE3FF), Color(0xFFB3C5FF), Color(0xFF0F3170), Color(0xFF001A43)),
+    SUKKOT(Color(0xFF4F6B12), Color(0xFFD5EFA0), Color(0xFFB8D873), Color(0xFF384E00), Color(0xFF182500)),
+    PESACH(Color(0xFF2C4B8F), Color(0xFFDCE3FF), Color(0xFFB3C5FF), Color(0xFF0F3170), Color(0xFF001A43)),
+    PURIM(Color(0xFF8E3E86), Color(0xFFFFD7F4), Color(0xFFFFACE9), Color(0xFF722B6C), Color(0xFF380032)),
+    ROSH_HASHANAH(Color(0xFF8A5B00), Color(0xFFFFDEA6), Color(0xFFF5BE48), Color(0xFF664000), Color(0xFF2B1B00)),
+    YOM_KIPPUR(Color(0xFF705C50), Color(0xFFF8DECE), Color(0xFFDEC0AE), Color(0xFF574236), Color(0xFF29180F)),
+    SHAVUOT(Color(0xFF4F6B12), Color(0xFFD5EFA0), Color(0xFFB8D873), Color(0xFF384E00), Color(0xFF182500)),
+    FAST_DAY(Color(0xFF5B6065), Color(0xFFE0E3E7), Color(0xFFC3C7CC), Color(0xFF43474C), Color(0xFF1B1C1E)),
+    SHMINI_ATZERET(Color(0xFF64518C), Color(0xFFEBDCFF), Color(0xFFCFBCF8), Color(0xFF4C396F), Color(0xFF211039));
 
-    fun lightScheme(): ColorScheme = lightColorScheme(
+    /** Human-readable, localized name (the persisted value remains [name]). */
+    @get:StringRes
+    val labelRes: Int
+        get() = when (this) {
+            CHANUKAH -> R.string.holiday_theme_chanukah
+            SUKKOT -> R.string.holiday_theme_sukkot
+            PESACH -> R.string.holiday_theme_pesach
+            PURIM -> R.string.holiday_theme_purim
+            ROSH_HASHANAH -> R.string.holiday_theme_rosh_hashanah
+            YOM_KIPPUR -> R.string.holiday_theme_yom_kippur
+            SHAVUOT -> R.string.holiday_theme_shavuot
+            FAST_DAY -> R.string.holiday_theme_fast_day
+            SHMINI_ATZERET -> R.string.holiday_theme_shemini_atzeret
+        }
+
+    fun lightScheme(): ColorScheme = LightColorScheme.copy(
         primary = lightPrimary,
-        secondary = lightSecondary,
-        tertiary = lightTertiary
+        onPrimary = Color.White,
+        primaryContainer = lightContainer,
+        onPrimaryContainer = accentInk,
+        inversePrimary = darkPrimary,
+        surfaceTint = lightPrimary,
     )
 
-    fun darkScheme(): ColorScheme = darkColorScheme(
+    fun darkScheme(): ColorScheme = DarkColorScheme.copy(
         primary = darkPrimary,
-        secondary = darkSecondary,
-        tertiary = darkTertiary
+        onPrimary = accentInk,
+        primaryContainer = darkContainer,
+        onPrimaryContainer = lightContainer,
+        inversePrimary = lightPrimary,
+        surfaceTint = darkPrimary,
     )
 }
 

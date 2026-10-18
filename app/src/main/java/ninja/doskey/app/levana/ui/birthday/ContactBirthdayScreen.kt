@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -37,9 +38,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.ui.events.HebrewDatePicker
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.events.formatHebrewDate
 import org.koin.androidx.compose.koinViewModel
 
@@ -96,21 +99,14 @@ fun ContactBirthdayScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Text(
-            text = if (state.isEditing) {
-                "Edit Birthday"
-            } else {
-                "Add Birthday"
-            },
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(stringResource(R.string.birthday_date_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Contact info
         if (state.contactLookupKey.isNotBlank()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme
                         .surfaceVariant
@@ -172,18 +168,16 @@ fun ContactBirthdayScreen(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Pick Contact")
+                Text(stringResource(R.string.birthday_pick_contact))
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Hebrew date picker
-        Text(
-            text = "Hebrew Birthday",
-            style = MaterialTheme.typography.titleSmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+        Text(stringResource(R.string.calendar_hebrew_date), style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(12.dp))
 
         BirthdayDatePicker(
             day = state.hebrewDay,
@@ -215,6 +209,8 @@ fun ContactBirthdayScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary
         )
+            }
+        }
 
         if (state.errorMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
@@ -235,7 +231,7 @@ fun ContactBirthdayScreen(
             enabled = !state.isSaving &&
                 state.contactLookupKey.isNotBlank()
         ) {
-            Text(if (state.isEditing) "Update" else "Save")
+            Text(stringResource(if (state.isEditing) R.string.event_update else R.string.event_save))
         }
     }
 }
@@ -249,19 +245,13 @@ private fun BirthdayDatePicker(
     onMonthChange: (Int) -> Unit,
     onYearChange: (Int) -> Unit
 ) {
-    // Use year=0 to mean "unknown year"; for the picker, use a
-    // reference year for leap-year month list
-    val pickerYear = if (year == 0) 5784 else year
-
     HebrewDatePicker(
         day = day,
         month = month,
-        year = pickerYear,
+        year = year,
         onDayChange = onDayChange,
         onMonthChange = onMonthChange,
-        onYearChange = { newYear ->
-            onYearChange(newYear)
-        }
+        onYearChange = onYearChange
     )
 }
 

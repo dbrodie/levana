@@ -8,6 +8,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.notifications.NotificationPoster
+import ninja.doskey.app.levana.notifications.withAppLocale
 import java.util.concurrent.TimeUnit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -42,7 +43,7 @@ class UpdateCheckWorker(
             return Result.success()
         }
 
-        if (NotificationPoster.postUpdateAvailable(applicationContext, latestVersion)) {
+        if (NotificationPoster.postUpdateAvailable(applicationContext.withAppLocale(), latestVersion)) {
             preferencesRepository.setLastNotifiedUpdateVersion(latestVersion)
         }
 

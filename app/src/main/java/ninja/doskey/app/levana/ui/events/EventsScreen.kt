@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
@@ -62,14 +63,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.db.PersonalEvent
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -119,9 +123,9 @@ fun EventsScreen(
             outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
-            "Exported ${state.customEvents.size} event(s)"
+            context.getString(R.string.events_exported, state.customEvents.size)
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            context.getString(R.string.events_export_failed, e.message.orEmpty())
         }
         viewModel.onIntent(EventsIntent.ShowExportResult(message))
     }
@@ -137,9 +141,9 @@ fun EventsScreen(
             outputStream.use { stream ->
                 stream.write(content.toByteArray())
             }
-            "Exported ${state.customEvents.size} event(s)"
+            context.getString(R.string.events_exported, state.customEvents.size)
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            context.getString(R.string.events_export_failed, e.message.orEmpty())
         }
         viewModel.onIntent(EventsIntent.ShowExportResult(message))
     }
@@ -153,7 +157,7 @@ fun EventsScreen(
                 stream.readBytes().toString(Charsets.UTF_8)
             } ?: run {
                 viewModel.onIntent(
-                    EventsIntent.ShowExportResult("Import failed: could not read file")
+                    EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed_read))
                 )
                 return@rememberLauncherForActivityResult
             }
@@ -161,7 +165,7 @@ fun EventsScreen(
             viewModel.onIntent(EventsIntent.ImportEvents(content, isCsv))
         } catch (e: Exception) {
             viewModel.onIntent(
-                EventsIntent.ShowExportResult("Import failed: ${e.message}")
+                EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed, e.message.orEmpty()))
             )
         }
     }
@@ -175,28 +179,28 @@ fun EventsScreen(
         onRegisterTopBarActions {
             if (pagerState.currentPage == 1) Box {
                 IconButton(onClick = { showOverflowMenuState.value = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.events_more_options))
                 }
                 DropdownMenu(
                     expanded = showOverflowMenuState.value,
                     onDismissRequest = { showOverflowMenuState.value = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Export as JSON") },
+                        text = { Text(stringResource(R.string.events_export_json)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             exportJsonLauncher.launch("levana_events.json")
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Export as CSV") },
+                        text = { Text(stringResource(R.string.events_export_csv)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             exportCsvLauncher.launch("levana_events.csv")
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Import events") },
+                        text = { Text(stringResource(R.string.events_import)) },
                         onClick = {
                             showOverflowMenuState.value = false
                             importLauncher.launch(
@@ -226,30 +230,31 @@ fun EventsScreen(
     state.importResult?.let { result ->
         AlertDialog(
             onDismissRequest = { viewModel.onIntent(EventsIntent.DismissImportResult) },
-            title = { Text(if (result.error != null) "Import Failed" else "Import Complete") },
+            title = { Text(stringResource(if (result.error != null) R.string.events_import_failed_title else R.string.events_import_complete_title)) },
             text = {
                 Text(
                     if (result.error != null) {
                         result.error
                     } else {
-                        buildString {
-                            append("Imported ${result.imported} event(s)")
+                        stringResource(R.string.events_imported, result.imported) +
                             if (result.skipped > 0) {
-                                append(", skipped ${result.skipped} duplicate(s)")
+                                stringResource(R.string.events_import_skipped, result.skipped)
+                            } else {
+                                ""
                             }
-                        }
                     }
                 )
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.onIntent(EventsIntent.DismissImportResult) }) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             }
         )
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -267,9 +272,11 @@ fun EventsScreen(
                     } else {
                         onAddEvent()
                     }
-                }
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.events_add))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -282,14 +289,14 @@ fun EventsScreen(
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(0) }
                     },
-                    text = { Text("Birthdays") }
+                    text = { Text(stringResource(R.string.events_tab_birthdays)) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(1) }
                     },
-                    text = { Text("Events") }
+                    text = { Text(stringResource(R.string.events_tab_events)) }
                 )
             }
 
@@ -365,20 +372,19 @@ private fun BirthdaysTab(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Contacts permission required",
+                    text = stringResource(R.string.events_contacts_permission_title),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Grant permission to manage Hebrew birthdays " +
-                        "on your contacts",
+                    text = stringResource(R.string.events_contacts_permission_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = onRequestPermission) {
-                    Text("Grant Permission")
+                    Text(stringResource(R.string.common_grant_permission))
                 }
             }
         }
@@ -392,13 +398,13 @@ private fun BirthdaysTab(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "No birthdays yet",
+                    text = stringResource(R.string.events_no_birthdays),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap + to add a Hebrew birthday to a contact",
+                    text = stringResource(R.string.events_no_birthdays_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -432,10 +438,10 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Remove Birthday") },
+            title = { Text(stringResource(R.string.events_remove_birthday_title)) },
             text = {
                 Text(
-                    "Remove Hebrew birthday for ${birthday.contactName}?"
+                    stringResource(R.string.events_remove_birthday_message, birthday.contactName)
                 )
             },
             confirmButton = {
@@ -443,12 +449,12 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
                     showDeleteDialog = false
                     onDelete()
                 }) {
-                    Text("Remove")
+                    Text(stringResource(R.string.events_remove))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -458,9 +464,8 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Row(
             modifier = Modifier
@@ -514,7 +519,7 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Birthday",
+                    text = stringResource(R.string.design_birthday),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -522,7 +527,7 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -544,13 +549,13 @@ private fun CustomEventsTab(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "No custom events yet",
+                    text = stringResource(R.string.events_no_custom),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap + to add a custom event",
+                    text = stringResource(R.string.events_no_custom_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -584,19 +589,19 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Event") },
-            text = { Text("Delete \"${event.title}\"?") },
+            title = { Text(stringResource(R.string.events_delete_title)) },
+            text = { Text(stringResource(R.string.events_delete_message, event.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
                     onDelete()
                 }) {
-                    Text("Delete")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -606,9 +611,8 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Row(
             modifier = Modifier
@@ -643,7 +647,7 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
                 )
                 if (event.useYahrzeitRules) {
                     Text(
-                        text = "Yahrzeit rules",
+                        text = stringResource(R.string.events_yahrzeit_rules),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -652,7 +656,7 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.common_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -660,22 +664,50 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
     }
 }
 
+/**
+ * A stored recurring date in Hebrew, e.g. "י׳ כסלו תשפ״ד". Any year the
+ * calendar library cannot handle (0, 1, -1, …) is an unknown year and gives
+ * the year-less form "י׳ כסלו", never raw numbers.
+ */
 internal fun formatHebrewDate(day: Int, month: Int, year: Int): String {
-    if (year == 0) {
-        // Unknown year — format just day/month
-        return try {
-            val jd = JewishDate(5784, month, day)
-            val formatted = hebrewFormatter.format(jd)
-            // Remove the year part (last word)
-            formatted.substringBeforeLast(" ")
+    val yearKnown = HebrewDateMatcher.isKnownYear(year)
+    if (yearKnown) {
+        try {
+            return hebrewFormatter.format(JewishDate(year, month, day))
         } catch (_: Exception) {
-            "$day/$month"
+            // A day or month that year does not have: build it from parts below
         }
     }
     return try {
-        val jd = JewishDate(year, month, day)
-        hebrewFormatter.format(jd)
+        require(day in 1..30)
+        val dayAndMonth =
+            "${hebrewFormatter.formatHebrewNumber(day)} ${hebrewMonthName(month, year)}"
+        if (yearKnown) {
+            "$dayAndMonth ${hebrewFormatter.formatHebrewNumber(year)}"
+        } else {
+            dayAndMonth
+        }
     } catch (_: Exception) {
-        "$day/$month/$year"
+        if (yearKnown) "$day/$month/$year" else "$day/$month"
     }
+}
+
+// Reference years for month names only: 5785 is a regular year, 5784 a leap year
+private const val REGULAR_REFERENCE_YEAR = 5785
+private const val LEAP_REFERENCE_YEAR = 5784
+
+/**
+ * Month name for a stored date. With an unknown or regular year, month 12 is
+ * plain "אדר"; only a known leap year makes it "אדר א׳". Month 13 is always
+ * "אדר ב׳".
+ */
+private fun hebrewMonthName(month: Int, year: Int): String {
+    val referenceYear = if (
+        month == JewishDate.ADAR_II || HebrewDateMatcher.isEventLeapYear(year)
+    ) {
+        LEAP_REFERENCE_YEAR
+    } else {
+        REGULAR_REFERENCE_YEAR
+    }
+    return hebrewFormatter.formatMonth(JewishDate(referenceYear, month, 1))
 }

@@ -53,4 +53,22 @@
     <string name="back">Back</string>
     <string name="change_location">Change location</string>
     <string name="not_set">Not set</string>
+
+    <!-- Developer settings: Force Holiday Theme options -->
+    <string name="holiday_theme_none">None</string>
+    <string name="holiday_theme_chanukah">Chanukah</string>
+    <string name="holiday_theme_sukkot">Sukkot</string>
+    <string name="holiday_theme_pesach">Pesach</string>
+    <string name="holiday_theme_purim">Purim</string>
+    <string name="holiday_theme_rosh_hashanah">Rosh Hashanah</string>
+    <string name="holiday_theme_yom_kippur">Yom Kippur</string>
+    <string name="holiday_theme_shavuot">Shavuot</string>
+    <string name="holiday_theme_fast_day">Fast day</string>
+    <string name="holiday_theme_shemini_atzeret">Shemini Atzeret</string>
+
+    <!-- Zmanim screen section headers -->
+    <string name="zmanim_category_morning">Morning</string>
+    <string name="zmanim_category_afternoon">Afternoon</string>
+    <string name="zmanim_category_evening">Evening</string>
+    <string name="zmanim_category_night">Night</string>
 </resources>

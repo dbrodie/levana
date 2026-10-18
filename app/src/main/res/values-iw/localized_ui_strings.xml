@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Common -->
+    <string name="common_ok">אישור</string>
+    <string name="common_cancel">ביטול</string>
+    <string name="common_delete">מחיקה</string>
+    <string name="common_grant_permission">מתן הרשאה</string>
+
+    <!-- My events -->
+    <string name="events_tab_birthdays">ימי הולדת</string>
+    <string name="events_tab_events">אירועים</string>
+    <string name="events_add">הוספה</string>
+    <string name="events_more_options">אפשרויות נוספות</string>
+    <string name="events_export_json">ייצוא כ-JSON</string>
+    <string name="events_export_csv">ייצוא כ-CSV</string>
+    <string name="events_import">ייבוא אירועים</string>
+    <string name="events_exported">יוצאו %1$d אירועים</string>
+    <string name="events_export_failed">הייצוא נכשל: %1$s</string>
+    <string name="events_import_failed_read">הייבוא נכשל: לא ניתן לקרוא את הקובץ</string>
+    <string name="events_import_failed">הייבוא נכשל: %1$s</string>
+    <string name="events_import_failed_title">הייבוא נכשל</string>
+    <string name="events_import_complete_title">הייבוא הושלם</string>
+    <string name="events_imported">יובאו %1$d אירועים</string>
+    <string name="events_import_skipped">, דולגו %1$d כפילויות</string>
+    <string name="events_contacts_permission_title">נדרשת הרשאת גישה לאנשי הקשר</string>
+    <string name="events_contacts_permission_description">יש לאשר הרשאה כדי לנהל ימי הולדת עבריים באנשי הקשר שלך</string>
+    <string name="events_no_birthdays">אין עדיין ימי הולדת</string>
+    <string name="events_no_birthdays_hint">יש להקיש על + כדי להוסיף יום הולדת עברי לאיש קשר</string>
+    <string name="events_remove_birthday_title">הסרת יום הולדת</string>
+    <string name="events_remove_birthday_message">להסיר את יום ההולדת העברי של %1$s?</string>
+    <string name="events_remove">הסרה</string>
+    <string name="events_no_custom">אין עדיין אירועים אישיים</string>
+    <string name="events_no_custom_hint">יש להקיש על + כדי להוסיף אירוע אישי</string>
+    <string name="events_delete_title">מחיקת אירוע</string>
+    <string name="events_delete_message">למחוק את \"%1$s\"?</string>
+    <string name="events_yahrzeit_rules">כללי יארצייט</string>
+
+    <!-- Birthday editor -->
+    <string name="birthday_pick_contact">בחירת איש קשר</string>
+
+    <!-- System calendars -->
+    <string name="calendar_selection_none">לא נמצאו יומנים במכשיר</string>
+    <string name="calendar_selection_permission_title">הוספת התוכניות שלך</string>
+    <string name="calendar_selection_permission_description">לבנה צריכה הרשאה לקרוא את היומנים שלך כדי להציג את האירועים שלך בלוח השנה העברי.</string>
+    <string name="calendar_selection_prompt">בחירת יומנים להצגה בלבנה</string>
+
+    <!-- Manual location -->
+    <string name="manual_location_name">שם המיקום</string>
+    <string name="manual_location_latitude">קו רוחב</string>
+    <string name="manual_location_longitude">קו אורך</string>
+    <string name="manual_location_timezone">אזור זמן (לדוגמה Asia/Jerusalem)</string>
+    <string name="manual_location_error_latitude">קו הרוחב חייב להיות בין ‎-90 ל-90</string>
+    <string name="manual_location_error_longitude">קו האורך חייב להיות בין ‎-180 ל-180</string>
+    <string name="manual_location_error_name">יש להזין שם למיקום</string>
+    <string name="manual_location_save">שמירת מיקום</string>
+
+    <!-- Settings -->
+    <string name="settings_halachic_times_title">זמנים הלכתיים</string>
+    <string name="settings_halachic_times_count">%1$d מוצגים בחלונית היום</string>
+    <string name="settings_developer_settings">הגדרות מפתחים</string>
+    <string name="settings_about">אודות</string>
+    <string name="settings_app_language_dialog_title">שפת האפליקציה</string>
+    <string name="settings_candle_offset_dialog_title">זמן הדלקת נרות</string>
+    <string name="settings_notification_mode_title">אופן ההתראה</string>
+    <string name="settings_notify_mode_morning">בבוקר של ערב שבת או חג</string>
+    <string name="settings_notify_mode_hours_before">מספר שעות לפני</string>
+    <string name="settings_notify_candle_lighting">הדלקת נרות</string>
+    <string name="settings_notify_mode">אופן ההתראה</string>
+    <string name="settings_notification_time">שעת ההתראה</string>
+    <!-- Uses the 24-hour value (%3$d); %1$d (12-hour) is unused in Hebrew. -->
+    <string name="settings_at_morning_time" formatted="true" tools:ignore="StringFormatCount">בשעה %3$d:%2$02d</string>
+    <string name="settings_earlier">מוקדם יותר</string>
+    <string name="settings_later">מאוחר יותר</string>
+    <string name="settings_decrease">הפחתה</string>
+    <string name="settings_increase">הגדלה</string>
+    <string name="settings_hours_before">שעות לפני</string>
+    <string name="settings_hours_before_sunset">%1$d שעות לפני השקיעה</string>
+    <string name="settings_notify_holidays">חגים</string>
+    <string name="settings_days_before">ימים לפני</string>
+    <string name="settings_days_before_value">%1$d ימים לפני</string>
+    <string name="settings_notify_fasts">צומות</string>
+    <string name="settings_notify_personal_events">אירועים אישיים</string>
+    <string name="settings_notify_omer">ספירת העומר</string>
+    <string name="settings_omer_at_tzait">בצאת הכוכבים</string>
+    <string name="settings_omer_morning_reminder">תזכורת בבוקר</string>
+    <string name="settings_reminder_time">שעת התזכורת</string>
+    <string name="settings_minhag_ashkenazi">אשכנז</string>
+    <string name="settings_minhag_sephardi">ספרד</string>
+    <string name="settings_minhag_yemenite">תימן</string>
+    <string name="settings_minhag_chabad">חב״ד</string>
+
+    <!-- About -->
+    <string name="about_version">גרסה</string>
+    <string name="about_install_source">מקור ההתקנה</string>
+    <string name="about_install_source_unknown">לא ידוע</string>
+
+    <!-- Yahrzeit Adar rules -->
+    <string name="settings_yahrzeit_leap_label">יארצייט של אדר בשנה מעוברת</string>
+    <string name="settings_yahrzeit_leap_description">כאשר הפטירה הייתה באדר של שנה פשוטה, לציין את היארצייט בשנה מעוברת ב:</string>
+    <string name="settings_yahrzeit_leap_adar_i">אדר א׳</string>
+    <string name="settings_yahrzeit_leap_adar_ii">אדר ב׳</string>
+    <string name="settings_yahrzeit_leap_both">שני האדרים</string>
+    <string name="settings_yahrzeit_first_year_label">יארצייט ראשון בשנה מעוברת</string>
+    <string name="settings_yahrzeit_first_year_description">כאשר הפטירה הייתה באדר של שנה פשוטה והשנה שאחריה מעוברת, היארצייט הראשון:</string>
+    <string name="settings_yahrzeit_first_year_follow">לפי המנהג השנתי</string>
+    <string name="settings_yahrzeit_first_year_adar_i">ציון ראשון באדר א׳</string>
+    <string name="settings_yahrzeit_first_year_both">לסמן את שני התאריכים בשנה הראשונה</string>
+    <string name="settings_yahrzeit_nisan_label">לסמן גם את א׳ ניסן</string>
+    <string name="settings_yahrzeit_nisan_description">ליארצייט בל׳ אדר א׳, לסמן גם את א׳ ניסן בשנים פשוטות</string>
+    <string name="occurrence_title_format">%1$s (%2$s)</string>
+    <string name="occurrence_adar_i">אדר א׳</string>
+    <string name="occurrence_adar_ii">אדר ב׳</string>
+    <string name="occurrence_shevat_30">ל׳ שבט</string>
+    <string name="occurrence_nisan_1">א׳ ניסן</string>
+    <string name="settings_yahrzeit_missing_day_label">יארצייט בל׳ חשון או בל׳ כסלו</string>
+    <string name="settings_yahrzeit_missing_day_description">כאשר יארצייט חל בל׳ חשון או בל׳ כסלו ובשנה זו יש בחודש רק 29 ימים, לציין אותו:</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary">לפי היארצייט הראשון (המנהג הנפוץ): בכ״ט אם בשנה שאחרי הפטירה היו בחודש 29 ימים, ואחרת בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh">תמיד בראש חודש (א׳ כסלו / א׳ טבת)</string>
+    <string name="settings_yahrzeit_missing_day_both">גם בכ״ט וגם בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary_short">לפי היארצייט הראשון</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh_short">תמיד בראש חודש</string>
+    <string name="settings_yahrzeit_missing_day_both_short">שני התאריכים</string>
+    <string name="occurrence_cheshvan_29">כ״ט חשון</string>
+    <string name="occurrence_kislev_1">א׳ כסלו</string>
+    <string name="occurrence_kislev_29">כ״ט כסלו</string>
+    <string name="occurrence_teves_1">א׳ טבת</string>
+    <string name="occurrence_delayed_from_30">נדחה מל׳ %1$s</string>
+    <!-- Birthday notification -->
+    <string name="notification_birthday_title">אירוע אישי</string>
+    <string name="notification_birthday_body">היום %1$s</string>
+    <string name="notification_birthday_event">יום ההולדת העברי של %1$s</string>
+    <!-- Other notifications (see notifications/NotificationTexts.kt) -->
+    <string name="notification_candle_lighting_title">הדלקת נרות</string>
+    <string name="notification_candle_lighting_body">הדלקת נרות בשעה %1$s</string>
+    <string name="notification_candle_lighting_body_with_end">הדלקת נרות בשעה %1$s \u00b7 צאת השבת %2$s</string>
+    <string name="notification_holiday_title">חג</string>
+    <string name="notification_holiday_today">היום %1$s</string>
+    <string name="notification_holiday_tomorrow">מחר: %1$s</string>
+    <plurals name="notification_holiday_in_days">
+        <item quantity="one">בעוד יום אחד: %1$s</item>
+        <item quantity="two">בעוד יומיים: %1$s</item>
+        <item quantity="many">בעוד %2$d ימים: %1$s</item>
+        <item quantity="other">בעוד %2$d ימים: %1$s</item>
+    </plurals>
+    <string name="notification_fast_title">יום צום</string>
+    <string name="notification_fast_begins">התחלה %1$s</string>
+    <string name="notification_fast_ends">סיום %1$s</string>
+    <string name="notification_personal_event_title">אירוע אישי</string>
+    <string name="notification_personal_event_body">היום %1$s</string>
+    <string name="notification_omer_title">ספירת העומר</string>
+    <string name="notification_omer_tonight">הלילה %1$s</string>
+    <string name="notification_omer_tonight_with_weeks">הלילה %1$s (%2$s)</string>
+    <string name="notification_omer_today">היום %1$s</string>
+    <string name="notification_omer_today_with_weeks">היום %1$s (%2$s)</string>
+    <plurals name="notification_omer_weeks">
+        <item quantity="one">שבוע אחד</item>
+        <item quantity="two">שני שבועות</item>
+        <item quantity="many">%d שבועות</item>
+        <item quantity="other">%d שבועות</item>
+    </plurals>
+    <plurals name="notification_omer_and_days">
+        <item quantity="one">ויום אחד</item>
+        <item quantity="two">ושני ימים</item>
+        <item quantity="many">ו־%d ימים</item>
+        <item quantity="other">ו־%d ימים</item>
+    </plurals>
+    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="notification_update_title">עדכון זמין</string>
+    <string name="notification_update_body">גרסה %1$s של לבנה זמינה \u2014 יש להקיש להורדה</string>
+    <!-- Notification channels (shown in system settings) -->
+    <string name="channel_candle_lighting_name">הדלקת נרות</string>
+    <string name="channel_candle_lighting_description">תזכורות לזמן הדלקת הנרות</string>
+    <string name="channel_holidays_name">חגים</string>
+    <string name="channel_holidays_description">תזכורות לחגים</string>
+    <string name="channel_fasts_name">צומות</string>
+    <string name="channel_fasts_description">תזכורות לימי צום</string>
+    <string name="channel_personal_events_name">אירועים אישיים</string>
+    <string name="channel_personal_events_description">תזכורות לאירועים אישיים ולימי הולדת</string>
+    <string name="channel_omer_name">ספירת העומר</string>
+    <string name="channel_omer_description">תזכורות לספירת העומר</string>
+    <string name="channel_updates_name">עדכוני האפליקציה</string>
+    <string name="channel_updates_description">התראות כשגרסה חדשה של לבנה זמינה</string>
+</resources>

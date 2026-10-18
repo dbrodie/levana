@@ -14,6 +14,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
+import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
+import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
@@ -83,6 +87,14 @@ class PreferencesRepository(private val context: Context) {
             intPreferencesKey("notify_omer_morning_time")
         val SELECTED_ZMANIM =
             stringSetPreferencesKey("selected_zmanim")
+        val YAHRZEIT_LEAP_YEAR_ADAR =
+            stringPreferencesKey("yahrzeit_leap_year_adar")
+        val YAHRZEIT_FIRST_YEAR =
+            stringPreferencesKey("yahrzeit_first_year")
+        val YAHRZEIT_ADAR_I_30_NISAN_1 =
+            booleanPreferencesKey("yahrzeit_adar_i_30_nisan_1")
+        val YAHRZEIT_MISSING_DAY =
+            stringPreferencesKey("yahrzeit_missing_day")
 
         // Internal update-checker state — NOT part of UserPreferences
         val LAST_NOTIFIED_UPDATE_VERSION =
@@ -150,8 +162,40 @@ class PreferencesRepository(private val context: Context) {
             notifyOmerMorning = prefs[Keys.NOTIFY_OMER_MORNING] ?: false,
             notifyOmerMorningTime = prefs[Keys.NOTIFY_OMER_MORNING_TIME] ?: 420,
             selectedZmanim = prefs[Keys.SELECTED_ZMANIM]
-                ?: setOf("Sunrise", "Sunset", "Nightfall")
+                ?: setOf("Sunrise", "Sunset", "Nightfall"),
+            yahrzeitRules = parseYahrzeitRules(
+                prefs[Keys.YAHRZEIT_LEAP_YEAR_ADAR],
+                prefs[Keys.YAHRZEIT_FIRST_YEAR],
+                prefs[Keys.YAHRZEIT_ADAR_I_30_NISAN_1],
+                prefs[Keys.YAHRZEIT_MISSING_DAY]
+            )
         )
+    }
+
+    suspend fun yahrzeitRules(): YahrzeitRules = preferences.first().yahrzeitRules
+
+    suspend fun saveYahrzeitLeapYearAdar(value: YahrzeitLeapYearAdar) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.YAHRZEIT_LEAP_YEAR_ADAR] = value.name
+        }
+    }
+
+    suspend fun saveYahrzeitFirstYear(value: YahrzeitFirstYear) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.YAHRZEIT_FIRST_YEAR] = value.name
+        }
+    }
+
+    suspend fun saveYahrzeitMissingDay(value: YahrzeitMissingDay) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.YAHRZEIT_MISSING_DAY] = value.name
+        }
+    }
+
+    suspend fun saveYahrzeitAdarI30AlsoNisan1(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.YAHRZEIT_ADAR_I_30_NISAN_1] = enabled
+        }
     }
 
     suspend fun addSavedLocation(location: Location): String {
@@ -355,4 +399,23 @@ class PreferencesRepository(private val context: Context) {
             prefs[Keys.LAST_NOTIFIED_UPDATE_VERSION] = version
         }
     }
+}
+
+/** Stored yahrzeit settings; missing or unrecognised values fall back to the defaults. */
+internal fun parseYahrzeitRules(
+    leapYearAdar: String?,
+    firstYear: String?,
+    adarI30AlsoNisan1: Boolean?,
+    missingDay: String? = null
+): YahrzeitRules {
+    val defaults = YahrzeitRules()
+    return YahrzeitRules(
+        leapYearAdar = YahrzeitLeapYearAdar.entries.firstOrNull { it.name == leapYearAdar }
+            ?: defaults.leapYearAdar,
+        firstYear = YahrzeitFirstYear.entries.firstOrNull { it.name == firstYear }
+            ?: defaults.firstYear,
+        adarI30AlsoNisan1 = adarI30AlsoNisan1 ?: defaults.adarI30AlsoNisan1,
+        missingDay = YahrzeitMissingDay.entries.firstOrNull { it.name == missingDay }
+            ?: defaults.missingDay
+    )
 }

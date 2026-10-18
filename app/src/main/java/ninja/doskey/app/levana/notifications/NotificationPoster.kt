@@ -10,16 +10,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.domain.model.Holiday
+import ninja.doskey.app.levana.domain.model.OccurrenceLabel
+import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.update.GITHUB_RELEASES_PAGE
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 object NotificationPoster {
 
     const val EXTRA_DATE_EPOCH_DAY = "EXTRA_DATE_EPOCH_DAY"
-
-    private val timeFormat = DateTimeFormatter.ofPattern("h:mm a")
 
     private const val CHANNEL_CANDLE_LIGHTING_ORDINAL = 0
     private const val CHANNEL_HOLIDAYS_ORDINAL = 1
@@ -45,126 +45,127 @@ object NotificationPoster {
         )
     }
 
+    /** Posts the candle-lighting reminder; [context] should already carry the app language. */
     fun postCandleLighting(
         context: Context,
         date: LocalDate,
         candleLightingTime: LocalTime,
         endTime: LocalTime?
     ) {
-        val timeStr = candleLightingTime.format(timeFormat)
-        val body = if (endTime != null) {
-            "Candle Lighting at $timeStr \u00b7 Shabbat ends ${endTime.format(timeFormat)}"
-        } else {
-            "Candle Lighting at $timeStr"
-        }
-
+        val text = candleLightingNotificationText(context, candleLightingTime, endTime)
         post(
             context,
             NotificationChannels.CANDLE_LIGHTING,
             notificationId(CHANNEL_CANDLE_LIGHTING_ORDINAL, date),
-            "Candle Lighting",
-            body,
+            text.title,
+            text.body,
             date
         )
     }
 
-    fun postHoliday(context: Context, date: LocalDate, holidayName: String, daysUntil: Int) {
-        val body = when (daysUntil) {
-            0 -> "Today is $holidayName"
-            1 -> "$holidayName begins tomorrow"
-            else -> "$holidayName begins in $daysUntil days"
-        }
-
+    /** Posts a holiday reminder; [context] should already carry the app language. */
+    fun postHoliday(context: Context, date: LocalDate, holiday: Holiday, daysUntil: Int) {
+        val text = holidayNotificationText(context, holiday, daysUntil)
         post(
             context,
             NotificationChannels.HOLIDAYS,
             notificationId(CHANNEL_HOLIDAYS_ORDINAL, date),
-            "Holiday",
-            body,
+            text.title,
+            text.body,
             date
         )
     }
 
+    /** Posts a fast reminder; [context] should already carry the app language. */
     fun postFast(
         context: Context,
         fastDate: LocalDate,
-        fastName: String,
+        fast: Holiday,
         startTime: LocalTime?,
         endTime: LocalTime?
     ) {
-        val body = buildString {
-            append(fastName)
-            if (startTime != null) {
-                append(" \u00b7 Begins ${startTime.format(timeFormat)}")
-            }
-            if (endTime != null) {
-                append(" \u00b7 Ends ${endTime.format(timeFormat)}")
-            }
-        }
-
+        val text = fastNotificationText(context, fast, startTime, endTime)
         post(
             context,
             NotificationChannels.FASTS,
             notificationId(CHANNEL_FASTS_ORDINAL, fastDate),
-            "Fast Day",
-            body,
+            text.title,
+            text.body,
             fastDate
         )
     }
 
-    fun postPersonalEvent(context: Context, date: LocalDate, eventTitle: String) {
+    /**
+     * Posts a personal event; [context] should already carry the app language. The id is
+     * keyed on [title] and [label], not the localized text, so a language change replaces
+     * the notification instead of adding a second one.
+     */
+    fun postPersonalEvent(
+        context: Context,
+        date: LocalDate,
+        title: String,
+        label: OccurrenceLabel?
+    ) {
+        val text = personalEventNotificationText(context, occurrenceTitle(context, title, label))
+        val key = "event|$title|$label"
         post(
             context,
             NotificationChannels.PERSONAL_EVENTS,
-            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + eventTitle.hashCode() % 1000,
-            "Personal Event",
-            "Today is $eventTitle",
+            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + key.hashCode() % 1000,
+            text.title,
+            text.body,
             date
         )
     }
 
-    fun postOmer(context: Context, date: LocalDate, omerDay: Int) {
-        val weeks = omerDay / 7
-        val remaining = omerDay % 7
-        val body = if (weeks == 0) {
-            "Tonight is day $omerDay of the Omer"
-        } else if (remaining == 0) {
-            "Tonight is day $omerDay of the Omer ($weeks weeks)"
-        } else {
-            "Tonight is day $omerDay of the Omer ($weeks weeks and $remaining days)"
-        }
+    /** Posts a Hebrew birthday; [context] should already carry the app language. */
+    fun postBirthday(
+        context: Context,
+        date: LocalDate,
+        contactName: String,
+        label: OccurrenceLabel?
+    ) {
+        val text = birthdayNotificationText(context, contactName, label)
+        // Keyed on the contact and label, not the localized text, so a language change
+        // replaces the notification instead of adding a second one
+        val key = "birthday|$contactName|$label"
+        post(
+            context,
+            NotificationChannels.PERSONAL_EVENTS,
+            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + key.hashCode() % 1000,
+            text.title,
+            text.body,
+            date
+        )
+    }
 
+    /** Posts the tzait Omer reminder; [context] should already carry the app language. */
+    fun postOmer(context: Context, date: LocalDate, omerDay: Int) {
+        val text = omerNotificationText(context, omerDay, tonight = true)
         post(
             context,
             NotificationChannels.OMER,
             notificationId(CHANNEL_OMER_ORDINAL, date),
-            "Sefirat HaOmer",
-            body,
+            text.title,
+            text.body,
             date
         )
     }
 
+    /** Posts the morning Omer reminder; [context] should already carry the app language. */
     fun postOmerMorning(context: Context, date: LocalDate, omerDay: Int) {
-        val weeks = omerDay / 7
-        val remaining = omerDay % 7
-        val body = if (weeks == 0) {
-            "Today is day $omerDay of the Omer"
-        } else if (remaining == 0) {
-            "Today is day $omerDay of the Omer ($weeks weeks)"
-        } else {
-            "Today is day $omerDay of the Omer ($weeks weeks and $remaining days)"
-        }
-
+        val text = omerNotificationText(context, omerDay, tonight = false)
         post(
             context,
             NotificationChannels.OMER,
             notificationId(CHANNEL_OMER_ORDINAL, date) + 1,
-            "Sefirat HaOmer",
-            body,
+            text.title,
+            text.body,
             date
         )
     }
 
+    /** Posts the update notice; [context] should already carry the app language. */
     fun postUpdateAvailable(context: Context, latestVersion: String): Boolean {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -181,12 +182,12 @@ object NotificationPoster {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val body = "Levana v$latestVersion is available — tap to download"
+        val text = updateAvailableNotificationText(context, latestVersion)
         val notification = NotificationCompat.Builder(context, NotificationChannels.UPDATE_AVAILABLE)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Update Available")
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentTitle(text.title)
+            .setContentText(text.body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text.body))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

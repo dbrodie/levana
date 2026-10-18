@@ -13,8 +13,6 @@ import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,9 +112,13 @@ class CalendarViewModel(
                     showGoToDateDialog = false
                 )
                 if (currentPrefs.calendarHebrewMode) {
-                    loadHebrewMonth(HebrewYearMonth.from(date))
+                    val target = HebrewYearMonth.from(date)
+                    _hebrewScrollTarget.trySend(target)
+                    loadHebrewMonth(target)
                 } else {
-                    loadMonth(YearMonth.from(date))
+                    val target = YearMonth.from(date)
+                    _gregorianScrollTarget.trySend(target)
+                    loadMonth(target)
                 }
             }
         }
@@ -132,8 +134,21 @@ class CalendarViewModel(
                     locationName = prefs.activeLocation?.name ?: "",
                     calendarHebrewMode = prefs.calendarHebrewMode
                 )
-                if (modeChanged || _state.value.monthDays.isEmpty()) {
+                if (_state.value.monthDays.isEmpty()) {
                     onIntent(CalendarIntent.LoadToday)
+                } else if (modeChanged) {
+                    // Switching calendar systems follows the currently selected day,
+                    // rather than unexpectedly returning a browsed calendar to today.
+                    val selectedDate = _state.value.selectedDate
+                    if (prefs.calendarHebrewMode) {
+                        val target = HebrewYearMonth.from(selectedDate)
+                        _hebrewScrollTarget.trySend(target)
+                        loadHebrewMonth(target)
+                    } else {
+                        val target = YearMonth.from(selectedDate)
+                        _gregorianScrollTarget.trySend(target)
+                        loadMonth(target)
+                    }
                 } else if (prefs.calendarHebrewMode) {
                     _state.value.hebrewYearMonth?.let {
                         loadHebrewMonth(it)
@@ -148,7 +163,8 @@ class CalendarViewModel(
     private suspend fun loadMonthDaysOnly(yearMonth: YearMonth): List<HebrewDay> {
         val monthDays = calendarRepository.getMonthDays(
             yearMonth,
-            currentPrefs.isInIsrael
+            currentPrefs.isInIsrael,
+            currentPrefs.showModernIsraeliHolidays
         )
 
         val eventDates = personalEventRepository
@@ -201,11 +217,9 @@ class CalendarViewModel(
 
         loadJob = viewModelScope.launch {
             val markedDays = loadMonthDaysOnly(yearMonth)
-            val hebrewMonthHeader = buildHebrewMonthHeader(markedDays)
             _state.value = _state.value.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
-                hebrewMonthHeader = hebrewMonthHeader,
                 isLoading = false,
                 gregorianMonthCache = mapOf(yearMonth to markedDays)
             )
@@ -232,7 +246,8 @@ class CalendarViewModel(
     private suspend fun loadHebrewMonthDaysOnly(hym: HebrewYearMonth): List<HebrewDay> {
         val monthDays = calendarRepository.getHebrewMonthDays(
             hym,
-            currentPrefs.isInIsrael
+            currentPrefs.isInIsrael,
+            currentPrefs.showModernIsraeliHolidays
         )
 
         val eventDays = personalEventRepository
@@ -286,14 +301,9 @@ class CalendarViewModel(
 
         loadJob = viewModelScope.launch {
             val markedDays = loadHebrewMonthDaysOnly(hym)
-            val hebrewMonthName = calendarRepository.getHebrewMonthName(hym)
-            val hebrewHeader = "$hebrewMonthName ${hym.year}"
-            val gregHeader = buildGregorianRange(markedDays)
             _state.value = _state.value.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
-                hebrewMonthHeader = hebrewHeader,
-                gregorianHeader = gregHeader,
                 isLoading = false,
                 hebrewMonthCache = mapOf(hym to markedDays)
             )
@@ -313,46 +323,6 @@ class CalendarViewModel(
                         next to nextDays
                     )
                 )
-            }
-        }
-    }
-
-    private fun buildGregorianRange(days: List<HebrewDay>): String {
-        if (days.isEmpty()) return ""
-        val first = days.first().gregorianDate
-        val last = days.last().gregorianDate
-        val fmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        return if (first.month == last.month &&
-            first.year == last.year
-        ) {
-            first.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-        } else {
-            "${first.format(fmt)} \u2013 ${last.format(fmt)}"
-        }
-    }
-
-    private fun buildHebrewMonthHeader(days: List<HebrewDay>): String {
-        if (days.isEmpty()) return ""
-        val firstDay = days.first()
-        val lastDay = days.last()
-
-        val firstMonthName = firstDay.month.name.lowercase()
-            .replaceFirstChar { it.uppercase() }
-            .replace("_", " ")
-        val firstYear = firstDay.year
-
-        return if (firstDay.month == lastDay.month) {
-            "$firstMonthName $firstYear"
-        } else {
-            val lastMonthName = lastDay.month.name.lowercase()
-                .replaceFirstChar { it.uppercase() }
-                .replace("_", " ")
-            val lastYear = lastDay.year
-            if (firstYear == lastYear) {
-                "$firstMonthName\u2013$lastMonthName $firstYear"
-            } else {
-                "$firstMonthName $firstYear \u2013 " +
-                    "$lastMonthName $lastYear"
             }
         }
     }

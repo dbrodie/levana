@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sheet_netz">NETZ</string>
+    <string name="sheet_shkia">SHKIA</string>
+    <string name="sheet_candles">CANDLES</string>
+    <string name="sheet_tzeit">TZEIT</string>
+    <string name="sheet_zmanim">Zmanim</string>
+    <string name="sheet_shabbat_mevarchim">Shabbat Mevarchim</string>
+    <string name="sheet_calendar_events">Calendar events</string>
+    <string name="sheet_yahrzeit">Yahrzeit</string>
+    <string name="sheet_shabbat">Shabbat</string>
+    <string name="sheet_expand">Expand day details</string>
+    <string name="sheet_collapse">Collapse day details</string>
+    <string name="sheet_more_times">More halachic times</string>
+    <string name="sheet_all_day">All day</string>
+</resources>

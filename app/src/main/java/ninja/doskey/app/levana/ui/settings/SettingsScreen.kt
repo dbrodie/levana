@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
@@ -38,6 +41,8 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Stars
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,19 +66,29 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.domain.model.displayName
+import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
 import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
+import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
+import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
+import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
@@ -240,35 +255,36 @@ private fun LocationsSettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        ListItem(
-            headlineContent = { Text("Use Current Location") },
-            supportingContent = { Text("Automatically detect location") },
+        SettingsGroup(stringResource(R.string.settings_group_current_location)) {
+        SettingsSwitchRow(
+            title = stringResource(R.string.location_use_current),
+            description = stringResource(R.string.location_auto_detect),
             leadingContent = {
                 Icon(Icons.Filled.GpsFixed, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = useCurrentLocation,
-                    onCheckedChange = onToggleGps
-                )
-            }
+            checked = useCurrentLocation,
+            onCheckedChange = onToggleGps
         )
+        }
 
         if (useCurrentLocation && gpsLocationName != null) {
+            SettingsGroup(stringResource(R.string.settings_group_active)) {
             ListItem(
                 headlineContent = { Text(gpsLocationName) },
                 leadingContent = {
                     Icon(Icons.Filled.GpsFixed, contentDescription = null)
                 }
             )
+            }
         }
 
         if (savedLocations.isNotEmpty()) {
-            HorizontalDivider()
-            SettingsSectionHeader("Saved Locations")
-
+            SettingsGroup(stringResource(R.string.settings_group_saved_locations)) {
             savedLocations.forEach { saved ->
                 ListItem(
                     headlineContent = { Text(saved.location.name) },
@@ -280,21 +296,23 @@ private fun LocationsSettingsContent(
                     },
                     trailingContent = {
                         IconButton(onClick = { onDelete(saved.id) }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.location_delete))
                         }
                     }
                 )
             }
+            }
         }
 
-        HorizontalDivider()
+        SettingsGroup(stringResource(R.string.settings_group_locations)) {
         ListItem(
-            headlineContent = { Text("Add Location") },
+            headlineContent = { Text(stringResource(R.string.location_add)) },
             leadingContent = {
                 Icon(Icons.Filled.Add, contentDescription = null)
             },
             modifier = Modifier.clickable(onClick = onAddLocation)
         )
+        }
     }
 }
 
@@ -310,6 +328,9 @@ fun SettingsContent(
     modifier: Modifier = Modifier
 ) {
     var showMinhagDialog by remember { mutableStateOf(false) }
+    var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
+    var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
+    var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
     var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
     var showCandleLightingModeDialog by remember { mutableStateOf(false) }
@@ -317,11 +338,14 @@ fun SettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // --- Location & System Calendars (no header) ---
+        SettingsGroup(stringResource(R.string.settings_group_calendar)) {
         ListItem(
-            headlineContent = { Text("Location") },
+            headlineContent = { Text(stringResource(R.string.settings_location_label)) },
             supportingContent = {
                 if (state.locationName.isNotEmpty()) Text(state.locationName)
             },
@@ -333,8 +357,9 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onChangeLocation)
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("System Calendars") },
+            headlineContent = { Text(stringResource(R.string.settings_system_calendars_label)) },
             leadingContent = {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
             },
@@ -343,39 +368,32 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onSystemCalendars)
         )
+        }
 
-        HorizontalDivider()
-        SettingsSectionHeader("Calendar Preferences")
-
-        ListItem(
-            headlineContent = { Text("Israel / Diaspora") },
-            supportingContent = { Text("Affects second day Yom Tov and parsha readings") },
+        SettingsGroup(stringResource(R.string.settings_group_preferences)) {
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_israel_diaspora_label),
+            description = stringResource(R.string.settings_israel_diaspora_description),
             leadingContent = {
                 Icon(Icons.Outlined.Public, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.isInIsrael,
-                    onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
-                )
-            }
+            checked = state.isInIsrael,
+            onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
         )
-        ListItem(
-            headlineContent = { Text("Modern Israeli Holidays") },
-            supportingContent = { Text("Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim") },
+        SettingsRowDivider()
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_modern_holidays_label),
+            description = stringResource(R.string.settings_modern_holidays_description),
             leadingContent = {
                 Icon(Icons.Outlined.Flag, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.showModernIsraeliHolidays,
-                    onCheckedChange = { onIntent(SettingsIntent.SetShowModernIsraeli(it)) }
-                )
-            }
+            checked = state.showModernIsraeliHolidays,
+            onCheckedChange = { onIntent(SettingsIntent.SetShowModernIsraeli(it)) }
         )
+        SettingsRowDivider()
         ListItem(
-            headlineContent = { Text("Candle Lighting Offset") },
-            supportingContent = { Text("${state.candleLightingOffset.toInt()} min before sunset") },
+            headlineContent = { Text(stringResource(R.string.settings_candle_offset_label)) },
+            supportingContent = { Text(stringResource(R.string.settings_candle_offset_description, state.candleLightingOffset.toInt())) },
             leadingContent = {
                 Icon(Icons.Outlined.WbTwilight, contentDescription = null)
             },
@@ -384,13 +402,12 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showCandleLightingOffsetDialog = true }
         )
+        }
 
-        HorizontalDivider()
-        SettingsSectionHeader("Minhag")
-
-        val minhagLabel = state.minhag.name.lowercase().replaceFirstChar { it.uppercase() }
+        val minhagLabel = minhagLabel(state.minhag)
+        SettingsGroup(stringResource(R.string.settings_group_minhag)) {
         ListItem(
-            headlineContent = { Text("Minhag") },
+            headlineContent = { Text(stringResource(R.string.settings_minhag_label)) },
             supportingContent = { Text(minhagLabel) },
             leadingContent = {
                 Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
@@ -400,16 +417,62 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showMinhagDialog = true }
         )
-
-        HorizontalDivider()
-        SettingsSectionHeader("Appearance")
+        // Yahrzeit Adar rules: global, and independent of the Minhag above
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_leap_label)) },
+            supportingContent = { Text(yahrzeitLeapLabel(state.yahrzeitRules.leapYearAdar)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitLeapDialog = true }
+        )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_first_year_label)) },
+            supportingContent = { Text(yahrzeitFirstYearLabel(state.yahrzeitRules.firstYear)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitFirstYearDialog = true }
+        )
+        SettingsRowDivider()
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_yahrzeit_nisan_label),
+            description = stringResource(R.string.settings_yahrzeit_nisan_description),
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            checked = state.yahrzeitRules.adarI30AlsoNisan1,
+            onCheckedChange = { onIntent(SettingsIntent.SetYahrzeitAdarI30AlsoNisan1(it)) }
+        )
+        SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_yahrzeit_missing_day_label)) },
+            supportingContent = { Text(yahrzeitMissingDayShortLabel(state.yahrzeitRules.missingDay)) },
+            leadingContent = {
+                Icon(Icons.Outlined.WbTwilight, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showYahrzeitMissingDayDialog = true }
+        )
+        }
 
         val appLanguageLabel = when (state.appLanguage) {
-            AppLanguage.SYSTEM -> "System default"
-            AppLanguage.HEBREW -> "Hebrew (עברית)"
+            AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
+            AppLanguage.HEBREW -> stringResource(R.string.settings_language_hebrew)
         }
+        SettingsGroup(stringResource(R.string.settings_group_appearance)) {
         ListItem(
-            headlineContent = { Text("App Language") },
+            headlineContent = { Text(stringResource(R.string.settings_app_language_label)) },
             supportingContent = { Text(appLanguageLabel) },
             leadingContent = {
                 Icon(Icons.Outlined.Language, contentDescription = null)
@@ -419,26 +482,23 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable { showAppLanguageDialog = true }
         )
-        ListItem(
-            headlineContent = { Text("Holiday Theming") },
-            supportingContent = { Text("Change app colors during holiday periods") },
+        SettingsRowDivider()
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_holiday_theming_label),
+            description = stringResource(R.string.settings_holiday_theming_description),
             leadingContent = {
                 Icon(Icons.Outlined.Palette, contentDescription = null)
             },
-            trailingContent = {
-                Switch(
-                    checked = state.dynamicHolidayTheme,
-                    onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
-                )
-            }
+            checked = state.dynamicHolidayTheme,
+            onCheckedChange = { onIntent(SettingsIntent.SetDynamicHolidayTheme(it)) }
         )
-
-        HorizontalDivider()
+        }
 
         val selectedCount = state.selectedZmanim.size
+        SettingsGroup(stringResource(R.string.settings_group_halachic_times)) {
         ListItem(
-            headlineContent = { Text("Halachic Times") },
-            supportingContent = { Text("$selectedCount shown in day panel") },
+            headlineContent = { Text(stringResource(R.string.settings_halachic_times_title)) },
+            supportingContent = { Text(stringResource(R.string.settings_halachic_times_count, selectedCount)) },
             leadingContent = {
                 Icon(Icons.Outlined.WbTwilight, contentDescription = null)
             },
@@ -447,20 +507,20 @@ fun SettingsContent(
             },
             modifier = Modifier.clickable(onClick = onHalachicTimesSettings)
         )
+        }
 
-        HorizontalDivider()
-        SettingsSectionHeader("Notifications")
-
+        SettingsGroup(stringResource(R.string.settings_group_notifications)) {
         NotificationsSection(
             state = state,
             onIntent = onIntent,
             onShowModeDialog = { showCandleLightingModeDialog = true }
         )
+        }
 
         if (state.showDeveloperSettings) {
-            HorizontalDivider()
+            SettingsGroup(stringResource(R.string.settings_group_developer)) {
             ListItem(
-                headlineContent = { Text("Developer Settings") },
+                headlineContent = { Text(stringResource(R.string.settings_developer_settings)) },
                 leadingContent = {
                     Icon(Icons.Outlined.Person, contentDescription = null)
                 },
@@ -469,12 +529,12 @@ fun SettingsContent(
                 },
                 modifier = Modifier.clickable(onClick = onDeveloperSettings)
             )
+            }
         }
 
-        HorizontalDivider()
-        SettingsSectionHeader("About")
+        SettingsGroup(stringResource(R.string.settings_group_about)) {
         ListItem(
-            headlineContent = { Text("About") },
+            headlineContent = { Text(stringResource(R.string.settings_about)) },
             leadingContent = {
                 Icon(Icons.Outlined.Info, contentDescription = null)
             },
@@ -482,6 +542,52 @@ fun SettingsContent(
                 Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
             },
             modifier = Modifier.clickable(onClick = onAbout)
+        )
+        }
+    }
+
+    if (showYahrzeitLeapDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_leap_label),
+            description = stringResource(R.string.settings_yahrzeit_leap_description),
+            options = YahrzeitLeapYearAdar.entries,
+            selected = state.yahrzeitRules.leapYearAdar,
+            label = { yahrzeitLeapLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitLeapYearAdar(it))
+                showYahrzeitLeapDialog = false
+            },
+            onDismiss = { showYahrzeitLeapDialog = false }
+        )
+    }
+
+    if (showYahrzeitFirstYearDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_first_year_label),
+            description = stringResource(R.string.settings_yahrzeit_first_year_description),
+            options = YahrzeitFirstYear.entries,
+            selected = state.yahrzeitRules.firstYear,
+            label = { yahrzeitFirstYearLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitFirstYear(it))
+                showYahrzeitFirstYearDialog = false
+            },
+            onDismiss = { showYahrzeitFirstYearDialog = false }
+        )
+    }
+
+    if (showYahrzeitMissingDayDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_yahrzeit_missing_day_label),
+            description = stringResource(R.string.settings_yahrzeit_missing_day_description),
+            options = YahrzeitMissingDay.entries,
+            selected = state.yahrzeitRules.missingDay,
+            label = { yahrzeitMissingDayLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetYahrzeitMissingDay(it))
+                showYahrzeitMissingDayDialog = false
+            },
+            onDismiss = { showYahrzeitMissingDayDialog = false }
         )
     }
 
@@ -528,14 +634,72 @@ fun SettingsContent(
 }
 
 @Composable
+private fun SettingsGroup(label: String, content: @Composable () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+            content()
+        }
+    }
+}
+
+/**
+ * A settings row with a trailing switch. The whole row is one toggleable element
+ * (Role.Switch), so a tap anywhere toggles it once and TalkBack reads one switch
+ * with its label. The Switch itself only displays the state.
+ */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    leadingContent: @Composable () -> Unit,
+    description: String? = null
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = description?.let { { Text(it) } },
+        leadingContent = leadingContent,
+        trailingContent = {
+            Switch(checked = checked, onCheckedChange = null)
+        },
+        modifier = Modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange
+        )
+    )
+}
+
+@Composable
+private fun SettingsRowDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(start = 16.dp)
+    )
+}
+
+@Composable
 private fun SettingsSectionHeader(text: String) {
     Text(
-        text = text,
+        text = text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+            .padding(start = 12.dp, top = 20.dp, bottom = 6.dp)
     )
 }
 
@@ -547,11 +711,11 @@ private fun MinhagDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Minhag") },
+        title = { Text(stringResource(R.string.settings_minhag_label)) },
         text = {
             Column(modifier = Modifier.selectableGroup()) {
                 Minhag.entries.forEach { minhag ->
-                    val label = minhag.name.lowercase().replaceFirstChar { it.uppercase() }
+                    val label = minhagLabel(minhag)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -574,10 +738,96 @@ private fun MinhagDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
+
+/** Single-choice dialog with an explanation above the options. */
+@Composable
+private fun <T> OptionDialog(
+    title: String,
+    description: String,
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = option == selected,
+                                onClick = { onSelect(option) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = option == selected, onClick = null)
+                        Text(
+                            text = label(option),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@Composable
+private fun yahrzeitLeapLabel(value: YahrzeitLeapYearAdar): String = stringResource(
+    when (value) {
+        YahrzeitLeapYearAdar.ADAR_I -> R.string.settings_yahrzeit_leap_adar_i
+        YahrzeitLeapYearAdar.ADAR_II -> R.string.settings_yahrzeit_leap_adar_ii
+        YahrzeitLeapYearAdar.BOTH -> R.string.settings_yahrzeit_leap_both
+    }
+)
+
+@Composable
+private fun yahrzeitFirstYearLabel(value: YahrzeitFirstYear): String = stringResource(
+    when (value) {
+        YahrzeitFirstYear.FOLLOW_ANNUAL -> R.string.settings_yahrzeit_first_year_follow
+        YahrzeitFirstYear.ADAR_I -> R.string.settings_yahrzeit_first_year_adar_i
+        YahrzeitFirstYear.BOTH -> R.string.settings_yahrzeit_first_year_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both
+    }
+)
+
+@Composable
+private fun yahrzeitMissingDayShortLabel(value: YahrzeitMissingDay): String = stringResource(
+    when (value) {
+        YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary_short
+        YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh_short
+        YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both_short
+    }
+)
 
 @Composable
 private fun AppLanguageDialog(
@@ -587,13 +837,13 @@ private fun AppLanguageDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("App Language") },
+        title = { Text(stringResource(R.string.settings_app_language_dialog_title)) },
         text = {
             Column(modifier = Modifier.selectableGroup()) {
                 AppLanguage.entries.forEach { language ->
                     val label = when (language) {
-                        AppLanguage.SYSTEM -> "System default"
-                        AppLanguage.HEBREW -> "Hebrew (עברית)"
+                        AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
+                        AppLanguage.HEBREW -> stringResource(R.string.settings_language_hebrew)
                     }
                     Row(
                         modifier = Modifier
@@ -617,7 +867,7 @@ private fun AppLanguageDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -631,11 +881,11 @@ private fun CandleLightingOffsetDialog(
     var sliderValue by remember(offset) { mutableFloatStateOf(offset.toFloat()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Candle Lighting Offset") },
+        title = { Text(stringResource(R.string.settings_candle_offset_dialog_title)) },
         text = {
             Column {
                 Text(
-                    text = "${sliderValue.roundToInt()} min before sunset",
+                    text = stringResource(R.string.settings_candle_offset_description, sliderValue.roundToInt()),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -651,10 +901,10 @@ private fun CandleLightingOffsetDialog(
             TextButton(onClick = {
                 onOffsetChange(sliderValue.roundToInt().toDouble())
                 onDismiss()
-            }) { Text("OK") }
+            }) { Text(stringResource(R.string.common_ok)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -665,10 +915,13 @@ private fun CandleLightingModeDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val options = listOf("morning" to "Morning of erev", "hours_before" to "Hours before")
+    val options = listOf(
+        "morning" to stringResource(R.string.settings_notify_mode_morning),
+        "hours_before" to stringResource(R.string.settings_notify_mode_hours_before)
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Notification Mode") },
+        title = { Text(stringResource(R.string.settings_notification_mode_title)) },
         text = {
             Column(modifier = Modifier.selectableGroup()) {
                 options.forEach { (value, label) ->
@@ -694,16 +947,19 @@ private fun CandleLightingModeDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
 
-private val ALL_ZMANIM = listOf(
-    "Alot HaShachar", "Misheyakir", "Sunrise",
-    "Sof Zman Shema (GRA)", "Sof Zman Shema (MGA)", "Sof Zman Tefillah",
-    "Chatzot", "Mincha Gedolah", "Mincha Ketanah", "Plag HaMincha",
-    "Candle Lighting", "Sunset", "Nightfall", "Havdalah", "Chatzot HaLaylah"
+@Composable
+private fun minhagLabel(minhag: Minhag): String = stringResource(
+    when (minhag) {
+        Minhag.ASHKENAZI -> R.string.settings_minhag_ashkenazi
+        Minhag.SEPHARDI -> R.string.settings_minhag_sephardi
+        Minhag.YEMENITE -> R.string.settings_minhag_yemenite
+        Minhag.CHABAD -> R.string.settings_minhag_chabad
+    }
 )
 
 @Composable
@@ -711,18 +967,27 @@ internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
     onToggle: (name: String, enabled: Boolean) -> Unit
 ) {
-    ALL_ZMANIM.forEach { name ->
-        val checked = name in selectedZmanim
-        ListItem(
-            headlineContent = { Text(text = name) },
-            trailingContent = {
-                Checkbox(
-                    checked = checked,
-                    onCheckedChange = { onToggle(name, it) }
+    Column(
+        modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(stringResource(R.string.zmanim_selection_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val hebrewUi = LocalConfiguration.current.locales[0].language in setOf("he", "iw")
+        // Single line: the name in the app language. Keys are the English names
+        ZmanimRepository.ZMAN_NAMES.forEach { zmanName ->
+            val name = zmanName.english
+            val checked = name in selectedZmanim
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+            ) {
+                ListItem(
+                    headlineContent = { Text(text = zmanName.displayName(hebrewUi).primary) },
+                    trailingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle(name, it) }) },
+                    modifier = Modifier.clickable { onToggle(name, !checked) }
                 )
-            },
-            modifier = Modifier.clickable { onToggle(name, !checked) }
-        )
+            }
+        }
     }
 }
 
@@ -733,59 +998,49 @@ private fun NotificationsSection(
     onShowModeDialog: () -> Unit
 ) {
     val context = LocalContext.current
-    var hasNotificationPermission by remember {
-        mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        )
-    }
+
+    // The switch the user tried to turn on while the permission dialog is showing.
+    // Saved by name so it survives configuration changes (e.g. rotation).
+    var pendingSwitchName by rememberSaveable { mutableStateOf<String?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        hasNotificationPermission = granted
+        notificationPermissionResultIntent(pendingSwitchName, granted)?.let(onIntent)
+        pendingSwitchName = null
     }
 
-    fun ensurePermissionThenEnable(onGranted: () -> Unit) {
-        if (hasNotificationPermission) {
-            onGranted()
+    fun setNotificationSwitch(switch: NotificationSwitch, enabled: Boolean) {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!enabled || granted) {
+            onIntent(switch.intent(enabled))
         } else {
+            pendingSwitchName = switch.name
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
     // Candle Lighting
-    ListItem(
-        headlineContent = { Text("Candle Lighting") },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_candle_lighting),
         leadingContent = {
             Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyCandleLighting,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyCandleLighting(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyCandleLighting(false))
-                    }
-                }
-            )
-        }
+        checked = state.notifyCandleLighting,
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.CandleLighting, it) }
     )
 
     if (state.notifyCandleLighting) {
         val modeLabel = when (state.candleLightingNotifyMode) {
-            "morning" -> "Morning of erev"
-            "hours_before" -> "Hours before"
+            "morning" -> stringResource(R.string.settings_notify_mode_morning)
+            "hours_before" -> stringResource(R.string.settings_notify_mode_hours_before)
             else -> state.candleLightingNotifyMode
         }
         ListItem(
-            headlineContent = { Text("Notify mode") },
+            headlineContent = { Text(stringResource(R.string.settings_notify_mode)) },
             supportingContent = { Text(modeLabel) },
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
             trailingContent = {
@@ -797,12 +1052,14 @@ private fun NotificationsSection(
         if (state.candleLightingNotifyMode == "morning") {
             val hours = state.candleLightingMorningTime / 60
             val minutes = state.candleLightingMorningTime % 60
-            val timeLabel = "At %d:%02d AM".format(
+            val timeLabel = stringResource(
+                R.string.settings_at_morning_time,
                 if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
-                minutes
+                minutes,
+                hours
             )
             ListItem(
-                headlineContent = { Text("Notification time") },
+                headlineContent = { Text(stringResource(R.string.settings_notification_time)) },
                 supportingContent = { Text(timeLabel) },
                 leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
                 trailingContent = {
@@ -818,7 +1075,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Remove, contentDescription = "Earlier")
+                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_earlier))
                         }
                         IconButton(
                             onClick = {
@@ -831,7 +1088,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Later")
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_later))
                         }
                     }
                 }
@@ -840,8 +1097,8 @@ private fun NotificationsSection(
 
         if (state.candleLightingNotifyMode == "hours_before") {
             ListItem(
-                headlineContent = { Text("Hours before") },
-                supportingContent = { Text("${state.candleLightingHoursBefore} hours before sunset") },
+                headlineContent = { Text(stringResource(R.string.settings_hours_before)) },
+                supportingContent = { Text(stringResource(R.string.settings_hours_before_sunset, state.candleLightingHoursBefore)) },
                 leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
                 trailingContent = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -856,7 +1113,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_decrease))
                         }
                         IconButton(
                             onClick = {
@@ -869,7 +1126,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Increase")
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_increase))
                         }
                     }
                 }
@@ -878,31 +1135,19 @@ private fun NotificationsSection(
     }
 
     // Holidays
-    ListItem(
-        headlineContent = { Text("Holidays") },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_holidays),
         leadingContent = {
             Icon(Icons.Outlined.Event, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyHolidays,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyHolidays(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyHolidays(false))
-                    }
-                }
-            )
-        }
+        checked = state.notifyHolidays,
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Holidays, it) }
     )
 
     if (state.notifyHolidays) {
         ListItem(
-            headlineContent = { Text("Days before") },
-            supportingContent = { Text("${state.holidayNotifyDaysBefore} days before") },
+            headlineContent = { Text(stringResource(R.string.settings_days_before)) },
+            supportingContent = { Text(stringResource(R.string.settings_days_before_value, state.holidayNotifyDaysBefore)) },
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
             trailingContent = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -917,7 +1162,7 @@ private fun NotificationsSection(
                             }
                         }
                     ) {
-                        Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                        Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_decrease))
                     }
                     IconButton(
                         onClick = {
@@ -930,7 +1175,7 @@ private fun NotificationsSection(
                             }
                         }
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Increase")
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_increase))
                     }
                 }
             }
@@ -938,103 +1183,61 @@ private fun NotificationsSection(
     }
 
     // Fasts
-    ListItem(
-        headlineContent = { Text("Fasts") },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_fasts),
         leadingContent = {
             Icon(Icons.Outlined.NoFood, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyFasts,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyFasts(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyFasts(false))
-                    }
-                }
-            )
-        }
+        checked = state.notifyFasts,
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Fasts, it) }
     )
 
     // Personal Events
-    ListItem(
-        headlineContent = { Text("Personal Events") },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_personal_events),
         leadingContent = {
             Icon(Icons.Outlined.Person, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyPersonalEvents,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyPersonalEvents(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyPersonalEvents(false))
-                    }
-                }
-            )
-        }
+        checked = state.notifyPersonalEvents,
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.PersonalEvents, it) }
     )
 
     // Omer
-    ListItem(
-        headlineContent = { Text("Sefirat HaOmer") },
+    SettingsSwitchRow(
+        title = stringResource(R.string.settings_notify_omer),
         leadingContent = {
             Icon(Icons.Outlined.Stars, contentDescription = null)
         },
-        trailingContent = {
-            Switch(
-                checked = state.notifyOmer,
-                onCheckedChange = { enabled ->
-                    if (enabled) {
-                        ensurePermissionThenEnable {
-                            onIntent(SettingsIntent.SetNotifyOmer(true))
-                        }
-                    } else {
-                        onIntent(SettingsIntent.SetNotifyOmer(false))
-                    }
-                }
-            )
-        }
+        checked = state.notifyOmer,
+        onCheckedChange = { setNotificationSwitch(NotificationSwitch.Omer, it) }
     )
 
     if (state.notifyOmer) {
-        ListItem(
-            headlineContent = { Text("At tzait (nightfall)") },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_omer_at_tzait),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-            trailingContent = {
-                Switch(
-                    checked = state.notifyOmerTzait,
-                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerTzait(it)) }
-                )
-            }
+            checked = state.notifyOmerTzait,
+            onCheckedChange = { setNotificationSwitch(NotificationSwitch.OmerTzait, it) }
         )
 
-        ListItem(
-            headlineContent = { Text("Morning reminder") },
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_omer_morning_reminder),
             leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-            trailingContent = {
-                Switch(
-                    checked = state.notifyOmerMorning,
-                    onCheckedChange = { onIntent(SettingsIntent.SetNotifyOmerMorning(it)) }
-                )
-            }
+            checked = state.notifyOmerMorning,
+            onCheckedChange = { setNotificationSwitch(NotificationSwitch.OmerMorning, it) }
         )
 
         if (state.notifyOmerMorning) {
             val hours = state.notifyOmerMorningTime / 60
             val minutes = state.notifyOmerMorningTime % 60
-            val timeLabel = "At %d:%02d AM".format(
+            val timeLabel = stringResource(
+                R.string.settings_at_morning_time,
                 if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
-                minutes
+                minutes,
+                hours
             )
             ListItem(
-                headlineContent = { Text("Reminder time") },
+                headlineContent = { Text(stringResource(R.string.settings_reminder_time)) },
                 supportingContent = { Text(timeLabel) },
                 leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
                 trailingContent = {
@@ -1050,7 +1253,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Remove, contentDescription = "Earlier")
+                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_earlier))
                         }
                         IconButton(
                             onClick = {
@@ -1063,7 +1266,7 @@ private fun NotificationsSection(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Later")
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_later))
                         }
                     }
                 }
@@ -1175,34 +1378,43 @@ private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate
             Text("Clear")
         }
         TextButton(onClick = {
-            try {
-                val y = yearText.toInt()
-                val m = monthText.toInt()
-                val d = dayText.toInt()
-                val jd = JewishDate(y, m, d)
-                val gc = jd.gregorianCalendar
-                onDateChange(
-                    LocalDate.of(
-                        gc.get(GregorianCalendar.YEAR),
-                        gc.get(GregorianCalendar.MONTH) + 1,
-                        gc.get(GregorianCalendar.DAY_OF_MONTH)
-                    )
-                )
-            } catch (_: Exception) {
-                // Invalid input, ignore
-            }
+            // Invalid input is ignored
+            parseHebrewDateOverride(yearText, monthText, dayText)?.let(onDateChange)
         }) {
             Text("Apply")
         }
     }
 }
 
+/**
+ * The Gregorian date for a Hebrew date typed into the Date Override fields,
+ * or null when it is not a real date. The year must be one the date pickers
+ * accept: an override far outside that range makes the app's "today" a date
+ * the calendar cannot render, and the override persists across restarts.
+ */
+internal fun parseHebrewDateOverride(yearText: String, monthText: String, dayText: String): LocalDate? =
+    try {
+        val y = yearText.trim().toInt()
+        val m = monthText.trim().toInt()
+        val d = dayText.trim().toInt()
+        require(y in HebrewDateMatcher.EDITABLE_YEARS)
+        val gc = JewishDate(y, m, d).gregorianCalendar
+        LocalDate.of(
+            gc.get(GregorianCalendar.YEAR),
+            gc.get(GregorianCalendar.MONTH) + 1,
+            gc.get(GregorianCalendar.DAY_OF_MONTH)
+        )
+    } catch (_: Exception) {
+        null
+    }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("None") + HolidayTheme.entries.map { it.name }
-    val displayValue = selected ?: "None"
+    val options: List<HolidayTheme?> = listOf(null) + HolidayTheme.entries
+    val selectedTheme = selected?.let { name -> HolidayTheme.entries.firstOrNull { it.name == name } }
+    val displayValue = holidayThemeLabel(selectedTheme)
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -1225,9 +1437,9 @@ private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(holidayThemeLabel(option)) },
                     onClick = {
-                        onSelect(if (option == "None") null else option)
+                        onSelect(option?.name)
                         expanded = false
                     }
                 )
@@ -1235,6 +1447,10 @@ private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
         }
     }
 }
+
+@Composable
+private fun holidayThemeLabel(theme: HolidayTheme?): String =
+    stringResource(theme?.labelRes ?: R.string.holiday_theme_none)
 
 @Composable
 fun AboutScreen(
@@ -1246,16 +1462,16 @@ fun AboutScreen(
         UpdateSource.PlayStore -> "Google Play"
         UpdateSource.FDroid -> "F-Droid"
         UpdateSource.GitHubRelease -> "GitHub Release"
-        UpdateSource.Unknown -> "Unknown"
+        UpdateSource.Unknown -> stringResource(R.string.about_install_source_unknown)
     }
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ListItem(
-            headlineContent = { Text("Version") },
+            headlineContent = { Text(stringResource(R.string.about_version)) },
             supportingContent = { Text(versionName) }
         )
         HorizontalDivider()
         ListItem(
-            headlineContent = { Text("Install Source") },
+            headlineContent = { Text(stringResource(R.string.about_install_source)) },
             supportingContent = { Text(installSource) }
         )
     }

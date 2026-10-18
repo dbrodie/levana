@@ -8,7 +8,9 @@ import java.time.LocalTime
 
 class NotificationAlarmReceiver : BroadcastReceiver() {
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(receiverContext: Context, intent: Intent) {
+        // Notification text follows Settings → App language, not just the device locale
+        val context = receiverContext.withAppLocale()
         val dateEpochDay = intent.getLongExtra(
             NotificationAlarmScheduler.EXTRA_DATE_EPOCH_DAY,
             0L

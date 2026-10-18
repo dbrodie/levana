@@ -4,6 +4,8 @@ import ninja.doskey.app.levana.data.db.PersonalEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 class EventSerializerTest {
@@ -112,5 +114,77 @@ class EventSerializerTest {
         assertThrows(IllegalArgumentException::class.java) {
             EventSerializer.fromCsv(csv)
         }
+    }
+
+    // ── Bad dates are rejected on import ─────────────────────────────────────
+
+    private fun json(day: Int = 10, month: Int = 9, year: Any = 5785) = """
+        [{"title":"Bad","hebrewDay":$day,"hebrewMonth":$month,"hebrewYear":$year}]
+    """.trimIndent()
+
+    private fun csv(day: Int = 10, month: Int = 9, year: Any = 5785) =
+        "title,hebrewDay,hebrewMonth,hebrewYear,notes,useYahrzeitRules\n" +
+            "Bad,$day,$month,$year,,false\n"
+
+    private fun assertRejected(expectedInMessage: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (e: Exception) {
+            assertTrue(
+                "message was: ${e.message}",
+                e.message.orEmpty().contains(expectedInMessage)
+            )
+            return
+        }
+        fail("Expected the import to be rejected")
+    }
+
+    @Test
+    fun importRejectsYearsTheCalendarCannotHandle() {
+        for (year in listOf(1, -1, 3761, 10000, 99999)) {
+            assertRejected("Invalid Hebrew year $year") { EventSerializer.fromJson(json(year = year)) }
+            assertRejected("Invalid Hebrew year $year") { EventSerializer.fromCsv(csv(year = year)) }
+        }
+    }
+
+    @Test
+    fun importRejectsYearsThatDoNotFitAnInt() {
+        assertRejected("") { EventSerializer.fromJson(json(year = "99999999999999")) }
+        assertRejected("") { EventSerializer.fromCsv(csv(year = "99999999999999")) }
+    }
+
+    @Test
+    fun importErrorNamesTheEvent() {
+        assertRejected("\"Bad\"") { EventSerializer.fromJson(json(year = 1)) }
+    }
+
+    @Test
+    fun importAcceptsUnknownYearAndBoundaryYears() {
+        for (year in listOf(0, 3762, 5650, 5785, 9999)) {
+            assertEquals(year, EventSerializer.fromJson(json(year = year)).single().hebrewYear)
+            assertEquals(year, EventSerializer.fromCsv(csv(year = year)).single().hebrewYear)
+        }
+    }
+
+    @Test
+    fun importRejectsImpossibleMonthsAndDays() {
+        for (month in listOf(0, -1, 14)) {
+            assertRejected("Invalid Hebrew month $month") { EventSerializer.fromJson(json(month = month)) }
+            assertRejected("Invalid Hebrew month $month") { EventSerializer.fromCsv(csv(month = month)) }
+        }
+        for (day in listOf(0, -1, 31)) {
+            assertRejected("Invalid Hebrew day $day") { EventSerializer.fromJson(json(day = day)) }
+            assertRejected("Invalid Hebrew day $day") { EventSerializer.fromCsv(csv(day = day)) }
+        }
+        assertEquals(13, EventSerializer.fromJson(json(month = 13, day = 30)).single().hebrewMonth)
+    }
+
+    @Test
+    fun oneBadEventRejectsTheWholeFile() {
+        val content = """
+            [{"title":"Good","hebrewDay":1,"hebrewMonth":7,"hebrewYear":5785},
+             {"title":"Bad","hebrewDay":1,"hebrewMonth":7,"hebrewYear":-1}]
+        """.trimIndent()
+        assertRejected("Invalid Hebrew year -1") { EventSerializer.fromJson(content) }
     }
 }

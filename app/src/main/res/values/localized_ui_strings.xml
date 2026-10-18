@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_grant_permission">Grant Permission</string>
+
+    <!-- My events -->
+    <string name="events_tab_birthdays">Birthdays</string>
+    <string name="events_tab_events">Events</string>
+    <string name="events_add">Add</string>
+    <string name="events_more_options">More options</string>
+    <string name="events_export_json">Export as JSON</string>
+    <string name="events_export_csv">Export as CSV</string>
+    <string name="events_import">Import events</string>
+    <string name="events_exported">Exported %1$d event(s)</string>
+    <string name="events_export_failed">Export failed: %1$s</string>
+    <string name="events_import_failed_read">Import failed: could not read file</string>
+    <string name="events_import_failed">Import failed: %1$s</string>
+    <string name="events_import_failed_title">Import Failed</string>
+    <string name="events_import_complete_title">Import Complete</string>
+    <string name="events_imported">Imported %1$d event(s)</string>
+    <string name="events_import_skipped">, skipped %1$d duplicate(s)</string>
+    <string name="events_contacts_permission_title">Contacts permission required</string>
+    <string name="events_contacts_permission_description">Grant permission to manage Hebrew birthdays on your contacts</string>
+    <string name="events_no_birthdays">No birthdays yet</string>
+    <string name="events_no_birthdays_hint">Tap + to add a Hebrew birthday to a contact</string>
+    <string name="events_remove_birthday_title">Remove Birthday</string>
+    <string name="events_remove_birthday_message">Remove Hebrew birthday for %1$s?</string>
+    <string name="events_remove">Remove</string>
+    <string name="events_no_custom">No custom events yet</string>
+    <string name="events_no_custom_hint">Tap + to add a custom event</string>
+    <string name="events_delete_title">Delete Event</string>
+    <string name="events_delete_message">Delete \"%1$s\"?</string>
+    <string name="events_yahrzeit_rules">Yahrzeit rules</string>
+
+    <!-- Birthday editor -->
+    <string name="birthday_pick_contact">Pick Contact</string>
+
+    <!-- System calendars -->
+    <string name="calendar_selection_none">No calendars found on this device</string>
+    <string name="calendar_selection_permission_title">Bring in your plans</string>
+    <string name="calendar_selection_permission_description">Levana needs permission to read your calendars to display your events on the Hebrew calendar.</string>
+    <string name="calendar_selection_prompt">Select calendars to display in Levana</string>
+
+    <!-- Manual location -->
+    <string name="manual_location_name">Location name</string>
+    <string name="manual_location_latitude">Latitude</string>
+    <string name="manual_location_longitude">Longitude</string>
+    <string name="manual_location_timezone">Timezone (e.g. America/New_York)</string>
+    <string name="manual_location_error_latitude">Latitude must be between -90 and 90</string>
+    <string name="manual_location_error_longitude">Longitude must be between -180 and 180</string>
+    <string name="manual_location_error_name">Please enter a location name</string>
+    <string name="manual_location_save">Save Location</string>
+
+    <!-- Settings -->
+    <string name="settings_halachic_times_title">Halachic Times</string>
+    <string name="settings_halachic_times_count">%1$d shown in day panel</string>
+    <string name="settings_developer_settings">Developer Settings</string>
+    <string name="settings_about">About</string>
+    <string name="settings_app_language_dialog_title">App Language</string>
+    <string name="settings_candle_offset_dialog_title">Candle Lighting Offset</string>
+    <string name="settings_notification_mode_title">Notification Mode</string>
+    <string name="settings_notify_mode_morning">Morning of erev</string>
+    <string name="settings_notify_mode_hours_before">Hours before</string>
+    <string name="settings_notify_candle_lighting">Candle Lighting</string>
+    <string name="settings_notify_mode">Notify mode</string>
+    <string name="settings_notification_time">Notification time</string>
+    <!-- %1$d = hour on a 12-hour clock, %2$d = minutes, %3$d = hour on a 24-hour clock -->
+    <string name="settings_at_morning_time" formatted="true">At %1$d:%2$02d AM</string>
+    <string name="settings_earlier">Earlier</string>
+    <string name="settings_later">Later</string>
+    <string name="settings_decrease">Decrease</string>
+    <string name="settings_increase">Increase</string>
+    <string name="settings_hours_before">Hours before</string>
+    <string name="settings_hours_before_sunset">%1$d hours before sunset</string>
+    <string name="settings_notify_holidays">Holidays</string>
+    <string name="settings_days_before">Days before</string>
+    <string name="settings_days_before_value">%1$d days before</string>
+    <string name="settings_notify_fasts">Fasts</string>
+    <string name="settings_notify_personal_events">Personal Events</string>
+    <string name="settings_notify_omer">Sefirat HaOmer</string>
+    <string name="settings_omer_at_tzait">At tzait (nightfall)</string>
+    <string name="settings_omer_morning_reminder">Morning reminder</string>
+    <string name="settings_reminder_time">Reminder time</string>
+    <string name="settings_minhag_ashkenazi">Ashkenazi</string>
+    <string name="settings_minhag_sephardi">Sephardi</string>
+    <string name="settings_minhag_yemenite">Yemenite</string>
+    <string name="settings_minhag_chabad">Chabad</string>
+
+    <!-- About -->
+    <string name="about_version">Version</string>
+    <string name="about_install_source">Install Source</string>
+    <string name="about_install_source_unknown">Unknown</string>
+
+    <!-- Yahrzeit Adar rules -->
+    <string name="settings_yahrzeit_leap_label">Yahrzeit for Adar in a leap year</string>
+    <string name="settings_yahrzeit_leap_description">When the death was in Adar of an ordinary year, observe the yahrzeit in a leap year in:</string>
+    <string name="settings_yahrzeit_leap_adar_i">Adar I</string>
+    <string name="settings_yahrzeit_leap_adar_ii">Adar II</string>
+    <string name="settings_yahrzeit_leap_both">Both Adars</string>
+    <string name="settings_yahrzeit_first_year_label">First yahrzeit in a leap year</string>
+    <string name="settings_yahrzeit_first_year_description">When the death was in Adar of an ordinary year and the next year is a leap year, the first yahrzeit:</string>
+    <string name="settings_yahrzeit_first_year_follow">Follow annual minhag</string>
+    <string name="settings_yahrzeit_first_year_adar_i">First observance in Adar I</string>
+    <string name="settings_yahrzeit_first_year_both">Mark both first-year dates</string>
+    <string name="settings_yahrzeit_nisan_label">Also mark 1 Nissan</string>
+    <string name="settings_yahrzeit_nisan_description">For a yahrzeit on 30 Adar I, also mark 1 Nissan in ordinary years</string>
+    <string name="occurrence_title_format">%1$s (%2$s)</string>
+    <string name="occurrence_adar_i">Adar I</string>
+    <string name="occurrence_adar_ii">Adar II</string>
+    <string name="occurrence_shevat_30">30 Shevat</string>
+    <string name="occurrence_nisan_1">1 Nissan</string>
+    <string name="settings_yahrzeit_missing_day_label">Yahrzeit on 30 Cheshvan or 30 Kislev</string>
+    <string name="settings_yahrzeit_missing_day_description">When a yahrzeit is on 30 Cheshvan or 30 Kislev and that month has only 29 days this year, observe it:</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary">Based on the first anniversary (common practice): on the 29th if the month had 29 days in the year after the death, otherwise on Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh">Always on Rosh Chodesh (1 Kislev / 1 Teves)</string>
+    <string name="settings_yahrzeit_missing_day_both">On both the 29th and Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_first_anniversary_short">Based on the first anniversary</string>
+    <string name="settings_yahrzeit_missing_day_rosh_chodesh_short">Always on Rosh Chodesh</string>
+    <string name="settings_yahrzeit_missing_day_both_short">Both dates</string>
+    <string name="occurrence_cheshvan_29">29 Cheshvan</string>
+    <string name="occurrence_kislev_1">1 Kislev</string>
+    <string name="occurrence_kislev_29">29 Kislev</string>
+    <string name="occurrence_teves_1">1 Teves</string>
+    <string name="occurrence_delayed_from_30">delayed from 30 %1$s</string>
+    <!-- Birthday notification -->
+    <string name="notification_birthday_title">Personal Event</string>
+    <string name="notification_birthday_body">Today is %1$s</string>
+    <string name="notification_birthday_event">%1$s\'s Hebrew Birthday</string>
+    <!-- Other notifications (see notifications/NotificationTexts.kt) -->
+    <string name="notification_candle_lighting_title">Candle Lighting</string>
+    <string name="notification_candle_lighting_body">Candle Lighting at %1$s</string>
+    <string name="notification_candle_lighting_body_with_end">Candle Lighting at %1$s \u00b7 Shabbat ends %2$s</string>
+    <string name="notification_holiday_title">Holiday</string>
+    <string name="notification_holiday_today">Today is %1$s</string>
+    <string name="notification_holiday_tomorrow">%1$s begins tomorrow</string>
+    <plurals name="notification_holiday_in_days">
+        <item quantity="one">%1$s begins in %2$d day</item>
+        <item quantity="other">%1$s begins in %2$d days</item>
+    </plurals>
+    <string name="notification_fast_title">Fast Day</string>
+    <string name="notification_fast_begins">Begins %1$s</string>
+    <string name="notification_fast_ends">Ends %1$s</string>
+    <string name="notification_personal_event_title">Personal Event</string>
+    <string name="notification_personal_event_body">Today is %1$s</string>
+    <string name="notification_omer_title">Sefirat HaOmer</string>
+    <string name="notification_omer_tonight">Tonight is day %1$s of the Omer</string>
+    <string name="notification_omer_tonight_with_weeks">Tonight is day %1$s of the Omer (%2$s)</string>
+    <string name="notification_omer_today">Today is day %1$s of the Omer</string>
+    <string name="notification_omer_today_with_weeks">Today is day %1$s of the Omer (%2$s)</string>
+    <plurals name="notification_omer_weeks">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+    <plurals name="notification_omer_and_days">
+        <item quantity="one">and %d day</item>
+        <item quantity="other">and %d days</item>
+    </plurals>
+    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="notification_update_title">Update Available</string>
+    <string name="notification_update_body">Levana v%1$s is available \u2014 tap to download</string>
+    <!-- Notification channels (shown in system settings) -->
+    <string name="channel_candle_lighting_name">Candle Lighting</string>
+    <string name="channel_candle_lighting_description">Candle lighting time reminders</string>
+    <string name="channel_holidays_name">Holidays</string>
+    <string name="channel_holidays_description">Holiday reminders</string>
+    <string name="channel_fasts_name">Fasts</string>
+    <string name="channel_fasts_description">Fast day reminders</string>
+    <string name="channel_personal_events_name">Personal Events</string>
+    <string name="channel_personal_events_description">Personal event and birthday reminders</string>
+    <string name="channel_omer_name">Omer</string>
+    <string name="channel_omer_description">Sefirat HaOmer reminders</string>
+    <string name="channel_updates_name">App Updates</string>
+    <string name="channel_updates_description">Notifications when a new version of Levana is available</string>
+</resources>

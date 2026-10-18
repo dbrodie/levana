@@ -40,21 +40,25 @@ class DailyNotificationWorker(
         val prefs = preferencesRepository.preferences.first()
         val location = prefs.activeLocation ?: return Result.success()
         val today = prefs.devDateOverride ?: LocalDate.now()
+        // Notification text follows Settings → App language, not just the device locale
+        val localized = applicationContext.withAppLocale()
+        // Keep channel names in the app language even if a language change was missed
+        NotificationChannels.createAll(applicationContext)
 
         if (prefs.notifyCandleLighting) {
-            handleCandleLighting(today, location, prefs)
+            handleCandleLighting(localized, today, location, prefs)
         }
 
         if (prefs.notifyHolidays) {
-            handleHolidays(today, prefs)
+            handleHolidays(localized, today, prefs)
         }
 
         if (prefs.notifyFasts) {
-            handleFasts(today, location, prefs)
+            handleFasts(localized, today, location, prefs)
         }
 
         if (prefs.notifyPersonalEvents) {
-            handlePersonalEvents(today)
+            handlePersonalEvents(localized, today)
         }
 
         if (prefs.notifyOmer) {
@@ -64,7 +68,9 @@ class DailyNotificationWorker(
         return Result.success()
     }
 
-    private fun handleCandleLighting(today: LocalDate, location: Location, prefs: UserPreferences) {
+    private fun handleCandleLighting(
+        localized: Context,
+        today: LocalDate, location: Location, prefs: UserPreferences) {
         if (!zmanimRepository.hasCandles(today)) return
 
         val shabbatInfo = zmanimRepository.getShabbatInfo(
@@ -101,7 +107,7 @@ class DailyNotificationWorker(
                 } else {
                     // Already past morning time, post immediately
                     NotificationPoster.postCandleLighting(
-                        applicationContext,
+                        localized,
                         today,
                         candleLightingTime,
                         endTime
@@ -123,7 +129,7 @@ class DailyNotificationWorker(
         }
     }
 
-    private fun handleHolidays(today: LocalDate, prefs: UserPreferences) {
+    private fun handleHolidays(localized: Context, today: LocalDate, prefs: UserPreferences) {
         val daysBefore = prefs.holidayNotifyDaysBefore
         for (offset in 0..daysBefore) {
             val checkDate = today.plusDays(offset.toLong())
@@ -137,9 +143,9 @@ class DailyNotificationWorker(
                     holiday.category == HolidayCategory.RABBINIC
                 ) {
                     NotificationPoster.postHoliday(
-                        applicationContext,
+                        localized,
                         checkDate,
-                        holiday.name,
+                        holiday,
                         offset
                     )
                 }
@@ -147,7 +153,9 @@ class DailyNotificationWorker(
         }
     }
 
-    private fun handleFasts(today: LocalDate, location: Location, prefs: UserPreferences) {
+    private fun handleFasts(
+        localized: Context,
+        today: LocalDate, location: Location, prefs: UserPreferences) {
         // All fasts: notify the day before
         val tomorrow = today.plusDays(1)
         val tomorrowInfo = calendarRepository.getDayInfo(tomorrow, inIsrael = prefs.isInIsrael)
@@ -157,31 +165,33 @@ class DailyNotificationWorker(
 
             val fastTimes = zmanimRepository.getFastTimes(tomorrow, location)
             NotificationPoster.postFast(
-                applicationContext,
+                localized,
                 tomorrow,
-                holiday.name,
+                holiday,
                 fastTimes?.first,
                 fastTimes?.second
             )
         }
     }
 
-    private suspend fun handlePersonalEvents(today: LocalDate) {
+    private suspend fun handlePersonalEvents(localized: Context, today: LocalDate) {
         val events = personalEventRepository.getEventsForDate(today)
-        for (event in events) {
+        for (occurrence in events) {
             NotificationPoster.postPersonalEvent(
-                applicationContext,
+                localized,
                 today,
-                event.title
+                occurrence.event.title,
+                occurrence.label
             )
         }
 
         val birthdays = contactBirthdayRepository.getBirthdaysForDate(today)
-        for (birthday in birthdays) {
-            NotificationPoster.postPersonalEvent(
-                applicationContext,
+        for (occurrence in birthdays) {
+            NotificationPoster.postBirthday(
+                localized,
                 today,
-                "${birthday.contactName}'s Hebrew Birthday"
+                occurrence.birthday.contactName,
+                occurrence.label
             )
         }
     }
