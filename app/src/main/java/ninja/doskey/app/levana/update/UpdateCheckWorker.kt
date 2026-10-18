@@ -27,8 +27,7 @@ class UpdateCheckWorker(
         when (updateChecker.detectUpdateSource()) {
             UpdateSource.GitHubRelease -> Unit
             UpdateSource.PlayStore,
-            UpdateSource.FDroid,
-            UpdateSource.Unknown -> return Result.success()
+            UpdateSource.FDroid -> return Result.success()
         }
 
         val latestVersion = updateChecker.fetchLatestVersion()

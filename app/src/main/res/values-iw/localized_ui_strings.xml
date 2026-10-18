@@ -92,7 +92,7 @@
     <!-- About -->
     <string name="about_version">גרסה</string>
     <string name="about_install_source">מקור ההתקנה</string>
-    <string name="about_install_source_unknown">לא ידוע</string>
+    <string name="about_install_source_none">ללא</string>
 
     <!-- Yahrzeit Adar rules -->
     <string name="settings_yahrzeit_leap_label">יארצייט של אדר בשנה מעוברת</string>

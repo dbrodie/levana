@@ -7,7 +7,10 @@ package ninja.doskey.app.levana.update
  * (API 30+, always available on minSdk 34).
  */
 sealed interface UpdateSource {
-    /** Sideloaded APK (null or ADB installer). Checks GitHub Releases. */
+    /**
+     * Sideloaded GitHub APK — installed by the system package installer (tapped in a
+     * browser or file manager), ADB, or any other app. Checks GitHub Releases.
+     */
     data object GitHubRelease : UpdateSource
 
     /** Installed via Google Play — Play handles its own update flow. */
@@ -16,6 +19,20 @@ sealed interface UpdateSource {
     /** Installed via F-Droid — F-Droid handles its own update flow. */
     data object FDroid : UpdateSource
 
-    /** Unknown installer — skip update check conservatively. */
-    data object Unknown : UpdateSource
+    companion object {
+        private const val INSTALLER_PLAY_STORE = "com.android.vending"
+        private const val INSTALLER_FDROID = "org.fdroid.fdroid"
+
+        /**
+         * Maps an `installingPackageName` to its update source. Levana ships only via
+         * GitHub, Play and F-Droid, so any installer other than Play or F-Droid
+         * (including none) means a GitHub-built APK.
+         */
+        fun fromInstaller(installingPackageName: String?): UpdateSource =
+            when (installingPackageName) {
+                INSTALLER_PLAY_STORE -> PlayStore
+                INSTALLER_FDROID -> FDroid
+                else -> GitHubRelease
+            }
+    }
 }

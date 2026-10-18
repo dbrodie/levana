@@ -92,7 +92,6 @@ import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
-import ninja.doskey.app.levana.update.UpdateSource
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.time.LocalDate
@@ -1458,12 +1457,8 @@ fun AboutScreen(
     updateChecker: UpdateChecker = koinInject()
 ) {
     val versionName = updateChecker.currentVersionName()
-    val installSource = when (updateChecker.detectUpdateSource()) {
-        UpdateSource.PlayStore -> "Google Play"
-        UpdateSource.FDroid -> "F-Droid"
-        UpdateSource.GitHubRelease -> "GitHub Release"
-        UpdateSource.Unknown -> stringResource(R.string.about_install_source_unknown)
-    }
+    val installSource = updateChecker.installerPackageName()
+        ?: stringResource(R.string.about_install_source_none)
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.about_version)) },
