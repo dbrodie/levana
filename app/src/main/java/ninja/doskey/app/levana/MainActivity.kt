@@ -1,8 +1,6 @@
 package ninja.doskey.app.levana
 
-import android.Manifest
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -62,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +86,6 @@ import androidx.navigation.toRoute
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.icon.DynamicIconManager
-import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.activeLocation
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayScreen
@@ -96,22 +94,18 @@ import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionScreen
 import ninja.doskey.app.levana.ui.events.AddEditEventScreen
 import ninja.doskey.app.levana.ui.events.EventsScreen
 import ninja.doskey.app.levana.ui.location.CityPickerScreen
-import ninja.doskey.app.levana.ui.location.ManualLocationScreen
 import ninja.doskey.app.levana.ui.navigation.AddEditEventRoute
 import ninja.doskey.app.levana.ui.navigation.CalendarRoute
 import ninja.doskey.app.levana.ui.navigation.CalendarSelectionRoute
 import ninja.doskey.app.levana.ui.navigation.CityPickerRoute
 import ninja.doskey.app.levana.ui.navigation.ContactBirthdayRoute
 import ninja.doskey.app.levana.ui.navigation.LocationsSettingsRoute
-import ninja.doskey.app.levana.ui.navigation.ManualLocationRoute
-import ninja.doskey.app.levana.ui.navigation.OnboardingRoute
 import ninja.doskey.app.levana.ui.navigation.PersonalEventsRoute
 import ninja.doskey.app.levana.ui.navigation.AboutRoute
 import ninja.doskey.app.levana.ui.navigation.DeveloperSettingsRoute
 import ninja.doskey.app.levana.ui.navigation.HalachicTimesSettingsRoute
 import ninja.doskey.app.levana.ui.navigation.SettingsRoute
 import ninja.doskey.app.levana.ui.navigation.ZmanimRoute
-import ninja.doskey.app.levana.ui.onboarding.OnboardingScreen
 import ninja.doskey.app.levana.ui.settings.AboutScreen
 import ninja.doskey.app.levana.ui.settings.DeveloperSettingsScreen
 import ninja.doskey.app.levana.ui.settings.HalachicTimesSettingsScreen
@@ -125,7 +119,6 @@ import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
@@ -190,31 +183,32 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         initial = null
     )
 
-    val hasLocation = prefs?.activeLocation != null
-    val locationName = prefs?.activeLocation?.name ?: ""
+    val currentPrefs = prefs ?: return
+    val locationName = currentPrefs.activeLocation.name
 
-    if (prefs == null) return
+    // Ask for location once per launch; the dialog pauses the activity, so a grant is
+    // picked up by the ON_RESUME refresh below.
+    var askedForLocation by rememberSaveable { mutableStateOf(false) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (!askedForLocation && !locationService.hasPermission()) {
+            askedForLocation = true
+            locationPermissionLauncher.launch(LocationService.PERMISSIONS)
+        }
+    }
 
-    val startDest: Any = if (hasLocation) CalendarRoute else OnboardingRoute
-
-    // GPS foreground refresh on resume
+    // Current-location refresh on resume
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                if (prefs?.locationMode is LocationMode.Gps) {
-                    scope.launch {
-                        try {
-                            val loc = withTimeoutOrNull(15_000L) {
-                                locationService.getCurrentLocation()
-                            }
-                            if (loc != null) preferencesRepository.updateGpsLocation(loc)
-                        } catch (_: Exception) {
-                            // Permission missing or GPS unavailable — skip silently
-                        }
-                    }
+                scope.launch {
+                    locationService.getCurrentLocationOrNull()
+                        ?.let { preferencesRepository.updateCurrentLocation(it) }
                 }
                 scope.launch(Dispatchers.IO) {
                     val currentPrefs = preferencesRepository.preferences.first()
@@ -228,7 +222,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
     // Handle notification deep-link — open calendar (day detail is inline)
     LaunchedEffect(deepLinkEpochDay) {
-        if (deepLinkEpochDay != 0L && hasLocation) {
+        if (deepLinkEpochDay != 0L) {
             navController.navigate(CalendarRoute) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
@@ -241,7 +235,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         DrawerNavItem(stringResource(R.string.design_my_events), Icons.Filled.Event, PersonalEventsRoute)
     )
 
-    val showDrawer = hasLocation && backStackEntry?.destination?.let { dest ->
+    val showDrawer = backStackEntry?.destination?.let { dest ->
         drawerNavItems.any { item -> dest.hasRoute(item.route::class) }
     } == true
 
@@ -281,77 +275,72 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     )
-                    if (hasLocation) {
-                        Surface(
-                            onClick = { citiesExpanded = !citiesExpanded },
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    Surface(
+                        onClick = { citiesExpanded = !citiesExpanded },
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(14.dp),
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(14.dp),
+                            Box(
+                                modifier = Modifier.size(40.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Box(
-                                    modifier = Modifier.size(40.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(Icons.Filled.LocationOn, contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.design_active_city),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                    Text(locationName, style = MaterialTheme.typography.titleMedium,
-                                        maxLines = 2, overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                }
-                                Icon(if (citiesExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                    contentDescription = stringResource(R.string.design_switch_city))
+                                Icon(Icons.Filled.LocationOn, contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(20.dp))
                             }
-                        }
-                        AnimatedVisibility(visible = citiesExpanded) {
-                            Column {
-                                val currentPrefs = prefs
-                                if (currentPrefs?.locationMode is LocationMode.Gps) {
-                                    NavigationDrawerItem(
-                                        label = { Text(currentPrefs.gpsLocation?.name ?: stringResource(R.string.design_detecting)) },
-                                        icon = { Icon(Icons.Filled.GpsFixed, contentDescription = null) },
-                                        selected = true,
-                                        onClick = { citiesExpanded = false },
-                                    )
-                                }
-                                currentPrefs?.savedLocations?.forEach { saved ->
-                                    val isActive = (currentPrefs.locationMode as? LocationMode.Saved)?.id == saved.id
-                                    NavigationDrawerItem(
-                                        label = { Text(saved.location.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                                        icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
-                                        selected = isActive,
-                                        onClick = {
-                                            scope.launch {
-                                                preferencesRepository.setLocationMode(LocationMode.Saved(saved.id))
-                                                citiesExpanded = false
-                                                drawerState.close()
-                                            }
-                                        },
-                                    )
-                                }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.design_active_city),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                Text(locationName, style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer)
                             }
+                            Icon(if (citiesExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = stringResource(R.string.design_switch_city))
                         }
-                        NavigationDrawerItem(
-                            label = { Text(stringResource(R.string.design_manage_cities)) },
-                            icon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                            selected = false,
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                navController.navigate(LocationsSettingsRoute) { launchSingleTop = true }
-                            },
-                        )
                     }
+                    AnimatedVisibility(visible = citiesExpanded) {
+                        Column {
+                            fun select(id: String?) {
+                                scope.launch {
+                                    preferencesRepository.setActiveLocation(id)
+                                    citiesExpanded = false
+                                    drawerState.close()
+                                }
+                            }
+                            NavigationDrawerItem(
+                                label = { Text(currentPrefs.currentLocation.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                icon = { Icon(Icons.Filled.GpsFixed, contentDescription = null) },
+                                selected = currentPrefs.savedLocations.none { it.id == currentPrefs.activeLocationId },
+                                onClick = { select(null) },
+                            )
+                            currentPrefs.savedLocations.forEach { saved ->
+                                NavigationDrawerItem(
+                                    label = { Text(saved.location.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                    icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
+                                    selected = saved.id == currentPrefs.activeLocationId,
+                                    onClick = { select(saved.id) },
+                                )
+                            }
+                        }
+                    }
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.design_manage_cities)) },
+                        icon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate(LocationsSettingsRoute) { launchSingleTop = true }
+                        },
+                    )
                     HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         color = MaterialTheme.colorScheme.outlineVariant)
                     drawerNavItems.forEach { item ->
@@ -396,7 +385,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
 
         Scaffold(
             topBar = {
-                if (!isCalendarRoute && backStackEntry?.destination?.hasRoute(OnboardingRoute::class) != true) {
+                if (!isCalendarRoute) {
                     TopAppBar(
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.background,
@@ -413,7 +402,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                                 destination?.hasRoute(PersonalEventsRoute::class) == true -> stringResource(R.string.design_my_events)
                                 destination?.hasRoute(CityPickerRoute::class) == true -> stringResource(R.string.design_cities)
                                 destination?.hasRoute(LocationsSettingsRoute::class) == true -> stringResource(R.string.design_cities)
-                                destination?.hasRoute(ManualLocationRoute::class) == true -> stringResource(R.string.design_add_location)
                                 destination?.hasRoute(CalendarSelectionRoute::class) == true -> stringResource(R.string.design_system_calendars)
                                 destination?.hasRoute(AddEditEventRoute::class) == true -> {
                                     if ((backStackEntry?.toRoute<AddEditEventRoute>()?.eventId ?: 0L) != 0L)
@@ -454,50 +442,15 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = startDest,
+                startDestination = CalendarRoute,
                 modifier = Modifier.padding(innerPadding),
                 enterTransition = { fadeIn(tween(220)) },
                 exitTransition = { fadeOut(tween(150)) },
                 popEnterTransition = { fadeIn(tween(220)) },
                 popExitTransition = { fadeOut(tween(150)) },
             ) {
-                composable<OnboardingRoute> {
-                    GpsOnboarding(
-                        navController = navController,
-                        preferencesRepository = preferencesRepository
-                    )
-                }
-
                 composable<CityPickerRoute> {
-                    CityPickerScreen(
-                        onLocationSaved = {
-                            if (navController.previousBackStackEntry
-                                    ?.destination
-                                    ?.hasRoute(LocationsSettingsRoute::class) == true
-                            ) {
-                                navController.popBackStack()
-                            } else {
-                                navController.navigate(CalendarRoute) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
-                        }
-                    )
-                }
-
-                composable<ManualLocationRoute> {
-                    val scope2 = rememberCoroutineScope()
-                    ManualLocationScreen(
-                        onSave = { location ->
-                            scope2.launch {
-                                val newId = preferencesRepository.addSavedLocation(location)
-                                preferencesRepository.setLocationMode(LocationMode.Saved(newId))
-                                navController.navigate(CalendarRoute) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
-                        }
-                    )
+                    CityPickerScreen(onLocationSaved = { navController.popBackStack() })
                 }
 
                 composable<CalendarRoute> {
@@ -564,11 +517,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                     LocationsSettingsScreen(
                         onAddLocation = {
                             navController.navigate(CityPickerRoute)
-                        },
-                        onNoLocations = {
-                            navController.navigate(CityPickerRoute) {
-                                popUpTo(0) { inclusive = true }
-                            }
                         }
                     )
                 }
@@ -632,56 +580,4 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
             }
         }
     }
-}
-
-@Composable
-private fun GpsOnboarding(
-    navController: androidx.navigation.NavController,
-    preferencesRepository: PreferencesRepository
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val locationService: LocationService = koinInject()
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions.values.any { it }
-        if (granted) {
-            scope.launch {
-                try {
-                    val loc = locationService.getCurrentLocation()
-                    preferencesRepository.updateGpsLocation(loc)
-                    preferencesRepository.setLocationMode(LocationMode.Gps)
-                    navController.navigate(CalendarRoute) {
-                        popUpTo(OnboardingRoute) { inclusive = true }
-                    }
-                } catch (_: Exception) {
-                    Toast.makeText(
-                        context,
-                        "Could not detect location",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        } else {
-            Toast.makeText(
-                context,
-                "Location permission denied",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    OnboardingScreen(
-        onUseGps = {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        },
-        onPickCity = { navController.navigate(CityPickerRoute) }
-    )
 }

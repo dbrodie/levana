@@ -81,10 +81,10 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.data.HebrewDateMatcher
+import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
-import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
@@ -202,39 +202,32 @@ fun DeveloperSettingsScreen(
 @Composable
 fun LocationsSettingsScreen(
     onAddLocation: () -> Unit,
-    onNoLocations: () -> Unit,
     modifier: Modifier = Modifier,
     preferencesRepository: PreferencesRepository = koinInject(),
+    locationService: LocationService = koinInject(),
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    var hasLocationPermission by remember { mutableStateOf(locationService.hasPermission()) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        hasLocationPermission = results.values.any { it }
+        if (hasLocationPermission) {
+            scope.launch {
+                locationService.getCurrentLocationOrNull()
+                    ?.let { preferencesRepository.updateCurrentLocation(it) }
+            }
+        }
+    }
 
     LocationsSettingsContent(
-        locationMode = state.locationMode,
-        gpsLocationName = state.gpsLocationName,
+        currentLocationName = state.currentLocationName,
+        hasLocationPermission = hasLocationPermission,
         savedLocations = state.savedLocations,
-        onToggleGps = { enabled ->
-            scope.launch {
-                if (enabled) {
-                    preferencesRepository.setLocationMode(LocationMode.Gps)
-                } else {
-                    val first = state.savedLocations.firstOrNull()
-                    preferencesRepository.setLocationMode(
-                        if (first != null) LocationMode.Saved(first.id) else null
-                    )
-                }
-            }
-        },
-        onDelete = { id ->
-            scope.launch {
-                preferencesRepository.removeSavedLocation(id)
-                val remaining = state.savedLocations.filter { it.id != id }
-                if (remaining.isEmpty() && state.locationMode !is LocationMode.Gps) {
-                    onNoLocations()
-                }
-            }
-        },
+        onRequestPermission = { permissionLauncher.launch(LocationService.PERMISSIONS) },
+        onDelete = { id -> scope.launch { preferencesRepository.removeSavedLocation(id) } },
         onAddLocation = onAddLocation,
         modifier = modifier
     )
@@ -242,15 +235,14 @@ fun LocationsSettingsScreen(
 
 @Composable
 private fun LocationsSettingsContent(
-    locationMode: LocationMode?,
-    gpsLocationName: String?,
+    currentLocationName: String,
+    hasLocationPermission: Boolean,
     savedLocations: List<SavedLocation>,
-    onToggleGps: (Boolean) -> Unit,
+    onRequestPermission: () -> Unit,
     onDelete: (String) -> Unit,
     onAddLocation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val useCurrentLocation = locationMode is LocationMode.Gps
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -260,26 +252,17 @@ private fun LocationsSettingsContent(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         SettingsGroup(stringResource(R.string.settings_group_current_location)) {
-        SettingsSwitchRow(
-            title = stringResource(R.string.location_use_current),
-            description = stringResource(R.string.location_auto_detect),
+        ListItem(
+            headlineContent = { Text(currentLocationName) },
+            supportingContent = if (hasLocationPermission) null else {
+                { Text(stringResource(R.string.location_permission_needed)) }
+            },
             leadingContent = {
                 Icon(Icons.Filled.GpsFixed, contentDescription = null)
             },
-            checked = useCurrentLocation,
-            onCheckedChange = onToggleGps
+            modifier = if (hasLocationPermission) Modifier
+                else Modifier.clickable(onClick = onRequestPermission)
         )
-        }
-
-        if (useCurrentLocation && gpsLocationName != null) {
-            SettingsGroup(stringResource(R.string.settings_group_active)) {
-            ListItem(
-                headlineContent = { Text(gpsLocationName) },
-                leadingContent = {
-                    Icon(Icons.Filled.GpsFixed, contentDescription = null)
-                }
-            )
-            }
         }
 
         if (savedLocations.isNotEmpty()) {

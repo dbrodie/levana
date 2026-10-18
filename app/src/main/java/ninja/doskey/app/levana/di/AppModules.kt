@@ -38,7 +38,7 @@ val dataModule = module {
     single { get<LevanaDatabase>().personalEventDao() }
     single { CalendarRepository() }
     single { CityRepository(get()) }
-    single { PreferencesRepository(get()) }
+    single { PreferencesRepository(get(), get()) }
     single<TodayProvider> { PreferencesTodayProvider(get()) }
     single { LocationService(get()) }
     single { ZmanimRepository() }

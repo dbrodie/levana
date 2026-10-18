@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="onboarding_setup_title">הגדרת לוח השנה</string>
-    <string name="onboarding_setup_description">בחרו מיקום כדי שלבנה תציג את הזמנים, החגים וזמני הדלקת הנרות המתאימים.</string>
-    <string name="onboarding_location_choice">כיצד לבנה תאתר את המיקום שלכם?</string>
-    <string name="onboarding_location_change_hint">אפשר לשנות זאת בהמשך בהגדרות.</string>
-    <string name="manual_location_details">פרטי מיקום</string>
-    <string name="manual_location_hint">הזינו קואורדינטות אם חיפוש עיר אינו מספיק.</string>
     <string name="birthday_date_title">יום הולדת עברי</string>
     <string name="birthday_date_hint">שמרו את התאריך העברי לתזכורת שנתית.</string>
     <string name="event_add_title">שמירת תאריך</string>
@@ -21,7 +15,6 @@
     <string name="settings_group_developer">מפתחים</string>
     <string name="settings_group_about">אודות</string>
     <string name="settings_group_current_location">מיקום נוכחי</string>
-    <string name="settings_group_active">פעיל</string>
     <string name="settings_group_saved_locations">מיקומים שמורים</string>
     <string name="settings_group_locations">מיקומים</string>
     <string name="settings_location_label">מיקום</string>
@@ -51,8 +44,7 @@
     <string name="event_update">עדכון</string>
     <string name="event_increase_value">הגדלת %1$s</string>
     <string name="event_decrease_value">הקטנת %1$s</string>
-    <string name="location_use_current">שימוש במיקום הנוכחי</string>
-    <string name="location_auto_detect">איתור אוטומטי של המיקום</string>
+    <string name="location_permission_needed">לפי אזור הזמן שלכם. הקישו כדי לאפשר גישה למיקום.</string>
     <string name="location_add">הוספת מיקום</string>
     <string name="location_delete">מחיקה</string>
     <string name="city_search_placeholder">חיפוש ערים…</string>

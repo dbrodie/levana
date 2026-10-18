@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.data
 
 import android.content.Context
+import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -12,7 +13,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.LocationMode
 import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
@@ -20,27 +20,34 @@ import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.LocalDate
+import java.util.TimeZone
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "user_preferences"
+    name = "user_preferences",
+    produceMigrations = { listOf(LocationModeMigration) }
 )
 
-class PreferencesRepository(private val context: Context) {
+class PreferencesRepository(
+    private val context: Context,
+    private val cityRepository: CityRepository
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
     private object Keys {
         val SAVED_LOCATIONS = stringPreferencesKey("saved_locations")
-        val LOCATION_MODE = stringPreferencesKey("location_mode")
-        val GPS_LOCATION = stringPreferencesKey("gps_location")
+        val ACTIVE_LOCATION_ID = stringPreferencesKey("active_location_id")
+        // Key name predates the always-on current location; kept so stored fixes survive.
+        val CURRENT_LOCATION = stringPreferencesKey("gps_location")
 
         val CANDLE_LIGHTING_OFFSET =
             doublePreferencesKey("candle_lighting_offset")
@@ -102,40 +109,31 @@ class PreferencesRepository(private val context: Context) {
     }
 
     val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
-        val savedLocations = prefs[Keys.SAVED_LOCATIONS]?.let {
-            runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
-        } ?: emptyList()
-
-        val locationMode = prefs[Keys.LOCATION_MODE]?.let {
-            runCatching { json.decodeFromString<LocationMode>(it) }.getOrNull()
-        }
-        val gpsLocation = prefs[Keys.GPS_LOCATION]?.let {
+        val savedLocations = decodeSavedLocations(prefs)
+        val currentLocation = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
-        }
+        } ?: cityRepository.defaultForTimeZone(TimeZone.getDefault().id)
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
         val minhag = prefs[Keys.MINHAG]?.let {
             try { Minhag.valueOf(it) } catch (_: IllegalArgumentException) { Minhag.ASHKENAZI }
         } ?: Minhag.ASHKENAZI
 
-        val tempPrefs = UserPreferences(
-            savedLocations = savedLocations,
-            locationMode = locationMode,
-            gpsLocation = gpsLocation
-        )
-        val activeLocation = tempPrefs.activeLocation
+        val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
+        val activeLocation = savedLocations.find { it.id == activeLocationId }?.location
+            ?: currentLocation
 
         val isManualIsrael = prefs[Keys.IS_IN_ISRAEL_MANUAL] ?: false
         val isInIsrael = if (isManualIsrael) {
             prefs[Keys.IS_IN_ISRAEL] ?: false
         } else {
-            activeLocation?.timezoneId == "Asia/Jerusalem"
+            activeLocation.timezoneId == "Asia/Jerusalem"
         }
 
         UserPreferences(
+            currentLocation = currentLocation,
             savedLocations = savedLocations,
-            locationMode = locationMode,
-            gpsLocation = gpsLocation,
+            activeLocationId = activeLocationId,
             candleLightingOffset = candleOffset,
             minhag = minhag,
             isInIsrael = isInIsrael,
@@ -198,47 +196,45 @@ class PreferencesRepository(private val context: Context) {
         }
     }
 
-    suspend fun addSavedLocation(location: Location): String {
-        val newId = UUID.randomUUID().toString()
-        val newEntry = SavedLocation(id = newId, location = location)
+    private fun decodeSavedLocations(prefs: Preferences): List<SavedLocation> =
+        prefs[Keys.SAVED_LOCATIONS]?.let {
+            runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
+        } ?: emptyList()
+
+    /** Saves [location] and makes it the active location. */
+    suspend fun addSavedLocation(location: Location) {
+        val newEntry = SavedLocation(id = UUID.randomUUID().toString(), location = location)
         context.dataStore.edit { prefs ->
-            val current = prefs[Keys.SAVED_LOCATIONS]?.let {
-                runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
-            } ?: emptyList()
-            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(current + newEntry)
+            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(decodeSavedLocations(prefs) + newEntry)
+            prefs[Keys.ACTIVE_LOCATION_ID] = newEntry.id
         }
-        return newId
     }
 
+    /** Removes a saved location; if it was active, the current location takes over. */
     suspend fun removeSavedLocation(id: String) {
         context.dataStore.edit { prefs ->
-            val current = prefs[Keys.SAVED_LOCATIONS]?.let {
-                runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
-            } ?: emptyList()
-            prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(current.filter { it.id != id })
-
-            val currentMode = prefs[Keys.LOCATION_MODE]?.let {
-                runCatching { json.decodeFromString<LocationMode>(it) }.getOrNull()
-            }
-            if (currentMode is LocationMode.Saved && currentMode.id == id) {
-                prefs.remove(Keys.LOCATION_MODE)
+            prefs[Keys.SAVED_LOCATIONS] =
+                json.encodeToString(decodeSavedLocations(prefs).filter { it.id != id })
+            if (prefs[Keys.ACTIVE_LOCATION_ID] == id) {
+                prefs.remove(Keys.ACTIVE_LOCATION_ID)
             }
         }
     }
 
-    suspend fun setLocationMode(mode: LocationMode?) {
+    /** Selects a saved location by [id], or the current location when [id] is null. */
+    suspend fun setActiveLocation(id: String?) {
         context.dataStore.edit { prefs ->
-            if (mode != null) {
-                prefs[Keys.LOCATION_MODE] = json.encodeToString(mode)
+            if (id != null) {
+                prefs[Keys.ACTIVE_LOCATION_ID] = id
             } else {
-                prefs.remove(Keys.LOCATION_MODE)
+                prefs.remove(Keys.ACTIVE_LOCATION_ID)
             }
         }
     }
 
-    suspend fun updateGpsLocation(location: Location) {
+    suspend fun updateCurrentLocation(location: Location) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.GPS_LOCATION] = json.encodeToString(location)
+            prefs[Keys.CURRENT_LOCATION] = json.encodeToString(location)
         }
     }
 
@@ -399,6 +395,31 @@ class PreferencesRepository(private val context: Context) {
             prefs[Keys.LAST_NOTIFIED_UPDATE_VERSION] = version
         }
     }
+}
+
+/**
+ * Replaces the old `location_mode` key ({"type":"gps"} or {"type":"saved","id":…}) with
+ * `active_location_id`. GPS mode maps to "no id", i.e. the current location.
+ */
+internal object LocationModeMigration : DataMigration<Preferences> {
+    private val LOCATION_MODE = stringPreferencesKey("location_mode")
+    private val ACTIVE_LOCATION_ID = stringPreferencesKey("active_location_id")
+
+    override suspend fun shouldMigrate(currentData: Preferences) = LOCATION_MODE in currentData
+
+    override suspend fun migrate(currentData: Preferences): Preferences {
+        val prefs = currentData.toMutablePreferences()
+        val mode = runCatching {
+            Json.parseToJsonElement(prefs[LOCATION_MODE]!!).jsonObject
+        }.getOrNull()
+        if (mode?.get("type")?.jsonPrimitive?.content == "saved") {
+            mode["id"]?.jsonPrimitive?.content?.let { prefs[ACTIVE_LOCATION_ID] = it }
+        }
+        prefs.remove(LOCATION_MODE)
+        return prefs.toPreferences()
+    }
+
+    override suspend fun cleanUp() = Unit
 }
 
 /** Stored yahrzeit settings; missing or unrecognised values fall back to the defaults. */

@@ -131,7 +131,7 @@ class CalendarViewModel(
                     currentPrefs.calendarHebrewMode != prefs.calendarHebrewMode
                 currentPrefs = prefs
                 _state.value = _state.value.copy(
-                    locationName = prefs.activeLocation?.name ?: "",
+                    locationName = prefs.activeLocation.name,
                     calendarHebrewMode = prefs.calendarHebrewMode
                 )
                 if (_state.value.monthDays.isEmpty()) {

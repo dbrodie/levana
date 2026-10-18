@@ -45,14 +45,6 @@
     <string name="calendar_selection_prompt">Select calendars to display in Levana</string>
 
     <!-- Manual location -->
-    <string name="manual_location_name">Location name</string>
-    <string name="manual_location_latitude">Latitude</string>
-    <string name="manual_location_longitude">Longitude</string>
-    <string name="manual_location_timezone">Timezone (e.g. America/New_York)</string>
-    <string name="manual_location_error_latitude">Latitude must be between -90 and 90</string>
-    <string name="manual_location_error_longitude">Longitude must be between -180 and 180</string>
-    <string name="manual_location_error_name">Please enter a location name</string>
-    <string name="manual_location_save">Save Location</string>
 
     <!-- Settings -->
     <string name="settings_halachic_times_title">Halachic Times</string>

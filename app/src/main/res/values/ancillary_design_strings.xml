@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="onboarding_setup_title">Set up your calendar</string>
-    <string name="onboarding_setup_description">Start with a location so Levana can show the right zmanim, holidays, and candle-lighting times.</string>
-    <string name="onboarding_location_choice">Choose how Levana finds your place</string>
-    <string name="onboarding_location_change_hint">You can change this later in Settings.</string>
-    <string name="manual_location_details">Location details</string>
-    <string name="manual_location_hint">Enter coordinates when a city search is not enough.</string>
     <string name="birthday_date_title">Hebrew birthday</string>
     <string name="birthday_date_hint">Save the Hebrew date for an annual reminder.</string>
     <string name="event_add_title">Remember a date</string>
@@ -21,7 +15,6 @@
     <string name="settings_group_developer">Developer</string>
     <string name="settings_group_about">About</string>
     <string name="settings_group_current_location">Current location</string>
-    <string name="settings_group_active">Active</string>
     <string name="settings_group_saved_locations">Saved locations</string>
     <string name="settings_group_locations">Locations</string>
     <string name="settings_location_label">Location</string>
@@ -51,8 +44,7 @@
     <string name="event_update">Update</string>
     <string name="event_increase_value">Increase %1$s</string>
     <string name="event_decrease_value">Decrease %1$s</string>
-    <string name="location_use_current">Use current location</string>
-    <string name="location_auto_detect">Automatically detect location</string>
+    <string name="location_permission_needed">Based on your time zone. Tap to allow location access.</string>
     <string name="location_add">Add location</string>
     <string name="location_delete">Delete</string>
     <string name="city_search_placeholder">Search cities…</string>

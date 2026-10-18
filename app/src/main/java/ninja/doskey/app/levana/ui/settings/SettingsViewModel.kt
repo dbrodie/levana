@@ -107,10 +107,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
                 _state.value = _state.value.copy(
-                    locationName = prefs.activeLocation?.name ?: "Not set",
+                    locationName = prefs.activeLocation.name,
+                    currentLocationName = prefs.currentLocation.name,
                     savedLocations = prefs.savedLocations,
-                    locationMode = prefs.locationMode,
-                    gpsLocationName = prefs.gpsLocation?.name,
+                    activeLocationId = prefs.activeLocationId,
                     minhag = prefs.minhag,
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,

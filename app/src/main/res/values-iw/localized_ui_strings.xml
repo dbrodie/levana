@@ -45,14 +45,6 @@
     <string name="calendar_selection_prompt">בחירת יומנים להצגה בלבנה</string>
 
     <!-- Manual location -->
-    <string name="manual_location_name">שם המיקום</string>
-    <string name="manual_location_latitude">קו רוחב</string>
-    <string name="manual_location_longitude">קו אורך</string>
-    <string name="manual_location_timezone">אזור זמן (לדוגמה Asia/Jerusalem)</string>
-    <string name="manual_location_error_latitude">קו הרוחב חייב להיות בין ‎-90 ל-90</string>
-    <string name="manual_location_error_longitude">קו האורך חייב להיות בין ‎-180 ל-180</string>
-    <string name="manual_location_error_name">יש להזין שם למיקום</string>
-    <string name="manual_location_save">שמירת מיקום</string>
 
     <!-- Settings -->
     <string name="settings_halachic_times_title">זמנים הלכתיים</string>
