@@ -20,15 +20,25 @@
         android:localeConfig="@xml/locales_config"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Launcher entry point: forwards to MainActivity and finishes. DynamicIconManager
+             toggles it and the dated aliases below; MainActivity is never toggled, because
+             Android finishes activities started through a component when it is disabled. -->
         <activity
-            android:name=".MainActivity"
+            android:name=".LauncherActivity"
             android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
 
         <receiver
             android:name=".notifications.NotificationAlarmReceiver"
@@ -54,11 +64,11 @@
         <!-- 30 activity aliases — one per Hebrew day of month (1–30).
              DynamicIconManager enables the matching alias at runtime so the
              launcher icon always shows the current Hebrew date letter.
-             All start disabled; MainActivity (with ic_launcher) is the fallback. -->
+             All start disabled; LauncherActivity (with ic_launcher) is the fallback. -->
 
         <activity-alias
             android:name=".MainActivityDay01"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_01"
             android:roundIcon="@mipmap/ic_launcher_day_01"
             android:enabled="false"
@@ -71,7 +81,7 @@
 
         <activity-alias
             android:name=".MainActivityDay02"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_02"
             android:roundIcon="@mipmap/ic_launcher_day_02"
             android:enabled="false"
@@ -84,7 +94,7 @@
 
         <activity-alias
             android:name=".MainActivityDay03"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_03"
             android:roundIcon="@mipmap/ic_launcher_day_03"
             android:enabled="false"
@@ -97,7 +107,7 @@
 
         <activity-alias
             android:name=".MainActivityDay04"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_04"
             android:roundIcon="@mipmap/ic_launcher_day_04"
             android:enabled="false"
@@ -110,7 +120,7 @@
 
         <activity-alias
             android:name=".MainActivityDay05"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_05"
             android:roundIcon="@mipmap/ic_launcher_day_05"
             android:enabled="false"
@@ -123,7 +133,7 @@
 
         <activity-alias
             android:name=".MainActivityDay06"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_06"
             android:roundIcon="@mipmap/ic_launcher_day_06"
             android:enabled="false"
@@ -136,7 +146,7 @@
 
         <activity-alias
             android:name=".MainActivityDay07"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_07"
             android:roundIcon="@mipmap/ic_launcher_day_07"
             android:enabled="false"
@@ -149,7 +159,7 @@
 
         <activity-alias
             android:name=".MainActivityDay08"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_08"
             android:roundIcon="@mipmap/ic_launcher_day_08"
             android:enabled="false"
@@ -162,7 +172,7 @@
 
         <activity-alias
             android:name=".MainActivityDay09"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_09"
             android:roundIcon="@mipmap/ic_launcher_day_09"
             android:enabled="false"
@@ -175,7 +185,7 @@
 
         <activity-alias
             android:name=".MainActivityDay10"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_10"
             android:roundIcon="@mipmap/ic_launcher_day_10"
             android:enabled="false"
@@ -188,7 +198,7 @@
 
         <activity-alias
             android:name=".MainActivityDay11"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_11"
             android:roundIcon="@mipmap/ic_launcher_day_11"
             android:enabled="false"
@@ -201,7 +211,7 @@
 
         <activity-alias
             android:name=".MainActivityDay12"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_12"
             android:roundIcon="@mipmap/ic_launcher_day_12"
             android:enabled="false"
@@ -214,7 +224,7 @@
 
         <activity-alias
             android:name=".MainActivityDay13"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_13"
             android:roundIcon="@mipmap/ic_launcher_day_13"
             android:enabled="false"
@@ -227,7 +237,7 @@
 
         <activity-alias
             android:name=".MainActivityDay14"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_14"
             android:roundIcon="@mipmap/ic_launcher_day_14"
             android:enabled="false"
@@ -240,7 +250,7 @@
 
         <activity-alias
             android:name=".MainActivityDay15"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_15"
             android:roundIcon="@mipmap/ic_launcher_day_15"
             android:enabled="false"
@@ -253,7 +263,7 @@
 
         <activity-alias
             android:name=".MainActivityDay16"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_16"
             android:roundIcon="@mipmap/ic_launcher_day_16"
             android:enabled="false"
@@ -266,7 +276,7 @@
 
         <activity-alias
             android:name=".MainActivityDay17"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_17"
             android:roundIcon="@mipmap/ic_launcher_day_17"
             android:enabled="false"
@@ -279,7 +289,7 @@
 
         <activity-alias
             android:name=".MainActivityDay18"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_18"
             android:roundIcon="@mipmap/ic_launcher_day_18"
             android:enabled="false"
@@ -292,7 +302,7 @@
 
         <activity-alias
             android:name=".MainActivityDay19"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_19"
             android:roundIcon="@mipmap/ic_launcher_day_19"
             android:enabled="false"
@@ -305,7 +315,7 @@
 
         <activity-alias
             android:name=".MainActivityDay20"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_20"
             android:roundIcon="@mipmap/ic_launcher_day_20"
             android:enabled="false"
@@ -318,7 +328,7 @@
 
         <activity-alias
             android:name=".MainActivityDay21"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_21"
             android:roundIcon="@mipmap/ic_launcher_day_21"
             android:enabled="false"
@@ -331,7 +341,7 @@
 
         <activity-alias
             android:name=".MainActivityDay22"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_22"
             android:roundIcon="@mipmap/ic_launcher_day_22"
             android:enabled="false"
@@ -344,7 +354,7 @@
 
         <activity-alias
             android:name=".MainActivityDay23"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_23"
             android:roundIcon="@mipmap/ic_launcher_day_23"
             android:enabled="false"
@@ -357,7 +367,7 @@
 
         <activity-alias
             android:name=".MainActivityDay24"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_24"
             android:roundIcon="@mipmap/ic_launcher_day_24"
             android:enabled="false"
@@ -370,7 +380,7 @@
 
         <activity-alias
             android:name=".MainActivityDay25"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_25"
             android:roundIcon="@mipmap/ic_launcher_day_25"
             android:enabled="false"
@@ -383,7 +393,7 @@
 
         <activity-alias
             android:name=".MainActivityDay26"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_26"
             android:roundIcon="@mipmap/ic_launcher_day_26"
             android:enabled="false"
@@ -396,7 +406,7 @@
 
         <activity-alias
             android:name=".MainActivityDay27"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_27"
             android:roundIcon="@mipmap/ic_launcher_day_27"
             android:enabled="false"
@@ -409,7 +419,7 @@
 
         <activity-alias
             android:name=".MainActivityDay28"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_28"
             android:roundIcon="@mipmap/ic_launcher_day_28"
             android:enabled="false"
@@ -422,7 +432,7 @@
 
         <activity-alias
             android:name=".MainActivityDay29"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_29"
             android:roundIcon="@mipmap/ic_launcher_day_29"
             android:enabled="false"
@@ -435,7 +445,7 @@
 
         <activity-alias
             android:name=".MainActivityDay30"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".LauncherActivity"
             android:icon="@mipmap/ic_launcher_day_30"
             android:roundIcon="@mipmap/ic_launcher_day_30"
             android:enabled="false"

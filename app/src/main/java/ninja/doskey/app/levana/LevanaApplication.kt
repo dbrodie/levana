@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import ninja.doskey.app.levana.crash.CrashReporting
 import ninja.doskey.app.levana.di.allModules
+import ninja.doskey.app.levana.icon.DynamicIconManager
 import ninja.doskey.app.levana.notifications.DailyNotificationWorker
 import ninja.doskey.app.levana.notifications.NotificationChannels
 import ninja.doskey.app.levana.update.UpdateCheckWorker
@@ -23,6 +24,7 @@ class LevanaApplication : Application() {
         super.onCreate()
         // ACRA shows the crash dialog in its own process; don't start the app there
         if (CrashReporting.isReporterProcess()) return
+        DynamicIconManager.restoreMainActivity(this)
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@LevanaApplication)
