@@ -51,15 +51,20 @@ Levana ships only through GitHub Releases, Google Play and F-Droid. Any installe
 - GitHub-tracking installers such as Obtainium
 - `adb`
 
-For all of these, the GitHub release is the right update source, so `Unknown` has no real case left and is removed. That also removes the `about_install_source_unknown` string (en + iw).
+For all of these, the GitHub release is the right update source, so `Unknown` has no real case left and is removed.
 
 Accepted risk: an F-Droid build installed through an alternative F-Droid client (Droid-ify, Neo Store, F-Droid Basic) will now be treated as a GitHub install. Today those are "Unknown". Recognising them can be a follow-up if Levana is published on F-Droid.
+
+### About screen shows the raw installer
+
+The mapping only decides whether the update worker calls GitHub. About → Install Source no longer shows a mapped label ("Google Play" / "F-Droid" / "GitHub Release"). It shows the raw `installingPackageName` (e.g. `com.android.vending`, `com.google.android.packageinstaller`), or **None** when there is no installer (adb). That way About reports exactly what Android recorded, which is more useful for bug reports than a guess. The `about_install_source_unknown` string is replaced by `about_install_source_none` (en + iw).
 
 ## Design
 
 - Add a pure function `UpdateSource.fromInstaller(installingPackageName: String?): UpdateSource` in `UpdateSource.kt`, which holds the mapping.
 - `UpdateChecker.detectUpdateSource()` delegates to it.
-- Remove `UpdateSource.Unknown` and its branches in `SettingsScreen.AboutScreen` and `UpdateCheckWorker`.
+- `UpdateChecker.installerPackageName()` returns the raw `installingPackageName`. `detectUpdateSource()` maps it, and `AboutScreen` displays it directly.
+- Remove `UpdateSource.Unknown` and its branch in `UpdateCheckWorker`.
 
 ## Tests
 
