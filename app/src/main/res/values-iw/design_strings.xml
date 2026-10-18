@@ -3,13 +3,11 @@
     <string name="design_my_events">האירועים שלי</string>
     <string name="design_active_city">עיר פעילה</string>
     <string name="design_switch_city">החלפת עיר</string>
-    <string name="design_detecting">מאתר…</string>
     <string name="design_manage_cities">ניהול ערים</string>
     <string name="design_halachic_times">זמני היום</string>
     <string name="design_developer_settings">הגדרות מפתחים</string>
     <string name="design_about">אודות</string>
     <string name="design_cities">ערים</string>
-    <string name="design_add_location">הוספת מיקום</string>
     <string name="design_system_calendars">לוחות שנה במכשיר</string>
     <string name="design_edit_event">עריכת אירוע</string>
     <string name="design_add_event">הוספת אירוע</string>

@@ -38,7 +38,7 @@ class DailyNotificationWorker(
 
     override suspend fun doWork(): Result {
         val prefs = preferencesRepository.preferences.first()
-        val location = prefs.activeLocation ?: return Result.success()
+        val location = prefs.activeLocation
         val today = prefs.devDateOverride ?: LocalDate.now()
         // Notification text follows Settings → App language, not just the device locale
         val localized = applicationContext.withAppLocale()

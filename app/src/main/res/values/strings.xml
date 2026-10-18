@@ -39,13 +39,6 @@
     <string name="settings_candle_lighting">Candle Lighting</string>
     <string name="settings_candle_lighting_desc">Minutes before sunset</string>
 
-    <!-- Onboarding -->
-    <string name="welcome_title">Welcome to Levana</string>
-    <string name="welcome_subtitle">Choose your location to get started</string>
-    <string name="pick_city">Pick a City</string>
-    <string name="use_gps">Use GPS</string>
-    <string name="enter_manually">Enter Manually</string>
-
     <!-- Quick Settings tile -->
     <string name="tile_name">Hebrew Date</string>
 

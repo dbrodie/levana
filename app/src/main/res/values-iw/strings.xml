@@ -39,13 +39,6 @@
     <string name="settings_candle_lighting">הדלקת נרות</string>
     <string name="settings_candle_lighting_desc">דקות לפני השקיעה</string>
 
-    <!-- Onboarding -->
-    <string name="welcome_title">ברוכים הבאים ללבנה</string>
-    <string name="welcome_subtitle">בחרו מיקום כדי להתחיל</string>
-    <string name="pick_city">בחר עיר</string>
-    <string name="use_gps">השתמש ב-GPS</string>
-    <string name="enter_manually">הכנס ידנית</string>
-
     <!-- Quick Settings tile -->
     <string name="tile_name">תאריך עברי</string>
 

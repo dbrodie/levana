@@ -1,9 +1,9 @@
 package ninja.doskey.app.levana.domain.model
 
 data class UserPreferences(
+    val currentLocation: Location = Location.JERUSALEM,
     val savedLocations: List<SavedLocation> = emptyList(),
-    val locationMode: LocationMode? = null,
-    val gpsLocation: Location? = null,
+    val activeLocationId: String? = null,
     val candleLightingOffset: Double = 18.0,
     val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,
@@ -30,10 +30,6 @@ data class UserPreferences(
     val yahrzeitRules: YahrzeitRules = YahrzeitRules()
 )
 
-val UserPreferences.activeLocation: Location?
-    get() = when (val mode = locationMode) {
-        is LocationMode.Gps -> gpsLocation
-        is LocationMode.Saved -> savedLocations.find { it.id == mode.id }?.location
-            ?: savedLocations.firstOrNull()?.location  // orphaned id → fall back to first
-        null -> null  // no mode set → onboarding
-    }
+/** The selected saved location, or the current location when none is selected. */
+val UserPreferences.activeLocation: Location
+    get() = savedLocations.find { it.id == activeLocationId }?.location ?: currentLocation

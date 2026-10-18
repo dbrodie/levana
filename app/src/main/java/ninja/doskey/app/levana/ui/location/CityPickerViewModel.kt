@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.LocationMode
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,8 +45,7 @@ class CityPickerViewModel(
 
     private fun selectCity(city: Location) {
         viewModelScope.launch {
-            val newId = preferencesRepository.addSavedLocation(city)
-            preferencesRepository.setLocationMode(LocationMode.Saved(newId))
+            preferencesRepository.addSavedLocation(city)
             _events.emit(CityPickerEvent.LocationSaved)
         }
     }

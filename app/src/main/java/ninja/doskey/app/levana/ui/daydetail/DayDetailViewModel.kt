@@ -9,7 +9,6 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.CalendarEvent
-import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +54,7 @@ class DayDetailViewModel(
         loadJob = viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
-            val location = prefs.activeLocation ?: Location.JERUSALEM
+            val location = prefs.activeLocation
             val dayInfo = calendarRepository.getDayInfo(
                 date,
                 prefs.isInIsrael,

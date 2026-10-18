@@ -20,6 +20,10 @@ class CityRepository(private val context: Context) {
         }
     }
 
+    /** Best guess before the device reports a location: the first bundled city in [timezoneId]. */
+    fun defaultForTimeZone(timezoneId: String): Location =
+        cities.firstOrNull { it.timezoneId == timezoneId } ?: Location.JERUSALEM
+
     private fun loadCities(): List<Location> {
         val json = context.assets.open("cities.json")
             .bufferedReader().use { it.readText() }
