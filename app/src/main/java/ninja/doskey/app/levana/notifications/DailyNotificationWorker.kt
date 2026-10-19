@@ -197,15 +197,18 @@ class DailyNotificationWorker(
     }
 
     private fun handleOmer(today: LocalDate, location: Location, prefs: UserPreferences) {
-        val dayInfo = calendarRepository.getDayInfo(today, inIsrael = false)
-        val omerDay = dayInfo.omerDay ?: return
+        val plan = planOmerReminders(
+            today,
+            prefs.notifyOmerTzait,
+            prefs.notifyOmerMorning,
+            calendarRepository
+        ) { zmanimRepository.getTzaitTime(today, location) }
 
-        if (prefs.notifyOmerTzait) {
-            val tzaitTime = zmanimRepository.getTzaitTime(today, location) ?: return
-            alarmScheduler.scheduleOmerReminder(today, tzaitTime, location, omerDay)
+        plan.evening?.let { evening ->
+            alarmScheduler.scheduleOmerReminder(today, evening.tzaitTime, location, evening.omerDay)
         }
 
-        if (prefs.notifyOmerMorning) {
+        plan.morningOmerDay?.let { omerDay ->
             val morningTime = LocalTime.of(
                 prefs.notifyOmerMorningTime / 60,
                 prefs.notifyOmerMorningTime % 60
@@ -242,4 +245,37 @@ class DailyNotificationWorker(
             )
         }
     }
+}
+
+internal data class EveningOmerReminder(val tzaitTime: LocalTime, val omerDay: Int)
+
+internal data class OmerReminderPlan(
+    val evening: EveningOmerReminder?,
+    val morningOmerDay: Int?
+)
+
+/**
+ * Omer reminders for the civil date [today]. The Hebrew day starts at nightfall, so the tzait
+ * reminder announces the count of the upcoming Hebrew day ([today] + 1), while the morning
+ * reminder announces the current day's count. A missing tzait only drops the evening reminder.
+ */
+internal fun planOmerReminders(
+    today: LocalDate,
+    notifyTzait: Boolean,
+    notifyMorning: Boolean,
+    calendarRepository: CalendarRepository,
+    tzaitTime: () -> LocalTime?
+): OmerReminderPlan {
+    val evening = if (notifyTzait) {
+        calendarRepository.getDayInfo(today.plusDays(1), inIsrael = false).omerDay
+            ?.let { omerDay -> tzaitTime()?.let { EveningOmerReminder(it, omerDay) } }
+    } else {
+        null
+    }
+    val morningOmerDay = if (notifyMorning) {
+        calendarRepository.getDayInfo(today, inIsrael = false).omerDay
+    } else {
+        null
+    }
+    return OmerReminderPlan(evening, morningOmerDay)
 }
