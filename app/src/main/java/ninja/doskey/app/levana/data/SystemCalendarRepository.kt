@@ -10,7 +10,9 @@ import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class SystemCalendarRepository(private val context: Context) {
 
@@ -71,11 +73,9 @@ class SystemCalendarRepository(private val context: Context) {
         }
 
         val zone = ZoneId.systemDefault()
-        val startMillis = date.atStartOfDay(zone).toInstant().toEpochMilli()
-        val endMillis = date.plusDays(1).atStartOfDay(zone).toInstant()
-            .toEpochMilli()
-
-        return queryInstances(startMillis, endMillis, calendarIds, zone)
+        return queryInstances(date, date, calendarIds, zone)
+            .filter { it.coveredDates.overlaps(date, date) }
+            .map { it.event }
     }
 
     fun getEventColorsForDateRange(
@@ -88,29 +88,38 @@ class SystemCalendarRepository(private val context: Context) {
         }
 
         val zone = ZoneId.systemDefault()
-        val startMillis = start.atStartOfDay(zone).toInstant().toEpochMilli()
-        val endMillis = end.plusDays(1).atStartOfDay(zone).toInstant()
-            .toEpochMilli()
-
-        val events = queryInstances(startMillis, endMillis, calendarIds, zone)
+        val instances = queryInstances(start, end, calendarIds, zone)
 
         val result = mutableMapOf<LocalDate, MutableSet<Int>>()
-        for (event in events) {
-            val eventDate = event.startTime.toLocalDate()
-            result.getOrPut(eventDate) { mutableSetOf() }
-                .add(event.calendarColor)
+        for (instance in instances) {
+            val dates = instance.coveredDates
+            var day = maxOf(dates.start, start)
+            val last = minOf(dates.endInclusive, end)
+            while (!day.isAfter(last)) {
+                result.getOrPut(day) { linkedSetOf() }
+                    .add(instance.event.calendarColor)
+                day = day.plusDays(1)
+            }
         }
 
         return result.mapValues { it.value.toList().take(MAX_DOTS) }
     }
 
     private fun queryInstances(
-        startMillis: Long,
-        endMillis: Long,
+        start: LocalDate,
+        end: LocalDate,
         calendarIds: Set<Long>,
         zone: ZoneId
-    ): List<SystemCalendarEvent> {
-        val events = mutableListOf<SystemCalendarEvent>()
+    ): List<CalendarInstance> {
+        val events = mutableListOf<CalendarInstance>()
+
+        // Widen by a day on each side: all-day instances are anchored to UTC
+        // midnight, which can fall outside the local-day window. Results are
+        // filtered by their covered dates afterwards.
+        val startMillis = start.minusDays(1).atStartOfDay(zone).toInstant()
+            .toEpochMilli()
+        val endMillis = end.plusDays(2).atStartOfDay(zone).toInstant()
+            .toEpochMilli()
 
         val builder = CalendarContract.Instances.CONTENT_URI.buildUpon()
         ContentUris.appendId(builder, startMillis)
@@ -165,22 +174,29 @@ class SystemCalendarRepository(private val context: Context) {
 
                 val beginMs = cursor.getLong(beginIdx)
                 val endMs = cursor.getLong(endIdx)
+                val allDay = cursor.getInt(allDayIdx) == 1
+                // All-day instances are stored as UTC midnight boundaries.
+                val eventZone = if (allDay) ZoneOffset.UTC else zone
 
+                val event = SystemCalendarEvent(
+                    eventId = cursor.getLong(eventIdIdx),
+                    title = cursor.getString(titleIdx) ?: "",
+                    startTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(beginMs),
+                        eventZone
+                    ),
+                    endTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(endMs),
+                        eventZone
+                    ),
+                    allDay = allDay,
+                    calendarId = calId,
+                    calendarColor = cursor.getInt(colorIdx)
+                )
                 events.add(
-                    SystemCalendarEvent(
-                        eventId = cursor.getLong(eventIdIdx),
-                        title = cursor.getString(titleIdx) ?: "",
-                        startTime = LocalDateTime.ofInstant(
-                            Instant.ofEpochMilli(beginMs),
-                            zone
-                        ),
-                        endTime = LocalDateTime.ofInstant(
-                            Instant.ofEpochMilli(endMs),
-                            zone
-                        ),
-                        allDay = cursor.getInt(allDayIdx) == 1,
-                        calendarId = calId,
-                        calendarColor = cursor.getInt(colorIdx)
+                    CalendarInstance(
+                        event,
+                        coveredDates(beginMs, endMs, allDay, zone)
                     )
                 )
             }
@@ -189,7 +205,42 @@ class SystemCalendarRepository(private val context: Context) {
         return events
     }
 
+    private class CalendarInstance(
+        val event: SystemCalendarEvent,
+        val coveredDates: ClosedRange<LocalDate>
+    )
+
     companion object {
         const val MAX_DOTS = 3
+
+        /**
+         * The calendar dates an instance occupies. All-day instances use UTC
+         * dates with an exclusive end; timed instances use [zone] dates, with
+         * an end at exactly midnight treated as exclusive.
+         */
+        internal fun coveredDates(
+            beginMillis: Long,
+            endMillis: Long,
+            allDay: Boolean,
+            zone: ZoneId
+        ): ClosedRange<LocalDate> {
+            val dateZone = if (allDay) ZoneOffset.UTC else zone
+            val begin = Instant.ofEpochMilli(beginMillis).atZone(dateZone)
+            val first = begin.toLocalDate()
+            if (endMillis <= beginMillis) return first..first
+
+            val end = Instant.ofEpochMilli(endMillis).atZone(dateZone)
+            val last = if (end.toLocalTime() == LocalTime.MIDNIGHT) {
+                end.toLocalDate().minusDays(1)
+            } else {
+                end.toLocalDate()
+            }
+            return first..maxOf(first, last)
+        }
+
+        private fun ClosedRange<LocalDate>.overlaps(
+            from: LocalDate,
+            to: LocalDate
+        ): Boolean = !start.isAfter(to) && !endInclusive.isBefore(from)
     }
 }
