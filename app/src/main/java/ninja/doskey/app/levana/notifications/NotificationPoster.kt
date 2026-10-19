@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Holiday
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.update.GITHUB_RELEASES_PAGE
@@ -50,9 +51,9 @@ object NotificationPoster {
         context: Context,
         date: LocalDate,
         candleLightingTime: LocalTime,
-        endTime: LocalTime?
+        end: ObservanceEnd?
     ) {
-        val text = candleLightingNotificationText(context, candleLightingTime, endTime)
+        val text = candleLightingNotificationText(context, date, candleLightingTime, end)
         post(
             context,
             NotificationChannels.CANDLE_LIGHTING,

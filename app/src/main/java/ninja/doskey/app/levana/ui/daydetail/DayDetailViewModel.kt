@@ -63,7 +63,8 @@ class DayDetailViewModel(
             val shabbatInfo = zmanimRepository.getShabbatInfo(
                 date,
                 location,
-                prefs.candleLightingOffset
+                prefs.candleLightingOffset,
+                prefs.isInIsrael
             )
 
             val personalEvents =
@@ -91,7 +92,12 @@ class DayDetailViewModel(
                 emptyList()
             }
 
-            val allZmanim = zmanimRepository.getZmanim(date, location, prefs.candleLightingOffset)
+            val allZmanim = zmanimRepository.getZmanim(
+                date,
+                location,
+                prefs.candleLightingOffset,
+                prefs.isInIsrael
+            )
             val halachicTimes = allZmanim.filter { it.name in prefs.selectedZmanim }
 
             _state.value = DayDetailState(

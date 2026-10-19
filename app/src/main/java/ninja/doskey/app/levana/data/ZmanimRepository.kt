@@ -4,6 +4,7 @@ import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.util.GeoLocation
 import ninja.doskey.app.levana.domain.model.Location
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.ShabbatInfo
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanName
@@ -18,29 +19,39 @@ import java.util.TimeZone
 
 class ZmanimRepository {
 
+    /**
+     * Candle lighting and havdalah for [date]. Follows the holy-day transitions: candles are
+     * lit before sunset on a weekday or on Yom Tov before Shabbat, but only after nightfall
+     * when Shabbat or Yom Tov continues into another Yom Tov; havdalah is only shown when
+     * the last of consecutive holy days ends. [inIsrael] selects one- or two-day Yom Tov.
+     */
     fun getShabbatInfo(
         date: LocalDate,
         location: Location,
-        candleLightingOffset: Double = 18.0
+        candleLightingOffset: Double = 18.0,
+        inIsrael: Boolean = false
     ): ShabbatInfo {
-        val jc = createJewishCalendar(date)
-        val isErevShabbat = date.dayOfWeek == DayOfWeek.FRIDAY
+        val today = createJewishCalendar(date, inIsrael)
+        val tomorrow = createJewishCalendar(date.plusDays(1), inIsrael)
         val isShabbat = date.dayOfWeek == DayOfWeek.SATURDAY
-        val isErevYomTov = jc.isErevYomTov ||
-            jc.isErevYomTovSheni
-        val isYomTov = jc.isYomTov && !isErevYomTov
+        val isYomTov = today.isYomTovAssurBemelacha
+        val isHolyToday = today.isAssurBemelacha
+        val isHolyTomorrow = tomorrow.isAssurBemelacha
 
-        val candleLightingTime = if (isErevShabbat || isErevYomTov) {
-            val czc = createCalendar(date, location)
-            czc.candleLightingOffset = candleLightingOffset
-            toLocalTime(czc.candleLighting, location)
-        } else {
-            null
+        val candleLightingTime = when {
+            !isHolyTomorrow -> null
+            // Lighting on Shabbat, or from Yom Tov into Yom Tov, waits for nightfall
+            isHolyToday && date.plusDays(1).dayOfWeek != DayOfWeek.SATURDAY ->
+                getTzaitTime(date, location)
+            else -> {
+                val czc = createCalendar(date, location)
+                czc.candleLightingOffset = candleLightingOffset
+                toLocalTime(czc.candleLighting, location)
+            }
         }
 
-        val havdalahTime = if (isShabbat || isYomTov) {
-            val czc = createCalendar(date, location)
-            toLocalTime(czc.tzais, location)
+        val havdalahTime = if (isHolyToday && !isHolyTomorrow) {
+            getTzaitTime(date, location)
         } else {
             null
         }
@@ -48,30 +59,51 @@ class ZmanimRepository {
         return ShabbatInfo(
             candleLightingTime = candleLightingTime,
             havdalahTime = havdalahTime,
-            isErevShabbat = isErevShabbat,
+            isErevShabbat = date.dayOfWeek == DayOfWeek.FRIDAY,
             isShabbat = isShabbat,
-            isErevYomTov = isErevYomTov,
+            isErevYomTov = tomorrow.isYomTovAssurBemelacha,
             isYomTov = isYomTov
         )
     }
 
-    fun hasCandles(date: LocalDate): Boolean {
-        val jc = createJewishCalendar(date)
-        return date.dayOfWeek == DayOfWeek.FRIDAY ||
-            jc.isErevYomTov ||
-            jc.isErevYomTovSheni
+    fun hasCandles(date: LocalDate, inIsrael: Boolean = false): Boolean =
+        createJewishCalendar(date.plusDays(1), inIsrael).isAssurBemelacha
+
+    /**
+     * When the holy days that begin on the evening of [date] end: the havdalah of the last
+     * of the consecutive Shabbat / Yom Tov days. Null if no holy day begins that evening.
+     */
+    fun getObservanceEnd(
+        date: LocalDate,
+        location: Location,
+        inIsrael: Boolean = false
+    ): ObservanceEnd? {
+        var day = date.plusDays(1)
+        var jc = createJewishCalendar(day, inIsrael)
+        if (!jc.isAssurBemelacha) return null
+        var includesYomTov = false
+        while (true) {
+            includesYomTov = includesYomTov || jc.isYomTovAssurBemelacha
+            val next = createJewishCalendar(day.plusDays(1), inIsrael)
+            if (!next.isAssurBemelacha) break
+            day = day.plusDays(1)
+            jc = next
+        }
+        return ObservanceEnd(day, getTzaitTime(day, location), includesYomTov)
     }
 
     fun getZmanim(
         date: LocalDate,
         location: Location,
-        candleLightingOffset: Double = 18.0
+        candleLightingOffset: Double = 18.0,
+        inIsrael: Boolean = false
     ): List<ZmanTime> {
         val czc = createCalendar(date, location)
         val shabbatInfo = getShabbatInfo(
             date,
             location,
-            candleLightingOffset
+            candleLightingOffset,
+            inIsrael
         )
         return buildList {
             add(zman(ALOT_HASHACHAR, czc.alosHashachar, ZmanCategory.MORNING, location))
@@ -136,13 +168,13 @@ class ZmanimRepository {
         return Pair(startTime, endTime)
     }
 
-    private fun createJewishCalendar(date: LocalDate): JewishCalendar {
+    private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false): JewishCalendar {
         val gc = GregorianCalendar(
             date.year,
             date.monthValue - 1,
             date.dayOfMonth
         )
-        return JewishCalendar(gc)
+        return JewishCalendar(gc).apply { setInIsrael(inIsrael) }
     }
 
     private fun toLocalTime(date: Date?, location: Location): LocalTime? = date?.toInstant()

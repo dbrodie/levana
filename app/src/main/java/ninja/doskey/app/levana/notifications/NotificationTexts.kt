@@ -6,8 +6,11 @@ import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Holiday
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 
 /**
  * Text builders for every notification except birthdays (see [birthdayNotificationText]).
@@ -44,17 +47,35 @@ fun notificationTime(context: Context, time: LocalTime): String {
 fun holidayDisplayName(context: Context, holiday: Holiday): String =
     if (context.isHebrewLanguage()) holiday.hebrewName else holiday.name
 
+/**
+ * Candle lighting on [date], with the havdalah of the last consecutive Shabbat / Yom Tov
+ * day. The end is labelled Yom Tov when it includes one, and names its weekday when it is
+ * not the next day.
+ */
 fun candleLightingNotificationText(
     context: Context,
+    date: LocalDate,
     candleLightingTime: LocalTime,
-    endTime: LocalTime?
+    end: ObservanceEnd?
 ): NotificationText {
     val time = notificationTime(context, candleLightingTime)
+    val endTime = end?.time
     val body = if (endTime != null) {
-        context.getString(
-            R.string.notification_candle_lighting_body_with_end,
-            time,
+        val endText = if (end.date == date.plusDays(1)) {
             notificationTime(context, endTime)
+        } else {
+            val weekday = end.date.dayOfWeek
+                .getDisplayName(TextStyle.FULL, context.resources.configuration.locales[0])
+            "$weekday ${notificationTime(context, endTime)}"
+        }
+        context.getString(
+            if (end.includesYomTov) {
+                R.string.notification_candle_lighting_body_with_yom_tov_end
+            } else {
+                R.string.notification_candle_lighting_body_with_end
+            },
+            time,
+            endText
         )
     } else {
         context.getString(R.string.notification_candle_lighting_body, time)

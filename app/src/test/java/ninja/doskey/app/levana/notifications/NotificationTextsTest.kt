@@ -8,6 +8,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.data.HolidayMapper
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.HebrewMonth
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import org.junit.After
@@ -17,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 import java.time.LocalTime
 
 @RunWith(RobolectricTestRunner::class)
@@ -33,6 +35,12 @@ class NotificationTextsTest {
 
     private val candles = LocalTime.of(18, 6)
     private val havdalah = LocalTime.of(19, 12)
+
+    /** Friday 2026-09-11, Erev Rosh Hashanah; Saturday is Shabbat. */
+    private val friday = LocalDate.of(2026, 9, 11)
+    private val shabbatEnd = ObservanceEnd(friday.plusDays(1), havdalah, includesYomTov = false)
+    private val yomTovEndNextDay = ObservanceEnd(friday.plusDays(1), havdalah, includesYomTov = true)
+    private val yomTovEndSunday = ObservanceEnd(friday.plusDays(2), havdalah, includesYomTov = true)
 
     /** English device, App language = System default. */
     private fun english(): Context = app.withAppLocale()
@@ -58,23 +66,35 @@ class NotificationTextsTest {
 
     @Test
     fun candleLightingEnglish() {
-        val withEnd = candleLightingNotificationText(english(), candles, havdalah)
+        val withEnd = candleLightingNotificationText(english(), friday, candles, shabbatEnd)
         assertEquals("Candle Lighting", withEnd.title)
         assertEquals("Candle Lighting at 6:06 PM · Shabbat ends 7:12 PM", withEnd.body)
         assertEquals(
             "Candle Lighting at 6:06 PM",
-            candleLightingNotificationText(english(), candles, null).body
+            candleLightingNotificationText(english(), friday, candles, null).body
+        )
+        assertEquals(
+            "Candle Lighting at 6:06 PM · Yom Tov ends 7:12 PM",
+            candleLightingNotificationText(english(), friday, candles, yomTovEndNextDay).body
+        )
+        assertEquals(
+            "Candle Lighting at 6:06 PM · Yom Tov ends Sunday 7:12 PM",
+            candleLightingNotificationText(english(), friday, candles, yomTovEndSunday).body
         )
     }
 
     @Test
     fun candleLightingHebrew() {
-        val withEnd = candleLightingNotificationText(hebrew(), candles, havdalah)
+        val withEnd = candleLightingNotificationText(hebrew(), friday, candles, shabbatEnd)
         assertEquals("הדלקת נרות", withEnd.title)
         assertEquals("הדלקת נרות בשעה 18:06 · צאת השבת 19:12", withEnd.body)
         assertEquals(
             "הדלקת נרות בשעה 18:06",
-            candleLightingNotificationText(hebrew(), candles, null).body
+            candleLightingNotificationText(hebrew(), friday, candles, null).body
+        )
+        assertEquals(
+            "הדלקת נרות בשעה 18:06 · צאת החג 19:12",
+            candleLightingNotificationText(hebrew(), friday, candles, yomTovEndNextDay).body
         )
     }
 

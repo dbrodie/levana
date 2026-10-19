@@ -38,7 +38,8 @@ class ZmanimViewModel(
             val zmanim = zmanimRepository.getZmanim(
                 date,
                 location,
-                prefs.candleLightingOffset
+                prefs.candleLightingOffset,
+                prefs.isInIsrael
             )
             _state.value = _state.value.copy(
                 date = date,

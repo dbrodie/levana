@@ -71,23 +71,18 @@ class DailyNotificationWorker(
     private fun handleCandleLighting(
         localized: Context,
         today: LocalDate, location: Location, prefs: UserPreferences) {
-        if (!zmanimRepository.hasCandles(today)) return
+        if (!zmanimRepository.hasCandles(today, prefs.isInIsrael)) return
 
         val shabbatInfo = zmanimRepository.getShabbatInfo(
             today,
             location,
-            prefs.candleLightingOffset
+            prefs.candleLightingOffset,
+            prefs.isInIsrael
         )
         val candleLightingTime = shabbatInfo.candleLightingTime ?: return
 
-        // Get havdalah/end time from the next day
-        val nextDay = today.plusDays(1)
-        val nextDayInfo = zmanimRepository.getShabbatInfo(
-            nextDay,
-            location,
-            prefs.candleLightingOffset
-        )
-        val endTime = nextDayInfo.havdalahTime
+        // Havdalah after the last of consecutive Shabbat / Yom Tov days
+        val end = zmanimRepository.getObservanceEnd(today, location, prefs.isInIsrael)
 
         when (prefs.candleLightingNotifyMode) {
             "morning" -> {
@@ -102,7 +97,7 @@ class DailyNotificationWorker(
                         morningTime,
                         location,
                         candleLightingTime,
-                        endTime
+                        end
                     )
                 } else {
                     // Already past morning time, post immediately
@@ -110,7 +105,7 @@ class DailyNotificationWorker(
                         localized,
                         today,
                         candleLightingTime,
-                        endTime
+                        end
                     )
                 }
             }
@@ -123,7 +118,7 @@ class DailyNotificationWorker(
                     triggerTime,
                     location,
                     candleLightingTime,
-                    endTime
+                    end
                 )
             }
         }

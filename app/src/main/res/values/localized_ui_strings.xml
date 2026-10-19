@@ -125,6 +125,7 @@
     <string name="notification_candle_lighting_title">Candle Lighting</string>
     <string name="notification_candle_lighting_body">Candle Lighting at %1$s</string>
     <string name="notification_candle_lighting_body_with_end">Candle Lighting at %1$s \u00b7 Shabbat ends %2$s</string>
+    <string name="notification_candle_lighting_body_with_yom_tov_end">Candle Lighting at %1$s \u00b7 Yom Tov ends %2$s</string>
     <string name="notification_holiday_title">Holiday</string>
     <string name="notification_holiday_today">Today is %1$s</string>
     <string name="notification_holiday_tomorrow">%1$s begins tomorrow</string>

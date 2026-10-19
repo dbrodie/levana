@@ -125,6 +125,7 @@
     <string name="notification_candle_lighting_title">הדלקת נרות</string>
     <string name="notification_candle_lighting_body">הדלקת נרות בשעה %1$s</string>
     <string name="notification_candle_lighting_body_with_end">הדלקת נרות בשעה %1$s \u00b7 צאת השבת %2$s</string>
+    <string name="notification_candle_lighting_body_with_yom_tov_end">הדלקת נרות בשעה %1$s \u00b7 צאת החג %2$s</string>
     <string name="notification_holiday_title">חג</string>
     <string name="notification_holiday_today">היום %1$s</string>
     <string name="notification_holiday_tomorrow">מחר: %1$s</string>

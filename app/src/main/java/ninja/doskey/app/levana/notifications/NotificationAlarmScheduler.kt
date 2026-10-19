@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import ninja.doskey.app.levana.domain.model.Location
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -20,6 +21,8 @@ class NotificationAlarmScheduler(private val context: Context) {
         const val EXTRA_DATE_EPOCH_DAY = "date_epoch_day"
         const val EXTRA_CANDLE_LIGHTING_TIME = "candle_lighting_time"
         const val EXTRA_END_TIME = "end_time"
+        const val EXTRA_END_DATE_EPOCH_DAY = "end_date_epoch_day"
+        const val EXTRA_END_INCLUDES_YOM_TOV = "end_includes_yom_tov"
         const val EXTRA_OMER_DAY = "omer_day"
 
         private const val REQUEST_CANDLE_LIGHTING = 100000
@@ -32,7 +35,7 @@ class NotificationAlarmScheduler(private val context: Context) {
         triggerTime: LocalTime,
         location: Location,
         candleLightingTime: LocalTime,
-        endTime: LocalTime?
+        end: ObservanceEnd?
     ) {
         val zoneId = ZoneId.of(location.timezoneId)
         val triggerZoned = ZonedDateTime.of(date, triggerTime, zoneId)
@@ -44,7 +47,11 @@ class NotificationAlarmScheduler(private val context: Context) {
             action = ACTION_CANDLE_LIGHTING
             putExtra(EXTRA_DATE_EPOCH_DAY, date.toEpochDay())
             putExtra(EXTRA_CANDLE_LIGHTING_TIME, candleLightingTime.toString())
-            putExtra(EXTRA_END_TIME, endTime?.toString())
+            putExtra(EXTRA_END_TIME, end?.time?.toString())
+            end?.let {
+                putExtra(EXTRA_END_DATE_EPOCH_DAY, it.date.toEpochDay())
+                putExtra(EXTRA_END_INCLUDES_YOM_TOV, it.includesYomTov)
+            }
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

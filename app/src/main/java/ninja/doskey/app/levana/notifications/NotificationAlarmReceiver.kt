@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -26,12 +27,27 @@ class NotificationAlarmReceiver : BroadcastReceiver() {
                 val endTime = intent.getStringExtra(
                     NotificationAlarmScheduler.EXTRA_END_TIME
                 )?.let { LocalTime.parse(it) }
+                val end = endTime?.let {
+                    ObservanceEnd(
+                        date = LocalDate.ofEpochDay(
+                            intent.getLongExtra(
+                                NotificationAlarmScheduler.EXTRA_END_DATE_EPOCH_DAY,
+                                date.plusDays(1).toEpochDay()
+                            )
+                        ),
+                        time = it,
+                        includesYomTov = intent.getBooleanExtra(
+                            NotificationAlarmScheduler.EXTRA_END_INCLUDES_YOM_TOV,
+                            false
+                        )
+                    )
+                }
 
                 NotificationPoster.postCandleLighting(
                     context,
                     date,
                     candleLightingTime,
-                    endTime
+                    end
                 )
             }
             NotificationAlarmScheduler.ACTION_OMER -> {
