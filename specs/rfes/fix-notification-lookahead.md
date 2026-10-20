@@ -88,10 +88,19 @@ before:
 
 `NotificationAlarmScheduler` gets `schedule(alarm: ReminderAlarm)`, which keeps the existing
 actions, extras and request codes. Its past-trigger guard reads an injectable `now` (by
-default `System::currentTimeMillis`). Each run also cancels, for every date in the window,
-the alarm kinds that are not in the current plan. That keeps the window consistent with
-today's computation, for example after the Omer ends. Re-scheduling an existing alarm
-replaces it (`FLAG_UPDATE_CURRENT`), so repeated runs are idempotent.
+default `System::currentTimeMillis`). `scheduleAll(plan)` reconciles the window. For each date in it, it cancels the alarm kinds the
+plan no longer wants, for example after the Omer ends or when a reminder is turned off.
+Re-scheduling an existing alarm replaces it (`FLAG_UPDATE_CURRENT`), so repeated runs are
+idempotent.
+
+Still-wanted alarms whose trigger has already passed go into `ReminderAlarmPlan.overdue` and
+are left alone: neither cancelled nor re-registered. An earlier run may have scheduled one
+that Android hasn't delivered yet (Doze can hold alarms past their trigger), and it must
+still fire once. Today's overdue morning-mode candle-lighting notice is the exception. It is
+`dueCandleLighting` and the worker posts it, so its pending alarm is cancelled to avoid a
+second post. Callers that rebuild alarms, such as a settings-change rebuilder, should
+reconcile through `scheduleAll` rather than `cancelAll()` plus a rebuild, which would drop
+undelivered alarms.
 
 ### No duplicate morning candle-lighting notice
 
@@ -127,5 +136,9 @@ After a reboot, which clears alarms, the boot-time run still posts a missed noti
 - Passed triggers are not registered.
 - Re-running a plan replaces alarms instead of duplicating them.
 - Applying a newer plan cancels alarms that are no longer planned.
+- Regression: an Omer evening and morning alarm held past their triggers survive later runs
+  that day, are not duplicated, and each posts exactly one notification when finally
+  delivered. They are still cancelled if Omer reminders are turned off. Overdue entries in a
+  plan are kept with their original trigger.
 - The overdue morning candle-lighting notice is posted once per date, and not at all if the
   delivery log already records it.

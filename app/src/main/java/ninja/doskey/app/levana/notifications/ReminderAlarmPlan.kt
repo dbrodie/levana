@@ -49,16 +49,21 @@ internal data class ReminderAlarmPlan(
     /** Alarms whose trigger is still in the future. */
     val alarms: List<ReminderAlarm>,
     /** Today's morning-mode candle-lighting notice whose morning time has already passed. */
-    val dueCandleLighting: ReminderAlarm.CandleLighting?
+    val dueCandleLighting: ReminderAlarm.CandleLighting?,
+    /**
+     * Still-wanted alarms whose trigger has passed. An earlier run may have scheduled them and
+     * Android may not have delivered them yet (e.g. deferred by Doze), so they must be kept.
+     */
+    val overdue: List<ReminderAlarm> = emptyList()
 )
 
 /**
  * Plans the candle-lighting and Omer reminder alarms for the civil dates
  * [today] .. [today] + [lookaheadDays]. Each trigger is resolved in its own date's offset, so
- * DST changes inside the window are handled. Only triggers after [now] are returned; the one
- * exception is today's morning-mode candle-lighting notice, returned as
- * [ReminderAlarmPlan.dueCandleLighting] so it can still be posted late. Never yields notices
- * for future dates.
+ * DST changes inside the window are handled. Triggers after [now] go to
+ * [ReminderAlarmPlan.alarms] and passed ones to [ReminderAlarmPlan.overdue]; the exception is
+ * today's morning-mode candle-lighting notice, returned as [ReminderAlarmPlan.dueCandleLighting]
+ * so it can still be posted late. Never yields notices for future dates.
  */
 internal fun planReminderAlarms(
     today: LocalDate,
@@ -73,6 +78,7 @@ internal fun planReminderAlarms(
     val locationZone = ZoneId.of(location.timezoneId)
     val window = (0..lookaheadDays).map { today.plusDays(it.toLong()) }
     val alarms = mutableListOf<ReminderAlarm>()
+    val overdue = mutableListOf<ReminderAlarm>()
     var dueCandleLighting: ReminderAlarm.CandleLighting? = null
 
     for (date in window) {
@@ -82,6 +88,7 @@ internal fun planReminderAlarms(
                     it.triggerAt.isAfter(now) -> alarms += it
                     date == today && prefs.candleLightingNotifyMode == "morning" ->
                         dueCandleLighting = it
+                    else -> overdue += it
                 }
             }
         }
@@ -96,21 +103,19 @@ internal fun planReminderAlarms(
 
             plan.evening?.let { evening ->
                 val triggerAt = ZonedDateTime.of(date, evening.tzaitTime, locationZone).toInstant()
-                if (triggerAt.isAfter(now)) {
-                    alarms += ReminderAlarm.OmerEvening(date, triggerAt, evening.omerDay)
-                }
+                val alarm = ReminderAlarm.OmerEvening(date, triggerAt, evening.omerDay)
+                if (triggerAt.isAfter(now)) alarms += alarm else overdue += alarm
             }
             plan.morningOmerDay?.let { omerDay ->
                 val morningTime = minutesToTime(prefs.notifyOmerMorningTime)
                 val triggerAt = ZonedDateTime.of(date, morningTime, deviceZone).toInstant()
-                if (triggerAt.isAfter(now)) {
-                    alarms += ReminderAlarm.OmerMorning(date, triggerAt, omerDay)
-                }
+                val alarm = ReminderAlarm.OmerMorning(date, triggerAt, omerDay)
+                if (triggerAt.isAfter(now)) alarms += alarm else overdue += alarm
             }
         }
     }
 
-    return ReminderAlarmPlan(window, alarms, dueCandleLighting)
+    return ReminderAlarmPlan(window, alarms, dueCandleLighting, overdue)
 }
 
 private fun candleLightingAlarm(

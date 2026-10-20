@@ -79,14 +79,16 @@ class NotificationAlarmScheduler(
     }
 
     /**
-     * Schedules every alarm in [plan] and cancels alarms for dates in the plan's window that the
-     * plan no longer contains (e.g. the Omer has ended), so the window matches the latest plan.
+     * Reconciles the alarms for [plan]'s window: schedules every planned alarm and cancels the
+     * ones the plan no longer wants (e.g. the Omer has ended, or a reminder was turned off).
+     * Overdue alarms are left alone, so one Android has not delivered yet still fires. Use this
+     * rather than [cancelAll] followed by a rebuild, which would drop such alarms.
      */
     internal fun scheduleAll(plan: ReminderAlarmPlan) {
-        val planned = plan.alarms.map { actionFor(it) to it.date }.toSet()
+        val wanted = (plan.alarms + plan.overdue).map { actionFor(it) to it.date }.toSet()
         for (date in plan.window) {
             for (action in ACTIONS) {
-                if (action to date !in planned) cancel(action, date)
+                if (action to date !in wanted) cancel(action, date)
             }
         }
         plan.alarms.forEach(::schedule)
