@@ -193,21 +193,109 @@ class VerifyLookaheadPathTest {
         assertEquals(49, alarmFor(ACTION_M, lastNight.plusDays(1)).intent().getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
     }
 
+    private fun notifications() = shadowOf(notificationManager).allNotifications.size
+
     /**
-     * Characterization: an Omer evening alarm whose trigger has passed but which AlarmManager
-     * has not yet delivered (e.g. deferred by Doze) is cancelled by the next run and nothing
-     * posts it. Baseline never cancelled alarms, so the late alarm would still have fired.
+     * Required: an Omer alarm whose trigger has passed but which AlarmManager has not yet
+     * delivered (e.g. deferred by Doze) survives later runs unchanged and then delivers once.
      */
     @Test
-    fun `overdue undelivered Omer evening alarm is cancelled and not posted`() {
+    fun `overdue undelivered Omer evening alarm survives repeated runs and delivers once`() {
         val day = LocalDate.of(2027, 5, 3)
         val posted = mutableListOf<LocalDate>()
         workerRun(day, LocalTime.of(5, 0), omer, posted)
-        assertEquals(1, alarms().count { it.key() == ACTION_E to day })
-        val before = shadowOf(notificationManager).allNotifications.size
+        val original = alarmFor(ACTION_E, day)
+        val trigger = original.triggerAtTime
+        val omerDay = original.intent().getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0)
 
-        workerRun(day, LocalTime.of(23, 50), omer, posted)
+        for (t in listOf(LocalTime.of(23, 0), LocalTime.of(23, 30), LocalTime.of(23, 50))) {
+            workerRun(day, t, omer, posted)
+            val kept = alarms().filter { it.key() == ACTION_E to day }
+            assertEquals("run at $t", 1, kept.size)
+            assertEquals(trigger, kept[0].triggerAtTime)
+            assertEquals(omerDay, kept[0].intent().getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
+        }
+
+        val before = notifications()
+        fire(alarmFor(ACTION_E, day))
+        assertEquals(before + 1, notifications())
+
+        // After delivery, later runs must not re-create or re-post it
+        workerRun(day, LocalTime.of(23, 55), omer, posted)
         assertTrue(alarms().none { it.key() == ACTION_E to day })
-        assertEquals(before, shadowOf(notificationManager).allNotifications.size)
+        assertEquals(before + 1, notifications())
+        assertEquals(emptyList<LocalDate>(), posted)
+    }
+
+    @Test
+    fun `overdue undelivered Omer morning alarm survives repeated runs and delivers once`() {
+        val day = LocalDate.of(2027, 5, 4)
+        val posted = mutableListOf<LocalDate>()
+        workerRun(day, LocalTime.of(5, 0), omer, posted)
+        val trigger = alarmFor(ACTION_M, day).triggerAtTime
+
+        workerRun(day, LocalTime.of(12, 0), omer, posted)
+        workerRun(day, LocalTime.of(12, 0), omer, posted)
+        val kept = alarms().filter { it.key() == ACTION_M to day }
+        assertEquals(1, kept.size)
+        assertEquals(trigger, kept[0].triggerAtTime)
+        // Tonight's evening alarm is still future and still scheduled once
+        assertEquals(1, alarms().count { it.key() == ACTION_E to day })
+
+        val before = notifications()
+        fire(kept[0])
+        assertEquals(before + 1, notifications())
+        workerRun(day, LocalTime.of(13, 0), omer, posted)
+        assertTrue(alarms().none { it.key() == ACTION_M to day })
+        assertEquals(before + 1, notifications())
+    }
+
+    @Test
+    fun `disabling Omer cancels overdue undelivered evening and morning alarms`() {
+        val day = LocalDate.of(2027, 5, 5)
+        val posted = mutableListOf<LocalDate>()
+        workerRun(day, LocalTime.of(5, 0), omer, posted)
+        assertEquals(8, alarms().count { it.key().first == ACTION_E })
+
+        workerRun(day, LocalTime.of(23, 50), omer.copy(notifyOmer = false), posted)
+        assertTrue(alarms().none { it.key().first == ACTION_E || it.key().first == ACTION_M })
+    }
+
+    @Test
+    fun `turning off only one Omer reminder cancels that kind and keeps the other overdue alarm`() {
+        val day = LocalDate.of(2027, 5, 6)
+        val posted = mutableListOf<LocalDate>()
+        workerRun(day, LocalTime.of(5, 0), omer, posted)
+
+        // Both of today's are overdue at 23:50; tzait turned off -> evenings go, mornings stay
+        workerRun(day, LocalTime.of(23, 50), omer.copy(notifyOmerTzait = false), posted)
+        assertTrue(alarms().none { it.key().first == ACTION_E })
+        assertEquals(1, alarms().count { it.key() == ACTION_M to day })
+
+        // Morning turned off too -> today's overdue morning is cancelled as well
+        workerRun(day, LocalTime.of(23, 55), omer.copy(notifyOmerTzait = false, notifyOmerMorning = false), posted)
+        assertTrue(alarms().none { it.key().first == ACTION_M })
+    }
+
+    @Test
+    fun `overdue undelivered hours-before candle alarm is kept and not posted by the worker`() {
+        val fri = LocalDate.of(2026, 12, 18)
+        val prefs = UserPreferences(notifyCandleLighting = true, candleLightingNotifyMode = "hours_before", candleLightingHoursBefore = 2)
+        val posted = mutableListOf<LocalDate>()
+        workerRun(fri, LocalTime.of(5, 0), prefs, posted)
+        val trigger = alarmFor(ACTION_C, fri).triggerAtTime
+
+        workerRun(fri, LocalTime.of(23, 0), prefs, posted)
+        workerRun(fri, LocalTime.of(23, 0), prefs, posted)
+        assertEquals(trigger, alarms().single { it.key() == ACTION_C to fri }.triggerAtTime)
+        assertEquals(emptyList<LocalDate>(), posted)
+
+        val before = notifications()
+        fire(alarmFor(ACTION_C, fri))
+        assertEquals(before + 1, notifications())
+
+        // Disabling candle lighting cancels pending ones (next Friday's)
+        workerRun(fri, LocalTime.of(23, 30), prefs.copy(notifyCandleLighting = false), posted)
+        assertTrue(alarms().none { it.key().first == ACTION_C })
     }
 }
