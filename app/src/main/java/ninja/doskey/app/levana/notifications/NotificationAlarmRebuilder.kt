@@ -88,14 +88,25 @@ data class CandleLightingTimes(val candleLighting: LocalTime, val end: Observanc
 /**
  * Owns the pending candle-lighting and Omer alarms: [rebuild] replaces them with the ones the
  * current preferences call for. It never posts a notification itself.
+ *
+ * [clock] is read on every rebuild, so the device time zone in effect at that moment is used
+ * even when it changed after this (singleton) instance was created.
  */
 class NotificationAlarmRebuilder(
     private val preferences: Flow<UserPreferences>,
     private val zmanimRepository: ZmanimRepository,
     private val calendarRepository: CalendarRepository,
     private val alarmScheduler: NotificationAlarmScheduler,
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val clock: () -> Clock = Clock::systemDefaultZone
 ) {
+    constructor(
+        preferences: Flow<UserPreferences>,
+        zmanimRepository: ZmanimRepository,
+        calendarRepository: CalendarRepository,
+        alarmScheduler: NotificationAlarmScheduler,
+        clock: Clock
+    ) : this(preferences, zmanimRepository, calendarRepository, alarmScheduler, { clock })
+
     private val mutex = Mutex()
 
     /** Reconciles the forward plan; a settings refresh never posts a late notice itself. */
@@ -104,8 +115,9 @@ class NotificationAlarmRebuilder(
         postCandleLighting: ((ReminderAlarm.CandleLighting) -> Unit)? = null
     ) = mutex.withLock {
         val prefs = preferences.first()
+        val current = clock()
         val plan = planReminderAlarms(
-            prefs.devDateOverride ?: LocalDate.now(clock), clock.instant(), clock.zone,
+            prefs.devDateOverride ?: LocalDate.now(current), current.instant(), current.zone,
             prefs.activeLocation, prefs, zmanimRepository, calendarRepository
         )
         if (deliveryLog != null && postCandleLighting != null) {

@@ -52,6 +52,16 @@
             </intent-filter>
         </receiver>
 
+        <!-- Re-plans reminder alarms when the device time zone or clock changes -->
+        <receiver
+            android:name=".notifications.TimeChangeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+
         <!-- Updates the launcher icon at midnight when the Hebrew date changes -->
         <receiver
             android:name=".icon.DateChangeReceiver"
