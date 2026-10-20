@@ -36,7 +36,15 @@ class ContactBirthdayViewModel(
     // Only the latest contact lookup may apply, so a slow earlier pick never
     // replaces a later one
     private var pickJob: Job? = null
+
+    // The stored birthday load. A repeated request for the same record (the
+    // screen re-issues it after rotation) is ignored, so neither a pending
+    // load nor completed edits are reset. A later contact choice, a load of
+    // another record or Save supersedes it; the token stops a superseded load
+    // from applying even if it has already resumed.
     private var loadJob: Job? = null
+    private var requestedKey: String? = null
+    private var loadToken = 0
 
     // Date fields the user changed while the stored birthday was loading;
     // their values win over the stored ones when the load completes
@@ -55,9 +63,12 @@ class ContactBirthdayViewModel(
         when (intent) {
             is ContactBirthdayIntent.LoadBirthday ->
                 loadBirthday(intent.contactLookupKey)
-            is ContactBirthdayIntent.ContactPicked ->
+            is ContactBirthdayIntent.ContactPicked -> {
+                supersedeLoad()
                 resolvePickedContact(intent.contactUri)
+            }
             is ContactBirthdayIntent.ContactSelected -> {
+                supersedeLoad()
                 pickJob?.cancel()
                 selectContact(intent.lookupKey, intent.name, intent.photoUri)
             }
@@ -128,9 +139,19 @@ class ContactBirthdayViewModel(
         }
     }
 
-    private fun loadBirthday(contactLookupKey: String) {
+    private fun supersedeLoad() {
+        loadToken++
         loadJob?.cancel()
+        loadJob = null
+    }
+
+    private fun loadBirthday(contactLookupKey: String) {
+        if (contactLookupKey == requestedKey) return
+        requestedKey = contactLookupKey
+        supersedeLoad()
+        pickJob?.cancel()
         editedWhileLoading.clear()
+        val token = loadToken
         loadJob = viewModelScope.launch {
             val birthday =
                 repository.getBirthdayForContact(contactLookupKey)
@@ -144,8 +165,9 @@ class ContactBirthdayViewModel(
                     useYahrzeitRules = false,
                     currentYear = currentYear.await()
                 )
+                if (token != loadToken) return@launch
                 val current = _state.value
-                _state.value = ContactBirthdayState(
+                _state.value = current.copy(
                     isEditing = true,
                     contactLookupKey = birthday.contactLookupKey,
                     contactName = birthday.contactName,
@@ -172,6 +194,8 @@ class ContactBirthdayViewModel(
         val s = _state.value
         if (s.contactLookupKey.isBlank()) return
 
+        // Save what the editor shows; a load still pending must not replace it
+        supersedeLoad()
         _state.value = s.copy(isSaving = true)
 
         viewModelScope.launch {

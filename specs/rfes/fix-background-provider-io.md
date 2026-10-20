@@ -45,9 +45,12 @@ query.
 - **UI state stays on Main.** ViewModels write state after the suspend call returns on
   `viewModelScope` (Main). The events list's birthday load, now asynchronous, cancels any
   earlier load so a stale result cannot overwrite a newer one (e.g. after a removal).
-  In the birthday editor a new contact pick (or explicit selection) cancels a pending
-  lookup, and day/month/year fields edited while the stored birthday loads keep the user's
-  values; unedited fields take the stored ones.
+  Birthday editor lifecycle: a new contact pick or selection cancels any pending pick
+  lookup **and** any pending stored-birthday load; a repeated load request for the same
+  record (rotation) is ignored, before or after completion, so edits survive; a load of a
+  different record replaces the pending one; Save supersedes a pending load. A token check
+  drops any superseded load result. Day/month/year fields edited while the stored birthday
+  loads keep the user's values; unedited fields take the stored ones.
 
 ## Out of scope
 
@@ -96,3 +99,16 @@ loading. Fixed in `ContactBirthdayViewModel`.
   `aSlowBirthdayLoadDoesNotDiscardAnEditMadeWhileLoading`.
 - Against the previous view model, 6 of these tests fail: both verifier reproductions, the
   3 new race tests and the updated edit-during-load test.
+
+### Follow-up 2: editor load/selection lifecycle (2026-10-20)
+
+Re-verification (test-only commit `e6e23c0`) found that a pick or selection made during a
+pending stored load was overwritten by it, and that a repeated same-record load (rotation)
+discarded an in-flight edit. Fixed as described above.
+
+- Candidate suite: `./gradlew :app:testDebugUnitTest --rerun` → 38 suites, 262 tests,
+  0 failures, 0 errors, 0 skipped (8 more focused tests in ContactBirthdayViewModelIoTest).
+- With the verifier's `verifyio` tests from `b9e5925` + `e6e23c0` applied (not committed): 42
+  suites, 291 tests, 0 failures, 0 errors, 0 skipped.
+- Against the previous view model, 10 of the 22 tests in ContactBirthdayViewModelIoTest +
+  VerifyBirthdayEditorRaceTest fail.

@@ -134,10 +134,166 @@ class ContactBirthdayViewModelIoTest {
     /** Lookups that complete only when the test says so. */
     private class GatedRepository : ContactBirthdayRepository(RuntimeEnvironment.getApplication()) {
         val picks = mutableMapOf<Uri, CompletableDeferred<PickedContact?>>()
-        val stored = CompletableDeferred<ContactBirthday?>()
+        val storedByKey = mutableMapOf<String, CompletableDeferred<ContactBirthday?>>()
+        val loads = mutableListOf<String>()
+        var saved: Pair<String, Triple<Int, Int, Int>>? = null
+        val stored get() = stored("key")
+        fun stored(key: String) = storedByKey.getOrPut(key) { CompletableDeferred() }
         override suspend fun resolveContact(contactUri: Uri): PickedContact? =
             picks.getOrPut(contactUri) { CompletableDeferred() }.await()
-        override suspend fun getBirthdayForContact(contactLookupKey: String) = stored.await()
+        override suspend fun getBirthdayForContact(contactLookupKey: String): ContactBirthday? {
+            loads += contactLookupKey
+            return stored(contactLookupKey).await()
+        }
+        override suspend fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
+            saved = contactLookupKey to Triple(day, month, year)
+        }
+    }
+
+    private fun rivka(key: String = "key", day: Int = 12) =
+        ContactBirthday(key, "Rivka", null, day, 3, 5750)
+
+    private val ContactBirthdayState.date get() = Triple(hebrewDay, hebrewMonth, hebrewYear)
+
+    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
+
+    // ── Contact choice against a pending stored load ────────────────────────
+
+    @Test
+    fun aPickWhileTheStoredBirthdayLoadsWins() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        val uri = Uri.parse("content://com.android.contacts/contacts/2")
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(uri))
+        repository.picks.getValue(uri).complete(PickedContact("kB", "Batya", null))
+        awaitOnMain { vm.state.value.contactName == "Batya" }
+        repository.stored.complete(rivka())
+        idle()
+
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertEquals("Batya", vm.state.value.contactName)
+        assertFalse(vm.state.value.isEditing)
+    }
+
+    @Test
+    fun aStoredLoadFinishingBeforeAnEarlierIssuedPickResolvesIsDropped() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        val uri = Uri.parse("content://com.android.contacts/contacts/2")
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(uri))
+        repository.stored.complete(rivka())
+        idle()
+        assertEquals("", vm.state.value.contactName)
+
+        repository.picks.getValue(uri).complete(PickedContact("kB", "Batya", null))
+        awaitOnMain { vm.state.value.contactName == "Batya" }
+        assertFalse(vm.state.value.isEditing)
+    }
+
+    @Test
+    fun aDirectSelectionWhileTheStoredBirthdayLoadsWins() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        repository.stored.complete(rivka())
+        idle()
+
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertFalse(vm.state.value.isEditing)
+    }
+
+    @Test
+    fun repeatingTheLoadAfterAContactChoiceDoesNotBringTheStoredOneBack() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key")) // rotation
+        repository.stored.complete(rivka())
+        idle()
+
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertEquals(listOf("key"), repository.loads)
+    }
+
+    // ── Repeated loads of the same record ───────────────────────────────────
+
+    @Test
+    fun aRepeatedLoadWhilePendingKeepsTheEditAndQueriesOnce() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        repository.stored.complete(rivka())
+        awaitOnMain { vm.state.value.isEditing }
+
+        assertEquals(Triple(20, 3, 5750), vm.state.value.date)
+        assertEquals(listOf("key"), repository.loads)
+    }
+
+    @Test
+    fun aRepeatedLoadAfterCompletionKeepsLaterEdits() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        repository.stored.complete(rivka())
+        awaitOnMain { vm.state.value.isEditing }
+        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(25))
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        idle()
+
+        assertEquals(Triple(25, 3, 5750), vm.state.value.date)
+        assertEquals(listOf("key"), repository.loads)
+    }
+
+    // ── Loads of a different record ─────────────────────────────────────────
+
+    @Test
+    fun aLoadOfAnotherRecordReplacesThePendingOne() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("k1"))
+        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("k2"))
+        repository.stored("k2").complete(rivka("k2", day = 5))
+        awaitOnMain { vm.state.value.isEditing }
+        repository.stored("k1").complete(rivka("k1", day = 9))
+        idle()
+
+        // The edit belonged to the replaced record; k1's late result is dropped
+        assertEquals("k2", vm.state.value.contactLookupKey)
+        assertEquals(Triple(5, 3, 5750), vm.state.value.date)
+        assertEquals(listOf("k1", "k2"), repository.loads)
+    }
+
+    @Test
+    fun saveDuringAPendingLoadSavesWhatIsShownAndStillCompletes() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("k1"))
+        repository.stored("k1").complete(rivka("k1"))
+        awaitOnMain { vm.state.value.isEditing }
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("k2"))
+        vm.onIntent(ContactBirthdayIntent.Save)
+        awaitOnMain { vm.state.value.saveComplete }
+        repository.stored("k2").complete(rivka("k2", day = 5))
+        idle()
+
+        assertEquals("k1" to Triple(12, 3, 5750), repository.saved)
+        assertEquals("k1", vm.state.value.contactLookupKey)
+        assertTrue(vm.state.value.saveComplete)
     }
 
     private fun gatedViewModel(repository: GatedRepository) =
