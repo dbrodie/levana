@@ -116,7 +116,7 @@ class ReminderAlarmSchedulingTest {
         val notifications = shadowOf(context.getSystemService(NotificationManager::class.java))
         val before = notifications.allNotifications.size
         listOf(evening, morning).forEach {
-            NotificationAlarmReceiver().onReceive(context, shadowOf(it.operation).savedIntent)
+            deliverIfEnabled(context, shadowOf(it.operation).savedIntent, omerPrefs)
         }
         assertEquals(before + 2, notifications.allNotifications.size)
 

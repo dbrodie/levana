@@ -157,6 +157,7 @@ class DailyNotificationWorkerTest {
                 single { PersonalEventRepository(dao) }
                 single { ContactBirthdayRepository(app) }
                 single { rebuilder }
+                single { NotificationDeliveryLog(app) }
             })
         }
         save {

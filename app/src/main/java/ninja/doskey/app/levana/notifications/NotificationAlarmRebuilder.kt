@@ -98,7 +98,7 @@ class NotificationAlarmRebuilder(
     private val mutex = Mutex()
 
     /** Reconciles the forward plan; a settings refresh never posts a late notice itself. */
-    suspend fun rebuild(
+    internal suspend fun rebuild(
         deliveryLog: NotificationDeliveryLog? = null,
         postCandleLighting: ((ReminderAlarm.CandleLighting) -> Unit)? = null
     ) = mutex.withLock {
@@ -128,8 +128,6 @@ class NotificationAlarmRebuilder(
 
 
 }
-
-internal fun minutesToTime(minutes: Int): LocalTime = LocalTime.of(minutes / 60, minutes % 60)
 
 /**
  * Keeps pending reminder alarms, and the daily categories' notifications, in step with the

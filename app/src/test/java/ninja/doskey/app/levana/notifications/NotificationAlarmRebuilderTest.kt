@@ -65,6 +65,12 @@ class NotificationAlarmRebuilderTest {
 
     private fun ScheduledAlarm.action(): String? = shadowOf(operation).savedIntent.action
 
+    private fun alarmsOn(date: LocalDate): List<ScheduledAlarm> = alarms().filter {
+        shadowOf(it.operation).savedIntent.getLongExtra(
+            NotificationAlarmScheduler.EXTRA_DATE_EPOCH_DAY, 0L
+        ) == date.toEpochDay()
+    }
+
     private fun millis(date: LocalDate, time: LocalTime, location: Location): Long =
         ZonedDateTime.of(date, time, ZoneId.of(location.timezoneId)).toInstant().toEpochMilli()
 
@@ -78,7 +84,7 @@ class NotificationAlarmRebuilderTest {
 
         rebuild { it.copy(notifyCandleLighting = true) }
 
-        val alarm = alarms().single()
+        val alarm = alarmsOn(friday).single()
         assertEquals(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, alarm.action())
         assertEquals(
             millis(friday, candleLighting(Location.JERUSALEM).minusHours(2), Location.JERUSALEM),
@@ -93,20 +99,20 @@ class NotificationAlarmRebuilderTest {
         rebuild { it.copy(candleLightingNotifyMode = "morning", candleLightingMorningTime = 9 * 60) }
         assertEquals(
             millis(friday, LocalTime.of(9, 0), Location.JERUSALEM),
-            alarms().single().triggerAtMs
+            alarmsOn(friday).single().triggerAtMs
         )
 
         rebuild { it.copy(candleLightingMorningTime = 10 * 60 + 30) }
         assertEquals(
             millis(friday, LocalTime.of(10, 30), Location.JERUSALEM),
-            alarms().single().triggerAtMs
+            alarmsOn(friday).single().triggerAtMs
         )
     }
 
     @Test
     fun changingTheActiveLocationMovesTheAlarm() {
         rebuild { it.copy(notifyCandleLighting = true) }
-        val jerusalem = alarms().single().triggerAtMs
+        val jerusalem = alarmsOn(friday).single().triggerAtMs
 
         rebuild {
             it.copy(
@@ -115,7 +121,7 @@ class NotificationAlarmRebuilderTest {
             )
         }
 
-        val alarm = alarms().single()
+        val alarm = alarmsOn(friday).single()
         assertNotEquals(jerusalem, alarm.triggerAtMs)
         assertEquals(millis(friday, candleLighting(newYork).minusHours(2), newYork), alarm.triggerAtMs)
     }
@@ -123,7 +129,9 @@ class NotificationAlarmRebuilderTest {
     @Test
     fun disablingCandleLightingCancelsItsAlarm() {
         rebuild { it.copy(notifyCandleLighting = true) }
-        assertEquals(1, alarms().size)
+        assertEquals(2, alarms().size)
+        assertEquals(1, alarmsOn(friday).size)
+        assertEquals(1, alarmsOn(friday.plusDays(7)).size)
 
         rebuild { it.copy(notifyCandleLighting = false) }
 
@@ -139,7 +147,8 @@ class NotificationAlarmRebuilderTest {
         )
 
         rebuild { it.copy(notifyOmerMorning = false) }
-        assertEquals(NotificationAlarmScheduler.ACTION_OMER, alarms().single().action())
+        assertTrue(alarms().isNotEmpty())
+        assertTrue(alarms().all { it.action() == NotificationAlarmScheduler.ACTION_OMER })
 
         rebuild { it.copy(notifyOmer = false) }
         assertTrue(alarms().isEmpty())
