@@ -6,6 +6,9 @@ import android.net.Uri
 import android.os.Looper
 import android.provider.ContactsContract
 import java.time.LocalDate
+import kotlinx.coroutines.CompletableDeferred
+import ninja.doskey.app.levana.data.PickedContact
+import ninja.doskey.app.levana.domain.model.ContactBirthday
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
@@ -70,7 +73,10 @@ class ContactBirthdayViewModelIoTest {
         FakeContactsProvider.hold!!.countDown()
         awaitOnMain { vm.state.value.isEditing }
 
-        assertEquals(12, vm.state.value.hebrewDay)
+        // The day edited during the load is kept; the rest comes from the store
+        assertEquals(7, vm.state.value.hebrewDay)
+        assertEquals(3, vm.state.value.hebrewMonth)
+        assertEquals(5785, vm.state.value.hebrewYear)
         assertEquals(FakeContactsProvider.NAME, vm.state.value.contactName)
         FakeContactsProvider.calls.forEach { assertNotSame(mainThread, it.thread) }
     }
@@ -123,6 +129,80 @@ class ContactBirthdayViewModelIoTest {
         assertEquals("Permission denied", vm.state.value.errorMessage)
         assertFalse(vm.state.value.isSaving)
         assertFalse(vm.state.value.saveComplete)
+    }
+
+    /** Lookups that complete only when the test says so. */
+    private class GatedRepository : ContactBirthdayRepository(RuntimeEnvironment.getApplication()) {
+        val picks = mutableMapOf<Uri, CompletableDeferred<PickedContact?>>()
+        val stored = CompletableDeferred<ContactBirthday?>()
+        override suspend fun resolveContact(contactUri: Uri): PickedContact? =
+            picks.getOrPut(contactUri) { CompletableDeferred() }.await()
+        override suspend fun getBirthdayForContact(contactLookupKey: String) = stored.await()
+    }
+
+    private fun gatedViewModel(repository: GatedRepository) =
+        ContactBirthdayViewModel(repository, TodayProvider { LocalDate.of(2026, 10, 20) })
+
+    @Test
+    fun aSlowEarlierPickNeverReplacesALaterPick() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        val first = Uri.parse("content://com.android.contacts/contacts/1")
+        val second = Uri.parse("content://com.android.contacts/contacts/2")
+
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(first))
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(second))
+        repository.picks.getValue(second).complete(PickedContact("kB", "Batya", null))
+        awaitOnMain { vm.state.value.contactName == "Batya" }
+        repository.picks.getValue(first).complete(PickedContact("kA", "Avi", null))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals("Batya", vm.state.value.contactName)
+        assertEquals("kB", vm.state.value.contactLookupKey)
+    }
+
+    @Test
+    fun aPendingPickDoesNotReplaceAContactChosenAfterIt() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        val uri = Uri.parse("content://com.android.contacts/contacts/1")
+
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(uri))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        repository.picks.getValue(uri).complete(PickedContact("kA", "Avi", null))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals("Batya", vm.state.value.contactName)
+    }
+
+    @Test
+    fun dateFieldsEditedWhileLoadingWinOverTheStoredDate() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5790))
+        repository.stored.complete(ContactBirthday("key", "Rivka", null, 12, 3, 5750))
+        awaitOnMain { vm.state.value.isEditing }
+
+        // Edited day and year kept, untouched month from the store
+        assertEquals(20, vm.state.value.hebrewDay)
+        assertEquals(3, vm.state.value.hebrewMonth)
+        assertEquals(5790, vm.state.value.hebrewYear)
+        assertEquals("Rivka", vm.state.value.contactName)
+    }
+
+    @Test
+    fun anUneditedLoadStillShowsTheStoredDate() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        repository.stored.complete(ContactBirthday("key", "Rivka", null, 12, 3, 5750))
+        awaitOnMain { vm.state.value.isEditing }
+
+        assertEquals(Triple(12, 3, 5750), vm.state.value.let { Triple(it.hebrewDay, it.hebrewMonth, it.hebrewYear) })
     }
 
     private fun awaitOnMain(condition: () -> Boolean) {

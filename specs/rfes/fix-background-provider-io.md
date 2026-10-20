@@ -45,6 +45,9 @@ query.
 - **UI state stays on Main.** ViewModels write state after the suspend call returns on
   `viewModelScope` (Main). The events list's birthday load, now asynchronous, cancels any
   earlier load so a stale result cannot overwrite a newer one (e.g. after a removal).
+  In the birthday editor a new contact pick (or explicit selection) cancels a pending
+  lookup, and day/month/year fields edited while the stored birthday loads keep the user's
+  values; unedited fields take the stored ones.
 
 ## Out of scope
 
@@ -79,3 +82,17 @@ birthday-load cancellation fails the removal-race test.
 Not covered: no device/emulator run; `rememberContactPhoto` has no direct test (it relies on
 the tested helper); Calendar/DayDetail view models are covered through their repositories.
 Import parsing (≤ 1 MiB) still runs on Main.
+
+### Follow-up: birthday editor races (2026-10-20)
+
+Independent verification (test-only commit `b9e5925`) found that a slow earlier contact pick
+could replace a later one, and a late stored-birthday load could discard a date edit made while
+loading. Fixed in `ContactBirthdayViewModel`.
+
+- Candidate suite: `./gradlew :app:testDebugUnitTest --rerun` → 38 suites, 254 tests, 0 failures,
+  0 errors, 0 skipped (4 new focused regression tests in ContactBirthdayViewModelIoTest).
+- With the verifier's `verifyio` tests applied (not committed here): 41 suites, 277 tests,
+  0 failures, 0 errors, 0 skipped, including `aSlowFirstPickDoesNotOverrideALaterPick` and
+  `aSlowBirthdayLoadDoesNotDiscardAnEditMadeWhileLoading`.
+- Against the previous view model, 6 of these tests fail: both verifier reproductions, the
+  3 new race tests and the updated edit-during-load test.

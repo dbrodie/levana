@@ -8,6 +8,7 @@ import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.TodayProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +33,17 @@ class ContactBirthdayViewModel(
     // the default year no longer applies
     private var yearChosen = false
 
+    // Only the latest contact lookup may apply, so a slow earlier pick never
+    // replaces a later one
+    private var pickJob: Job? = null
+    private var loadJob: Job? = null
+
+    // Date fields the user changed while the stored birthday was loading;
+    // their values win over the stored ones when the load completes
+    private val editedWhileLoading = mutableSetOf<DateField>()
+
+    private enum class DateField { DAY, MONTH, YEAR }
+
     init {
         viewModelScope.launch {
             val year = currentYear.await()
@@ -45,18 +57,22 @@ class ContactBirthdayViewModel(
                 loadBirthday(intent.contactLookupKey)
             is ContactBirthdayIntent.ContactPicked ->
                 resolvePickedContact(intent.contactUri)
-            is ContactBirthdayIntent.ContactSelected ->
-                _state.value = _state.value.copy(
-                    contactLookupKey = intent.lookupKey,
-                    contactName = intent.name,
-                    contactPhotoUri = intent.photoUri
-                )
-            is ContactBirthdayIntent.SetHebrewDay ->
+            is ContactBirthdayIntent.ContactSelected -> {
+                pickJob?.cancel()
+                selectContact(intent.lookupKey, intent.name, intent.photoUri)
+            }
+            is ContactBirthdayIntent.SetHebrewDay -> {
+                editedWhileLoading += DateField.DAY
                 setDate(day = intent.day)
-            is ContactBirthdayIntent.SetHebrewMonth ->
+            }
+            is ContactBirthdayIntent.SetHebrewMonth -> {
+                editedWhileLoading += DateField.MONTH
                 setDate(month = intent.month)
-            is ContactBirthdayIntent.SetHebrewYear ->
+            }
+            is ContactBirthdayIntent.SetHebrewYear -> {
+                editedWhileLoading += DateField.YEAR
                 setDate(year = intent.year)
+            }
             is ContactBirthdayIntent.Save -> save()
         }
     }
@@ -89,8 +105,17 @@ class ContactBirthdayViewModel(
         )
     }
 
+    private fun selectContact(lookupKey: String, name: String, photoUri: String?) {
+        _state.value = _state.value.copy(
+            contactLookupKey = lookupKey,
+            contactName = name,
+            contactPhotoUri = photoUri
+        )
+    }
+
     private fun resolvePickedContact(contactUri: Uri) {
-        viewModelScope.launch {
+        pickJob?.cancel()
+        pickJob = viewModelScope.launch {
             val contact = try {
                 repository.resolveContact(contactUri)
             } catch (e: CancellationException) {
@@ -99,18 +124,14 @@ class ContactBirthdayViewModel(
                 _state.value = _state.value.copy(errorMessage = e.message)
                 return@launch
             } ?: return@launch
-            onIntent(
-                ContactBirthdayIntent.ContactSelected(
-                    contact.lookupKey,
-                    contact.name,
-                    contact.photoUri
-                )
-            )
+            selectContact(contact.lookupKey, contact.name, contact.photoUri)
         }
     }
 
     private fun loadBirthday(contactLookupKey: String) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        editedWhileLoading.clear()
+        loadJob = viewModelScope.launch {
             val birthday =
                 repository.getBirthdayForContact(contactLookupKey)
             if (birthday != null) {
@@ -123,7 +144,7 @@ class ContactBirthdayViewModel(
                     useYahrzeitRules = false,
                     currentYear = currentYear.await()
                 )
-                yearChosen = true
+                val current = _state.value
                 _state.value = ContactBirthdayState(
                     isEditing = true,
                     contactLookupKey = birthday.contactLookupKey,
@@ -133,6 +154,16 @@ class ContactBirthdayViewModel(
                     hebrewMonth = month,
                     hebrewYear = year
                 )
+                if (editedWhileLoading.isNotEmpty()) {
+                    // Keep what the user changed meanwhile, normalised
+                    // against the resulting month and year
+                    setDate(
+                        day = if (DateField.DAY in editedWhileLoading) current.hebrewDay else day,
+                        month = if (DateField.MONTH in editedWhileLoading) current.hebrewMonth else month,
+                        year = if (DateField.YEAR in editedWhileLoading) current.hebrewYear else year
+                    )
+                }
+                yearChosen = true
             }
         }
     }
