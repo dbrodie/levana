@@ -175,7 +175,11 @@ class VerifyProviderMainThreadTest {
         val vm = DayDetailViewModel(
             CalendarRepository(), ZmanimRepository(), prefs,
             PersonalEventRepository(FakeDao()),
-            ContactBirthdayRepository(app()), SystemCalendarRepository(app())
+            ContactBirthdayRepository(app()), SystemCalendarRepository(app()),
+            object : ninja.doskey.app.levana.data.EventDataChanges {
+                override val changes = kotlinx.coroutines.flow.emptyFlow<Unit>()
+                override fun recheckPermissions() = Unit
+            }
         )
         val ms = timeMs { vm.onIntent(DayDetailIntent.LoadDay(date)) }
         assertTrue("LoadDay blocked ${ms}ms", ms < 1_000)
