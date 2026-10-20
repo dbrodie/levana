@@ -360,9 +360,17 @@ class NotificationIdentityVerificationTest {
     fun `fired alarm posts the reminder for its own date`() {
         scheduler.scheduleOmerMorningReminder(future, LocalTime.of(7, 0), 5)
         scheduler.scheduleOmerReminder(future, LocalTime.of(19, 45), Location.JERUSALEM, 6)
-        for (intent in savedIntents()) NotificationAlarmReceiver().onReceive(app, intent)
+        for (intent in savedIntents()) deliverIfEnabled(
+            app, intent, ninja.doskey.app.levana.domain.model.UserPreferences(
+                notifyOmer = true, notifyOmerMorning = true
+            )
+        )
         // Re-delivery of the same alarm replaces its notification
-        for (intent in savedIntents()) NotificationAlarmReceiver().onReceive(app, intent)
+        for (intent in savedIntents()) deliverIfEnabled(
+            app, intent, ninja.doskey.app.levana.domain.model.UserPreferences(
+                notifyOmer = true, notifyOmerMorning = true
+            )
+        )
         assertEquals(
             setOf("omer_morning/$future", "omer_tzait/$future"),
             active.map { it.tag }.toSet()

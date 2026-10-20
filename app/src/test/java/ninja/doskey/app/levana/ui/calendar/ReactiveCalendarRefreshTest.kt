@@ -85,6 +85,7 @@ class ReactiveCalendarRefreshTest {
         dao = CountingDao(db.personalEventDao())
         events = PersonalEventRepository(dao)
         preferences = PreferencesRepository(app, CityRepository(app))
+        runBlocking { preferences.saveCalendarHebrewMode(false) }
     }
 
     @After
@@ -186,6 +187,10 @@ class ReactiveCalendarRefreshTest {
         changes.signal()
         settle()
 
+        awaitUntil {
+            calendar.state.value.gregorianMonthCache[browsedMonth.plusMonths(1)]
+                ?.any { it.gregorianDate == nextMonthDate && it.hasPersonalEvent } == true
+        }
         val next = calendar.state.value.gregorianMonthCache.getValue(browsedMonth.plusMonths(1))
         assertTrue(next.single { it.gregorianDate == nextMonthDate }.hasPersonalEvent)
     }
