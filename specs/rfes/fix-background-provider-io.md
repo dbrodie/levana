@@ -20,12 +20,13 @@ query.
   `getEventColorsForDateRange`) are `suspend` and run on an injectable IO dispatcher
   (default `Dispatchers.IO`). Permission checks stay synchronous (no IO).
 - **Cancellation-aware queries.** A shared helper runs each query with a `CancellationSignal`
-  that is cancelled when the calling coroutine is cancelled, so the caller is released
-  immediately and the provider can abort; cursor loops check for cancellation per row.
-  Provider aborts surface as `CancellationException`, never as an error. `applyBatch` has no
-  signal; cancellation is checked between its lookup queries and the batch.
-- **Contact picker and photos.** New `ContactBirthdayRepository.resolveContact(uri)` and
-  `loadPhoto(uri)` (suspend, IO). The picker result goes to the ViewModel
+  that is cancelled when the calling coroutine is cancelled, so a provider that honours it
+  aborts at once; cursor loops check for cancellation per row. Provider aborts surface as
+  `CancellationException`, never as an error. Work without a signal (`applyBatch`, stream
+  open) is skipped if cancellation came first, otherwise it finishes on the IO thread before
+  the cancelled caller completes — the main thread is never blocked either way.
+- **Contact picker and photos.** New `ContactBirthdayRepository.resolveContact(uri)` and a
+  top-level `loadContactPhoto(resolver, uri)` (suspend, IO). The picker result goes to the ViewModel
   (`ContactBirthdayIntent.ContactPicked`); the three photo sites use one `rememberContactPhoto`
   composable built on `produceState`, so decoding happens off the main thread and is cancelled
   with the composable. Photo failures still fall back to the icon.
@@ -42,7 +43,8 @@ query.
   snackbar instead of crashing; calendar selection treats a `SecurityException` as "no
   permission".
 - **UI state stays on Main.** ViewModels write state after the suspend call returns on
-  `viewModelScope` (Main).
+  `viewModelScope` (Main). The events list's birthday load, now asynchronous, cancels any
+  earlier load so a stale result cannot overwrite a newer one (e.g. after a removal).
 
 ## Out of scope
 
@@ -61,3 +63,19 @@ storage or DI beyond wiring the new repository.
 - Import/export: streams are opened and read/written on the IO thread; oversized input is
   rejected with the bounded-size message; a failing stream yields the localized error message.
 - Existing calendar-date, Omer and holy-day suites keep passing.
+
+## Results (2026-10-20, JVM/Robolectric only)
+
+`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew :app:testDebugUnitTest --rerun`
+→ BUILD SUCCESSFUL, 38 suites, 250 tests, 0 failures, 0 errors, 0 skipped
+(20 new: ContactBirthdayRepositoryIoTest 4, ContactBirthdayViewModelIoTest 4,
+SystemCalendarRepositoryIoTest 3, EventsFileIoTest 9). `:app:lintDebug` reports nothing new in
+the touched code.
+
+Mutation checks: running provider work on the caller's thread fails 13 of the 19 IO tests;
+not cancelling the `CancellationSignal` fails both cancellation tests; dropping the stale
+birthday-load cancellation fails the removal-race test.
+
+Not covered: no device/emulator run; `rememberContactPhoto` has no direct test (it relies on
+the tested helper); Calendar/DayDetail view models are covered through their repositories.
+Import parsing (≤ 1 MiB) still runs on Main.

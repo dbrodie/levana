@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.events
 
+import android.Manifest
 import android.app.Application
 import android.net.Uri
 import android.os.Looper
@@ -9,6 +10,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -19,6 +21,7 @@ import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
+import ninja.doskey.app.levana.domain.model.ContactBirthday
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
@@ -213,5 +216,27 @@ class EventsFileIoTest {
         awaitOnMain { vm.state.value.message != null }
 
         assertEquals(EventsMessage.RemoveBirthdayFailed("Permission denied"), vm.state.value.message)
+    }
+
+    @Test
+    fun aSlowEarlierBirthdayLoadCannotRestoreARemovedBirthday() {
+        shadowOf(app).grantPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
+        val stale = listOf(ContactBirthday("key", "Rivka", null, 12, 3, 5785))
+        val firstLoad = CompletableDeferred<List<ContactBirthday>>()
+        var loads = 0
+        val birthdays = object : ContactBirthdayRepository(app) {
+            override suspend fun getAll(): List<ContactBirthday> =
+                if (loads++ == 0) firstLoad.await() else emptyList()
+            override suspend fun removeBirthday(contactLookupKey: String) = Unit
+        }
+        val vm = viewModel(FakeDao(emptyList()), birthdays)
+
+        // The initial load is still in flight when the removal reloads
+        vm.onIntent(EventsIntent.DeleteBirthday("key"))
+        awaitOnMain { loads == 2 }
+        firstLoad.complete(stale)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(vm.state.value.birthdays.isEmpty())
     }
 }

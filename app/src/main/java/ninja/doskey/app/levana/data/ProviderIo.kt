@@ -14,7 +14,8 @@ import kotlinx.coroutines.coroutineScope
  * Runs blocking provider or stream work on [dispatcher]. Cancelling the
  * caller cancels the [CancellationSignal] handed to [block], so a provider
  * that honours it stops early; an abort surfaces as [CancellationException],
- * never as an error.
+ * never as an error. Work that ignores the signal still runs to completion
+ * (off the caller's thread) before the cancelled caller completes.
  */
 internal suspend fun <T> runCancellable(
     dispatcher: CoroutineDispatcher,

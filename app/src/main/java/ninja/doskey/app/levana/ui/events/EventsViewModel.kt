@@ -9,6 +9,7 @@ import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,10 @@ class EventsViewModel(
 
     private val _state = MutableStateFlow(EventsState())
     val state: StateFlow<EventsState> = _state.asStateFlow()
+
+    // Only the latest birthdays load may publish, so a slow earlier load can
+    // never bring back a birthday that was just removed
+    private var birthdaysJob: Job? = null
 
     init {
         observeEvents()
@@ -61,7 +66,8 @@ class EventsViewModel(
     }
 
     private fun loadBirthdays() {
-        viewModelScope.launch {
+        birthdaysJob?.cancel()
+        birthdaysJob = viewModelScope.launch {
             val hasPermission =
                 contactBirthdayRepository.hasContactsPermission()
             if (hasPermission) {

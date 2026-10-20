@@ -223,8 +223,8 @@ open class ContactBirthdayRepository(
         applyBatch(ops)
     }
 
-    // applyBatch takes no CancellationSignal; a cancelled caller is still
-    // released and the batch is skipped if cancellation came first
+    // applyBatch takes no CancellationSignal: it is skipped if cancellation
+    // came first, otherwise a cancelled caller completes once it returns
     private suspend fun applyBatch(ops: ArrayList<ContentProviderOperation>) {
         runCancellable(ioDispatcher) { signal ->
             signal.throwIfCanceled()
