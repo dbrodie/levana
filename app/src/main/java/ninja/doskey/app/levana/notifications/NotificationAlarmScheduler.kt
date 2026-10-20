@@ -81,11 +81,14 @@ class NotificationAlarmScheduler(
     /**
      * Reconciles the alarms for [plan]'s window: schedules every planned alarm and cancels the
      * ones the plan no longer wants (e.g. the Omer has ended, or a reminder was turned off).
-     * Overdue alarms are left alone, so one Android has not delivered yet still fires. Use this
-     * rather than [cancelAll] followed by a rebuild, which would drop such alarms.
+     * Overdue alarms, including today's due candle-lighting notice, are left alone, so one
+     * Android has not delivered yet still fires. Use this rather than [cancelAll] followed by a
+     * rebuild, which would drop such alarms.
      */
     internal fun scheduleAll(plan: ReminderAlarmPlan) {
-        val wanted = (plan.alarms + plan.overdue).map { actionFor(it) to it.date }.toSet()
+        val wanted = (plan.alarms + plan.overdue + listOfNotNull(plan.dueCandleLighting))
+            .map { actionFor(it) to it.date }
+            .toSet()
         for (date in plan.window) {
             for (action in ACTIONS) {
                 if (action to date !in wanted) cancel(action, date)
@@ -93,6 +96,9 @@ class NotificationAlarmScheduler(
         }
         plan.alarms.forEach(::schedule)
     }
+
+    /** Cancels the pending alarm for [alarm]'s reminder and date, if any. */
+    internal fun cancel(alarm: ReminderAlarm) = cancel(actionFor(alarm), alarm.date)
 
     private fun cancel(action: String, date: LocalDate) {
         cancelExisting(context.getSystemService(AlarmManager::class.java),

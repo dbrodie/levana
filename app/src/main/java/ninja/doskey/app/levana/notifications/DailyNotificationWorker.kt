@@ -205,6 +205,8 @@ internal suspend fun applyReminderAlarmPlan(
 ) {
     alarmScheduler.scheduleAll(plan)
     plan.dueCandleLighting?.let { due ->
+        // Posted here instead, so its pending alarm must not fire it a second time
+        alarmScheduler.cancel(due)
         if (deliveryLog.lastCandleLightingDate() != due.date) {
             postCandleLighting(due)
             deliveryLog.recordCandleLighting(due.date)

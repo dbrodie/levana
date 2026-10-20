@@ -93,7 +93,8 @@ class NotificationAlarmRebuilder(
     private val preferences: Flow<UserPreferences>,
     private val zmanimRepository: ZmanimRepository,
     private val calendarRepository: CalendarRepository,
-    private val alarmScheduler: NotificationAlarmScheduler
+    private val alarmScheduler: NotificationAlarmScheduler,
+    private val clock: Clock = Clock.systemDefaultZone()
 ) {
     private val mutex = Mutex()
 
@@ -103,7 +104,6 @@ class NotificationAlarmRebuilder(
         postCandleLighting: ((ReminderAlarm.CandleLighting) -> Unit)? = null
     ) = mutex.withLock {
         val prefs = preferences.first()
-        val clock = Clock.systemDefaultZone()
         val plan = planReminderAlarms(
             prefs.devDateOverride ?: LocalDate.now(clock), clock.instant(), clock.zone,
             prefs.activeLocation, prefs, zmanimRepository, calendarRepository
