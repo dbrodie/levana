@@ -148,6 +148,12 @@ class SessionTests(unittest.TestCase):
         self.assertFalse(session.port_collision(log, offset))
         self.assertTrue(session.port_collision(log, 0))
 
+    def test_silent_adb_failure_identifies_the_failed_operation(self):
+        result = type("Result", (), dict(returncode=1, stdout="", stderr=""))()
+        with patch.object(session.subprocess, "run", return_value=result):
+            with self.assertRaisesRegex(RuntimeError, "exit 1.*shell pidof.*no diagnostic output"):
+                session.adb("-s", "emulator-5556", "shell", "pidof", "ninja.doskey.app.levana")
+
 
 if __name__ == "__main__":
     unittest.main()

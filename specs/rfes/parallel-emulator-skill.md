@@ -34,12 +34,13 @@ Run two independent agents concurrently against the same AVD. Verify distinct
 serials, separate guest state and artifacts, concurrent dynamic forwards, and that
 stopping one session leaves the other responsive. Exercise failure cleanup,
 idempotent stop, and skill validation. Use available agent models because the
-requested Opus 5.5 is not exposed in this environment. Record observed limitations.
+requested Opus 5.5 is not exposed by the built-in collaboration API. Paseo's Claude
+provider does expose it and is used for the follow-up verification below.
 
 ## Observed validation (2026-10-20)
 
-- Two available-model agents completed two live parallel rounds. Opus 5.5 was not
-  available through the agent API.
+- Two built-in collaboration agents completed two live parallel rounds. The initial
+  model-availability check did not include Paseo; its Claude provider supports Opus 5.5.
 - Round 1 used a freshly provisioned, warmed config-only temporary template. Agents
   owned emulator-5556 and emulator-5558; writing different values to the same guest
   file remained isolated. Each installed the worktree APK and captured its own UI.
@@ -63,3 +64,30 @@ requested Opus 5.5 is not exposed in this environment. Record observed limitatio
 
 The branch is intentionally unmerged. Sandbox auto-review delays affected test
 scheduling; they did not prevent the completed live checks.
+
+## Paseo Claude Opus 5.5 follow-up
+
+Two actual Paseo agents were created with provider/model
+`claude/claude-opus-5-5` in auto mode:
+
+- A: d0bb243d-5f15-4734-aec8-ea9d1a46c42e, emulator-5558, PID 88807.
+- B: e914dd2f-db15-4f1e-972b-a336a25b9c35, emulator-5556, PID 88763.
+
+Their emulator processes started three seconds apart on the default managed AVD.
+Both followed the updated worktree skill, installed the APK on their own target,
+resolved the launcher, captured UI evidence, and verified separate guest markers.
+Both actually attached jdb and listed threads; forwards used distinct ports 55836
+and 55937. After A stopped, B's marker, process, app PID, and forward remained intact.
+Both then stopped their own sessions; repeated stop was idempotent. User emulator
+5554 remained untouched. No additional skill instructions were required.
+
+B's first forward attempt just after launch failed with empty ADB output; a bounded
+retry succeeded. The operation responsible could not be established from the old
+generic error. Improve silent-failure diagnostics to include the ADB operation and
+exit code, with a regression test; do not infer a cause or retry arbitrary failures.
+
+Reports and coordination evidence:
+`/tmp/levana-opus-concurrency-nEB6CM/a-result.md` and `b-result.md`.
+Session artifacts: `/tmp/levana-emu-yrmrdbgm/artifacts/` and
+`/tmp/levana-emu-e1p3ht_e/artifacts/`. Thirteen regression tests pass after the
+diagnostic improvement. This branch remains unmerged.

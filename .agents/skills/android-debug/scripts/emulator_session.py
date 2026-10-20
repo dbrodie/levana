@@ -84,7 +84,8 @@ def adb(*args, timeout=10):
         env=environment(), capture_output=True, text=True, timeout=timeout,
     )
     if result.returncode:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "ADB failed")
+        detail = result.stderr.strip() or result.stdout.strip() or "no diagnostic output"
+        raise RuntimeError(f"ADB command failed (exit {result.returncode}): {' '.join(map(str, args))}: {detail}")
     return result.stdout.strip()
 
 
