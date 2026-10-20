@@ -98,6 +98,7 @@ class VerifyReactiveRefreshLifecycleTest {
         runBlocking {
             preferences.saveSelectedCalendarIds(setOf(1L))
             preferences.saveCalendarHebrewMode(false)
+            preferences.saveDevDateOverride(null)
         }
     }
 
