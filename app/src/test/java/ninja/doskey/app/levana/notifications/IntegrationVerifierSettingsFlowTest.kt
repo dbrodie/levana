@@ -40,6 +40,21 @@ class IntegrationVerifierSettingsFlowTest {
     @Test
     fun `each preference change reaches only the affected rebuild or category refresh`() {
         val prefs = PreferencesRepository(app, CityRepository(app))
+        // Preferences persist across tests in one JVM: start from a known baseline
+        runBlocking {
+            prefs.saveDynamicHolidayTheme(true)
+            prefs.saveSelectedZmanim(setOf("Sunrise", "Sunset", "Nightfall"))
+            prefs.saveNotifyHolidays(false)
+            prefs.saveHolidayNotifyDaysBefore(1)
+            prefs.saveNotifyFasts(false)
+            prefs.saveNotifyPersonalEvents(false)
+            prefs.saveCandleLightingOffset(18.0)
+            prefs.saveNotifyCandleLighting(false)
+            prefs.saveNotifyOmer(false)
+            prefs.saveNotifyOmerMorningTime(420)
+            prefs.saveIsInIsrael(true)
+            prefs.saveDevDateOverride(null)
+        }
         val log = Collections.synchronizedList(mutableListOf<String>())
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         scope.launch { rebuildOnAlarmSettingsChange(prefs.preferences) { log += "rebuild" } }
