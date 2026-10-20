@@ -136,6 +136,7 @@ class DailyNotificationWorker(
             NotificationPoster.postPersonalEvent(
                 localized,
                 today,
+                occurrence.event.id,
                 occurrence.event.title,
                 occurrence.label
             )
@@ -146,6 +147,7 @@ class DailyNotificationWorker(
             NotificationPoster.postBirthday(
                 localized,
                 today,
+                occurrence.birthday.contactLookupKey,
                 occurrence.birthday.contactName,
                 occurrence.label
             )

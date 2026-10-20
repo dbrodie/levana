@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import java.time.LocalDate
@@ -28,6 +29,32 @@ class NotificationAlarmScheduler(private val context: Context) {
         private const val REQUEST_CANDLE_LIGHTING = 100000
         private const val REQUEST_OMER = 200000
         private const val REQUEST_OMER_MORNING = 201000
+
+        private const val ALARM_SCHEME = "levana-alarm"
+        private val ACTIONS = listOf(ACTION_CANDLE_LIGHTING, ACTION_OMER, ACTION_OMER_MORNING)
+
+        /** Days either side of the given date whose alarms [cancelAll] cancels. */
+        private const val CANCEL_WINDOW_DAYS = 7L
+
+        private fun requestCode(action: String) = when (action) {
+            ACTION_CANDLE_LIGHTING -> REQUEST_CANDLE_LIGHTING
+            ACTION_OMER -> REQUEST_OMER
+            else -> REQUEST_OMER_MORNING
+        }
+
+        /**
+         * Identity of the alarm for [action] on [date]. The full date is in the data URI, which
+         * is part of PendingIntent identity (extras are not), so alarms for different dates —
+         * including the same day of different years — never replace each other, while
+         * rescheduling the same reminder for the same date replaces its one pending alarm.
+         */
+        internal fun alarmUri(action: String, date: LocalDate): Uri =
+            Uri.Builder()
+                .scheme(ALARM_SCHEME)
+                .authority("alarm")
+                .appendPath(action.substringAfterLast('.').lowercase())
+                .appendPath(date.toString())
+                .build()
     }
 
     fun scheduleCandleLighting(
@@ -39,13 +66,7 @@ class NotificationAlarmScheduler(private val context: Context) {
     ) {
         val zoneId = ZoneId.of(location.timezoneId)
         val triggerZoned = ZonedDateTime.of(date, triggerTime, zoneId)
-        val triggerMillis = triggerZoned.toInstant().toEpochMilli()
-
-        if (triggerMillis <= System.currentTimeMillis()) return
-
-        val intent = Intent(context, NotificationAlarmReceiver::class.java).apply {
-            action = ACTION_CANDLE_LIGHTING
-            putExtra(EXTRA_DATE_EPOCH_DAY, date.toEpochDay())
+        schedule(ACTION_CANDLE_LIGHTING, date, triggerZoned) {
             putExtra(EXTRA_CANDLE_LIGHTING_TIME, candleLightingTime.toString())
             putExtra(EXTRA_END_TIME, end?.time?.toString())
             end?.let {
@@ -53,20 +74,6 @@ class NotificationAlarmScheduler(private val context: Context) {
                 putExtra(EXTRA_END_INCLUDES_YOM_TOV, it.includesYomTov)
             }
         }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CANDLE_LIGHTING + date.dayOfYear,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val alarmManager = context.getSystemService(AlarmManager::class.java)
-        alarmManager.setAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerMillis,
-            pendingIntent
-        )
     }
 
     fun scheduleOmerReminder(
@@ -77,29 +84,9 @@ class NotificationAlarmScheduler(private val context: Context) {
     ) {
         val zoneId = ZoneId.of(location.timezoneId)
         val triggerZoned = ZonedDateTime.of(date, tzaitTime, zoneId)
-        val triggerMillis = triggerZoned.toInstant().toEpochMilli()
-
-        if (triggerMillis <= System.currentTimeMillis()) return
-
-        val intent = Intent(context, NotificationAlarmReceiver::class.java).apply {
-            action = ACTION_OMER
-            putExtra(EXTRA_DATE_EPOCH_DAY, date.toEpochDay())
+        schedule(ACTION_OMER, date, triggerZoned) {
             putExtra(EXTRA_OMER_DAY, omerDay)
         }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_OMER + date.dayOfYear,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val alarmManager = context.getSystemService(AlarmManager::class.java)
-        alarmManager.setAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerMillis,
-            pendingIntent
-        )
     }
 
     fun scheduleOmerMorningReminder(
@@ -108,24 +95,36 @@ class NotificationAlarmScheduler(private val context: Context) {
         omerDay: Int
     ) {
         val triggerZoned = ZonedDateTime.of(date, morningTime, ZoneId.systemDefault())
-        val triggerMillis = triggerZoned.toInstant().toEpochMilli()
+        schedule(ACTION_OMER_MORNING, date, triggerZoned) {
+            putExtra(EXTRA_OMER_DAY, omerDay)
+        }
+    }
+
+    private fun schedule(
+        action: String,
+        date: LocalDate,
+        trigger: ZonedDateTime,
+        extras: Intent.() -> Unit
+    ) {
+        val triggerMillis = trigger.toInstant().toEpochMilli()
 
         if (triggerMillis <= System.currentTimeMillis()) return
 
-        val intent = Intent(context, NotificationAlarmReceiver::class.java).apply {
-            action = ACTION_OMER_MORNING
+        val intent = alarmIntent(action, date).apply {
             putExtra(EXTRA_DATE_EPOCH_DAY, date.toEpochDay())
-            putExtra(EXTRA_OMER_DAY, omerDay)
+            extras()
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            REQUEST_OMER_MORNING + date.dayOfYear,
+            requestCode(action),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val alarmManager = context.getSystemService(AlarmManager::class.java)
+        // An alarm a previous version set for this same reminder would fire it a second time
+        cancelExisting(alarmManager, legacyAlarmIntent(action), legacyRequestCode(action, date))
         alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerMillis,
@@ -133,31 +132,56 @@ class NotificationAlarmScheduler(private val context: Context) {
         )
     }
 
-    fun cancelAll() {
+    /**
+     * Cancels the alarms for the days around [around] (alarms are only set for the current
+     * date) and every alarm set by a previous version, which used day-of-year request codes.
+     */
+    fun cancelAll(around: LocalDate = LocalDate.now()) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-        for (action in listOf(ACTION_CANDLE_LIGHTING, ACTION_OMER, ACTION_OMER_MORNING)) {
-            for (dayOfYear in 1..366) {
-                val requestCode = when (action) {
-                    ACTION_CANDLE_LIGHTING -> REQUEST_CANDLE_LIGHTING + dayOfYear
-                    ACTION_OMER -> REQUEST_OMER + dayOfYear
-                    ACTION_OMER_MORNING -> REQUEST_OMER_MORNING + dayOfYear
-                    else -> continue
-                }
-                val intent = Intent(context, NotificationAlarmReceiver::class.java).apply {
-                    this.action = action
-                }
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    requestCode,
-                    intent,
-                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        for (action in ACTIONS) {
+            for (offset in -CANCEL_WINDOW_DAYS..CANCEL_WINDOW_DAYS) {
+                cancelExisting(
+                    alarmManager,
+                    alarmIntent(action, around.plusDays(offset)),
+                    requestCode(action)
                 )
-                if (pendingIntent != null) {
-                    alarmManager.cancel(pendingIntent)
-                    pendingIntent.cancel()
-                }
             }
+            for (dayOfYear in 1..366) {
+                cancelExisting(
+                    alarmManager,
+                    legacyAlarmIntent(action),
+                    requestCode(action) + dayOfYear
+                )
+            }
+        }
+    }
+
+    private fun alarmIntent(action: String, date: LocalDate) =
+        Intent(context, NotificationAlarmReceiver::class.java).apply {
+            this.action = action
+            data = alarmUri(action, date)
+        }
+
+    /** Previous versions keyed alarms on `REQUEST_x + dayOfYear` with no data URI. */
+    private fun legacyAlarmIntent(action: String) =
+        Intent(context, NotificationAlarmReceiver::class.java).apply {
+            this.action = action
+        }
+
+    private fun legacyRequestCode(action: String, date: LocalDate) =
+        requestCode(action) + date.dayOfYear
+
+    private fun cancelExisting(alarmManager: AlarmManager, intent: Intent, requestCode: Int) {
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
         }
     }
 }

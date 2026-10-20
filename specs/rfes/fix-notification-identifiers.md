@@ -68,7 +68,7 @@ same component and extras for every notification of that date, so it is already 
 
 ### Alarm identity
 
-Alarm broadcasts get a data URI `levana-alarm://<type>/<ISO date>`, making the full date part
+Alarm broadcasts get a data URI `levana-alarm://alarm/<type>/<ISO date>`, making the full date part
 of `Intent.filterEquals` identity; the request code becomes a per-type constant. Action and
 extras are unchanged, so the receiver is unchanged. Rescheduling the same reminder for the
 same date (`FLAG_UPDATE_CURRENT`) still replaces the one pending alarm.
