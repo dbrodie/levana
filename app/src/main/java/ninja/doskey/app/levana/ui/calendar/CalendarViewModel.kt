@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
+import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
@@ -11,6 +12,7 @@ import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.ui.ChangeRefresher
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.Job
@@ -26,7 +28,8 @@ class CalendarViewModel(
     private val preferencesRepository: PreferencesRepository,
     private val personalEventRepository: PersonalEventRepository,
     private val contactBirthdayRepository: ContactBirthdayRepository,
-    private val systemCalendarRepository: SystemCalendarRepository
+    private val systemCalendarRepository: SystemCalendarRepository,
+    eventDataChanges: EventDataChanges
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CalendarState())
@@ -39,8 +42,11 @@ class CalendarViewModel(
     val gregorianScrollTarget = _gregorianScrollTarget.receiveAsFlow()
 
     private var currentPrefs = UserPreferences()
+    private var preferencesLoaded = false
     private var loadJob: Job? = null
     private var adjacentJob: Job? = null
+
+    private val changeRefresher = ChangeRefresher(viewModelScope, eventDataChanges, refresh = ::refresh)
 
     init {
         observePreferences()
@@ -121,6 +127,20 @@ class CalendarViewModel(
                     loadMonth(target)
                 }
             }
+            is CalendarIntent.Resume -> changeRefresher.onResume()
+            is CalendarIntent.Pause -> changeRefresher.onPause()
+        }
+    }
+
+    /** Reloads the browsed month and its neighbours in place, keeping the selection. */
+    private fun refresh() {
+        // Before the first preferences the initial load has not started; it will read fresh data.
+        if (!preferencesLoaded) return
+        val current = _state.value
+        if (currentPrefs.calendarHebrewMode) {
+            current.hebrewYearMonth?.let { loadHebrewMonth(it, keepContent = true) }
+        } else {
+            loadMonth(current.currentMonth, keepContent = true)
         }
     }
 
@@ -130,6 +150,7 @@ class CalendarViewModel(
                 val modeChanged =
                     currentPrefs.calendarHebrewMode != prefs.calendarHebrewMode
                 currentPrefs = prefs
+                preferencesLoaded = true
                 _state.value = _state.value.copy(
                     locationName = prefs.activeLocation.name,
                     calendarHebrewMode = prefs.calendarHebrewMode
@@ -205,23 +226,30 @@ class CalendarViewModel(
         }
     }
 
-    private fun loadMonth(yearMonth: YearMonth) {
+    private fun loadMonth(yearMonth: YearMonth, keepContent: Boolean = false) {
         loadJob?.cancel()
         adjacentJob?.cancel()
 
-        _state.value = _state.value.copy(
-            isLoading = true,
-            currentMonth = yearMonth,
-            monthDays = emptyList()
-        )
+        if (!keepContent) {
+            _state.value = _state.value.copy(
+                isLoading = true,
+                currentMonth = yearMonth,
+                monthDays = emptyList()
+            )
+        }
 
         loadJob = viewModelScope.launch {
             val markedDays = loadMonthDaysOnly(yearMonth)
-            _state.value = _state.value.copy(
+            val current = _state.value
+            _state.value = current.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 isLoading = false,
-                gregorianMonthCache = mapOf(yearMonth to markedDays)
+                gregorianMonthCache = if (keepContent) {
+                    current.gregorianMonthCache + (yearMonth to markedDays)
+                } else {
+                    mapOf(yearMonth to markedDays)
+                }
             )
         }
 
@@ -289,23 +317,30 @@ class CalendarViewModel(
         }
     }
 
-    private fun loadHebrewMonth(hym: HebrewYearMonth) {
+    private fun loadHebrewMonth(hym: HebrewYearMonth, keepContent: Boolean = false) {
         loadJob?.cancel()
         adjacentJob?.cancel()
 
-        _state.value = _state.value.copy(
-            isLoading = true,
-            hebrewYearMonth = hym,
-            monthDays = emptyList()
-        )
+        if (!keepContent) {
+            _state.value = _state.value.copy(
+                isLoading = true,
+                hebrewYearMonth = hym,
+                monthDays = emptyList()
+            )
+        }
 
         loadJob = viewModelScope.launch {
             val markedDays = loadHebrewMonthDaysOnly(hym)
-            _state.value = _state.value.copy(
+            val current = _state.value
+            _state.value = current.copy(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 isLoading = false,
-                hebrewMonthCache = mapOf(hym to markedDays)
+                hebrewMonthCache = if (keepContent) {
+                    current.hebrewMonthCache + (hym to markedDays)
+                } else {
+                    mapOf(hym to markedDays)
+                }
             )
         }
 

@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
+import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.ui.ChangeRefresher
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +27,8 @@ class DayDetailViewModel(
     private val preferencesRepository: PreferencesRepository,
     private val personalEventRepository: PersonalEventRepository,
     private val contactBirthdayRepository: ContactBirthdayRepository,
-    private val systemCalendarRepository: SystemCalendarRepository
+    private val systemCalendarRepository: SystemCalendarRepository,
+    eventDataChanges: EventDataChanges
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DayDetailState())
@@ -33,6 +36,11 @@ class DayDetailViewModel(
 
     private var lastLoadedDate: LocalDate? = null
     private var loadJob: Job? = null
+
+    // Reloads the open day in place when its events change.
+    private val changeRefresher = ChangeRefresher(viewModelScope, eventDataChanges) {
+        lastLoadedDate?.let { date -> loadDay(date, keepContent = true) }
+    }
 
     init {
         viewModelScope.launch {
@@ -45,14 +53,16 @@ class DayDetailViewModel(
     fun onIntent(intent: DayDetailIntent) {
         when (intent) {
             is DayDetailIntent.LoadDay -> loadDay(intent.date)
+            is DayDetailIntent.Resume -> changeRefresher.onResume()
+            is DayDetailIntent.Pause -> changeRefresher.onPause()
         }
     }
 
-    private fun loadDay(date: LocalDate) {
+    private fun loadDay(date: LocalDate, keepContent: Boolean = false) {
         lastLoadedDate = date
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            if (!keepContent) _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
             val location = prefs.activeLocation
             val dayInfo = calendarRepository.getDayInfo(
