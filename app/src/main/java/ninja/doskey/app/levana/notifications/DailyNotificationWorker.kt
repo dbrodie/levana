@@ -34,7 +34,7 @@ class DailyNotificationWorker(
     private val calendarRepository: CalendarRepository by inject()
     private val personalEventRepository: PersonalEventRepository by inject()
     private val contactBirthdayRepository: ContactBirthdayRepository by inject()
-    private val alarmScheduler: NotificationAlarmScheduler by inject()
+    private val alarmRebuilder: NotificationAlarmRebuilder by inject()
 
     override suspend fun doWork(): Result {
         val prefs = preferencesRepository.preferences.first()
@@ -45,8 +45,11 @@ class DailyNotificationWorker(
         // Keep channel names in the app language even if a language change was missed
         NotificationChannels.createAll(applicationContext)
 
+        // Candle-lighting and Omer reminders are alarms for today's times
+        alarmRebuilder.rebuild()
+
         if (prefs.notifyCandleLighting) {
-            handleCandleLighting(localized, today, location, prefs)
+            postLateCandleLighting(localized, today, prefs)
         }
 
         if (prefs.notifyHolidays) {
@@ -61,67 +64,21 @@ class DailyNotificationWorker(
             handlePersonalEvents(localized, today)
         }
 
-        if (prefs.notifyOmer) {
-            handleOmer(today, location, prefs)
-        }
-
         return Result.success()
     }
 
-    private fun handleCandleLighting(
+    /** Posts the "morning" candle-lighting notice at once if its time has already passed. */
+    private fun postLateCandleLighting(
         localized: Context,
-        today: LocalDate, location: Location, prefs: UserPreferences) {
-        if (!zmanimRepository.hasCandles(today, prefs.isInIsrael)) return
-
-        val shabbatInfo = zmanimRepository.getShabbatInfo(
-            today,
-            location,
-            prefs.candleLightingOffset,
-            prefs.isInIsrael
-        )
-        val candleLightingTime = shabbatInfo.candleLightingTime ?: return
-
-        // Havdalah after the last of consecutive Shabbat / Yom Tov days
-        val end = zmanimRepository.getObservanceEnd(today, location, prefs.isInIsrael)
-
-        when (prefs.candleLightingNotifyMode) {
-            "morning" -> {
-                val morningTime = LocalTime.of(
-                    prefs.candleLightingMorningTime / 60,
-                    prefs.candleLightingMorningTime % 60
-                )
-                if (LocalTime.now().isBefore(morningTime)) {
-                    // Schedule for this morning
-                    alarmScheduler.scheduleCandleLighting(
-                        today,
-                        morningTime,
-                        location,
-                        candleLightingTime,
-                        end
-                    )
-                } else {
-                    // Already past morning time, post immediately
-                    NotificationPoster.postCandleLighting(
-                        localized,
-                        today,
-                        candleLightingTime,
-                        end
-                    )
-                }
-            }
-            "hours_before" -> {
-                val triggerTime = candleLightingTime.minusHours(
-                    prefs.candleLightingHoursBefore.toLong()
-                )
-                alarmScheduler.scheduleCandleLighting(
-                    today,
-                    triggerTime,
-                    location,
-                    candleLightingTime,
-                    end
-                )
-            }
-        }
+        today: LocalDate,
+        prefs: UserPreferences
+    ) {
+        if (prefs.candleLightingNotifyMode != "morning") return
+        val morningTime = minutesToTime(prefs.candleLightingMorningTime)
+        // Before the morning time the alarm scheduled by the rebuild posts it
+        if (LocalTime.now().isBefore(morningTime)) return
+        val times = alarmRebuilder.candleLightingTimes(today, prefs) ?: return
+        NotificationPoster.postCandleLighting(localized, today, times.candleLighting, times.end)
     }
 
     private fun handleHolidays(localized: Context, today: LocalDate, prefs: UserPreferences) {
@@ -188,27 +145,6 @@ class DailyNotificationWorker(
                 occurrence.birthday.contactName,
                 occurrence.label
             )
-        }
-    }
-
-    private fun handleOmer(today: LocalDate, location: Location, prefs: UserPreferences) {
-        val plan = planOmerReminders(
-            today,
-            prefs.notifyOmerTzait,
-            prefs.notifyOmerMorning,
-            calendarRepository
-        ) { zmanimRepository.getTzaitTime(today, location) }
-
-        plan.evening?.let { evening ->
-            alarmScheduler.scheduleOmerReminder(today, evening.tzaitTime, location, evening.omerDay)
-        }
-
-        plan.morningOmerDay?.let { omerDay ->
-            val morningTime = LocalTime.of(
-                prefs.notifyOmerMorningTime / 60,
-                prefs.notifyOmerMorningTime % 60
-            )
-            alarmScheduler.scheduleOmerMorningReminder(today, morningTime, omerDay)
         }
     }
 

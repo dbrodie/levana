@@ -12,6 +12,7 @@ import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
+import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
 import ninja.doskey.app.levana.update.UpdateChecker
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
@@ -49,6 +50,9 @@ val dataModule = module {
     single { ContactBirthdayRepository(androidContext()) }
     single { SystemCalendarRepository(androidContext()) }
     single { NotificationAlarmScheduler(androidContext()) }
+    single {
+        NotificationAlarmRebuilder(get<PreferencesRepository>().preferences, get(), get(), get())
+    }
     single { UpdateChecker(androidContext()) }
 }
 

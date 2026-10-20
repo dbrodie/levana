@@ -8,6 +8,7 @@ import ninja.doskey.app.levana.di.allModules
 import ninja.doskey.app.levana.icon.DynamicIconManager
 import ninja.doskey.app.levana.notifications.DailyNotificationWorker
 import ninja.doskey.app.levana.notifications.NotificationChannels
+import ninja.doskey.app.levana.notifications.NotificationRescheduling
 import ninja.doskey.app.levana.update.UpdateCheckWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -32,6 +33,7 @@ class LevanaApplication : Application() {
         }
         NotificationChannels.createAll(this)
         DailyNotificationWorker.enqueueDaily(this)
+        NotificationRescheduling.start()
         UpdateCheckWorker.enqueueDaily(this)
     }
 
