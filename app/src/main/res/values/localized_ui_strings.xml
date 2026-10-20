@@ -22,6 +22,8 @@
     <string name="events_import_complete_title">Import Complete</string>
     <string name="events_imported">Imported %1$d event(s)</string>
     <string name="events_import_skipped">, skipped %1$d duplicate(s)</string>
+    <string name="events_import_too_large">Import failed: the file is larger than %1$d KB</string>
+    <string name="events_remove_birthday_failed">Could not remove birthday: %1$s</string>
     <string name="events_contacts_permission_title">Contacts permission required</string>
     <string name="events_contacts_permission_description">Grant permission to manage Hebrew birthdays on your contacts</string>
     <string name="events_no_birthdays">No birthdays yet</string>
@@ -125,6 +127,7 @@
     <string name="notification_candle_lighting_title">Candle Lighting</string>
     <string name="notification_candle_lighting_body">Candle Lighting at %1$s</string>
     <string name="notification_candle_lighting_body_with_end">Candle Lighting at %1$s \u00b7 Shabbat ends %2$s</string>
+    <string name="notification_candle_lighting_body_with_yom_tov_end">Candle Lighting at %1$s \u00b7 Yom Tov ends %2$s</string>
     <string name="notification_holiday_title">Holiday</string>
     <string name="notification_holiday_today">Today is %1$s</string>
     <string name="notification_holiday_tomorrow">%1$s begins tomorrow</string>

@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Holiday
+import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.update.GITHUB_RELEASES_PAGE
@@ -21,16 +22,8 @@ object NotificationPoster {
 
     const val EXTRA_DATE_EPOCH_DAY = "EXTRA_DATE_EPOCH_DAY"
 
-    private const val CHANNEL_CANDLE_LIGHTING_ORDINAL = 0
-    private const val CHANNEL_HOLIDAYS_ORDINAL = 1
-    private const val CHANNEL_FASTS_ORDINAL = 2
-    private const val CHANNEL_PERSONAL_EVENTS_ORDINAL = 3
-    private const val CHANNEL_OMER_ORDINAL = 4
+    // Untagged; reminders are tagged (see NotificationKeys), so they cannot collide with it
     private const val NOTIFICATION_ID_UPDATE_AVAILABLE = 9001
-
-    private fun notificationId(channelOrdinal: Int, date: LocalDate): Int {
-        return channelOrdinal * 10000 + date.dayOfYear
-    }
 
     private fun deepLinkIntent(context: Context, date: LocalDate): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -50,13 +43,13 @@ object NotificationPoster {
         context: Context,
         date: LocalDate,
         candleLightingTime: LocalTime,
-        endTime: LocalTime?
+        end: ObservanceEnd?
     ) {
-        val text = candleLightingNotificationText(context, candleLightingTime, endTime)
+        val text = candleLightingNotificationText(context, date, candleLightingTime, end)
         post(
             context,
             NotificationChannels.CANDLE_LIGHTING,
-            notificationId(CHANNEL_CANDLE_LIGHTING_ORDINAL, date),
+            NotificationKeys.candleLighting(date),
             text.title,
             text.body,
             date
@@ -69,7 +62,7 @@ object NotificationPoster {
         post(
             context,
             NotificationChannels.HOLIDAYS,
-            notificationId(CHANNEL_HOLIDAYS_ORDINAL, date),
+            NotificationKeys.holiday(date, holiday),
             text.title,
             text.body,
             date
@@ -88,7 +81,7 @@ object NotificationPoster {
         post(
             context,
             NotificationChannels.FASTS,
-            notificationId(CHANNEL_FASTS_ORDINAL, fastDate),
+            NotificationKeys.fast(fastDate, fast),
             text.title,
             text.body,
             fastDate
@@ -96,43 +89,45 @@ object NotificationPoster {
     }
 
     /**
-     * Posts a personal event; [context] should already carry the app language. The id is
-     * keyed on [title] and [label], not the localized text, so a language change replaces
-     * the notification instead of adding a second one.
+     * Posts a personal event; [context] should already carry the app language. The
+     * notification is keyed on [eventId], not the title or localized text, so a language
+     * change or title edit replaces it and events with the same title stay separate.
      */
     fun postPersonalEvent(
         context: Context,
         date: LocalDate,
+        eventId: Long,
         title: String,
         label: OccurrenceLabel?
     ) {
         val text = personalEventNotificationText(context, occurrenceTitle(context, title, label))
-        val key = "event|$title|$label"
         post(
             context,
             NotificationChannels.PERSONAL_EVENTS,
-            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + key.hashCode() % 1000,
+            NotificationKeys.personalEvent(date, eventId, title, label),
             text.title,
             text.body,
             date
         )
     }
 
-    /** Posts a Hebrew birthday; [context] should already carry the app language. */
+    /**
+     * Posts a Hebrew birthday; [context] should already carry the app language. Keyed on
+     * [contactLookupKey], not the name or localized text, so a language change replaces the
+     * notification and contacts with the same name stay separate.
+     */
     fun postBirthday(
         context: Context,
         date: LocalDate,
+        contactLookupKey: String,
         contactName: String,
         label: OccurrenceLabel?
     ) {
         val text = birthdayNotificationText(context, contactName, label)
-        // Keyed on the contact and label, not the localized text, so a language change
-        // replaces the notification instead of adding a second one
-        val key = "birthday|$contactName|$label"
         post(
             context,
             NotificationChannels.PERSONAL_EVENTS,
-            notificationId(CHANNEL_PERSONAL_EVENTS_ORDINAL, date) + key.hashCode() % 1000,
+            NotificationKeys.birthday(date, contactLookupKey, contactName, label),
             text.title,
             text.body,
             date
@@ -145,7 +140,7 @@ object NotificationPoster {
         post(
             context,
             NotificationChannels.OMER,
-            notificationId(CHANNEL_OMER_ORDINAL, date),
+            NotificationKeys.omerTzait(date),
             text.title,
             text.body,
             date
@@ -158,7 +153,7 @@ object NotificationPoster {
         post(
             context,
             NotificationChannels.OMER,
-            notificationId(CHANNEL_OMER_ORDINAL, date) + 1,
+            NotificationKeys.omerMorning(date),
             text.title,
             text.body,
             date
@@ -199,7 +194,7 @@ object NotificationPoster {
     private fun post(
         context: Context,
         channelId: String,
-        notificationId: Int,
+        key: NotificationKey,
         title: String,
         body: String,
         date: LocalDate
@@ -221,6 +216,9 @@ object NotificationPoster {
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(notificationId, notification)
+        val manager = NotificationManagerCompat.from(context)
+        // Drop the untagged copy a previous version posted for this same reminder
+        manager.cancel(key.legacyId)
+        manager.notify(key.tag, key.id, notification)
     }
 }

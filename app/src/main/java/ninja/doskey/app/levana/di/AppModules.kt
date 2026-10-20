@@ -2,8 +2,11 @@ package ninja.doskey.app.levana.di
 
 import androidx.room.Room
 import ninja.doskey.app.levana.data.CalendarRepository
+import ninja.doskey.app.levana.data.AndroidEventDataChanges
 import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
+import ninja.doskey.app.levana.data.EventDataChanges
+import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
@@ -12,7 +15,9 @@ import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
+import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
+import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
 import ninja.doskey.app.levana.update.UpdateChecker
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
@@ -26,6 +31,9 @@ import ninja.doskey.app.levana.ui.zmanim.ZmanimViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 val dataModule = module {
     single {
@@ -48,17 +56,34 @@ val dataModule = module {
     }
     single { ContactBirthdayRepository(androidContext()) }
     single { SystemCalendarRepository(androidContext()) }
+    single<EventDataChanges> {
+        val contacts = get<ContactBirthdayRepository>()
+        val calendars = get<SystemCalendarRepository>()
+        AndroidEventDataChanges(
+            androidContext().contentResolver,
+            get<PersonalEventRepository>().getAll(),
+            contacts::hasContactsPermission,
+            calendars::hasCalendarPermission,
+            // Observers are shared by the view models and released when none collects.
+            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        )
+    }
+    single { EventFileRepository(androidContext()) }
     single { NotificationAlarmScheduler(androidContext()) }
+    single { NotificationDeliveryLog(androidContext()) }
+    single {
+        NotificationAlarmRebuilder(get<PreferencesRepository>().preferences, get(), get(), get())
+    }
     single { UpdateChecker(androidContext()) }
 }
 
 val viewModelModule = module {
-    viewModel { CalendarViewModel(get(), get(), get(), get(), get()) }
-    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), androidContext()) }
-    viewModel { EventsViewModel(get(), get()) }
+    viewModel { EventsViewModel(get(), get(), get()) }
     viewModel { AddEditEventViewModel(get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }

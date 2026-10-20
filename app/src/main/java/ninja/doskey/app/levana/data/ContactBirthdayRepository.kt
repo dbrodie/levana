@@ -3,15 +3,26 @@ package ninja.doskey.app.levana.data
 import android.content.ContentProviderOperation
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.domain.model.BirthdayOccurrence
 import ninja.doskey.app.levana.domain.model.ContactBirthday
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
-open class ContactBirthdayRepository(private val context: Context) {
+/**
+ * Contact birthdays stored in the Contacts provider. Every provider call is a
+ * main-safe suspend function running on [ioDispatcher].
+ */
+open class ContactBirthdayRepository(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
 
     companion object {
         const val MIME_TYPE =
@@ -32,10 +43,9 @@ open class ContactBirthdayRepository(private val context: Context) {
             ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun getAll(): List<ContactBirthday> {
+    open suspend fun getAll(): List<ContactBirthday> {
         if (!hasContactsPermission()) return emptyList()
 
-        val birthdays = mutableListOf<ContactBirthday>()
         val projection = arrayOf(
             ContactsContract.Data.LOOKUP_KEY,
             ContactsContract.Data.DISPLAY_NAME_PRIMARY,
@@ -47,13 +57,15 @@ open class ContactBirthdayRepository(private val context: Context) {
         val selection = "${ContactsContract.Data.MIMETYPE} = ?"
         val selectionArgs = arrayOf(MIME_TYPE)
 
-        context.contentResolver.query(
+        return context.contentResolver.queryCancellable(
+            ioDispatcher,
             ContactsContract.Data.CONTENT_URI,
             projection,
             selection,
             selectionArgs,
             "${ContactsContract.Data.DISPLAY_NAME_PRIMARY} ASC"
-        )?.use { cursor ->
+        ) { cursor, signal ->
+            val birthdays = mutableListOf<ContactBirthday>()
             val lookupIdx = cursor.getColumnIndexOrThrow(
                 ContactsContract.Data.LOOKUP_KEY
             )
@@ -68,6 +80,7 @@ open class ContactBirthdayRepository(private val context: Context) {
             val yearIdx = cursor.getColumnIndexOrThrow(COL_YEAR)
 
             while (cursor.moveToNext()) {
+                signal.throwIfCanceled()
                 val day = cursor.getString(dayIdx)?.toIntOrNull() ?: continue
                 val month = cursor.getString(monthIdx)?.toIntOrNull()
                     ?: continue
@@ -83,17 +96,18 @@ open class ContactBirthdayRepository(private val context: Context) {
                     )
                 )
             }
-        }
-        return birthdays
+            birthdays
+        } ?: emptyList()
     }
 
     // Birthdays never use the yahrzeit rule, so the yahrzeit settings do
     // not apply; the matching still goes through HebrewDateMatcher.occurrences.
 
     /** Birthdays observed on [date], each with its occurrence label (day panel, notifications). */
-    fun getBirthdaysForDate(date: LocalDate): List<BirthdayOccurrence> {
+    suspend fun getBirthdaysForDate(date: LocalDate): List<BirthdayOccurrence> {
+        val birthdays = getAll()
         val jd = jewishDate(date)
-        return getAll().mapNotNull { bday ->
+        return birthdays.mapNotNull { bday ->
             HebrewDateMatcher.occurrenceOn(
                 bday.hebrewDay,
                 bday.hebrewMonth,
@@ -106,42 +120,49 @@ open class ContactBirthdayRepository(private val context: Context) {
         }
     }
 
-    fun getBirthdayDaysForHebrewMonth(year: Int, month: Int): Set<Int> =
-        getAll().flatMap { bday ->
-            HebrewDateMatcher.occurrences(
-                bday.hebrewDay,
-                bday.hebrewMonth,
-                bday.hebrewYear,
-                useYahrzeitRules = false,
-                targetYear = year
-            ).filter { it.month == month }.map { it.day }
-        }.toSet()
-
-    fun getBirthdayDatesForGregorianMonth(year: Int, month: Int): Set<LocalDate> {
-        val allBirthdays = getAll()
-        if (allBirthdays.isEmpty()) return emptySet()
-        val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
-
-        return (1..daysInMonth).map { LocalDate.of(year, month, it) }.filter { date ->
-            val jd = jewishDate(date)
-            allBirthdays.any { bday ->
-                HebrewDateMatcher.matchesDate(
+    suspend fun getBirthdayDaysForHebrewMonth(year: Int, month: Int): Set<Int> {
+        val birthdays = getAll()
+        return withContext(ioDispatcher) {
+            birthdays.flatMap { bday ->
+                HebrewDateMatcher.occurrences(
                     bday.hebrewDay,
                     bday.hebrewMonth,
                     bday.hebrewYear,
                     useYahrzeitRules = false,
-                    jd.jewishYear,
-                    jd.jewishMonth,
-                    jd.jewishDayOfMonth
-                )
-            }
-        }.toSet()
+                    targetYear = year
+                ).filter { it.month == month }.map { it.day }
+            }.toSet()
+        }
+    }
+
+    suspend fun getBirthdayDatesForGregorianMonth(year: Int, month: Int): Set<LocalDate> {
+        val allBirthdays = getAll()
+        if (allBirthdays.isEmpty()) return emptySet()
+        val daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth()
+
+        // A month of Hebrew-date matching per birthday: keep it off the caller
+        return withContext(ioDispatcher) {
+            (1..daysInMonth).map { LocalDate.of(year, month, it) }.filter { date ->
+                val jd = jewishDate(date)
+                allBirthdays.any { bday ->
+                    HebrewDateMatcher.matchesDate(
+                        bday.hebrewDay,
+                        bday.hebrewMonth,
+                        bday.hebrewYear,
+                        useYahrzeitRules = false,
+                        jd.jewishYear,
+                        jd.jewishMonth,
+                        jd.jewishDayOfMonth
+                    )
+                }
+            }.toSet()
+        }
     }
 
     private fun jewishDate(date: LocalDate) =
         JewishDate(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
 
-    open fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
+    open suspend fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
         val rawContactId = getRawContactId(contactLookupKey) ?: return
 
         // Check if a row already exists
@@ -181,13 +202,10 @@ open class ContactBirthdayRepository(private val context: Context) {
             )
         }
 
-        context.contentResolver.applyBatch(
-            ContactsContract.AUTHORITY,
-            ops
-        )
+        applyBatch(ops)
     }
 
-    fun removeBirthday(contactLookupKey: String) {
+    open suspend fun removeBirthday(contactLookupKey: String) {
         val rawContactId = getRawContactId(contactLookupKey) ?: return
         val existingDataId = getExistingDataId(rawContactId) ?: return
 
@@ -202,10 +220,19 @@ open class ContactBirthdayRepository(private val context: Context) {
                 )
                 .build()
         )
-        context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+        applyBatch(ops)
     }
 
-    open fun getBirthdayForContact(contactLookupKey: String): ContactBirthday? {
+    // applyBatch takes no CancellationSignal: it is skipped if cancellation
+    // came first, otherwise a cancelled caller completes once it returns
+    private suspend fun applyBatch(ops: ArrayList<ContentProviderOperation>) {
+        runCancellable(ioDispatcher) { signal ->
+            signal.throwIfCanceled()
+            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+        }
+    }
+
+    open suspend fun getBirthdayForContact(contactLookupKey: String): ContactBirthday? {
         if (!hasContactsPermission()) return null
 
         val projection = arrayOf(
@@ -220,92 +247,113 @@ open class ContactBirthdayRepository(private val context: Context) {
             "${ContactsContract.Data.LOOKUP_KEY} = ?"
         val selectionArgs = arrayOf(MIME_TYPE, contactLookupKey)
 
-        context.contentResolver.query(
+        return context.contentResolver.queryCancellable(
+            ioDispatcher,
             ContactsContract.Data.CONTENT_URI,
             projection,
             selection,
-            selectionArgs,
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val dayIdx = cursor.getColumnIndexOrThrow(COL_DAY)
-                val monthIdx = cursor.getColumnIndexOrThrow(COL_MONTH)
-                val yearIdx = cursor.getColumnIndexOrThrow(COL_YEAR)
-                val nameIdx = cursor.getColumnIndexOrThrow(
-                    ContactsContract.Data.DISPLAY_NAME_PRIMARY
-                )
-                val photoIdx = cursor.getColumnIndexOrThrow(
-                    ContactsContract.Data.PHOTO_THUMBNAIL_URI
-                )
-                val day = cursor.getString(dayIdx)?.toIntOrNull()
-                    ?: return null
-                val month = cursor.getString(monthIdx)?.toIntOrNull()
-                    ?: return null
-                val year = cursor.getString(yearIdx)?.toIntOrNull() ?: 0
-                return ContactBirthday(
-                    contactLookupKey = contactLookupKey,
-                    contactName = cursor.getString(nameIdx) ?: "",
-                    contactPhotoUri = cursor.getString(photoIdx),
-                    hebrewDay = day,
-                    hebrewMonth = month,
-                    hebrewYear = year
-                )
-            }
+            selectionArgs
+        ) { cursor, _ ->
+            if (!cursor.moveToFirst()) return@queryCancellable null
+            val dayIdx = cursor.getColumnIndexOrThrow(COL_DAY)
+            val monthIdx = cursor.getColumnIndexOrThrow(COL_MONTH)
+            val yearIdx = cursor.getColumnIndexOrThrow(COL_YEAR)
+            val nameIdx = cursor.getColumnIndexOrThrow(
+                ContactsContract.Data.DISPLAY_NAME_PRIMARY
+            )
+            val photoIdx = cursor.getColumnIndexOrThrow(
+                ContactsContract.Data.PHOTO_THUMBNAIL_URI
+            )
+            val day = cursor.getString(dayIdx)?.toIntOrNull()
+                ?: return@queryCancellable null
+            val month = cursor.getString(monthIdx)?.toIntOrNull()
+                ?: return@queryCancellable null
+            val year = cursor.getString(yearIdx)?.toIntOrNull() ?: 0
+            ContactBirthday(
+                contactLookupKey = contactLookupKey,
+                contactName = cursor.getString(nameIdx) ?: "",
+                contactPhotoUri = cursor.getString(photoIdx),
+                hebrewDay = day,
+                hebrewMonth = month,
+                hebrewYear = year
+            )
         }
-        return null
     }
 
-    private fun getRawContactId(lookupKey: String): Long? {
-        val contactUri = ContactsContract.Contacts.lookupContact(
-            context.contentResolver,
-            ContactsContract.Contacts.CONTENT_LOOKUP_URI
-                .buildUpon()
-                .appendPath(lookupKey)
-                .build()
+    /** The lookup key, display name and thumbnail of a contact returned by the picker. */
+    open suspend fun resolveContact(contactUri: Uri): PickedContact? =
+        context.contentResolver.queryCancellable(
+            ioDispatcher,
+            contactUri,
+            arrayOf(
+                ContactsContract.Contacts.LOOKUP_KEY,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+                ContactsContract.Contacts.PHOTO_THUMBNAIL_URI
+            )
+        ) { cursor, _ ->
+            if (!cursor.moveToFirst()) return@queryCancellable null
+            val lookupKey = cursor.getString(0) ?: return@queryCancellable null
+            PickedContact(
+                lookupKey = lookupKey,
+                name = cursor.getString(1) ?: "Unknown",
+                photoUri = cursor.getString(2)
+            )
+        }
+
+    private suspend fun getRawContactId(lookupKey: String): Long? {
+        val contactUri = runCancellable(ioDispatcher) {
+            ContactsContract.Contacts.lookupContact(
+                context.contentResolver,
+                ContactsContract.Contacts.CONTENT_LOOKUP_URI
+                    .buildUpon()
+                    .appendPath(lookupKey)
+                    .build()
+            )
+        } ?: return null
+
+        val cId = firstLong(
+            contactUri,
+            ContactsContract.Contacts._ID,
+            null,
+            null
         ) ?: return null
 
-        var contactId: Long? = null
-        context.contentResolver.query(
-            contactUri,
-            arrayOf(ContactsContract.Contacts._ID),
-            null,
-            null,
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                contactId = cursor.getLong(0)
-            }
-        }
-        val cId = contactId ?: return null
-
         // Get raw contact ID
-        context.contentResolver.query(
+        return firstLong(
             ContactsContract.RawContacts.CONTENT_URI,
-            arrayOf(ContactsContract.RawContacts._ID),
+            ContactsContract.RawContacts._ID,
             "${ContactsContract.RawContacts.CONTACT_ID} = ?",
-            arrayOf(cId.toString()),
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return cursor.getLong(0)
-            }
-        }
-        return null
+            arrayOf(cId.toString())
+        )
     }
 
-    private fun getExistingDataId(rawContactId: Long): Long? {
-        context.contentResolver.query(
+    private suspend fun getExistingDataId(rawContactId: Long): Long? =
+        firstLong(
             ContactsContract.Data.CONTENT_URI,
-            arrayOf(ContactsContract.Data._ID),
+            ContactsContract.Data._ID,
             "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND " +
                 "${ContactsContract.Data.MIMETYPE} = ?",
-            arrayOf(rawContactId.toString(), MIME_TYPE),
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return cursor.getLong(0)
-            }
-        }
-        return null
+            arrayOf(rawContactId.toString(), MIME_TYPE)
+        )
+
+    private suspend fun firstLong(
+        uri: Uri,
+        column: String,
+        selection: String?,
+        selectionArgs: Array<String>?
+    ): Long? = context.contentResolver.queryCancellable(
+        ioDispatcher,
+        uri,
+        arrayOf(column),
+        selection,
+        selectionArgs
+    ) { cursor, _ ->
+        if (cursor.moveToFirst()) cursor.getLong(0) else null
     }
 }
+
+data class PickedContact(
+    val lookupKey: String,
+    val name: String,
+    val photoUri: String?
+)

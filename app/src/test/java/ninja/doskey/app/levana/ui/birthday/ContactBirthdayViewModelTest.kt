@@ -98,8 +98,8 @@ class ContactBirthdayViewModelTest {
     private class FakeRepository(private val stored: ContactBirthday) :
         ContactBirthdayRepository(RuntimeEnvironment.getApplication()) {
         var saved: Triple<Int, Int, Int>? = null
-        override fun getBirthdayForContact(contactLookupKey: String) = stored
-        override fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
+        override suspend fun getBirthdayForContact(contactLookupKey: String) = stored
+        override suspend fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
             saved = Triple(day, month, year)
         }
     }

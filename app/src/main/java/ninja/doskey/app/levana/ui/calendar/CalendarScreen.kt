@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.R
@@ -133,6 +134,16 @@ fun CalendarScreen(
 
     LaunchedEffect(state.selectedDate) {
         dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+    }
+
+    // Changes to events made elsewhere (or a newly granted permission) refresh on return.
+    LifecycleResumeEffect(viewModel, dayDetailViewModel) {
+        viewModel.onIntent(CalendarIntent.Resume)
+        dayDetailViewModel.onIntent(DayDetailIntent.Resume)
+        onPauseOrDispose {
+            viewModel.onIntent(CalendarIntent.Pause)
+            dayDetailViewModel.onIntent(DayDetailIntent.Pause)
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
