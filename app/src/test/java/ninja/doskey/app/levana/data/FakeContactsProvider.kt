@@ -38,12 +38,15 @@ class FakeContactsProvider : ContentProvider() {
     ): Cursor {
         calls += Call("query", Thread.currentThread(), cancellationSignal != null)
         hold?.let { latch ->
-            cancellationSignal?.setOnCancelListener {
-                signalCancelled.countDown()
-                latch.countDown()
+            if (!ignoreSignal) {
+                cancellationSignal?.setOnCancelListener {
+                    signalCancelled.countDown()
+                    latch.countDown()
+                }
             }
             queryStarted.countDown()
             latch.await(5, TimeUnit.SECONDS)
+            failAfterHold?.let { throw IllegalStateException(it) }
             cancellationSignal?.throwIfCanceled()
         }
         val columns = projection!!
@@ -123,7 +126,15 @@ class FakeContactsProvider : ContentProvider() {
         @Volatile var queryStarted = CountDownLatch(1)
         @Volatile var signalCancelled = CountDownLatch(1)
 
+        /** Held queries ignore their signal, as a provider may. */
+        @Volatile var ignoreSignal = false
+
+        /** Held queries fail with this message once released. */
+        @Volatile var failAfterHold: String? = null
+
         fun reset() {
+            ignoreSignal = false
+            failAfterHold = null
             calls.clear()
             stored = null
             hold = null

@@ -128,3 +128,28 @@ loads; the Events birthday list and the birthday editor are covered by earlier f
   (stale "Family" list replaces "Work"; stale load restores permission) and pass with it.
 - Candidate suite: 38 suites, 264 tests, 0 failures/errors/skipped. With the verifier's
   `verifyio` tests (`b9e5925` + `e6e23c0`, not committed): 42 suites, 293 tests, 0 failures.
+
+### Follow-up 4: cancelled callers and late provider failures (2026-10-20)
+
+When a caller was cancelled while a provider ignored the `CancellationSignal` and later threw,
+`coroutineScope` reported that late exception instead of the cancellation, so stale error
+paths ran on Main: a superseded calendar load published "no permission" over a newer list, a
+superseded pick published its error, and a superseded stored load's error escaped uncaught.
+`runCancellable` now restores the caller's cancellation (`ensureActive()`) before rethrowing a
+worker failure; a live caller still sees the provider's error.
+
+- `ProviderIoTest`: cancelled caller on `Main.immediate`, `Unconfined` and a background
+  dispatcher sees `CancellationException`; a live Main caller sees the `SecurityException`.
+- View-model regressions: superseded calendar load that later fails; superseded pick whose
+  lookup fails (no error shown); superseded stored load that fails (nothing reaches the main
+  thread's uncaught handler); a current pick's failure is still shown.
+- Without the helper fix 6 of these fail (the `Unconfined` case passes either way).
+- Calendar toggle during a reload (verifier's skipped test): it passes when run alone (3/3);
+  together with other tests it times out before the reload is released, waiting for the toggle's
+  DataStore save — the process-wide `preferencesDataStore` is bound to an earlier test's
+  Application. That is fixture isolation, not an app race. The reload reads preferences after
+  its query, so a saved toggle is picked up; and the screen shows no list (so no toggle) while
+  a permission refresh runs. No change.
+- Candidate suite: 39 suites, 272 tests, 0 failures/errors/skipped. With the verifier's
+  `verifyio` tests (`b9e5925`, `e6e23c0`, `ec5ab98`, `c8334f4`; not committed): 47 suites,
+  322 tests, 0 failures, 0 errors, 1 skipped (the verifier's own `@Ignore` toggle test).

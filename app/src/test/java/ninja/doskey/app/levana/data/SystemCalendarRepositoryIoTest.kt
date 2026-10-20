@@ -154,6 +154,30 @@ class SystemCalendarRepositoryIoTest {
         assertTrue(viewModel.state.value.calendars.isEmpty())
     }
 
+    @Test
+    fun aSupersededLoadThatLaterFailsCannotHideTheNewerList() {
+        // The first query ignores its cancellation and then reports revocation
+        CalendarsProvider.hold = CountDownLatch(1)
+        CalendarsProvider.holdFirstOnly = true
+        CalendarsProvider.ignoreSignal = true
+        CalendarsProvider.failAfterHold = { SecurityException("permission revoked") }
+        val viewModel = CalendarSelectionViewModel(
+            SystemCalendarRepository(app),
+            PreferencesRepository(app, CityRepository(app))
+        )
+        assertTrue(CalendarsProvider.queryStarted.await(5, TimeUnit.SECONDS))
+
+        CalendarsProvider.calendarName = "Work"
+        viewModel.onIntent(CalendarSelectionIntent.PermissionGranted)
+        awaitOnMain { !viewModel.state.value.isLoading }
+
+        CalendarsProvider.hold!!.countDown()
+        holdsFor {
+            viewModel.state.value.hasPermission &&
+                viewModel.state.value.calendars.map { it.name } == listOf("Work")
+        }
+    }
+
     /** Lets any stale completion run for a second; [condition] must hold throughout. */
     private fun holdsFor(condition: () -> Boolean) {
         val end = System.currentTimeMillis() + 1_000
@@ -198,12 +222,15 @@ class SystemCalendarRepositoryIoTest {
             val name = calendarName
             val held = if (holdFirstOnly && threads.size > 1) null else hold
             held?.let { latch ->
-                cancellationSignal?.setOnCancelListener {
-                    signalCancelled.countDown()
-                    latch.countDown()
+                if (!ignoreSignal) {
+                    cancellationSignal?.setOnCancelListener {
+                        signalCancelled.countDown()
+                        latch.countDown()
+                    }
                 }
                 queryStarted.countDown()
                 latch.await(5, TimeUnit.SECONDS)
+                failAfterHold?.let { throw it() }
                 cancellationSignal?.throwIfCanceled()
             }
             val columns = projection!!
@@ -238,6 +265,8 @@ class SystemCalendarRepositoryIoTest {
             @Volatile var hold: CountDownLatch? = null
             @Volatile var holdFirstOnly = false
             @Volatile var calendarName = "Family"
+            @Volatile var ignoreSignal = false
+            @Volatile var failAfterHold: (() -> RuntimeException)? = null
             @Volatile var queryStarted = CountDownLatch(1)
             @Volatile var signalCancelled = CountDownLatch(1)
 
@@ -245,6 +274,8 @@ class SystemCalendarRepositoryIoTest {
                 threads.clear()
                 hold = null
                 holdFirstOnly = false
+                ignoreSignal = false
+                failAfterHold = null
                 calendarName = "Family"
                 queryStarted = CountDownLatch(1)
                 signalCancelled = CountDownLatch(1)

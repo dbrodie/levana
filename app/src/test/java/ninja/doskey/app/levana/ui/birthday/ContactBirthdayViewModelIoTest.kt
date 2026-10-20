@@ -131,6 +131,70 @@ class ContactBirthdayViewModelIoTest {
         assertFalse(vm.state.value.saveComplete)
     }
 
+    // ── Superseded provider calls that fail late ────────────────────────────
+
+    @Test
+    fun aSupersededPickWhoseLookupFailsLaterShowsNoError() {
+        FakeContactsProvider.hold = CountDownLatch(1)
+        FakeContactsProvider.ignoreSignal = true
+        FakeContactsProvider.failAfterHold = "stale pick failed"
+        val vm = viewModel()
+
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/1")))
+        assertTrue(FakeContactsProvider.queryStarted.await(5, TimeUnit.SECONDS))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        FakeContactsProvider.hold!!.countDown()
+        holdsFor { vm.state.value.errorMessage == null && vm.state.value.contactLookupKey == "kB" }
+    }
+
+    @Test
+    fun aSupersededStoredLoadThatFailsLaterDoesNotEscape() {
+        FakeContactsProvider.hold = CountDownLatch(1)
+        FakeContactsProvider.ignoreSignal = true
+        FakeContactsProvider.failAfterHold = "stale load failed"
+        // The load has no error handling, so a late failure would escape to
+        // the main thread's uncaught-exception handler
+        val escaped = java.util.concurrent.CopyOnWriteArrayList<Throwable>()
+        val main = Looper.getMainLooper().thread
+        val previous = main.uncaughtExceptionHandler
+        main.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e -> escaped += e }
+        try {
+            val vm = viewModel()
+
+            vm.onIntent(ContactBirthdayIntent.LoadBirthday(FakeContactsProvider.KEY))
+            assertTrue(FakeContactsProvider.queryStarted.await(5, TimeUnit.SECONDS))
+            vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+            FakeContactsProvider.hold!!.countDown()
+            holdsFor { vm.state.value.errorMessage == null && vm.state.value.contactLookupKey == "kB" }
+            assertFalse(vm.state.value.isEditing)
+            assertEquals(emptyList<Throwable>(), escaped)
+        } finally {
+            main.uncaughtExceptionHandler = previous
+        }
+    }
+
+    @Test
+    fun aCurrentPickWhoseLookupFailsStillShowsTheError() {
+        FakeContactsProvider.hold = CountDownLatch(1)
+        FakeContactsProvider.failAfterHold = "lookup failed"
+        val vm = viewModel()
+
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/1")))
+        FakeContactsProvider.hold!!.countDown()
+        awaitOnMain { vm.state.value.errorMessage != null }
+
+        assertEquals("lookup failed", vm.state.value.errorMessage)
+    }
+
+    private fun holdsFor(condition: () -> Boolean) {
+        val end = System.currentTimeMillis() + 1_000
+        while (System.currentTimeMillis() < end) {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertTrue("stale result published", condition())
+            Thread.sleep(10)
+        }
+    }
+
     /** Lookups that complete only when the test says so. */
     private class GatedRepository : ContactBirthdayRepository(RuntimeEnvironment.getApplication()) {
         val picks = mutableMapOf<Uri, CompletableDeferred<PickedContact?>>()

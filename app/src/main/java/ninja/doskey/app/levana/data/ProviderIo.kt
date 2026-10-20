@@ -9,15 +9,31 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * Runs blocking provider or stream work on [dispatcher]. Cancelling the
  * caller cancels the [CancellationSignal] handed to [block], so a provider
  * that honours it stops early; an abort surfaces as [CancellationException],
  * never as an error. Work that ignores the signal still runs to completion
- * (off the caller's thread) before the cancelled caller completes.
+ * (off the caller's thread) before the cancelled caller completes, and a
+ * cancelled caller always sees [CancellationException], even if that work
+ * later fails: a superseded request can never report a stale error.
  */
 internal suspend fun <T> runCancellable(
+    dispatcher: CoroutineDispatcher,
+    block: (CancellationSignal) -> T
+): T = try {
+    runOnWorker(dispatcher, block)
+} catch (e: Throwable) {
+    // coroutineScope prefers a worker's late failure over the caller's own
+    // cancellation; restore the cancellation
+    currentCoroutineContext().ensureActive()
+    throw e
+}
+
+private suspend fun <T> runOnWorker(
     dispatcher: CoroutineDispatcher,
     block: (CancellationSignal) -> T
 ): T = coroutineScope {
