@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +18,10 @@ class CalendarSelectionViewModel(
 
     private val _state = MutableStateFlow(CalendarSelectionState())
     val state: StateFlow<CalendarSelectionState> = _state.asStateFlow()
+
+    // Only the latest Load / PermissionGranted may publish, so a slower
+    // earlier query never replaces a newer calendar list or permission state
+    private var loadJob: Job? = null
 
     init {
         onIntent(CalendarSelectionIntent.Load)
@@ -32,7 +37,8 @@ class CalendarSelectionViewModel(
     }
 
     private fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val hasPermission =
                 systemCalendarRepository.hasCalendarPermission()
             if (!hasPermission) {

@@ -112,3 +112,19 @@ discarded an in-flight edit. Fixed as described above.
   suites, 291 tests, 0 failures, 0 errors, 0 skipped.
 - Against the previous view model, 10 of the 22 tests in ContactBirthdayViewModelIoTest +
   VerifyBirthdayEditorRaceTest fail.
+
+### Follow-up 3: calendar selection stale loads (2026-10-20)
+
+`CalendarSelectionViewModel.load()` now awaits the provider query, and the permission prompt
+stays on screen while it runs (`isLoading` is not set by a refresh). So a repeated
+`PermissionGranted`/`Load` could start a second load while an earlier one was still querying,
+and the earlier one could publish last: an older calendar list, or `hasPermission = true` after
+a newer load had found no permission. Each load now cancels the previous one.
+
+Audit of the other newly asynchronous loads: Calendar and DayDetail already cancel earlier
+loads; the Events birthday list and the birthday editor are covered by earlier follow-ups.
+
+- Two gated regression tests in SystemCalendarRepositoryIoTest; both fail without the guard
+  (stale "Family" list replaces "Work"; stale load restores permission) and pass with it.
+- Candidate suite: 38 suites, 264 tests, 0 failures/errors/skipped. With the verifier's
+  `verifyio` tests (`b9e5925` + `e6e23c0`, not committed): 42 suites, 293 tests, 0 failures.

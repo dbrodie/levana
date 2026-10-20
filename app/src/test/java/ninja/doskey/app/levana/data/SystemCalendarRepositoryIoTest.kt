@@ -23,6 +23,7 @@ import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionIntent
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -111,6 +112,58 @@ class SystemCalendarRepositoryIoTest {
         assertNotSame(mainThread, CalendarsProvider.threads.single())
     }
 
+    @Test
+    fun aSlowerEarlierLoadNeverReplacesANewerCalendarList() {
+        CalendarsProvider.hold = CountDownLatch(1)
+        CalendarsProvider.holdFirstOnly = true
+        val viewModel = CalendarSelectionViewModel(
+            SystemCalendarRepository(app),
+            PreferencesRepository(app, CityRepository(app))
+        )
+        assertTrue(CalendarsProvider.queryStarted.await(5, TimeUnit.SECONDS))
+
+        // A repeated permission refresh queries again and finishes first
+        CalendarsProvider.calendarName = "Work"
+        viewModel.onIntent(CalendarSelectionIntent.PermissionGranted)
+        awaitOnMain { !viewModel.state.value.isLoading }
+        assertEquals(listOf("Work"), viewModel.state.value.calendars.map { it.name })
+
+        CalendarsProvider.hold!!.countDown()
+        holdsFor { viewModel.state.value.calendars.map { it.name } == listOf("Work") }
+
+        assertEquals(2, CalendarsProvider.threads.size)
+    }
+
+    @Test
+    fun aPendingLoadNeverRestoresPermissionAfterANewerLoadFoundNone() {
+        CalendarsProvider.hold = CountDownLatch(1)
+        val viewModel = CalendarSelectionViewModel(
+            SystemCalendarRepository(app),
+            PreferencesRepository(app, CityRepository(app))
+        )
+        assertTrue(CalendarsProvider.queryStarted.await(5, TimeUnit.SECONDS))
+
+        shadowOf(app).denyPermissions(Manifest.permission.READ_CALENDAR)
+        viewModel.onIntent(CalendarSelectionIntent.Load)
+        assertFalse(viewModel.state.value.hasPermission)
+        assertFalse(viewModel.state.value.isLoading)
+
+        CalendarsProvider.hold!!.countDown()
+        holdsFor { !viewModel.state.value.hasPermission }
+
+        assertTrue(viewModel.state.value.calendars.isEmpty())
+    }
+
+    /** Lets any stale completion run for a second; [condition] must hold throughout. */
+    private fun holdsFor(condition: () -> Boolean) {
+        val end = System.currentTimeMillis() + 1_000
+        while (System.currentTimeMillis() < end) {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertTrue("stale load published", condition())
+            Thread.sleep(10)
+        }
+    }
+
     private fun awaitOnMain(condition: () -> Boolean) {
         val deadline = System.currentTimeMillis() + 5_000
         while (!condition()) {
@@ -141,7 +194,10 @@ class SystemCalendarRepositoryIoTest {
             cancellationSignal: CancellationSignal?
         ): Cursor {
             threads += Thread.currentThread()
-            hold?.let { latch ->
+            // Captured when the query starts, like a provider snapshot
+            val name = calendarName
+            val held = if (holdFirstOnly && threads.size > 1) null else hold
+            held?.let { latch ->
                 cancellationSignal?.setOnCancelListener {
                     signalCancelled.countDown()
                     latch.countDown()
@@ -154,7 +210,7 @@ class SystemCalendarRepositoryIoTest {
             val start = LocalDate.of(2026, 10, 20).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
             val values = mapOf(
                 CalendarContract.Calendars._ID to CAL_ID,
-                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME to "Family",
+                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME to name,
                 CalendarContract.Calendars.ACCOUNT_NAME to "me",
                 CalendarContract.Calendars.CALENDAR_COLOR to COLOR,
                 CalendarContract.Instances.EVENT_ID to 1L,
@@ -180,12 +236,16 @@ class SystemCalendarRepositoryIoTest {
         companion object {
             val threads = CopyOnWriteArrayList<Thread>()
             @Volatile var hold: CountDownLatch? = null
+            @Volatile var holdFirstOnly = false
+            @Volatile var calendarName = "Family"
             @Volatile var queryStarted = CountDownLatch(1)
             @Volatile var signalCancelled = CountDownLatch(1)
 
             fun reset() {
                 threads.clear()
                 hold = null
+                holdFirstOnly = false
+                calendarName = "Family"
                 queryStarted = CountDownLatch(1)
                 signalCancelled = CountDownLatch(1)
             }
