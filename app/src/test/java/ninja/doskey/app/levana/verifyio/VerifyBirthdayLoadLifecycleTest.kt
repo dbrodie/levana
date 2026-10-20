@@ -232,4 +232,24 @@ class VerifyBirthdayLoadLifecycleTest {
         assertTrue(vm.state.value.isEditing)
         assertEquals("Sarah", vm.state.value.contactName)
     }
+
+    @Test
+    fun aSupersededPickWhoseLookupLaterFailsLeavesNoError() {
+        val hold = CountDownLatch(1)
+        provider.responder = { uri, proj, sel, args ->
+            if (uri.lastPathSegment == "7" && uri.pathSegments.size == 2) {
+                hold.await(5, TimeUnit.SECONDS)
+                throw IllegalStateException("stale pick failed")
+            }
+            contacts.respond(uri, proj, sel, args)
+        }
+        val vm = vm()
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(android.net.Uri.parse("content://com.android.contacts/contacts/7")))
+        awaitEntered(provider, 1)
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        hold.countDown()
+        settle()
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertEquals("superseded pick published an error", null, vm.state.value.errorMessage)
+    }
 }
