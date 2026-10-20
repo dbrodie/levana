@@ -9,12 +9,18 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Looper
 import kotlinx.coroutines.runBlocking
+import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.data.CityRepository
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,6 +44,7 @@ class VerifyLookaheadPathTest {
     private val alarmManager get() = app.getSystemService(AlarmManager::class.java)
     private val notificationManager get() = app.getSystemService(NotificationManager::class.java)
 
+    private lateinit var preferences: PreferencesRepository
     private val zmanim = ZmanimRepository()
     private val calendar = CalendarRepository()
     private val ny = Location(40.7128, -74.006, timezoneId = "America/New_York", name = "NY")
@@ -60,10 +67,21 @@ class VerifyLookaheadPathTest {
     fun setUp() {
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         NotificationChannels.createAll(app)
+        preferences = PreferencesRepository(app, CityRepository(app))
+        startKoin { modules(module { single { preferences } }) }
     }
+
+    @After
+    fun tearDown() { stopKoin() }
 
     /** Simulates one worker run at [now] (device zone NY) with the production apply path. */
     private fun workerRun(today: LocalDate, at: LocalTime, prefs: UserPreferences, posted: MutableList<LocalDate>) {
+        runBlocking {
+            preferences.saveNotifyCandleLighting(prefs.notifyCandleLighting)
+            preferences.saveNotifyOmer(prefs.notifyOmer)
+            preferences.saveNotifyOmerTzait(prefs.notifyOmerTzait)
+            preferences.saveNotifyOmerMorning(prefs.notifyOmerMorning)
+        }
         val now = ZonedDateTime.of(today, at, nyZone).toInstant()
         val plan = planReminderAlarms(today, now, nyZone, ny, prefs, zmanim, calendar)
         val scheduler = NotificationAlarmScheduler(app) { now.toEpochMilli() }
@@ -87,9 +105,16 @@ class VerifyLookaheadPathTest {
         // The manifest receiver has no intent-filter, so Robolectric cannot route the explicit
         // intent; register the real receiver class and send the same action + extras.
         val receiver = NotificationAlarmReceiver()
-        app.registerReceiver(receiver, IntentFilter(alarm.intent().action), Context.RECEIVER_NOT_EXPORTED)
+        val before = shadowOf(notificationManager).allNotifications.size
+        val filter = IntentFilter(alarm.intent().action).apply { addDataScheme("levana-alarm") }
+        app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         app.sendBroadcast(Intent(alarm.intent()).setComponent(null).setPackage(app.packageName))
         shadowOf(Looper.getMainLooper()).idle()
+        val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5)
+        while (shadowOf(notificationManager).allNotifications.size == before && System.nanoTime() < deadline) {
+            Thread.sleep(10)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
         app.unregisterReceiver(receiver)
         shadowOf(Looper.getMainLooper()).idle()
         alarmManager.cancel(alarm.operation!!)
