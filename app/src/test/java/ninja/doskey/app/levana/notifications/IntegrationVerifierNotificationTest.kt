@@ -373,10 +373,10 @@ class IntegrationVerifierNotificationTest {
         val evening = pending(NotificationAlarmScheduler.ACTION_OMER, LocalDate.of(2026, 4, 10))!!
         val nextMorning = pending(NotificationAlarmScheduler.ACTION_OMER_MORNING, LocalDate.of(2026, 4, 11))!!
         val sameMorning = pending(NotificationAlarmScheduler.ACTION_OMER_MORNING, LocalDate.of(2026, 4, 10))!!
-        // 10 Apr 2026 day = 9th day; that evening starts the 10th
-        assertEquals(10, evening.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
-        assertEquals(10, nextMorning.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
-        assertEquals(9, sameMorning.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
+        // Omer day 1 = 16 Nisan = 3 Apr 2026, so 10 Apr = day 8; its evening starts day 9
+        assertEquals(9, evening.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
+        assertEquals(9, nextMorning.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
+        assertEquals(8, sameMorning.getIntExtra(NotificationAlarmScheduler.EXTRA_OMER_DAY, 0))
         listOf(sameMorning, evening, nextMorning).forEach { deliverIfEnabled(app, it, prefs) }
         assertEquals(3, shadowOf(notificationManager).allNotifications.size)
         // Re-delivering the same reminder replaces rather than duplicates
