@@ -35,6 +35,7 @@ class DailyNotificationWorker(
     private val personalEventRepository: PersonalEventRepository by inject()
     private val contactBirthdayRepository: ContactBirthdayRepository by inject()
     private val alarmRebuilder: NotificationAlarmRebuilder by inject()
+    private val deliveryLog: NotificationDeliveryLog by inject()
 
     override suspend fun doWork(): Result {
         // A refresh run lists the categories whose settings changed; the daily/boot run has none
@@ -45,12 +46,10 @@ class DailyNotificationWorker(
         NotificationChannels.createAll(applicationContext)
 
         if (requested == null) {
-            // Candle-lighting and Omer reminders are alarms for today's times
-            alarmRebuilder.rebuild()
-
-            val prefs = preferencesRepository.preferences.first()
-            if (prefs.notifyCandleLighting) {
-                postLateCandleLighting(localized, prefs.today(), prefs)
+            alarmRebuilder.rebuild(deliveryLog) { due ->
+                NotificationPoster.postCandleLighting(
+                    localized, due.date, due.candleLightingTime, due.end
+                )
             }
         }
 
@@ -70,20 +69,6 @@ class DailyNotificationWorker(
     }
 
     private fun UserPreferences.today(): LocalDate = devDateOverride ?: LocalDate.now()
-
-    /** Posts the "morning" candle-lighting notice at once if its time has already passed. */
-    private fun postLateCandleLighting(
-        localized: Context,
-        today: LocalDate,
-        prefs: UserPreferences
-    ) {
-        if (prefs.candleLightingNotifyMode != "morning") return
-        val morningTime = minutesToTime(prefs.candleLightingMorningTime)
-        // Before the morning time the alarm scheduled by the rebuild posts it
-        if (LocalTime.now().isBefore(morningTime)) return
-        val times = alarmRebuilder.candleLightingTimes(today, prefs) ?: return
-        NotificationPoster.postCandleLighting(localized, today, times.candleLighting, times.end)
-    }
 
     private fun handleHolidays(localized: Context, today: LocalDate, prefs: UserPreferences) {
         val daysBefore = prefs.holidayNotifyDaysBefore
@@ -204,6 +189,25 @@ class DailyNotificationWorker(
             for (category in categories) {
                 workManager.cancelUniqueWork(REFRESH_WORK_PREFIX + category.name)
             }
+        }
+    }
+}
+
+/**
+ * Schedules [plan]'s alarms and posts today's overdue morning candle-lighting notice unless
+ * it was already delivered (normally by the alarm a previous run scheduled).
+ */
+internal suspend fun applyReminderAlarmPlan(
+    plan: ReminderAlarmPlan,
+    alarmScheduler: NotificationAlarmScheduler,
+    deliveryLog: NotificationDeliveryLog,
+    postCandleLighting: (ReminderAlarm.CandleLighting) -> Unit
+) {
+    alarmScheduler.scheduleAll(plan)
+    plan.dueCandleLighting?.let { due ->
+        if (deliveryLog.lastCandleLightingDate() != due.date) {
+            postCandleLighting(due)
+            deliveryLog.recordCandleLighting(due.date)
         }
     }
 }

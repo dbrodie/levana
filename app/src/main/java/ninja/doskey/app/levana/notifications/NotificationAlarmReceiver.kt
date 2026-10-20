@@ -23,11 +23,18 @@ class NotificationAlarmReceiver : BroadcastReceiver(), KoinComponent {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                deliverIfEnabled(
-                    receiverContext,
-                    intent,
-                    preferencesRepository.preferences.first()
-                )
+                val prefs = preferencesRepository.preferences.first()
+                deliverIfEnabled(receiverContext, intent, prefs)
+                if (isAlarmEnabled(intent.action, prefs) &&
+                    intent.action == NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING &&
+                    intent.hasExtra(NotificationAlarmScheduler.EXTRA_CANDLE_LIGHTING_TIME)
+                ) {
+                    NotificationDeliveryLog(receiverContext).recordCandleLighting(
+                        LocalDate.ofEpochDay(intent.getLongExtra(
+                            NotificationAlarmScheduler.EXTRA_DATE_EPOCH_DAY, 0L
+                        ))
+                    )
+                }
             } finally {
                 pendingResult.finish()
             }

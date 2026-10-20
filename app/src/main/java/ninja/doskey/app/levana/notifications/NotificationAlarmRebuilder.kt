@@ -9,6 +9,7 @@ import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlinx.coroutines.CancellationException
@@ -96,13 +97,22 @@ class NotificationAlarmRebuilder(
 ) {
     private val mutex = Mutex()
 
-    /** Cancels every pending reminder alarm and schedules today's for the enabled categories. */
-    suspend fun rebuild() = mutex.withLock {
+    /** Reconciles the forward plan; a settings refresh never posts a late notice itself. */
+    suspend fun rebuild(
+        deliveryLog: NotificationDeliveryLog? = null,
+        postCandleLighting: ((ReminderAlarm.CandleLighting) -> Unit)? = null
+    ) = mutex.withLock {
         val prefs = preferences.first()
-        val today = prefs.devDateOverride ?: LocalDate.now()
-        alarmScheduler.cancelAll()
-        if (prefs.notifyCandleLighting) scheduleCandleLighting(today, prefs)
-        if (prefs.notifyOmer) scheduleOmer(today, prefs)
+        val clock = Clock.systemDefaultZone()
+        val plan = planReminderAlarms(
+            prefs.devDateOverride ?: LocalDate.now(clock), clock.instant(), clock.zone,
+            prefs.activeLocation, prefs, zmanimRepository, calendarRepository
+        )
+        if (deliveryLog != null && postCandleLighting != null) {
+            applyReminderAlarmPlan(plan, alarmScheduler, deliveryLog, postCandleLighting)
+        } else {
+            alarmScheduler.scheduleAll(plan)
+        }
     }
 
     /** Today's candle-lighting and end times, or null when no candles are lit [date]. */
@@ -116,38 +126,6 @@ class NotificationAlarmRebuilder(
         return CandleLightingTimes(candleLighting, end)
     }
 
-    private fun scheduleCandleLighting(today: LocalDate, prefs: UserPreferences) {
-        val times = candleLightingTimes(today, prefs) ?: return
-        val triggerTime = when (prefs.candleLightingNotifyMode) {
-            "morning" -> minutesToTime(prefs.candleLightingMorningTime)
-            "hours_before" ->
-                times.candleLighting.minusHours(prefs.candleLightingHoursBefore.toLong())
-            else -> return
-        }
-        // The scheduler skips trigger times that have already passed
-        alarmScheduler.scheduleCandleLighting(
-            today,
-            triggerTime,
-            prefs.activeLocation,
-            times.candleLighting,
-            times.end
-        )
-    }
-
-    private fun scheduleOmer(today: LocalDate, prefs: UserPreferences) {
-        val location = prefs.activeLocation
-        val plan = planOmerReminders(
-            today, prefs.notifyOmerTzait, prefs.notifyOmerMorning, calendarRepository
-        ) { zmanimRepository.getTzaitTime(today, location) }
-        plan.evening?.let { evening ->
-            alarmScheduler.scheduleOmerReminder(today, evening.tzaitTime, location, evening.omerDay)
-        }
-        plan.morningOmerDay?.let { omerDay ->
-            alarmScheduler.scheduleOmerMorningReminder(
-                today, minutesToTime(prefs.notifyOmerMorningTime), omerDay
-            )
-        }
-    }
 
 }
 

@@ -12,7 +12,10 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-class NotificationAlarmScheduler(private val context: Context) {
+class NotificationAlarmScheduler(
+    private val context: Context,
+    private val now: () -> Long = System::currentTimeMillis
+) {
 
     companion object {
         const val ACTION_CANDLE_LIGHTING = "ninja.doskey.app.levana.CANDLE_LIGHTING_ALARM"
@@ -55,6 +58,57 @@ class NotificationAlarmScheduler(private val context: Context) {
                 .appendPath(action.substringAfterLast('.').lowercase())
                 .appendPath(date.toString())
                 .build()
+    }
+
+    internal fun schedule(alarm: ReminderAlarm) {
+        val trigger = alarm.triggerAt.atZone(ZoneId.systemDefault())
+        schedule(actionFor(alarm), alarm.date, trigger) {
+            when (alarm) {
+                is ReminderAlarm.CandleLighting -> {
+                    putExtra(EXTRA_CANDLE_LIGHTING_TIME, alarm.candleLightingTime.toString())
+                    putExtra(EXTRA_END_TIME, alarm.end?.time?.toString())
+                    alarm.end?.let {
+                        putExtra(EXTRA_END_DATE_EPOCH_DAY, it.date.toEpochDay())
+                        putExtra(EXTRA_END_INCLUDES_YOM_TOV, it.includesYomTov)
+                    }
+                }
+                is ReminderAlarm.OmerEvening -> putExtra(EXTRA_OMER_DAY, alarm.omerDay)
+                is ReminderAlarm.OmerMorning -> putExtra(EXTRA_OMER_DAY, alarm.omerDay)
+            }
+        }
+    }
+
+    /**
+     * Schedules every alarm in [plan] and cancels alarms for dates in the plan's window that the
+     * plan no longer contains (e.g. the Omer has ended), so the window matches the latest plan.
+     */
+    internal fun scheduleAll(plan: ReminderAlarmPlan) {
+        val planned = plan.alarms.map { actionFor(it) to it.date }.toSet()
+        for (date in plan.window) {
+            for (action in ACTIONS) {
+                if (action to date !in planned) cancel(action, date)
+            }
+        }
+        plan.alarms.forEach(::schedule)
+    }
+
+    private fun cancel(action: String, date: LocalDate) {
+        cancelExisting(context.getSystemService(AlarmManager::class.java),
+            legacyAlarmIntent(action), legacyRequestCode(action, date))
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode(action),
+            alarmIntent(action, date),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        ) ?: return
+        context.getSystemService(AlarmManager::class.java).cancel(pendingIntent)
+        pendingIntent.cancel()
+    }
+
+    private fun actionFor(alarm: ReminderAlarm): String = when (alarm) {
+        is ReminderAlarm.CandleLighting -> ACTION_CANDLE_LIGHTING
+        is ReminderAlarm.OmerEvening -> ACTION_OMER
+        is ReminderAlarm.OmerMorning -> ACTION_OMER_MORNING
     }
 
     fun scheduleCandleLighting(
@@ -108,7 +162,7 @@ class NotificationAlarmScheduler(private val context: Context) {
     ) {
         val triggerMillis = trigger.toInstant().toEpochMilli()
 
-        if (triggerMillis <= System.currentTimeMillis()) return
+        if (triggerMillis <= now()) return
 
         val intent = alarmIntent(action, date).apply {
             putExtra(EXTRA_DATE_EPOCH_DAY, date.toEpochDay())
