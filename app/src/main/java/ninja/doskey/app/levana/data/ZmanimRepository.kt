@@ -10,6 +10,7 @@ import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -137,6 +138,13 @@ class ZmanimRepository {
         val czc = createCalendar(date, location)
         return toLocalTime(czc.tzais, location)
     }
+
+    /**
+     * Nightfall computed for [date] as an absolute instant. At high latitudes it can fall
+     * after the following civil midnight, which [getTzaitTime] does not show.
+     */
+    fun getTzaitInstant(date: LocalDate, location: Location): Instant? =
+        createCalendar(date, location).tzais?.toInstant()
 
     fun getFastTimes(date: LocalDate, location: Location): Pair<LocalTime?, LocalTime?>? {
         val jc = createJewishCalendar(date)

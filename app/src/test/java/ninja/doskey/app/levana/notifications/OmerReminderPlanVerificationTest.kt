@@ -4,16 +4,16 @@ import ninja.doskey.app.levana.data.CalendarRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 
 /** Independent verifier tests using hard-coded Gregorian dates rather than KosherJava-derived ones. */
 class OmerReminderPlanVerificationTest {
 
     private val repo = CalendarRepository()
-    private val tzait = LocalTime.of(19, 45)
+    private val tzait = Instant.parse("2026-04-20T16:45:00Z")
 
-    private fun plan(today: LocalDate, tzaitTime: LocalTime? = tzait) =
+    private fun plan(today: LocalDate, tzaitTime: Instant? = tzait) =
         planOmerReminders(today, true, true, repo) { tzaitTime }
 
     /** first-night civil date (15 Nissan) and Shavuot (6 Sivan) per year. */

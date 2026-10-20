@@ -5,13 +5,13 @@ import ninja.doskey.app.levana.data.CalendarRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 
 class OmerReminderPlanTest {
 
     private val calendarRepository = CalendarRepository()
-    private val tzait = LocalTime.of(20, 5)
+    private val tzait = Instant.parse("2026-04-20T17:05:00Z")
 
     /** Civil date of [day] [month] 5786. */
     private fun date(month: Int, day: Int): LocalDate =
@@ -21,7 +21,7 @@ class OmerReminderPlanTest {
         today: LocalDate,
         notifyTzait: Boolean = true,
         notifyMorning: Boolean = true,
-        tzaitTime: LocalTime? = tzait
+        tzaitTime: Instant? = tzait
     ) = planOmerReminders(today, notifyTzait, notifyMorning, calendarRepository) { tzaitTime }
 
     @Test

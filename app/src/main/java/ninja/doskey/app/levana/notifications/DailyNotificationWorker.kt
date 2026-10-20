@@ -17,8 +17,8 @@ import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.activeLocation
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
@@ -214,7 +214,8 @@ internal suspend fun applyReminderAlarmPlan(
     }
 }
 
-internal data class EveningOmerReminder(val tzaitTime: LocalTime, val omerDay: Int)
+/** Fires at [tzaitAt], the nightfall of the evening; [omerDay] is the count beginning then. */
+internal data class EveningOmerReminder(val tzaitAt: Instant, val omerDay: Int)
 
 internal data class OmerReminderPlan(
     val evening: EveningOmerReminder?,
@@ -224,18 +225,19 @@ internal data class OmerReminderPlan(
 /**
  * Omer reminders for the civil date [today]. The Hebrew day starts at nightfall, so the tzait
  * reminder announces the count of the upcoming Hebrew day ([today] + 1), while the morning
- * reminder announces the current day's count. A missing tzait only drops the evening reminder.
+ * reminder announces the current day's count. [tzaitAt] is the nightfall of [today], which may
+ * fall on the next civil date. A missing tzait only drops the evening reminder.
  */
 internal fun planOmerReminders(
     today: LocalDate,
     notifyTzait: Boolean,
     notifyMorning: Boolean,
     calendarRepository: CalendarRepository,
-    tzaitTime: () -> LocalTime?
+    tzaitAt: () -> Instant?
 ): OmerReminderPlan {
     val evening = if (notifyTzait) {
         calendarRepository.getDayInfo(today.plusDays(1), inIsrael = false).omerDay
-            ?.let { omerDay -> tzaitTime()?.let { EveningOmerReminder(it, omerDay) } }
+            ?.let { omerDay -> tzaitAt()?.let { EveningOmerReminder(it, omerDay) } }
     } else {
         null
     }
