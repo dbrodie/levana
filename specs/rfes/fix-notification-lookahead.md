@@ -121,8 +121,11 @@ After a reboot, which clears alarms, the boot-time run still posts a missed noti
   and the correct dates.
 - Disabled preferences produce no alarms.
 
-`NotificationAlarmSchedulerTest` (Robolectric, `ShadowAlarmManager`): scheduling a plan
-registers alarms at the planned instants with the correct extras, and reconciling cancels
-alarms that are no longer planned.
+`ReminderAlarmSchedulingTest` (Robolectric, `ShadowAlarmManager`):
 
-`NotificationDeliveryLogTest`: records and reads back the delivered date.
+- Scheduling a plan registers each alarm at its planned instant with the correct extras.
+- Passed triggers are not registered.
+- Re-running a plan replaces alarms instead of duplicating them.
+- Applying a newer plan cancels alarms that are no longer planned.
+- The overdue morning candle-lighting notice is posted once per date, and not at all if the
+  delivery log already records it.
