@@ -17,7 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,12 +24,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 
-/**
- * Order-dependent under Robolectric: the app's preferencesDataStore delegate is
- * a process-wide singleton bound to the first test's Application, so saves
- * from later tests in the same JVM do not land. Run this class on its own.
- */
-@Ignore("Run alone: shared DataStore singleton across Robolectric tests")
+/** Seeds persisted selection explicitly so other tests cannot change the toggle's starting state. */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -70,6 +64,7 @@ class VerifyCalendarSelectionToggleIsolatedTest {
         world.calendars += CalendarWorld.Cal(1, "Home", "a", 1)
         world.calendars += CalendarWorld.Cal(2, "Work", "a", 2)
         val prefs = prefs()
+        runBlocking { prefs.saveSelectedCalendarIds(emptySet()) }
         val vm = vm(prefs)
         idleUntil(what = "first load") { !vm.state.value.isLoading }
         holds[2] = CountDownLatch(1)
