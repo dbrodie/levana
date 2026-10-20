@@ -14,7 +14,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -123,16 +122,50 @@ class SystemCalendarVerifierTest {
         assertTrue(repo.getEventsForDate(d(2026, 11, 2), setOf(cal)).isEmpty())
     }
 
-    // Known gap: start-of-day is 01:00 when DST skips midnight, so the
-    // candidate's LocalTime.MIDNIGHT check marks 2026-03-08 too.
-    @Ignore("Known candidate gap: DST-skipped midnight end is treated as inclusive")
     @Test
     fun `timed event ending at start of a day whose midnight is skipped by DST`() {
         // Cuba springs forward at 00:00 -> 01:00 on 2026-03-08; start of day is 01:00.
         zone("America/Havana")
         val endOfDay = d(2026, 3, 8).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        timed(1, RED, local(LocalDateTime.of(2026, 3, 7, 22, 0)), endOfDay)
+        val begin = local(LocalDateTime.of(2026, 3, 7, 22, 0))
+        timed(1, RED, begin, endOfDay)
         assertEquals(setOf(d(2026, 3, 7)), range(d(2026, 3, 1), d(2026, 3, 31)).keys)
+        assertTrue(repo.getEventsForDate(d(2026, 3, 8), setOf(cal)).isEmpty())
+        assertEquals(1, repo.getEventsForDate(d(2026, 3, 7), setOf(cal)).size)
+
+        // One millisecond past the shifted start of day does cover 2026-03-08.
+        FakeCalendarProvider.rows.clear()
+        timed(1, RED, begin, endOfDay + 1)
+        assertEquals(setOf(d(2026, 3, 7), d(2026, 3, 8)), range(d(2026, 3, 1), d(2026, 3, 31)).keys)
+        assertEquals(1, repo.getEventsForDate(d(2026, 3, 8), setOf(cal)).size)
+
+        // One millisecond before it stays on 2026-03-07 only.
+        FakeCalendarProvider.rows.clear()
+        timed(1, RED, begin, endOfDay - 1)
+        assertEquals(setOf(d(2026, 3, 7)), range(d(2026, 3, 1), d(2026, 3, 31)).keys)
+    }
+
+    @Test
+    fun `ordinary midnight end exact and just after in New York`() {
+        zone("America/New_York")
+        val begin = local(LocalDateTime.of(2026, 10, 10, 22, 0))
+        val midnight = local(LocalDateTime.of(2026, 10, 11, 0, 0))
+        timed(1, RED, begin, midnight)
+        assertEquals(setOf(d(2026, 10, 10)), range(d(2026, 10, 1), d(2026, 10, 31)).keys)
+        FakeCalendarProvider.rows.clear()
+        timed(1, RED, begin, midnight + 1)
+        assertEquals(setOf(d(2026, 10, 10), d(2026, 10, 11)), range(d(2026, 10, 1), d(2026, 10, 31)).keys)
+    }
+
+    @Test
+    fun `all-day exclusive UTC end unaffected by device zone with midnight DST`() {
+        zone("America/Havana")
+        allDay(1, RED, d(2026, 3, 7), 2)
+        assertEquals(setOf(d(2026, 3, 7), d(2026, 3, 8)), range(d(2026, 3, 1), d(2026, 3, 31)).keys)
+        assertTrue(repo.getEventsForDate(d(2026, 3, 9), setOf(cal)).isEmpty())
+        val e = repo.getEventsForDate(d(2026, 3, 8), setOf(cal)).single()
+        assertEquals(LocalDateTime.of(2026, 3, 7, 0, 0), e.startTime)
+        assertEquals(LocalDateTime.of(2026, 3, 9, 0, 0), e.endTime)
     }
 
     @Test
