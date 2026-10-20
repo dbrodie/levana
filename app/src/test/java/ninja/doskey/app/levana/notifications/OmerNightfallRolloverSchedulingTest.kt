@@ -96,4 +96,30 @@ class OmerNightfallRolloverSchedulingTest {
             triggerMillis(it) <= ZonedDateTime.of(may25, LocalTime.of(0, 1), zone).toInstant().toEpochMilli()
         })
     }
+
+    @Test
+    fun `turning the evening reminder off after midnight cancels the pending post-midnight alarm`() {
+        run(may24, LocalTime.NOON)
+        assertEquals(1, eveningAlarms(may24).size)
+
+        val off = prefs.copy(notifyOmerTzait = false)
+        val now = ZonedDateTime.of(may25, LocalTime.of(0, 1), zone).toInstant()
+        NotificationAlarmScheduler(context) { now.toEpochMilli() }.scheduleAll(
+            planReminderAlarms(may25, now, zone, stPetersburg, off, zmanim, CalendarRepository())
+        )
+
+        assertTrue(eveningAlarms(may24).isEmpty())
+        assertTrue(eveningAlarms(may25).isEmpty())
+    }
+
+    @Test
+    fun `an undelivered previous-evening alarm survives a run after its nightfall`() {
+        run(may24, LocalTime.NOON)
+        val pending = eveningAlarms(may24).single()
+
+        run(may25, LocalTime.of(0, 10))
+
+        assertEquals(triggerMillis(pending), triggerMillis(eveningAlarms(may24).single()))
+        assertEquals(33, omerDay(eveningAlarms(may24).single()))
+    }
 }

@@ -21,10 +21,12 @@ actually begins on the night of 24/25 May (day 33), while the current count was 
 - Missing nightfall (e.g. no `tzais` during white nights) drops only that evening's reminder;
   morning reminders are kept, including on the first and final Omer days.
 - Planning window: the plan still covers civil dates `today .. today + lookahead`. In addition,
-  the evening of `today - 1` is planned when its nightfall is still after `now` (a run between
-  civil midnight and a post-midnight nightfall), so that night's reminder is scheduled rather
-  than lost. Reconciliation (`scheduleAll`) and the window used for cancellation are
-  unchanged; that previous evening is only ever added as a future alarm.
+  the evening Omer reminder of `today - 1` (the plan's *previous evening*) is planned, since
+  its nightfall can fall inside today: as a future alarm while that nightfall is still ahead
+  (so a run between midnight and a post-midnight nightfall schedules it), otherwise as an
+  overdue alarm that is kept. Reconciliation (`scheduleAll`) also covers the evening Omer
+  alarm of the previous evening, so turning the reminder off cancels it; no other reminder
+  kind is reconciled for that date.
 - The trigger is an absolute instant, so it is independent of the device zone and of DST
   transitions in the location zone.
 
@@ -36,6 +38,8 @@ actually begins on the night of 24/25 May (day 33), while the current count was 
 - `planOmerReminders` takes the nightfall as `() -> Instant?`; `EveningOmerReminder` holds the
   nightfall `Instant` (`tzaitAt`) instead of a `LocalTime`. `planReminderAlarms` uses it
   directly as the `OmerEvening` trigger.
+- `ReminderAlarmPlan.previousEvening: LocalDate?` names the extra date whose `ACTION_OMER`
+  alarm `NotificationAlarmScheduler.scheduleAll` reconciles alongside the window.
 - `NotificationAlarmScheduler.scheduleOmerReminder(date, LocalTime, …)` (legacy, unused by the
   planning path) is left as is.
 
@@ -55,12 +59,17 @@ actually begins on the night of 24/25 May (day 33), while the current count was 
   - Successive post-midnight evenings stay distinct, ordered, one per date, counts
     increasing by one, each after the previous evening's.
   - Run at 00:01 on 25 May (before the 00:02 nightfall): the 24 May evening is still planned
-    as a future alarm with count 33; after nightfall it is not re-added.
+    as a future alarm with count 33; after nightfall it is overdue (kept), not rescheduled.
+  - Previous evening is not planned when the reminder is off or the Omer is over.
   - First (count 1) and last (count 49) Omer evenings.
   - Missing nightfall (white nights) keeps morning alarms through the end of the Omer.
   - DST: Santiago across the April 2026 change, and a location zone different from the
     device zone; triggers equal the nightfall instant.
   - Horizon: the last date of the window plans its post-midnight evening.
 - Existing `planOmerReminders` tests adapted to the `Instant` nightfall.
-- Robolectric: `scheduleAll` with the post-midnight plan sets the 24 May evening alarm at
-  the 25 May instant.
+- `OmerNightfallRolloverSchedulingTest` (Robolectric, production apply path):
+  - The 24 May evening alarm is set at the 25 May nightfall instant with count 33, and a run
+    at 00:01 on 25 May keeps exactly that one alarm.
+  - A first run at 00:01 on 25 May schedules it.
+  - Turning the evening reminder off at 00:01 cancels it.
+  - A run after that nightfall leaves an undelivered alarm in place.

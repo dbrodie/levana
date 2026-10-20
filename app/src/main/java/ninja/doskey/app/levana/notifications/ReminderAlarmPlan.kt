@@ -49,10 +49,7 @@ internal sealed interface ReminderAlarm {
 internal data class ReminderAlarmPlan(
     /** Civil dates covered by this plan; alarms outside [alarms] for these dates are stale. */
     val window: List<LocalDate>,
-    /**
-     * Alarms whose trigger is still in the future. May also hold the evening Omer alarm of the
-     * day before [window] when its nightfall falls after midnight and is still ahead.
-     */
+    /** Alarms whose trigger is still in the future. */
     val alarms: List<ReminderAlarm>,
     /** Today's morning-mode candle-lighting notice whose morning time has already passed. */
     val dueCandleLighting: ReminderAlarm.CandleLighting?,
@@ -60,7 +57,12 @@ internal data class ReminderAlarmPlan(
      * Still-wanted alarms whose trigger has passed. An earlier run may have scheduled them and
      * Android may not have delivered them yet (e.g. deferred by Doze), so they must be kept.
      */
-    val overdue: List<ReminderAlarm> = emptyList()
+    val overdue: List<ReminderAlarm> = emptyList(),
+    /**
+     * The civil date before [window] whose evening Omer alarm is also covered by this plan: its
+     * nightfall can fall after midnight, inside the window's first day.
+     */
+    val previousEvening: LocalDate? = null
 )
 
 /**
@@ -70,7 +72,7 @@ internal data class ReminderAlarmPlan(
  * [ReminderAlarmPlan.alarms] and passed ones to [ReminderAlarmPlan.overdue]; the exception is
  * today's morning-mode candle-lighting notice, returned as [ReminderAlarmPlan.dueCandleLighting]
  * so it can still be posted late. Never yields notices for future dates. The evening Omer
- * alarm of the day before [today] is planned too while its nightfall is still ahead.
+ * alarm of the day before [today] is planned too, as [ReminderAlarmPlan.previousEvening].
  */
 internal fun planReminderAlarms(
     today: LocalDate,
@@ -88,13 +90,14 @@ internal fun planReminderAlarms(
     val overdue = mutableListOf<ReminderAlarm>()
     var dueCandleLighting: ReminderAlarm.CandleLighting? = null
 
+    // Yesterday's nightfall can still be ahead when it falls after civil midnight
+    val previousEvening = today.minusDays(1)
     if (prefs.notifyOmer && prefs.notifyOmerTzait) {
-        // Yesterday's nightfall can still be ahead when it falls after civil midnight
-        val yesterday = today.minusDays(1)
-        planOmerReminders(yesterday, notifyTzait = true, notifyMorning = false, calendarRepository) {
-            zmanimRepository.getTzaitInstant(yesterday, location)
-        }.evening?.takeIf { it.tzaitAt.isAfter(now) }?.let {
-            alarms += ReminderAlarm.OmerEvening(yesterday, it.tzaitAt, it.omerDay)
+        planOmerReminders(previousEvening, notifyTzait = true, notifyMorning = false, calendarRepository) {
+            zmanimRepository.getTzaitInstant(previousEvening, location)
+        }.evening?.let {
+            val alarm = ReminderAlarm.OmerEvening(previousEvening, it.tzaitAt, it.omerDay)
+            if (alarm.triggerAt.isAfter(now)) alarms += alarm else overdue += alarm
         }
     }
 
@@ -131,7 +134,7 @@ internal fun planReminderAlarms(
         }
     }
 
-    return ReminderAlarmPlan(window, alarms, dueCandleLighting, overdue)
+    return ReminderAlarmPlan(window, alarms, dueCandleLighting, overdue, previousEvening)
 }
 
 private fun candleLightingAlarm(

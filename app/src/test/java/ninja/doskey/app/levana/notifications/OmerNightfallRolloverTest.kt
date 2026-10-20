@@ -78,7 +78,8 @@ class OmerNightfallRolloverTest {
         assertEquals(zmanim.getTzaitInstant(may(24), stPetersburg), evening.triggerAt)
         // Not the same-date join of the clock time, almost a day earlier
         assertTrue(evening.triggerAt.isAfter(ZonedDateTime.of(may(24), LocalTime.of(23, 0), spbZone).toInstant()))
-        assertTrue(result.overdue.none { it is ReminderAlarm.OmerEvening })
+        // Only the previous evening, whose nightfall has passed, is overdue
+        assertEquals(listOf(may(23)), result.overdue.filterIsInstance<ReminderAlarm.OmerEvening>().map { it.date })
         // The morning reminder of that date still carries the current count
         val morning = result.overdue.filterIsInstance<ReminderAlarm.OmerMorning>().single()
         assertEquals(may(24), morning.date)
@@ -135,9 +136,12 @@ class OmerNightfallRolloverTest {
         // Today's morning is still ahead and counts the day that begins at that nightfall
         assertEquals(33, beforeNightfall.mornings().single { it.date == may(25) }.omerDay)
 
+        assertEquals(may(24), beforeNightfall.previousEvening)
+
+        // Once that nightfall has passed it is kept as overdue, not scheduled again
         val afterNightfall = plan(may(25), LocalTime.of(0, 5))
         assertTrue(afterNightfall.alarms.none { it.date == may(24) })
-        assertTrue(afterNightfall.overdue.none { it.date == may(24) })
+        assertEquals(33, afterNightfall.overdue.filterIsInstance<ReminderAlarm.OmerEvening>().single { it.date == may(24) }.omerDay)
         assertEquals(34, afterNightfall.evening(may(25)).omerDay)
     }
 
@@ -145,14 +149,18 @@ class OmerNightfallRolloverTest {
     fun `previous evening is not planned when its reminder is off or the Omer is over`() {
         val noTzait = plan(may(25), LocalTime.of(0, 1), prefs = omerPrefs.copy(notifyOmerTzait = false))
         assertTrue(noTzait.evenings().isEmpty())
+        assertTrue(noTzait.overdue.none { it is ReminderAlarm.OmerEvening })
+        assertEquals(may(24), noTzait.previousEvening)
 
         val noOmer = plan(may(25), LocalTime.of(0, 1), prefs = omerPrefs.copy(notifyOmer = false))
         assertTrue(noOmer.alarms.isEmpty())
+        assertTrue(noOmer.overdue.isEmpty())
 
         // Erev Shavuot 2027 (5 Sivan, 10 June) has no evening count; in Riga its nightfall is after midnight
         val afterLastEve = plan(LocalDate.of(2027, 6, 11), LocalTime.of(0, 1), location = riga)
         assertTrue(afterLastEve.evenings().isEmpty())
         assertTrue(afterLastEve.mornings().isEmpty())
+        assertTrue(afterLastEve.overdue.isEmpty())
     }
 
     @Test
@@ -191,7 +199,7 @@ class OmerNightfallRolloverTest {
 
         assertNull(zmanim.getTzaitInstant(LocalDate.of(2027, 6, 9), stPetersburg))
         assertTrue(result.evenings().isEmpty())
-        assertTrue(result.overdue.isEmpty())
+        assertTrue(result.overdue.none { it is ReminderAlarm.OmerEvening })
         assertEquals((3..10).map { LocalDate.of(2027, 6, it) }, result.mornings().map { it.date })
         assertEquals((42..49).toList(), result.mornings().map { it.omerDay })
     }

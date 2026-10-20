@@ -79,8 +79,8 @@ class NotificationAlarmScheduler(
     }
 
     /**
-     * Reconciles the alarms for [plan]'s window: schedules every planned alarm and cancels the
-     * ones the plan no longer wants (e.g. the Omer has ended, or a reminder was turned off).
+     * Reconciles the alarms for [plan]'s window, and the evening Omer alarm of its previous
+     * evening: schedules every planned alarm and cancels the ones the plan no longer wants (e.g. the Omer has ended, or a reminder was turned off).
      * Overdue alarms, including today's due candle-lighting notice, are left alone, so one
      * Android has not delivered yet still fires. Use this rather than [cancelAll] followed by a
      * rebuild, which would drop such alarms.
@@ -93,6 +93,9 @@ class NotificationAlarmScheduler(
             for (action in ACTIONS) {
                 if (action to date !in wanted) cancel(action, date)
             }
+        }
+        plan.previousEvening?.let { date ->
+            if (ACTION_OMER to date !in wanted) cancel(ACTION_OMER, date)
         }
         plan.alarms.forEach(::schedule)
     }
