@@ -37,35 +37,39 @@ class DailyNotificationWorker(
     private val alarmRebuilder: NotificationAlarmRebuilder by inject()
 
     override suspend fun doWork(): Result {
-        val prefs = preferencesRepository.preferences.first()
-        val location = prefs.activeLocation
-        val today = prefs.devDateOverride ?: LocalDate.now()
+        // A refresh run lists the categories whose settings changed; the daily/boot run has none
+        val requested = DailyCategory.fromInputData(inputData)
         // Notification text follows Settings → App language, not just the device locale
         val localized = applicationContext.withAppLocale()
         // Keep channel names in the app language even if a language change was missed
         NotificationChannels.createAll(applicationContext)
 
-        // Candle-lighting and Omer reminders are alarms for today's times
-        alarmRebuilder.rebuild()
+        if (requested == null) {
+            // Candle-lighting and Omer reminders are alarms for today's times
+            alarmRebuilder.rebuild()
 
-        if (prefs.notifyCandleLighting) {
-            postLateCandleLighting(localized, today, prefs)
+            val prefs = preferencesRepository.preferences.first()
+            if (prefs.notifyCandleLighting) {
+                postLateCandleLighting(localized, prefs.today(), prefs)
+            }
         }
 
-        if (prefs.notifyHolidays) {
-            handleHolidays(localized, today, prefs)
-        }
-
-        if (prefs.notifyFasts) {
-            handleFasts(localized, today, location, prefs)
-        }
-
-        if (prefs.notifyPersonalEvents) {
-            handlePersonalEvents(localized, today)
+        for (category in requested ?: DailyCategory.entries) {
+            // Read the saved settings again so a category switched off meanwhile isn't posted
+            val prefs = preferencesRepository.preferences.first()
+            if (!category.isEnabled(prefs)) continue
+            val today = prefs.today()
+            when (category) {
+                DailyCategory.HOLIDAYS -> handleHolidays(localized, today, prefs)
+                DailyCategory.FASTS -> handleFasts(localized, today, prefs.activeLocation, prefs)
+                DailyCategory.PERSONAL_EVENTS -> handlePersonalEvents(localized, today)
+            }
         }
 
         return Result.success()
     }
+
+    private fun UserPreferences.today(): LocalDate = devDateOverride ?: LocalDate.now()
 
     /** Posts the "morning" candle-lighting notice at once if its time has already passed. */
     private fun postLateCandleLighting(
@@ -151,6 +155,7 @@ class DailyNotificationWorker(
     companion object {
         private const val DAILY_WORK_NAME = "daily_notification_worker"
         private const val IMMEDIATE_WORK_NAME = "immediate_notification_worker"
+        private const val REFRESH_WORK_PREFIX = "refresh_notification_worker_"
 
         fun enqueueDaily(context: Context) {
             val request = PeriodicWorkRequestBuilder<DailyNotificationWorker>(
@@ -174,6 +179,29 @@ class DailyNotificationWorker(
                 ExistingWorkPolicy.REPLACE,
                 request
             )
+        }
+
+        /** Posts [categories] now, e.g. after their settings changed, leaving the others alone. */
+        fun enqueueRefresh(context: Context, categories: Set<DailyCategory>) {
+            val workManager = WorkManager.getInstance(context)
+            for (category in categories) {
+                val request = OneTimeWorkRequestBuilder<DailyNotificationWorker>()
+                    .setInputData(DailyCategory.toInputData(setOf(category)))
+                    .build()
+                // One pending refresh per category; the latest settings win
+                workManager.enqueueUniqueWork(
+                    REFRESH_WORK_PREFIX + category.name,
+                    ExistingWorkPolicy.REPLACE,
+                    request
+                )
+            }
+        }
+
+        fun cancelRefresh(context: Context, categories: Set<DailyCategory>) {
+            val workManager = WorkManager.getInstance(context)
+            for (category in categories) {
+                workManager.cancelUniqueWork(REFRESH_WORK_PREFIX + category.name)
+            }
         }
     }
 }

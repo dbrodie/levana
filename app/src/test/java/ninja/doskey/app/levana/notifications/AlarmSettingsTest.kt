@@ -76,10 +76,11 @@ class AlarmSettingsTest {
     }
 
     @Test
-    fun devDateOverrideIsAnAlarmSetting() {
+    fun devDateOverrideAndIsraelAreAlarmSettings() {
         assertTrue(
             base.alarmSettings() != base.copy(devDateOverride = LocalDate.of(2030, 1, 4)).alarmSettings()
         )
+        assertTrue(base.alarmSettings() != base.copy(isInIsrael = !base.isInIsrael).alarmSettings())
     }
 
     @Test

@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.notifications
 
+import android.content.Context
 import android.util.Log
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
@@ -38,6 +39,7 @@ internal data class AlarmSettings(
     val notifyOmerMorning: Boolean,
     val notifyOmerMorningTime: Int,
     val location: Location,
+    val isInIsrael: Boolean,
     val devDateOverride: LocalDate?
 )
 
@@ -52,6 +54,7 @@ internal fun UserPreferences.alarmSettings() = AlarmSettings(
     notifyOmerMorning = notifyOmerMorning,
     notifyOmerMorningTime = notifyOmerMorningTime,
     location = activeLocation,
+    isInIsrael = isInIsrael,
     devDateOverride = devDateOverride
 )
 
@@ -150,23 +153,48 @@ class NotificationAlarmRebuilder(
 
 internal fun minutesToTime(minutes: Int): LocalTime = LocalTime.of(minutes / 60, minutes % 60)
 
-/** Keeps pending reminder alarms in step with the settings for the life of the process. */
+/**
+ * Keeps pending reminder alarms, and the daily categories' notifications, in step with the
+ * settings for the life of the process.
+ */
 object NotificationRescheduling : KoinComponent {
+    private const val TAG = "NotificationRescheduling"
+
     private val preferencesRepository: PreferencesRepository by inject()
     private val alarmRebuilder: NotificationAlarmRebuilder by inject()
+    private val context: Context by inject()
 
     fun start(scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)) {
         scope.launch {
             rebuildOnAlarmSettingsChange(preferencesRepository.preferences) {
-                try {
-                    alarmRebuilder.rebuild()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    // Keep observing; the next change or daily run rebuilds again
-                    Log.e("NotificationRescheduling", "Failed to rebuild reminder alarms", e)
-                }
+                logFailure("rebuild reminder alarms") { alarmRebuilder.rebuild() }
             }
+        }
+        scope.launch {
+            refreshOnDailySettingsChange(
+                preferencesRepository.preferences,
+                refresh = { categories ->
+                    logFailure("refresh $categories") {
+                        DailyNotificationWorker.enqueueRefresh(context, categories)
+                    }
+                },
+                disabled = { categories ->
+                    logFailure("cancel $categories") {
+                        DailyNotificationWorker.cancelRefresh(context, categories)
+                    }
+                }
+            )
+        }
+    }
+
+    // Keep observing after a failure; the next change or daily run tries again
+    private suspend fun logFailure(what: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to $what", e)
         }
     }
 }
