@@ -7,13 +7,22 @@ import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import ninja.doskey.app.levana.domain.model.DeviceCalendar
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-class SystemCalendarRepository(private val context: Context) {
+/**
+ * Device calendars from the Calendar provider. Every provider call is a
+ * main-safe suspend function running on [ioDispatcher].
+ */
+class SystemCalendarRepository(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
 
     fun hasCalendarPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -22,10 +31,9 @@ class SystemCalendarRepository(private val context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun getDeviceCalendars(): List<DeviceCalendar> {
+    suspend fun getDeviceCalendars(): List<DeviceCalendar> {
         if (!hasCalendarPermission()) return emptyList()
 
-        val calendars = mutableListOf<DeviceCalendar>()
         val projection = arrayOf(
             CalendarContract.Calendars._ID,
             CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
@@ -33,13 +41,13 @@ class SystemCalendarRepository(private val context: Context) {
             CalendarContract.Calendars.CALENDAR_COLOR
         )
 
-        context.contentResolver.query(
+        return context.contentResolver.queryCancellable(
+            ioDispatcher,
             CalendarContract.Calendars.CONTENT_URI,
             projection,
-            null,
-            null,
-            "${CalendarContract.Calendars.CALENDAR_DISPLAY_NAME} ASC"
-        )?.use { cursor ->
+            sortOrder = "${CalendarContract.Calendars.CALENDAR_DISPLAY_NAME} ASC"
+        ) { cursor, signal ->
+            val calendars = mutableListOf<DeviceCalendar>()
             val idIdx = cursor.getColumnIndex(CalendarContract.Calendars._ID)
             val nameIdx = cursor.getColumnIndex(
                 CalendarContract.Calendars.CALENDAR_DISPLAY_NAME
@@ -52,6 +60,7 @@ class SystemCalendarRepository(private val context: Context) {
             )
 
             while (cursor.moveToNext()) {
+                signal.throwIfCanceled()
                 calendars.add(
                     DeviceCalendar(
                         id = cursor.getLong(idIdx),
@@ -61,12 +70,11 @@ class SystemCalendarRepository(private val context: Context) {
                     )
                 )
             }
-        }
-
-        return calendars
+            calendars
+        } ?: emptyList()
     }
 
-    fun getEventsForDate(date: LocalDate, calendarIds: Set<Long>): List<SystemCalendarEvent> {
+    suspend fun getEventsForDate(date: LocalDate, calendarIds: Set<Long>): List<SystemCalendarEvent> {
         if (!hasCalendarPermission() || calendarIds.isEmpty()) {
             return emptyList()
         }
@@ -77,7 +85,7 @@ class SystemCalendarRepository(private val context: Context) {
             .map { it.event }
     }
 
-    fun getEventColorsForDateRange(
+    suspend fun getEventColorsForDateRange(
         start: LocalDate,
         end: LocalDate,
         calendarIds: Set<Long>
@@ -104,14 +112,12 @@ class SystemCalendarRepository(private val context: Context) {
         return result.mapValues { it.value.toList().take(MAX_DOTS) }
     }
 
-    private fun queryInstances(
+    private suspend fun queryInstances(
         start: LocalDate,
         end: LocalDate,
         calendarIds: Set<Long>,
         zone: ZoneId
     ): List<CalendarInstance> {
-        val events = mutableListOf<CalendarInstance>()
-
         // Widen by a day on each side: all-day instances are anchored to UTC
         // midnight, which can fall outside the local-day window. Results are
         // filtered by their covered dates afterwards.
@@ -138,13 +144,14 @@ class SystemCalendarRepository(private val context: Context) {
         val selection =
             "${CalendarContract.Instances.CALENDAR_ID} IN ($calendarIdList)"
 
-        context.contentResolver.query(
+        return context.contentResolver.queryCancellable(
+            ioDispatcher,
             builder.build(),
             projection,
             selection,
-            null,
-            "${CalendarContract.Instances.BEGIN} ASC"
-        )?.use { cursor ->
+            sortOrder = "${CalendarContract.Instances.BEGIN} ASC"
+        ) { cursor, signal ->
+            val events = mutableListOf<CalendarInstance>()
             val eventIdIdx = cursor.getColumnIndex(
                 CalendarContract.Instances.EVENT_ID
             )
@@ -168,6 +175,7 @@ class SystemCalendarRepository(private val context: Context) {
             )
 
             while (cursor.moveToNext()) {
+                signal.throwIfCanceled()
                 val calId = cursor.getLong(calIdIdx)
                 if (calId !in calendarIds) continue
 
@@ -199,9 +207,8 @@ class SystemCalendarRepository(private val context: Context) {
                     )
                 )
             }
-        }
-
-        return events
+            events
+        } ?: emptyList()
     }
 
     private class CalendarInstance(

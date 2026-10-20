@@ -10,6 +10,7 @@ import java.time.ZoneOffset
 import java.util.TimeZone
 import ninja.doskey.app.levana.data.SystemCalendarRepositoryTest.FakeCalendarProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepositoryTest.Row
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -56,12 +57,12 @@ class SystemCalendarVerifierTest {
         FakeCalendarProvider.rows += Row(id, begin, end, false, cal, color)
     }
 
-    private fun range(a: LocalDate, b: LocalDate) = repo.getEventColorsForDateRange(a, b, setOf(cal))
-    private fun daysOf(a: LocalDate, b: LocalDate): Set<LocalDate> =
+    private suspend fun range(a: LocalDate, b: LocalDate) = repo.getEventColorsForDateRange(a, b, setOf(cal))
+    private suspend fun daysOf(a: LocalDate, b: LocalDate): Set<LocalDate> =
         generateSequence(a) { it.plusDays(1) }.takeWhile { !it.isAfter(b) }.toSet()
 
     @Test
-    fun `all-day keeps date at extreme offsets plus14 and minus11`() {
+    fun `all-day keeps date at extreme offsets plus14 and minus11`() = runBlocking<Unit> {
         for (z in listOf("Pacific/Kiritimati", "Pacific/Pago_Pago", "Asia/Jerusalem", "America/Los_Angeles")) {
             zone(z)
             FakeCalendarProvider.rows.clear()
@@ -77,7 +78,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `all-day event starting months before the queried month marks the whole month`() {
+    fun `all-day event starting months before the queried month marks the whole month`() = runBlocking<Unit> {
         zone("Pacific/Pago_Pago")
         allDay(1, RED, d(2026, 8, 15), 100) // Aug 15 .. Nov 22 inclusive
         assertEquals(daysOf(d(2026, 10, 1), d(2026, 10, 31)), range(d(2026, 10, 1), d(2026, 10, 31)).keys)
@@ -85,7 +86,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `six-week grid range spanning three months`() {
+    fun `six-week grid range spanning three months`() = runBlocking<Unit> {
         zone("Pacific/Kiritimati")
         allDay(1, RED, d(2026, 9, 27), 2)
         allDay(2, BLUE, d(2026, 11, 7), 1)
@@ -96,7 +97,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `recurring all-day and timed instances stay distinct and colours dedupe and cap`() {
+    fun `recurring all-day and timed instances stay distinct and colours dedupe and cap`() = runBlocking<Unit> {
         zone("America/New_York")
         for (w in listOf(4, 11, 18)) allDay(10, RED, d(2026, 10, w), 1)
         timed(11, RED, local(LocalDateTime.of(2026, 10, 11, 9, 0)), local(LocalDateTime.of(2026, 10, 11, 10, 0)))
@@ -110,7 +111,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `timed event across DST fall-back night`() {
+    fun `timed event across DST fall-back night`() = runBlocking<Unit> {
         zone("America/New_York")
         // 2026-11-01 DST ends in NY.
         timed(1, RED, local(LocalDateTime.of(2026, 10, 31, 23, 0)), local(LocalDateTime.of(2026, 11, 2, 0, 0)))
@@ -123,7 +124,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `timed event ending at start of a day whose midnight is skipped by DST`() {
+    fun `timed event ending at start of a day whose midnight is skipped by DST`() = runBlocking<Unit> {
         // Cuba springs forward at 00:00 -> 01:00 on 2026-03-08; start of day is 01:00.
         zone("America/Havana")
         val endOfDay = d(2026, 3, 8).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -146,7 +147,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `ordinary midnight end exact and just after in New York`() {
+    fun `ordinary midnight end exact and just after in New York`() = runBlocking<Unit> {
         zone("America/New_York")
         val begin = local(LocalDateTime.of(2026, 10, 10, 22, 0))
         val midnight = local(LocalDateTime.of(2026, 10, 11, 0, 0))
@@ -158,7 +159,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `all-day exclusive UTC end unaffected by device zone with midnight DST`() {
+    fun `all-day exclusive UTC end unaffected by device zone with midnight DST`() = runBlocking<Unit> {
         zone("America/Havana")
         allDay(1, RED, d(2026, 3, 7), 2)
         assertEquals(setOf(d(2026, 3, 7), d(2026, 3, 8)), range(d(2026, 3, 1), d(2026, 3, 31)).keys)
@@ -169,7 +170,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `timed event entirely in the widened margin is not reported`() {
+    fun `timed event entirely in the widened margin is not reported`() = runBlocking<Unit> {
         zone("Asia/Jerusalem")
         timed(1, RED, local(LocalDateTime.of(2026, 9, 30, 10, 0)), local(LocalDateTime.of(2026, 9, 30, 11, 0)))
         timed(2, BLUE, local(LocalDateTime.of(2026, 11, 1, 0, 0)), local(LocalDateTime.of(2026, 11, 1, 1, 0)))
@@ -179,7 +180,7 @@ class SystemCalendarVerifierTest {
     }
 
     @Test
-    fun `timed event starting exactly at local midnight of first day`() {
+    fun `timed event starting exactly at local midnight of first day`() = runBlocking<Unit> {
         zone("Asia/Tokyo")
         timed(1, RED, local(LocalDateTime.of(2026, 10, 1, 0, 0)), local(LocalDateTime.of(2026, 10, 1, 0, 30)))
         assertEquals(setOf(d(2026, 10, 1)), range(d(2026, 10, 1), d(2026, 10, 31)).keys)

@@ -22,6 +22,8 @@
     <string name="events_import_complete_title">הייבוא הושלם</string>
     <string name="events_imported">יובאו %1$d אירועים</string>
     <string name="events_import_skipped">, דולגו %1$d כפילויות</string>
+    <string name="events_import_too_large">הייבוא נכשל: הקובץ גדול מ-%1$d KB</string>
+    <string name="events_remove_birthday_failed">לא ניתן להסיר את יום ההולדת: %1$s</string>
     <string name="events_contacts_permission_title">נדרשת הרשאת גישה לאנשי הקשר</string>
     <string name="events_contacts_permission_description">יש לאשר הרשאה כדי לנהל ימי הולדת עבריים באנשי הקשר שלך</string>
     <string name="events_no_birthdays">אין עדיין ימי הולדת</string>

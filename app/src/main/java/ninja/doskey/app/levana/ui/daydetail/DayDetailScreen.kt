@@ -2,8 +2,6 @@ package ninja.doskey.app.levana.ui.daydetail
 
 import android.content.ContentUris
 import android.content.Intent
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.foundation.Image
@@ -42,13 +40,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextDirection
@@ -56,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
@@ -432,8 +429,6 @@ private fun OmerSection(omerFormatted: String) {
 
 @Composable
 private fun PersonalEventsSection(events: List<CalendarEvent>) {
-    val context = LocalContext.current
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -452,27 +447,12 @@ private fun PersonalEventsSection(events: List<CalendarEvent>) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     when (event) {
                         is CalendarEvent.Birthday -> {
-                            val photoBitmap = remember(
+                            val photo = rememberContactPhoto(
                                 event.birthday.contactPhotoUri
-                            ) {
-                                event.birthday.contactPhotoUri?.let {
-                                        uriStr ->
-                                    try {
-                                        context.contentResolver
-                                            .openInputStream(
-                                                Uri.parse(uriStr)
-                                            )?.use {
-                                                BitmapFactory
-                                                    .decodeStream(it)
-                                            }
-                                    } catch (_: Exception) {
-                                        null
-                                    }
-                                }
-                            }
-                            if (photoBitmap != null) {
+                            ).value
+                            if (photo != null) {
                                 Image(
-                                    bitmap = photoBitmap.asImageBitmap(),
+                                    bitmap = photo,
                                     contentDescription = event.title,
                                     modifier = Modifier
                                         .size(32.dp)

@@ -1,10 +1,12 @@
 package ninja.doskey.app.levana.ui.birthday
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.TodayProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,8 @@ class ContactBirthdayViewModel(
         when (intent) {
             is ContactBirthdayIntent.LoadBirthday ->
                 loadBirthday(intent.contactLookupKey)
+            is ContactBirthdayIntent.ContactPicked ->
+                resolvePickedContact(intent.contactUri)
             is ContactBirthdayIntent.ContactSelected ->
                 _state.value = _state.value.copy(
                     contactLookupKey = intent.lookupKey,
@@ -83,6 +87,26 @@ class ContactBirthdayViewModel(
             hebrewMonth = safeMonth,
             hebrewYear = safeYear
         )
+    }
+
+    private fun resolvePickedContact(contactUri: Uri) {
+        viewModelScope.launch {
+            val contact = try {
+                repository.resolveContact(contactUri)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(errorMessage = e.message)
+                return@launch
+            } ?: return@launch
+            onIntent(
+                ContactBirthdayIntent.ContactSelected(
+                    contact.lookupKey,
+                    contact.name,
+                    contact.photoUri
+                )
+            )
+        }
     }
 
     private fun loadBirthday(contactLookupKey: String) {
@@ -131,6 +155,8 @@ class ContactBirthdayViewModel(
                     isSaving = false,
                     saveComplete = true
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isSaving = false,

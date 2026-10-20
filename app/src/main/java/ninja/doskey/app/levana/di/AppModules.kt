@@ -6,6 +6,7 @@ import ninja.doskey.app.levana.data.AndroidEventDataChanges
 import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.EventDataChanges
+import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
@@ -67,6 +68,7 @@ val dataModule = module {
             CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         )
     }
+    single { EventFileRepository(androidContext()) }
     single { NotificationAlarmScheduler(androidContext()) }
     single { NotificationDeliveryLog(androidContext()) }
     single {
@@ -81,7 +83,7 @@ val viewModelModule = module {
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), androidContext()) }
-    viewModel { EventsViewModel(get(), get()) }
+    viewModel { EventsViewModel(get(), get(), get()) }
     viewModel { AddEditEventViewModel(get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }

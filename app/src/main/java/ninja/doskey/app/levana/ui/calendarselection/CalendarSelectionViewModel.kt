@@ -43,7 +43,16 @@ class CalendarSelectionViewModel(
                 return@launch
             }
 
-            val calendars = systemCalendarRepository.getDeviceCalendars()
+            val calendars = try {
+                systemCalendarRepository.getDeviceCalendars()
+            } catch (_: SecurityException) {
+                // Permission revoked since the check
+                _state.value = CalendarSelectionState(
+                    hasPermission = false,
+                    isLoading = false
+                )
+                return@launch
+            }
             val prefs = preferencesRepository.preferences.first()
 
             _state.value = CalendarSelectionState(

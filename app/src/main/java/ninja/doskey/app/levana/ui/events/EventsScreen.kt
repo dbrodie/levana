@@ -1,8 +1,6 @@
 package ninja.doskey.app.levana.ui.events
 
 import android.Manifest
-import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -60,7 +58,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -71,10 +68,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.R
-import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.ContactBirthday
+import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -112,62 +109,26 @@ fun EventsScreen(
         }
     }
 
+    // File IO runs in the view model, off the main thread
     val exportJsonLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        val message = try {
-            val content = EventSerializer.toJson(state.customEvents)
-            val outputStream = context.contentResolver.openOutputStream(uri)
-                ?: error("Could not open output file")
-            outputStream.use { stream ->
-                stream.write(content.toByteArray())
-            }
-            context.getString(R.string.events_exported, state.customEvents.size)
-        } catch (e: Exception) {
-            context.getString(R.string.events_export_failed, e.message.orEmpty())
-        }
-        viewModel.onIntent(EventsIntent.ShowExportResult(message))
+        viewModel.onIntent(EventsIntent.ExportEvents(uri, isCsv = false))
     }
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        val message = try {
-            val content = EventSerializer.toCsv(state.customEvents)
-            val outputStream = context.contentResolver.openOutputStream(uri)
-                ?: error("Could not open output file")
-            outputStream.use { stream ->
-                stream.write(content.toByteArray())
-            }
-            context.getString(R.string.events_exported, state.customEvents.size)
-        } catch (e: Exception) {
-            context.getString(R.string.events_export_failed, e.message.orEmpty())
-        }
-        viewModel.onIntent(EventsIntent.ShowExportResult(message))
+        viewModel.onIntent(EventsIntent.ExportEvents(uri, isCsv = true))
     }
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        try {
-            val content = context.contentResolver.openInputStream(uri)?.use { stream ->
-                stream.readBytes().toString(Charsets.UTF_8)
-            } ?: run {
-                viewModel.onIntent(
-                    EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed_read))
-                )
-                return@rememberLauncherForActivityResult
-            }
-            val isCsv = detectCsv(uri, content)
-            viewModel.onIntent(EventsIntent.ImportEvents(content, isCsv))
-        } catch (e: Exception) {
-            viewModel.onIntent(
-                EventsIntent.ShowExportResult(context.getString(R.string.events_import_failed, e.message.orEmpty()))
-            )
-        }
+        viewModel.onIntent(EventsIntent.ImportFromUri(uri))
     }
 
     // Overflow menu state — defined here so the lambda registered below can capture it
@@ -219,11 +180,26 @@ fun EventsScreen(
         onDispose { onUnregisterTopBarActions() }
     }
 
-    // Show export result as a snackbar
-    LaunchedEffect(state.exportMessage) {
-        val msg = state.exportMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(msg)
-        viewModel.onIntent(EventsIntent.DismissExportResult)
+    // Show export/import/remove results as a snackbar
+    LaunchedEffect(state.message) {
+        val msg = state.message ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(
+            when (msg) {
+                is EventsMessage.Exported ->
+                    context.getString(R.string.events_exported, msg.count)
+                is EventsMessage.ExportFailed ->
+                    context.getString(R.string.events_export_failed, msg.detail)
+                EventsMessage.ImportReadFailed ->
+                    context.getString(R.string.events_import_failed_read)
+                is EventsMessage.ImportFailed ->
+                    context.getString(R.string.events_import_failed, msg.detail)
+                is EventsMessage.ImportTooLarge ->
+                    context.getString(R.string.events_import_too_large, msg.maxKilobytes)
+                is EventsMessage.RemoveBirthdayFailed ->
+                    context.getString(R.string.events_remove_birthday_failed, msg.detail)
+            }
+        )
+        viewModel.onIntent(EventsIntent.DismissMessage)
     }
 
     // Import result dialog
@@ -340,13 +316,6 @@ fun EventsScreen(
 }
 
 /** Returns true if the content looks like CSV rather than JSON. */
-private fun detectCsv(uri: Uri, content: String): Boolean {
-    val path = uri.lastPathSegment?.lowercase() ?: ""
-    if (path.endsWith(".json")) return false
-    if (path.endsWith(".csv")) return true
-    return !content.trimStart().startsWith("[")
-}
-
 @Composable
 private fun BirthdaysTab(
     birthdays: List<ContactBirthday>,
@@ -473,21 +442,10 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val context = LocalContext.current
-            val photoBitmap = remember(birthday.contactPhotoUri) {
-                birthday.contactPhotoUri?.let { uriStr ->
-                    try {
-                        context.contentResolver.openInputStream(
-                            Uri.parse(uriStr)
-                        )?.use { BitmapFactory.decodeStream(it) }
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-            }
-            if (photoBitmap != null) {
+            val photo = rememberContactPhoto(birthday.contactPhotoUri).value
+            if (photo != null) {
                 Image(
-                    bitmap = photoBitmap.asImageBitmap(),
+                    bitmap = photo,
                     contentDescription = birthday.contactName,
                     modifier = Modifier
                         .size(40.dp)

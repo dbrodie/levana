@@ -13,6 +13,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.TimeZone
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -51,7 +52,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `all-day event keeps its calendar date west of UTC`() {
+    fun `all-day event keeps its calendar date west of UTC`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addAllDay(id = 1, color = RED, first = LocalDate.of(2026, 10, 20), days = 1)
 
@@ -61,7 +62,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `multi-day all-day event marks every day with exclusive end`() {
+    fun `multi-day all-day event marks every day with exclusive end`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addAllDay(id = 1, color = RED, first = LocalDate.of(2026, 10, 5), days = 3)
 
@@ -74,7 +75,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `timed event starting before the month marks its days inside the month`() {
+    fun `timed event starting before the month marks its days inside the month`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addTimed(
             id = 1, color = RED,
@@ -91,7 +92,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `all-day event spanning the month boundary marks days in both months`() {
+    fun `all-day event spanning the month boundary marks days in both months`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addAllDay(id = 1, color = RED, first = LocalDate.of(2026, 10, 30), days = 4)
 
@@ -113,7 +114,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `timed event ending exactly at midnight does not mark the next day`() {
+    fun `timed event ending exactly at midnight does not mark the next day`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addTimed(
             id = 1, color = RED,
@@ -125,7 +126,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `timed event ending at a DST-shifted start of day does not mark that day`() {
+    fun `timed event ending at a DST-shifted start of day does not mark that day`() = runBlocking<Unit> {
         // Havana springs forward 00:00 -> 01:00 on 2026-03-08; the day starts at 01:00.
         useZone("America/Havana")
         addTimed(
@@ -148,7 +149,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `overnight timed event marks both local days`() {
+    fun `overnight timed event marks both local days`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addTimed(
             id = 1, color = RED,
@@ -163,7 +164,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `timed evening event uses the device time zone date`() {
+    fun `timed evening event uses the device time zone date`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         // 21:00 New York is 01:00 UTC on the next day.
         addTimed(
@@ -176,7 +177,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `recurring instances each mark their own day and colors are merged`() {
+    fun `recurring instances each mark their own day and colors are merged`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         for (day in listOf(14, 21, 28)) {
             addTimed(
@@ -196,7 +197,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `events for date excludes neighbouring all-day events west of UTC`() {
+    fun `events for date excludes neighbouring all-day events west of UTC`() = runBlocking<Unit> {
         useZone(NEW_YORK)
         addAllDay(id = 1, color = RED, first = LocalDate.of(2026, 10, 20), days = 1)
 
@@ -215,7 +216,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `events for date excludes neighbouring all-day events east of UTC`() {
+    fun `events for date excludes neighbouring all-day events east of UTC`() = runBlocking<Unit> {
         useZone(JERUSALEM)
         addAllDay(id = 1, color = RED, first = LocalDate.of(2026, 10, 20), days = 1)
 
@@ -231,7 +232,7 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
-    fun `events for date includes every day of a multi-day timed event`() {
+    fun `events for date includes every day of a multi-day timed event`() = runBlocking<Unit> {
         useZone(JERUSALEM)
         addTimed(
             id = 1, color = RED,
@@ -252,7 +253,7 @@ class SystemCalendarRepositoryTest {
         )
     }
 
-    private fun october() = repository.getEventColorsForDateRange(
+    private suspend fun october() = repository.getEventColorsForDateRange(
         LocalDate.of(2026, 10, 1),
         LocalDate.of(2026, 10, 31),
         setOf(calendarId)

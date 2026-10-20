@@ -8,7 +8,7 @@ data class EventsState(
     val customEvents: List<PersonalEvent> = emptyList(),
     val hasContactsPermission: Boolean = false,
     val isLoading: Boolean = true,
-    val exportMessage: String? = null,
+    val message: EventsMessage? = null,
     val importResult: ImportResult? = null
 )
 
@@ -17,3 +17,13 @@ data class ImportResult(
     val skipped: Int,
     val error: String? = null
 )
+
+/** One-off snackbar messages; the screen maps them to localized text. */
+sealed interface EventsMessage {
+    data class Exported(val count: Int) : EventsMessage
+    data class ExportFailed(val detail: String) : EventsMessage
+    data object ImportReadFailed : EventsMessage
+    data class ImportFailed(val detail: String) : EventsMessage
+    data class ImportTooLarge(val maxKilobytes: Int) : EventsMessage
+    data class RemoveBirthdayFailed(val detail: String) : EventsMessage
+}
