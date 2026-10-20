@@ -321,3 +321,4 @@ class FakeDao : PersonalEventDao {
         events.value = events.value.filter { it.id != event.id }
     }
 }
+

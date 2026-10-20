@@ -149,4 +149,25 @@ class VerifyCalendarSelectionLatestLoadTest {
         assertTrue("stale SecurityException published no-permission", vm.state.value.hasPermission)
         assertEquals(setOf("Home"), names(vm))
     }
+
+    @Test
+    fun toggleDuringAReloadIsNotLostWhenTheReloadPublishes() {
+        world.calendars += CalendarWorld.Cal(1, "Home", "a", 1)
+        world.calendars += CalendarWorld.Cal(2, "Work", "a", 2)
+        // Seed an explicit starting selection: other tests in this JVM share the
+        // persisted preferences (a full run leaves {7} selected here)
+        val prefs = prefs()
+        runBlocking { prefs.saveSelectedCalendarIds(setOf(1L)) }
+        val vm = vm(prefs)
+        idleUntil(what = "first load") { !vm.state.value.isLoading }
+        assertEquals(setOf(1L), vm.state.value.selectedIds)
+        holds[2] = CountDownLatch(1)
+        vm.onIntent(CalendarSelectionIntent.PermissionGranted)
+        awaitQueries(2)
+        vm.onIntent(CalendarSelectionIntent.ToggleCalendar(2))
+        idleUntil(what = "saved") { runBlocking { prefs.preferences.first().selectedCalendarIds } == setOf(1L, 2L) }
+        holds[2]!!.countDown()
+        settle()
+        assertEquals(setOf(1L, 2L), vm.state.value.selectedIds)
+    }
 }
