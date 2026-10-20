@@ -125,6 +125,29 @@ class SystemCalendarRepositoryTest {
     }
 
     @Test
+    fun `timed event ending at a DST-shifted start of day does not mark that day`() {
+        // Havana springs forward 00:00 -> 01:00 on 2026-03-08; the day starts at 01:00.
+        useZone("America/Havana")
+        addTimed(
+            id = 1, color = RED,
+            begin = LocalDateTime.of(2026, 3, 7, 22, 0),
+            end = LocalDateTime.of(2026, 3, 8, 1, 0)
+        )
+
+        val march = repository.getEventColorsForDateRange(
+            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 3, 31),
+            setOf(calendarId)
+        )
+
+        assertEquals(setOf(LocalDate.of(2026, 3, 7)), march.keys)
+        assertTrue(
+            repository.getEventsForDate(LocalDate.of(2026, 3, 8), setOf(calendarId))
+                .isEmpty()
+        )
+    }
+
+    @Test
     fun `overnight timed event marks both local days`() {
         useZone(NEW_YORK)
         addTimed(

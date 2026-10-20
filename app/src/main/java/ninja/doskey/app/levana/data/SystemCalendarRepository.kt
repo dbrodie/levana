@@ -10,7 +10,6 @@ import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -216,7 +215,7 @@ class SystemCalendarRepository(private val context: Context) {
         /**
          * The calendar dates an instance occupies. All-day instances use UTC
          * dates with an exclusive end; timed instances use [zone] dates, with
-         * an end at exactly midnight treated as exclusive.
+         * an end at exactly the start of a day treated as exclusive.
          */
         internal fun coveredDates(
             beginMillis: Long,
@@ -230,10 +229,13 @@ class SystemCalendarRepository(private val context: Context) {
             if (endMillis <= beginMillis) return first..first
 
             val end = Instant.ofEpochMilli(endMillis).atZone(dateZone)
-            val last = if (end.toLocalTime() == LocalTime.MIDNIGHT) {
-                end.toLocalDate().minusDays(1)
+            val endDate = end.toLocalDate()
+            // Compare against the zone's start of day rather than 00:00, which
+            // DST can skip (e.g. the day starts at 01:00).
+            val last = if (end == endDate.atStartOfDay(dateZone)) {
+                endDate.minusDays(1)
             } else {
-                end.toLocalDate()
+                endDate
             }
             return first..maxOf(first, last)
         }

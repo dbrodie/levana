@@ -71,4 +71,20 @@ class SystemCalendarCoveredDatesTest {
             coveredDates(begin, end, false, tokyo)
         )
     }
+
+    @Test
+    fun `timed end at a DST-shifted start of day is exclusive`() {
+        // Havana springs forward 00:00 -> 01:00 on 2026-03-08, so the day starts at 01:00.
+        val havana = ZoneId.of("America/Havana")
+        val begin = millis(LocalDateTime.of(2026, 3, 7, 22, 0), havana)
+        val end = LocalDate.of(2026, 3, 8).atStartOfDay(havana).toInstant().toEpochMilli()
+        assertEquals(
+            LocalDate.of(2026, 3, 7)..LocalDate.of(2026, 3, 7),
+            coveredDates(begin, end, false, havana)
+        )
+        assertEquals(
+            LocalDate.of(2026, 3, 7)..LocalDate.of(2026, 3, 8),
+            coveredDates(begin, end + 1, false, havana)
+        )
+    }
 }
