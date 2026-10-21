@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "levana",
+  "project_id": "d8e4be42-6818-449f-ac57-b7f20e72023c"
+}
