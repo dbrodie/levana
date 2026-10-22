@@ -78,10 +78,6 @@
     <string name="settings_omer_at_tzait">At tzait (nightfall)</string>
     <string name="settings_omer_morning_reminder">Morning reminder</string>
     <string name="settings_reminder_time">Reminder time</string>
-    <string name="settings_minhag_ashkenazi">Ashkenazi</string>
-    <string name="settings_minhag_sephardi">Sephardi</string>
-    <string name="settings_minhag_yemenite">Yemenite</string>
-    <string name="settings_minhag_chabad">Chabad</string>
 
     <!-- About -->
     <string name="about_version">Version</string>
@@ -96,7 +92,7 @@
     <string name="settings_yahrzeit_leap_both">Both Adars</string>
     <string name="settings_yahrzeit_first_year_label">First yahrzeit in a leap year</string>
     <string name="settings_yahrzeit_first_year_description">When the death was in Adar of an ordinary year and the next year is a leap year, the first yahrzeit:</string>
-    <string name="settings_yahrzeit_first_year_follow">Follow annual minhag</string>
+    <string name="settings_yahrzeit_first_year_follow">Follow the leap-year Adar setting</string>
     <string name="settings_yahrzeit_first_year_adar_i">First observance in Adar I</string>
     <string name="settings_yahrzeit_first_year_both">Mark both first-year dates</string>
     <string name="settings_yahrzeit_nisan_label">Also mark 1 Nissan</string>

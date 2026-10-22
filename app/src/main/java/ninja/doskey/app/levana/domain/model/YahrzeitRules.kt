@@ -24,7 +24,7 @@ enum class YahrzeitMissingDay {
 }
 
 /**
- * Global yahrzeit settings, independent of [Minhag]. Defaults confirmed by
+ * Global yahrzeit settings (Settings → Yahrzeit settings). Defaults confirmed by
  * the owner: both Adars in a leap year, first year follows the annual
  * setting, no extra 1 Nisan, first-anniversary rule for 30 Cheshvan/Kislev.
  */

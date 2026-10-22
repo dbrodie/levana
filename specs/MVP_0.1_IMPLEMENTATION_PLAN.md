@@ -282,7 +282,7 @@ These decisions apply across all increments:
 **What to build:**
 - Settings screen (replacing placeholder tab) with sections:
   - **Location:** Current location display, tap to change
-  - **Minhag:** Ashkenazi / Sephardi / Yemenite / Chabad radio selection
+  - **Minhag:** Ashkenazi / Sephardi / Yemenite / Chabad radio selection *(superseded: never drove any calculation and was removed — see `specs/rfes/remove-minhag-selection.md`)*
   - **Israel/Diaspora:** Toggle (auto-detected from location, with manual override)
   - **Modern Israeli Holidays:** Toggle to show/hide
   - **Hebrew-primary:** Toggle (switches calendar to Hebrew-month view — implemented in Inc. 9)
@@ -291,14 +291,14 @@ These decisions apply across all increments:
 - All downstream screens react to settings changes via Flow collection
 
 **Key technical notes:**
-- Minhag affects parsha readings, some holiday observances, and zmanim defaults
+- Minhag affects parsha readings, some holiday observances, and zmanim defaults *(superseded: not implemented; the selector was removed)*
 - Israel/Diaspora affects Yom Tov second day and parsha alignment
 - Settings changes must propagate immediately (no "save" button)
 - MVI triad: `SettingsState`, `SettingsIntent`, `SettingsViewModel`
 
 **Acceptance criteria:**
 - [x] Settings screen accessible via bottom navigation
-- [x] Minhag selection persists and updates relevant calculations
+- [x] Minhag selection persists ~~and updates relevant calculations~~ *(historical: it persisted but affected no calculation; removed — see `specs/rfes/remove-minhag-selection.md`)*
 - [x] Israel/Diaspora toggle changes Yom Tov day count (navigate to a Yom Tov to verify)
 - [x] Modern Israeli Holidays toggle shows/hides them on calendar
 - [x] Candle lighting offset change updates candle lighting times immediately
@@ -565,6 +565,6 @@ After completing all MVP 0.1 increments, the app should satisfy:
 - [ ] Candle lighting times accurate (halachically critical)
 - [ ] Israel/Diaspora differences correct (Yom Tov days, parsha alignment)
 - [ ] Yahrzeit Adar rules correct per halacha
-- [ ] All four minhagim selectable and affecting relevant calculations
+- [ ] ~~All four minhagim selectable and affecting relevant calculations~~ *(dropped: general minhag selection removed — see `specs/rfes/remove-minhag-selection.md`)*
 - [ ] RTL layout correct in Hebrew mode
 - [ ] `./gradlew build` passes

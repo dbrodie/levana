@@ -8,7 +8,7 @@
     <string name="zmanim_selection_hint">Choose which zmanim appear in the day panel.</string>
     <string name="settings_group_calendar">Calendar</string>
     <string name="settings_group_preferences">Calendar preferences</string>
-    <string name="settings_group_minhag">Minhag</string>
+    <string name="settings_group_yahrzeit">Yahrzeit settings</string>
     <string name="settings_group_appearance">Appearance</string>
     <string name="settings_group_halachic_times">Halachic times</string>
     <string name="settings_group_notifications">Notifications</string>
@@ -25,7 +25,6 @@
     <string name="settings_modern_holidays_description">Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim</string>
     <string name="settings_candle_offset_label">Candle lighting offset</string>
     <string name="settings_candle_offset_description">%1$d min before sunset</string>
-    <string name="settings_minhag_label">Minhag</string>
     <string name="settings_app_language_label">App language</string>
     <string name="settings_language_system">System default</string>
     <string name="settings_language_hebrew">Hebrew (עברית)</string>
@@ -35,7 +34,7 @@
     <string name="event_title_example">e.g., Dad’s yahrzeit, anniversary</string>
     <string name="event_hebrew_date_label">Hebrew date</string>
     <string name="event_yahrzeit_rules">Use yahrzeit Adar rules</string>
-    <string name="event_yahrzeit_rules_description">Adar dates follow the yahrzeit settings under Settings → Minhag. Adar I and II remain separate.</string>
+    <string name="event_yahrzeit_rules_description">Adar dates follow Settings → Yahrzeit settings. Adar I and II remain separate.</string>
     <string name="event_notes_optional">Notes (optional)</string>
     <string name="event_date_picker_day">Day</string>
     <string name="event_date_picker_month">Month</string>

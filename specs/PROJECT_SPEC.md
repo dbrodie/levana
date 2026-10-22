@@ -23,7 +23,7 @@ Levana is an open-source Android Hebrew calendar application designed for Orthod
 
 - Complete offline functionality
 - Material Design 3 with modern Android technologies
-- Comprehensive minhag support with configurable zmanim calculations
+- Configurable yahrzeit rules and zmanim calculations (explicit per-setting choices rather than a general minhag profile)
 - Dynamic theming based on Jewish holidays
 
 ---
@@ -107,7 +107,7 @@ The app should display all commonly used zmanim, including but not limited to:
 
 #### 3.2.2 Calculation Methods
 
-Users must be able to configure zmanim calculation methods independently from general minhag settings:
+Users must be able to configure zmanim calculation methods as explicit, individual settings (there is no general minhag selector; see `specs/rfes/remove-minhag-selection.md`):
 
 - **Temporal hours calculation:** Magen Avraham vs. GR"A (Vilna Gaon)
 - **Degrees below horizon:** Configurable for various zmanim
@@ -138,7 +138,7 @@ Users must be able to configure zmanim calculation methods independently from ge
 #### 3.4.1 Candle Lighting Times
 
 - Calculate candle lighting time based on location
-- Configurable offset before sunset (default: 18 minutes, configurable per minhag)
+- Configurable offset before sunset (default: 18 minutes, user-adjustable)
 - Special handling for Jerusalem (40 minutes minhag option)
 
 #### 3.4.2 Havdalah Times
@@ -355,11 +355,13 @@ Automatically adjust app accent colors based on current/upcoming holidays:
 - Location selection (city search, GPS, manual)
 - Timezone display/override
 
-#### 7.1.2 Minhag Settings
+#### 7.1.2 Calendar and Yahrzeit Settings
 
-- General minhag selection (affects various defaults)
 - Israel/Diaspora toggle
-- Individual zmanim calculation method overrides
+- Yahrzeit settings: leap-year Adar, first yahrzeit in a leap year, 1 Nissan for 30 Adar I, 30 Cheshvan/Kislev
+- Individual zmanim calculation method choices (planned)
+
+A general minhag (Ashkenazi / Sephardi / Yemenite / Chabad) selection was removed because it drove no behavior; individual settings are configured directly. See `specs/rfes/remove-minhag-selection.md`.
 
 #### 7.1.3 Display Settings
 

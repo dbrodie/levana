@@ -8,7 +8,7 @@
     <string name="zmanim_selection_hint">בחרו אילו זמנים יוצגו בלוח היום.</string>
     <string name="settings_group_calendar">לוח שנה</string>
     <string name="settings_group_preferences">העדפות לוח שנה</string>
-    <string name="settings_group_minhag">מנהג</string>
+    <string name="settings_group_yahrzeit">הגדרות יארצייט</string>
     <string name="settings_group_appearance">מראה</string>
     <string name="settings_group_halachic_times">זמנים הלכתיים</string>
     <string name="settings_group_notifications">התראות</string>
@@ -25,7 +25,6 @@
     <string name="settings_modern_holidays_description">יום השואה, יום הזיכרון, יום העצמאות ויום ירושלים</string>
     <string name="settings_candle_offset_label">הקדמת הדלקת נרות</string>
     <string name="settings_candle_offset_description">%1$d דקות לפני השקיעה</string>
-    <string name="settings_minhag_label">מנהג</string>
     <string name="settings_app_language_label">שפת האפליקציה</string>
     <string name="settings_language_system">ברירת מחדל של המערכת</string>
     <string name="settings_language_hebrew">עברית</string>
@@ -35,7 +34,7 @@
     <string name="event_title_example">לדוגמה: יארצייט של אבא, יום נישואין</string>
     <string name="event_hebrew_date_label">תאריך עברי</string>
     <string name="event_yahrzeit_rules">החלת כללי יארצייט באדר</string>
-    <string name="event_yahrzeit_rules_description">תאריכי אדר נקבעים לפי הגדרות היארצייט בהגדרות ← מנהג. אדר א׳ ואדר ב׳ נשארים נפרדים.</string>
+    <string name="event_yahrzeit_rules_description">תאריכי אדר נקבעים לפי הגדרות ← הגדרות יארצייט. אדר א׳ ואדר ב׳ נשארים נפרדים.</string>
     <string name="event_notes_optional">הערות (רשות)</string>
     <string name="event_date_picker_day">יום</string>
     <string name="event_date_picker_month">חודש</string>

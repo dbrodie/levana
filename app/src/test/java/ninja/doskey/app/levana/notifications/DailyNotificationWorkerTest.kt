@@ -22,7 +22,6 @@ import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.notifications.DailyCategory.FASTS
 import ninja.doskey.app.levana.notifications.DailyCategory.HOLIDAYS
 import ninja.doskey.app.levana.notifications.DailyCategory.PERSONAL_EVENTS
@@ -216,7 +215,7 @@ class DailyNotificationWorkerTest {
 
         // Unrelated settings post nothing
         save {
-            saveMinhag(Minhag.SEPHARDI)
+            saveShowDeveloperSettings(false)
             saveDynamicHolidayTheme(false)
             saveCalendarHebrewMode(true)
             saveSelectedZmanim(setOf("Sunrise"))
