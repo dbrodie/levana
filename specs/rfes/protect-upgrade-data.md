@@ -49,9 +49,12 @@ this change does **not** bump the version or add an empty migration.
    bumps `version`, adds an explicit `Migration(n, n + 1)` (or a verified
    `@AutoMigration`) to `MIGRATIONS`, commits the new schema JSON, and adds a
    `MigrationTestHelper` test from every shipped version to the new one.
-4. **Test infrastructure.** Add `room-testing` and expose `app/schemas` as
-   unit-test assets so Robolectric tests can use `MigrationTestHelper`.
-   Schemas are not packaged into the APK.
+4. **Test infrastructure.** Add `room-testing` (plus `kspTest` for a
+   test-only future database) and add `app/schemas` to the **debug** assets so
+   Robolectric's `MigrationTestHelper` can read them (Robolectric only sees the
+   variant's merged assets, not test-source-set assets). Debug APKs carry the
+   small schema JSON; release APKs do not. `mergeDebugAssets` depends on
+   `kspDebugKotlin` so a newly exported schema is visible in the same build.
 
 ## Verification
 
