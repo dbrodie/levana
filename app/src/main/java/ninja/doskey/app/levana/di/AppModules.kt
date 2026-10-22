@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.di
 
-import androidx.room.Room
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.AndroidEventDataChanges
 import ninja.doskey.app.levana.data.CityRepository
@@ -36,13 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 val dataModule = module {
-    single {
-        Room.databaseBuilder(
-            get(),
-            LevanaDatabase::class.java,
-            "levana-database"
-        ).fallbackToDestructiveMigration().build()
-    }
+    single { LevanaDatabase.build(get()) }
     single { get<LevanaDatabase>().personalEventDao() }
     single { CalendarRepository() }
     single { CityRepository(get()) }

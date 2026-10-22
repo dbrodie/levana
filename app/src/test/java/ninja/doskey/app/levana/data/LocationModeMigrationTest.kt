@@ -37,6 +37,22 @@ class LocationModeMigrationTest {
     }
 
     @Test
+    fun savedLocationsAndSettingsSurviveTheMigration() {
+        val savedLocations = stringPreferencesKey("saved_locations")
+        val minhag = stringPreferencesKey("minhag")
+        val stored = """[{"id":"abc","location":{"name":"Tel Aviv"}}]"""
+        val migrated = migrate(
+            preferencesOf(
+                locationMode to """{"type":"saved","id":"abc"}""",
+                savedLocations to stored,
+                minhag to "SEPHARDI"
+            )
+        )
+        assertEquals(stored, migrated[savedLocations])
+        assertEquals("SEPHARDI", migrated[minhag])
+    }
+
+    @Test
     fun onlyRunsWhenTheOldKeyExists() = runBlocking {
         assertFalse(LocationModeMigration.shouldMigrate(preferencesOf()))
     }
