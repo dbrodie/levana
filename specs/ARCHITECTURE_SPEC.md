@@ -86,7 +86,7 @@ Dependencies flow inward: UI → State → Domain → Data
 | Data Type | Storage | Examples |
 |-----------|---------|----------|
 | Structured data | Room | Personal events (birthdays, yahrzeits) |
-| User preferences | DataStore | Location, minhag, notification settings |
+| User preferences | DataStore | Location, Israel/Diaspora, yahrzeit rules, notification settings |
 | City locations | KosherJava built-in | Initial implementation, expand later |
 
 ---

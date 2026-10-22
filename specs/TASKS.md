@@ -18,7 +18,7 @@ Updated after merging the verified bug fixes. Original task order, priorities, t
 | 10 | P2 | Bug fix | Move blocking work off the UI thread | Run contact queries, calendar queries, and file import/export on an IO dispatcher to prevent UI freezes. | Done |
 | 11 | P2 | Cleanup | Centralize date and timezone handling | Use a shared date provider and explicitly distinguish device time from selected-location time across screens and workers. | Partial |
 | 12 | P2 | Bug fix | Make calendar data refresh reactive | Refresh calendar dots and day details when personal events, contact birthdays, or device-calendar events change. | Done |
-| 13 | P2 | New feature | Make minhag selection meaningful | Define and verify the defaults each minhag controls, apply them to relevant calculations, and allow individual overrides. | Open |
+| 13 | P2 | Cleanup | Remove the unused minhag selection | Owner decision: a general minhag selector is not relevant now. Remove it, keep the independent yahrzeit settings under Yahrzeit settings, and tolerate the legacy stored key (`specs/rfes/remove-minhag-selection.md`). Zmanim methods remain #14. | Implemented, awaiting merge |
 | 14 | P2 | New feature | Configure zmanim methods | Add calculation profiles, Rabbeinu Tam options, and explanations of the method used for each displayed time. | Open |
 | 15 | P2 | New feature | Full backup and restore | Add a versioned backup format for personal events, saved locations, and preferences, with explicit handling of contact birthdays. | Open |
 | 16 | P2 | New feature | Home-screen widget | Display the Hebrew/Gregorian date, next zman, upcoming candle lighting, and selected location on the home screen. | Open |

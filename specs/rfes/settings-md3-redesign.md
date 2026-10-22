@@ -1,5 +1,7 @@
 # Settings Screen MD3 Redesign
 
+> **Superseded in part:** the Minhag row and `MinhagDialog` described below were later removed; the yahrzeit rules now form the "Yahrzeit settings" group. See `specs/rfes/remove-minhag-selection.md`. This document is otherwise a historical record.
+
 ## Context
 
 The current settings screen (`SettingsScreen.kt`) uses a custom `SectionCard` composable that wraps

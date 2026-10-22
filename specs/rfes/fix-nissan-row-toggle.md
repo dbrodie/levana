@@ -2,7 +2,7 @@
 
 ## Problem
 
-In Settings → Minhag, the "Also mark 1 Nissan" row (yahrzeit on 30 Adar I) only
+In Settings → Minhag (now Settings → Yahrzeit settings), the "Also mark 1 Nissan" row (yahrzeit on 30 Adar I) only
 toggles when the user taps the switch itself. Tapping the title or description
 does nothing. The row is a `ListItem` with a `Switch` in `trailingContent` that
 owns the click handler; the row has no click handling of its own.
@@ -11,7 +11,7 @@ Every other switch row in `ui/settings/SettingsScreen.kt` is built the same way
 and has the same problem:
 
 - Preferences: Israel / Diaspora, Modern Israeli holidays
-- Minhag: Also mark 1 Nissan
+- Minhag (now Yahrzeit settings): Also mark 1 Nissan
 - Appearance: Holiday theming
 - Notifications: Candle lighting, Holidays, Fasts, Personal events, Omer,
   Omer at tzait, Omer morning reminder
@@ -46,6 +46,6 @@ work as before.
 ## Test plan
 
 - `./gradlew :app:assembleDebug` and `./gradlew :app:testDebugUnitTest` pass.
-- Emulator: in Settings → Minhag, tap the "Also mark 1 Nissan" title text. The
+- Emulator: in Settings → Yahrzeit settings (formerly Minhag), tap the "Also mark 1 Nissan" title text. The
   switch flips once. Force-stop and relaunch the app. The new value is still
   set.
