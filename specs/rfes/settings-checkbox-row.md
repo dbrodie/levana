@@ -70,3 +70,18 @@ minimal. `SettingsSwitchRow` is left untouched.
   check UI hierarchy shows one checkable node per row, force-stop/relaunch and
   confirm selections persist and the day panel shows the selected zmanim.
   TalkBack spoken output is only claimed if actually run.
+
+## Verification (2026-10-22)
+
+- Robolectric: `SettingsCheckboxRowTest` 10/10; full `:app:testDebugUnitTest`
+  524 tests, 0 failures; `:app:assembleDebug` succeeds.
+- Emulator `emulator-5558` (commit `fe7d0c4`), English: each zman row is a
+  single checkable/clickable/focusable node with no separate checkbox node;
+  tapping the label, the checkbox and empty row space each flips the state once;
+  Tab focuses the row, Enter and D-pad center toggle it once (Space does
+  nothing, which is Compose's default `clickable` behavior, same as the switch
+  rows); selections survive force-stop and relaunch and appear in the day panel.
+- Hebrew (`iw` app locale): RTL layout with the checkbox on the left; label and
+  checkbox taps each flip once.
+- Not verified: TalkBack spoken output (hierarchy checks only); disabled state on
+  device (no caller disables a row; covered by Robolectric test).
