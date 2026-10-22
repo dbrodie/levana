@@ -1,7 +1,6 @@
 package ninja.doskey.app.levana.notifications
 
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
@@ -65,7 +64,7 @@ class DailyCategorySettingsTest {
         // Unrelated settings, including the alarm-backed categories
         val unrelated = set {
             it.copy(
-                minhag = Minhag.SEPHARDI,
+                showDeveloperSettings = false,
                 dynamicHolidayTheme = false,
                 calendarHebrewMode = true,
                 selectedZmanim = setOf("Sunrise"),

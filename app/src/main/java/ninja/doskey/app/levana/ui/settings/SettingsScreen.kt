@@ -32,7 +32,6 @@ import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NoFood
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
@@ -86,7 +85,6 @@ import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -321,7 +319,6 @@ fun SettingsContent(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showMinhagDialog by remember { mutableStateOf(false) }
     var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
     var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
     var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
@@ -398,21 +395,7 @@ fun SettingsContent(
         )
         }
 
-        val minhagLabel = minhagLabel(state.minhag)
-        SettingsGroup(stringResource(R.string.settings_group_minhag)) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_minhag_label)) },
-            supportingContent = { Text(minhagLabel) },
-            leadingContent = {
-                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
-            },
-            trailingContent = {
-                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
-            },
-            modifier = Modifier.clickable { showMinhagDialog = true }
-        )
-        // Yahrzeit Adar rules: global, and independent of the Minhag above
-        SettingsRowDivider()
+        SettingsGroup(stringResource(R.string.settings_group_yahrzeit)) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.settings_yahrzeit_leap_label)) },
             supportingContent = { Text(yahrzeitLeapLabel(state.yahrzeitRules.leapYearAdar)) },
@@ -585,17 +568,6 @@ fun SettingsContent(
         )
     }
 
-    if (showMinhagDialog) {
-        MinhagDialog(
-            selected = state.minhag,
-            onSelect = {
-                onIntent(SettingsIntent.SetMinhag(it))
-                showMinhagDialog = false
-            },
-            onDismiss = { showMinhagDialog = false }
-        )
-    }
-
     if (showAppLanguageDialog) {
         AppLanguageDialog(
             selected = state.appLanguage,
@@ -694,46 +666,6 @@ private fun SettingsSectionHeader(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 12.dp, top = 20.dp, bottom = 6.dp)
-    )
-}
-
-@Composable
-private fun MinhagDialog(
-    selected: Minhag,
-    onSelect: (Minhag) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_minhag_label)) },
-        text = {
-            Column(modifier = Modifier.selectableGroup()) {
-                Minhag.entries.forEach { minhag ->
-                    val label = minhagLabel(minhag)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = minhag == selected,
-                                onClick = { onSelect(minhag) },
-                                role = Role.RadioButton
-                            )
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = minhag == selected, onClick = null)
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 12.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        }
     )
 }
 
@@ -945,16 +877,6 @@ private fun CandleLightingModeDialog(
         }
     )
 }
-
-@Composable
-private fun minhagLabel(minhag: Minhag): String = stringResource(
-    when (minhag) {
-        Minhag.ASHKENAZI -> R.string.settings_minhag_ashkenazi
-        Minhag.SEPHARDI -> R.string.settings_minhag_sephardi
-        Minhag.YEMENITE -> R.string.settings_minhag_yemenite
-        Minhag.CHABAD -> R.string.settings_minhag_chabad
-    }
-)
 
 @Composable
 internal fun HalachicTimesSection(
