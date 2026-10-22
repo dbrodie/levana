@@ -1,6 +1,6 @@
 # Protect personal data during database upgrades
 
-**Status:** In progress
+**Status:** Implemented and verified on `fix/protect-upgrade-data`; awaiting merge approval
 **Beads:** levana-tvw (backlog #3 in `specs/TASKS.md`)
 
 ## Problem
@@ -79,6 +79,23 @@ Robolectric unit tests on an on-disk database:
 
 Plus `./gradlew :app:testDebugUnitTest`, `ktlintCheck` and
 `assembleDebug`/`assembleRelease` regression checks.
+
+## Results
+
+- `LevanaDatabaseUpgradeTest` (4) and `LocationModeMigrationTest` (5) pass;
+  full `:app:testDebugUnitTest` passes (514 tests). `assembleDebug` and
+  `assembleRelease` succeed; the schema JSON is in the debug APK only.
+- Mutation checks: re-adding `fallbackToDestructiveMigration()` fails the
+  upgrade and downgrade tests; changing `PersonalEvent` without a version bump
+  fails the v1 tests; bumping `VERSION` without a schema/migration fails the
+  guard test.
+- Emulator (isolated `Levana_Agent_Template_API_36_1`): `master` debug build
+  (versionCode 300) seeded through the UI with event "Upgrade check keep-me"
+  (5 Tishrei 5787, yahrzeit rules) and saved location Tel Aviv; this branch
+  (versionCode 301) installed with `adb install -r`. After relaunch both are
+  present and Tel Aviv is still the active city; no fatal log entries.
+- Limitation: there is no shipped v2 yet, so no real migration is exercised.
+  The first schema change must add one plus its MigrationTestHelper test.
 
 ## Out of scope
 

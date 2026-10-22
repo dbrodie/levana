@@ -8,7 +8,7 @@ Updated after merging the verified bug fixes. Original task order, priorities, t
 | ---: | --- | --- | --- | --- | --- |
 | 1 | P1 | Bug fix | Fix Shabbat/Yom Tov transitions | Calculate candle-lighting and Havdalah according to consecutive holy days and the Israel/Diaspora setting. | Done |
 | 2 | P1 | Bug fix | Correct evening Omer counts | Use the upcoming Hebrew day’s count for evening reminders and the current day’s count for morning reminders. | Done |
-| 3 | P1 | Cleanup | Protect personal data during upgrades | Export Room schemas, replace destructive migration fallback with explicit migrations, and test data preservation. | Open |
+| 3 | P1 | Cleanup | Protect personal data during upgrades | Export Room schemas, replace destructive migration fallback with explicit migrations, and test data preservation. | Done |
 | 4 | P1 | Bug fix | Reschedule notifications immediately | Cancel and rebuild scheduled reminders when notification settings, timing, or the active location changes. | Done |
 | 5 | P1 | Bug fix | Prevent missed reminders | Schedule reminders ahead so a daily worker running after a reminder’s trigger time doesn’t leave gaps. | Done |
 | 6 | P1 | Cleanup | Add CI checks before release | Run unit tests, lint, and screenshot verification on pull requests and require successful checks before publishing. | Open |
