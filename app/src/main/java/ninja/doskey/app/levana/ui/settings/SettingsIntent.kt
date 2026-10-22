@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.ui.settings
 
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -8,7 +7,6 @@ import java.time.LocalDate
 
 
 sealed interface SettingsIntent {
-    data class SetMinhag(val minhag: Minhag) : SettingsIntent
     data class SetIsInIsrael(val inIsrael: Boolean) : SettingsIntent
     data class SetShowModernIsraeli(val show: Boolean) : SettingsIntent
     data class SetAppLanguage(val language: AppLanguage) : SettingsIntent

@@ -73,7 +73,7 @@ Applies only when the death was in an ordinary year's Adar and the
 immediately following Hebrew year (death year + 1) is a leap year, and only
 to that first target year. Setting with three values:
 
-- Follow annual minhag → section 2.
+- Follow the leap-year Adar setting → section 2. (Originally labelled "Follow annual minhag"; renamed so it cannot suggest the removed community selector. Stored value `FOLLOW_ANNUAL` is unchanged.)
 - First observance in Adar I → same day in Adar I in that first year only;
   later leap years use section 2.
 - Mark both first-year dates → same day in both Adar I and Adar II in that
@@ -82,7 +82,7 @@ to that first target year. Setting with three values:
 ### Defaults and interpretations
 
 - Defaults (confirmed by the owner): annual setting = **Both Adars**;
-  first-year setting = Follow annual minhag; 1 Nisan option = off; and the
+  first-year setting = Follow the leap-year Adar setting; 1 Nisan option = off; and the
   30 Cheshvan / 30 Kislev setting (1c) = first-anniversary-based. An
   unrecognised stored value falls back to these defaults.
 - The defaults do **not** reproduce the previous yahrzeit behaviour. Before
@@ -94,9 +94,10 @@ to that first target year. Setting with three values:
   non-existent 30 Adar and was never marked; it is now 30 Shevat, as
   section 1 requires.)
 - The three settings are global (not per event), stored in DataStore with
-  the other preferences, and shown in Settings in the Minhag group under the
-  Minhag row. They are independent of the Minhag (Ashkenazi / Sephardi / …)
-  setting; no default is derived from it. All labels and option names are
+  the other preferences, and shown in Settings in the Yahrzeit settings
+  group. (Originally shown in a "Minhag" group under a general Ashkenazi /
+  Sephardi / … selector; that selector was removed — see
+  `specs/rfes/remove-minhag-selection.md`. No default was ever derived from it.) All labels and option names are
   string resources with English and Hebrew translations.
 - Unknown death year (fails `isKnownYear`): a stored month 12 is treated as
   an ordinary year's Adar (section 2; the first-year exception cannot apply
@@ -177,7 +178,7 @@ Owner's developer notes:
 ### Interpretations (owner: correct these if wrong)
 
 - The setting is global, stored in DataStore like the three Adar settings,
-  and shown with them in Settings (Minhag group), with English and Hebrew
+  and shown with them in Settings (Yahrzeit settings group), with English and Hebrew
   strings and an explanation in its dialog.
 - "Observe both" produces two separate occurrences, labelled like the Adar
   "Both" case: "(29 Cheshvan)" / "(1 Kislev)" and "(29 Kislev)" /

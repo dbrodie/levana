@@ -1,5 +1,7 @@
 # Increment 08: Settings Screen
 
+> **Superseded in part:** the general `Minhag` selection described here was later removed because it drove no behavior; the stored `minhag` key is left inert. See `specs/rfes/remove-minhag-selection.md`. The rest of this increment is a historical record.
+
 ## Overview
 
 Replace the placeholder settings tab with a full settings screen. All settings persist in DataStore and propagate reactively to downstream screens via Flow.

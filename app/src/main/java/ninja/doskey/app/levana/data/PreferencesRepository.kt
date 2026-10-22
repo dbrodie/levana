@@ -13,7 +13,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -51,7 +50,8 @@ class PreferencesRepository(
 
         val CANDLE_LIGHTING_OFFSET =
             doublePreferencesKey("candle_lighting_offset")
-        val MINHAG = stringPreferencesKey("minhag")
+        // The removed general Minhag selection stored "minhag". Older stores may still
+        // contain it; it is deliberately left unread and in place (DataStore keeps unknown keys).
         val IS_IN_ISRAEL = booleanPreferencesKey("is_in_israel")
         val IS_IN_ISRAEL_MANUAL =
             booleanPreferencesKey("is_in_israel_manual")
@@ -115,9 +115,6 @@ class PreferencesRepository(
         } ?: cityRepository.defaultForTimeZone(TimeZone.getDefault().id)
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
-        val minhag = prefs[Keys.MINHAG]?.let {
-            try { Minhag.valueOf(it) } catch (_: IllegalArgumentException) { Minhag.ASHKENAZI }
-        } ?: Minhag.ASHKENAZI
 
         val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
         val activeLocation = savedLocations.find { it.id == activeLocationId }?.location
@@ -135,7 +132,6 @@ class PreferencesRepository(
             savedLocations = savedLocations,
             activeLocationId = activeLocationId,
             candleLightingOffset = candleOffset,
-            minhag = minhag,
             isInIsrael = isInIsrael,
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
             calendarHebrewMode = prefs[Keys.CALENDAR_HEBREW_MODE] ?: false,
@@ -241,12 +237,6 @@ class PreferencesRepository(
     suspend fun saveCandleLightingOffset(offset: Double) {
         context.dataStore.edit { prefs ->
             prefs[Keys.CANDLE_LIGHTING_OFFSET] = offset
-        }
-    }
-
-    suspend fun saveMinhag(minhag: Minhag) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.MINHAG] = minhag.name
         }
     }
 
