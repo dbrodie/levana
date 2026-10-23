@@ -143,19 +143,22 @@
     <string name="notification_omer_tonight_with_weeks">הלילה %1$s (%2$s)</string>
     <string name="notification_omer_today">היום %1$s</string>
     <string name="notification_omer_today_with_weeks">היום %1$s (%2$s)</string>
-    <plurals name="notification_omer_weeks">
+    <plurals name="omer_weeks">
         <item quantity="one">שבוע אחד</item>
         <item quantity="two">שני שבועות</item>
         <item quantity="many">%d שבועות</item>
         <item quantity="other">%d שבועות</item>
     </plurals>
-    <plurals name="notification_omer_and_days">
+    <plurals name="omer_and_days">
         <item quantity="one">ויום אחד</item>
         <item quantity="two">ושני ימים</item>
         <item quantity="many">ו־%d ימים</item>
         <item quantity="other">ו־%d ימים</item>
     </plurals>
-    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="omer_weeks_and_days">%1$s %2$s</string>
+    <!-- Day panel Omer card (see ui/OmerCountText.kt); the plurals above are shared -->
+    <string name="omer_card_day">%1$s</string>
+    <string name="omer_card_day_with_weeks">%1$s, שהם %2$s</string>
     <string name="notification_update_title">עדכון זמין</string>
     <string name="notification_update_body">גרסה %1$s של לבנה זמינה \u2014 יש להקיש להורדה</string>
     <!-- Notification channels (shown in system settings) -->

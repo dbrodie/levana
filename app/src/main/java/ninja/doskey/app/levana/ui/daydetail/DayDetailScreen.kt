@@ -56,6 +56,7 @@ import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.omerCardText
 import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import ninja.doskey.app.levana.domain.model.ZmanName
@@ -122,8 +123,8 @@ fun DayDetailContent(
                     }
 
                     // Omer
-                    if (dayInfo.omerFormatted != null) {
-                        OmerSection(dayInfo.omerFormatted!!)
+                    dayInfo.omerDay?.let { omerDay ->
+                        OmerSection(omerDay)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
@@ -404,7 +405,9 @@ private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
 }
 
 @Composable
-private fun OmerSection(omerFormatted: String) {
+private fun OmerSection(omerDay: Int) {
+    // The composition's context carries the app language, so a language change updates it
+    val omerText = omerCardText(LocalContext.current, omerDay)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -420,7 +423,7 @@ private fun OmerSection(omerFormatted: String) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = omerFormatted,
+                text = omerText,
                 style = MaterialTheme.typography.bodyLarge
             )
         }

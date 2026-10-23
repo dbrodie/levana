@@ -22,11 +22,16 @@ internal sealed interface ReminderAlarm {
     val date: LocalDate
     val triggerAt: Instant
 
+    /**
+     * Candle lighting on the evening of [date], at [candleLightingAt], which may be after the
+     * following civil midnight; [candleLightingTime] is its wall time in the location's zone.
+     */
     data class CandleLighting(
         override val date: LocalDate,
         override val triggerAt: Instant,
         val candleLightingTime: LocalTime,
-        val end: ObservanceEnd?
+        val end: ObservanceEnd?,
+        val candleLightingAt: Instant = triggerAt
     ) : ReminderAlarm
 
     /**
@@ -59,20 +64,22 @@ internal data class ReminderAlarmPlan(
      */
     val overdue: List<ReminderAlarm> = emptyList(),
     /**
-     * The civil date before [window] whose evening Omer alarm is also covered by this plan: its
-     * nightfall can fall after midnight, inside the window's first day.
+     * The civil date before [window] whose evening Omer and candle-lighting alarms are also
+     * covered by this plan: nightfall can fall after midnight, inside the window's first day.
      */
     val previousEvening: LocalDate? = null
 )
 
 /**
- * Plans the candle-lighting and Omer reminder alarms for the civil dates
- * [today] .. [today] + [lookaheadDays]. Each trigger is resolved in its own date's offset, so
- * DST changes inside the window are handled. Triggers after [now] go to
- * [ReminderAlarmPlan.alarms] and passed ones to [ReminderAlarmPlan.overdue]; the exception is
- * today's morning-mode candle-lighting notice, returned as [ReminderAlarmPlan.dueCandleLighting]
- * so it can still be posted late. Never yields notices for future dates. The evening Omer
- * alarm of the day before [today] is planned too, as [ReminderAlarmPlan.previousEvening].
+ * Plans the candle-lighting and Omer reminder alarms for the civil dates from the earlier of
+ * [today] (device) and [locationToday] (active location) to [lookaheadDays] after the later
+ * one. Each trigger is resolved in its own date's offset, so DST changes inside the window
+ * are handled. Triggers after [now] go to [ReminderAlarmPlan.alarms] and passed ones to
+ * [ReminderAlarmPlan.overdue]; the exception is today's morning-mode candle-lighting notice,
+ * returned as [ReminderAlarmPlan.dueCandleLighting] so it can still be posted late. Never
+ * yields notices for future dates. The evening of the day before the window is planned too,
+ * as [ReminderAlarmPlan.previousEvening]: its Omer alarm, and its candle-lighting alarm while
+ * the candles are still to be lit.
  */
 internal fun planReminderAlarms(
     today: LocalDate,
@@ -82,16 +89,21 @@ internal fun planReminderAlarms(
     prefs: UserPreferences,
     zmanimRepository: ZmanimRepository,
     calendarRepository: CalendarRepository,
-    lookaheadDays: Int = REMINDER_LOOKAHEAD_DAYS
+    lookaheadDays: Int = REMINDER_LOOKAHEAD_DAYS,
+    locationToday: LocalDate = today
 ): ReminderAlarmPlan {
     val locationZone = ZoneId.of(location.timezoneId)
-    val window = (0..lookaheadDays).map { today.plusDays(it.toLong()) }
+    // Location-zone reminders the location has not reached yet stay wanted when the device
+    // zone is ahead of it, and vice versa
+    val start = minOf(today, locationToday)
+    val end = maxOf(today, locationToday).plusDays(lookaheadDays.toLong())
+    val window = generateSequence(start) { it.plusDays(1) }.takeWhile { !it.isAfter(end) }.toList()
     val alarms = mutableListOf<ReminderAlarm>()
     val overdue = mutableListOf<ReminderAlarm>()
     var dueCandleLighting: ReminderAlarm.CandleLighting? = null
 
     // Yesterday's nightfall can still be ahead when it falls after civil midnight
-    val previousEvening = today.minusDays(1)
+    val previousEvening = start.minusDays(1)
     if (prefs.notifyOmer && prefs.notifyOmerTzait) {
         planOmerReminders(previousEvening, notifyTzait = true, notifyMorning = false, calendarRepository) {
             zmanimRepository.getTzaitInstant(previousEvening, location)
@@ -99,6 +111,12 @@ internal fun planReminderAlarms(
             val alarm = ReminderAlarm.OmerEvening(previousEvening, it.tzaitAt, it.omerDay)
             if (alarm.triggerAt.isAfter(now)) alarms += alarm else overdue += alarm
         }
+    }
+    // ... and so can its candle lighting at nightfall; once lit, its reminder is stale
+    if (prefs.notifyCandleLighting) {
+        candleLightingAlarm(previousEvening, locationZone, location, prefs, zmanimRepository)
+            ?.takeIf { it.candleLightingAt.isAfter(now) }
+            ?.let { if (it.triggerAt.isAfter(now)) alarms += it else overdue += it }
     }
 
     for (date in window) {
@@ -145,12 +163,13 @@ private fun candleLightingAlarm(
     zmanimRepository: ZmanimRepository
 ): ReminderAlarm.CandleLighting? {
     if (!zmanimRepository.hasCandles(date, prefs.isInIsrael)) return null
-    val candleLightingTime = zmanimRepository.getShabbatInfo(
+    // The actual instant: at nightfall it can be after midnight, on the next civil date
+    val candleLightingAt = zmanimRepository.getCandleLightingInstant(
         date,
         location,
         prefs.candleLightingOffset,
         prefs.isInIsrael
-    ).candleLightingTime ?: return null
+    ) ?: return null
 
     // Havdalah after the last of consecutive Shabbat / Yom Tov days
     val end = zmanimRepository.getObservanceEnd(date, location, prefs.isInIsrael)
@@ -161,11 +180,17 @@ private fun candleLightingAlarm(
             minutesToTime(prefs.candleLightingMorningTime),
             locationZone
         )
-        "hours_before" -> ZonedDateTime.of(date, candleLightingTime, locationZone)
+        "hours_before" -> candleLightingAt.atZone(locationZone)
             .minusHours(prefs.candleLightingHoursBefore.toLong())
         else -> return null
     }
-    return ReminderAlarm.CandleLighting(date, trigger.toInstant(), candleLightingTime, end)
+    return ReminderAlarm.CandleLighting(
+        date,
+        trigger.toInstant(),
+        candleLightingAt.atZone(locationZone).toLocalTime(),
+        end,
+        candleLightingAt
+    )
 }
 
 private fun minutesToTime(minutes: Int): LocalTime = LocalTime.of(minutes / 60, minutes % 60)

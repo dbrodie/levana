@@ -116,7 +116,7 @@ class IntegrationVerifierNotificationTest {
         val later = at(friday, 9, 35)
         val changed = prefs.copy(notifyOmerMorningTime = 400)
         // Exactly what rebuild() does without a delivery log
-        scheduler(later).scheduleAll(plan(later, changed))
+        runBlocking { scheduler(later).scheduleAll(plan(later, changed)) }
 
         assertNotNull(
             "an unrelated settings change must not cancel today's still-undelivered candle alarm",
@@ -134,12 +134,12 @@ class IntegrationVerifierNotificationTest {
             candleLightingHoursBefore = 2
         )
         val first = at(friday, 8, 0)
-        scheduler(first).scheduleAll(plan(first, prefs))
+        runBlocking { scheduler(first).scheduleAll(plan(first, prefs)) }
         val alarm = pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, friday)
         assertNotNull(alarm)
         val candle = LocalTime.parse(alarm!!.getStringExtra(NotificationAlarmScheduler.EXTRA_CANDLE_LIGHTING_TIME))
         val after = ZonedDateTime.of(friday, candle.minusHours(2).plusMinutes(3), nyZone)
-        scheduler(after).scheduleAll(plan(after, prefs.copy(notifyOmerMorningTime = 400)))
+        runBlocking { scheduler(after).scheduleAll(plan(after, prefs.copy(notifyOmerMorningTime = 400))) }
         assertNotNull(pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, friday))
     }
 
@@ -147,13 +147,13 @@ class IntegrationVerifierNotificationTest {
     fun `turning candle lighting off cancels the whole forward horizon and blocks delivery`() {
         val start = at(LocalDate.of(2026, 10, 20), 8, 0)
         val on = UserPreferences(notifyCandleLighting = true, candleLightingNotifyMode = "hours_before")
-        scheduler(start).scheduleAll(plan(start, on, lookahead = 14))
+        runBlocking { scheduler(start).scheduleAll(plan(start, on, lookahead = 14)) }
         val fridays = listOf(LocalDate.of(2026, 10, 23), LocalDate.of(2026, 10, 30))
         fridays.forEach { assertNotNull(pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, it)) }
         val stale = pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, fridays[0])!!
 
         val off = on.copy(notifyCandleLighting = false)
-        scheduler(start).scheduleAll(plan(start, off, lookahead = 14))
+        runBlocking { scheduler(start).scheduleAll(plan(start, off, lookahead = 14)) }
         fridays.forEach { assertNull(pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, it)) }
 
         // An already-fired intent reaching the receiver after the switch-off posts nothing
@@ -169,12 +169,12 @@ class IntegrationVerifierNotificationTest {
         )
         // Run on Friday evening after candle lighting: next Friday must be scheduled
         val fridayNight = at(LocalDate.of(2026, 10, 23), 22, 0)
-        scheduler(fridayNight).scheduleAll(plan(fridayNight, prefs))
+        runBlocking { scheduler(fridayNight).scheduleAll(plan(fridayNight, prefs)) }
         assertNotNull(pending(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING, LocalDate.of(2026, 10, 30)))
         // Crosses the US DST change (1 Nov 2026): trigger is 2h before candle lighting in EST
         val fri = LocalDate.of(2026, 11, 6)
         val sat = at(LocalDate.of(2026, 10, 31), 12, 0)
-        scheduler(sat).scheduleAll(plan(sat, prefs))
+        runBlocking { scheduler(sat).scheduleAll(plan(sat, prefs)) }
         val alarm = shadowOf(alarmManager).scheduledAlarms.single {
             shadowOf(it.operation).savedIntent.getLongExtra(NotificationAlarmScheduler.EXTRA_DATE_EPOCH_DAY, -1) == fri.toEpochDay()
         }
@@ -369,7 +369,7 @@ class IntegrationVerifierNotificationTest {
     fun `Omer evening and next morning are distinct alarms and notifications`() {
         val prefs = UserPreferences(notifyOmer = true, notifyOmerTzait = true, notifyOmerMorning = true)
         val now = at(LocalDate.of(2026, 4, 10), 6, 0)
-        scheduler(now).scheduleAll(plan(now, prefs))
+        runBlocking { scheduler(now).scheduleAll(plan(now, prefs)) }
         val evening = pending(NotificationAlarmScheduler.ACTION_OMER, LocalDate.of(2026, 4, 10))!!
         val nextMorning = pending(NotificationAlarmScheduler.ACTION_OMER_MORNING, LocalDate.of(2026, 4, 11))!!
         val sameMorning = pending(NotificationAlarmScheduler.ACTION_OMER_MORNING, LocalDate.of(2026, 4, 10))!!
@@ -385,7 +385,7 @@ class IntegrationVerifierNotificationTest {
 
         // Omer-morning off: its pending alarms are cancelled, evenings kept, stale morning blocked
         val noMorning = prefs.copy(notifyOmerMorning = false)
-        scheduler(now).scheduleAll(plan(now, noMorning))
+        runBlocking { scheduler(now).scheduleAll(plan(now, noMorning)) }
         assertNull(pending(NotificationAlarmScheduler.ACTION_OMER_MORNING, LocalDate.of(2026, 4, 11)))
         assertNotNull(pending(NotificationAlarmScheduler.ACTION_OMER, LocalDate.of(2026, 4, 11)))
         assertFalse(isAlarmEnabled(NotificationAlarmScheduler.ACTION_OMER_MORNING, noMorning))
@@ -395,10 +395,10 @@ class IntegrationVerifierNotificationTest {
     fun `changing reminder time replaces pending alarms instead of adding`() {
         val prefs = UserPreferences(notifyOmer = true, notifyOmerTzait = false, notifyOmerMorning = true)
         val now = at(LocalDate.of(2026, 4, 10), 6, 0)
-        scheduler(now).scheduleAll(plan(now, prefs))
+        runBlocking { scheduler(now).scheduleAll(plan(now, prefs)) }
         val count = shadowOf(alarmManager).scheduledAlarms.size
         assertEquals(8, count)
-        scheduler(now).scheduleAll(plan(now, prefs.copy(notifyOmerMorningTime = 9 * 60)))
+        runBlocking { scheduler(now).scheduleAll(plan(now, prefs.copy(notifyOmerMorningTime = 9 * 60))) }
         assertEquals(count, shadowOf(alarmManager).scheduledAlarms.size)
         val alarm = shadowOf(alarmManager).scheduledAlarms.first {
             shadowOf(it.operation).savedIntent.getLongExtra(NotificationAlarmScheduler.EXTRA_DATE_EPOCH_DAY, -1) ==
