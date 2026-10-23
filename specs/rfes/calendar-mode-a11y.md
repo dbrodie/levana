@@ -103,10 +103,27 @@ controls, Settings.
     selected option keeps the mode and focus. After a switch, focus moves to the
     menu button because the per-mode header is recomposed (pre-existing
     Crossfade behaviour, not changed here).
-- TalkBack: enabled on the emulator, but adb-injected taps, swipes and
-  Alt+arrow keys did not move TalkBack focus, and the image has no root to raise
-  TalkBack's speech logging, so spoken output was **not** verified. The
-  accessibility tree shows each option as a checkable `android.view.View` with
-  checked state, plus an empty, non-focusable `android.widget.RadioButton`
-  child emitted by Material 3 1.3.1's `SegmentedButton`; whether TalkBack says
-  "radio button" for the option needs a manual TalkBack check.
+- TalkBack, first attempt (`emulator-5560`): adb-injected taps, swipes and
+  Alt+arrow keys did not move TalkBack focus, so no speech was captured there.
+- TalkBack spoken output, second session (`emulator-5556`, owned read-only
+  session, evidence under `/tmp/levana-emu-qkq71rin/artifacts/`, `*-logcat.txt`
+  per step). The TalkBack log level was set to VERBOSE in TalkBack's developer
+  settings on the disposable emulator; focus was moved with keyboard Tab and
+  activation was via Enter. The spoken text was read from
+  `SpeechControllerImpl: Speaking fragment` lines (TalkBack 16.0, order
+  "state, name, type"):
+  - English: "Not selected, Hebrew, Radio button, 1 of 2, In list, 2 items";
+    "Selected, Gregorian, Radio button, 2 of 2". Focus moves directly from one
+    option to the other; the empty `RadioButton` child is never focused or
+    spoken.
+  - Enter on the selected Gregorian option: nothing spoken, mode unchanged.
+    Enter on Hebrew: one switch, then "Selected, Hebrew, Radio button, 1 of 2,
+    In list, 2 items" (TalkBack focus returns to the new Hebrew option).
+  - Hebrew: "נבחר, עברי, Radio button, 1 of 2, In list, 2 items";
+    "לא נבחר, לועזי, Radio button, 2 of 2, In list, 2 items"; Enter on לועזי
+    switches once, then "נבחר, לועזי, Radio button, 2 of 2, In list, 2 items".
+    Role words are English because the emulator's system language is English.
+  - Not covered: TalkBack touch gestures (explore by touch, double-tap), which
+    adb can't inject. After a switch, TalkBack focus lands back on the selected
+    option, but keyboard input focus is lost: the next Tab starts from the menu
+    button (follow-up `levana-wf2`).
