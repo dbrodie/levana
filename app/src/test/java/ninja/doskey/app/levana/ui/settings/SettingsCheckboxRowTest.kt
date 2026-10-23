@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.ui.settings
 import android.app.Application
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -173,6 +174,28 @@ class SettingsCheckboxRowTest {
     }
 
     @Test
+    fun leadingContentStaysInsideTheSingleTarget() {
+        compose.setContent {
+            MaterialTheme {
+                SettingsCheckboxRow(
+                    title = TITLE,
+                    description = DESCRIPTION,
+                    checked = false,
+                    onCheckedChange = { changes += it },
+                    leadingContent = { Text(LEADING) },
+                    modifier = Modifier.width(360.dp)
+                )
+            }
+        }
+
+        compose.onAllNodes(isToggleable()).assertCountEquals(1)
+        compose.onAllNodes(hasClickAction(), useUnmergedTree = true).assertCountEquals(1)
+        row.assert(hasTextExactly(LEADING, TITLE, DESCRIPTION))
+        compose.onNodeWithText(LEADING, useUnmergedTree = true).performClick()
+        assertEquals(listOf(true), changes)
+    }
+
+    @Test
     fun halachicTimesSectionExposesOneCheckboxPerZman() {
         val toggles = mutableListOf<Pair<String, Boolean>>()
         val first = ZmanimRepository.ZMAN_NAMES.first().english
@@ -193,11 +216,13 @@ class SettingsCheckboxRowTest {
         firstRow.assertIsOff()
     }
 
-    private fun hasTextExactly(text: String) = SemanticsMatcher("Text == $text") { node ->
-        node.config.getOrNull(SemanticsProperties.Text)?.map { it.text } == listOf(text)
+    private fun hasTextExactly(vararg texts: String) = SemanticsMatcher("Text == ${texts.toList()}") { node ->
+        node.config.getOrNull(SemanticsProperties.Text)?.map { it.text } == texts.toList()
     }
 
     private companion object {
         const val TITLE = "Sunrise"
+        const val DESCRIPTION = "Netz"
+        const val LEADING = "Dot"
     }
 }
