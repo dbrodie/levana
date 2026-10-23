@@ -75,3 +75,38 @@ controls, Settings.
   persists across force-stop/relaunch; header layout screenshot compared to
   before. Keyboard (D-pad/Tab + Enter) via `adb input keyevent`. TalkBack
   spoken output is claimed only if actually run.
+
+## Verification (2026-10-23)
+
+- Robolectric: `CalendarModeSelectorTest` 10/10; new
+  `ReactiveCalendarRefreshTest` case for `SetCalendarHebrewMode` passes; full
+  `:app:testDebugUnitTest` 536 tests, 0 failures, 0 errors, 0 skipped.
+  `:app:assembleDebug` and `:app:lintDebug` succeed; the only lint finding in the
+  touched files is the pre-existing `ModifierParameter` on `CalendarScreen`
+  (line 127, unchanged).
+- Emulator `emulator-5560` (owned read-only `Levana_Agent_Template_API_36_1`
+  session, evidence under `/tmp/levana-emu-gpi_auo0/artifacts/`):
+  - Before (master APK): the selected Gregorian option was
+    `selected=true enabled=false focusable=false`.
+  - After, English and Hebrew: each option is one checkable, enabled, focusable
+    node; exactly one is `checked=true`. The checked option reports
+    `clickable=false`, which is how Android exposes a checked radio button (it
+    cannot be unchecked); it is not disabled.
+  - Tapping the selected option keeps the mode; tapping the other switches once;
+    tapping it again keeps it. The selected day (Oct 15) is kept across the
+    switch. Mode persists across force-stop/relaunch, in both languages.
+  - Hebrew locale: order is mirrored (עברי on the right); both header rows keep
+    their height (selector 126px = 48dp touch target, visual 40dp); subtitles
+    fit in all four combinations.
+  - Keyboard: Tab reaches both options (Hebrew then Gregorian), including the
+    selected one; Enter on the unselected option switches; Enter/Space on the
+    selected option keeps the mode and focus. After a switch, focus moves to the
+    menu button because the per-mode header is recomposed (pre-existing
+    Crossfade behaviour, not changed here).
+- TalkBack: enabled on the emulator, but adb-injected taps, swipes and
+  Alt+arrow keys did not move TalkBack focus, and the image has no root to raise
+  TalkBack's speech logging, so spoken output was **not** verified. The
+  accessibility tree shows each option as a checkable `android.view.View` with
+  checked state, plus an empty, non-focusable `android.widget.RadioButton`
+  child emitted by Material 3 1.3.1's `SegmentedButton`; whether TalkBack says
+  "radio button" for the option needs a manual TalkBack check.

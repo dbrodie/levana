@@ -13,6 +13,7 @@ import java.time.YearMonth
 import java.util.GregorianCalendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.CityRepository
@@ -287,6 +288,41 @@ class ReactiveCalendarRefreshTest {
             assertTrue(calendar.marked(date))
             assertEquals(browsed, calendar.state.value.hebrewYearMonth)
             assertEquals(date, calendar.state.value.selectedDate)
+        } finally {
+            runBlocking { preferences.saveCalendarHebrewMode(false) }
+        }
+    }
+
+    @Test
+    fun `selecting a calendar mode is explicit and idempotent`() {
+        try {
+            val calendar = calendarViewModel()
+            val date = calendar.state.value.monthDays[9].gregorianDate
+            calendar.onIntent(CalendarIntent.SelectDay(date))
+
+            // Re-selecting the current mode neither switches nor reloads.
+            val readsBefore = dao.reads
+            calendar.onIntent(CalendarIntent.SetCalendarHebrewMode(false))
+            settle()
+            assertFalse(calendar.state.value.calendarHebrewMode)
+            assertFalse(runBlocking { preferences.preferences.first() }.calendarHebrewMode)
+            assertEquals(readsBefore, dao.reads)
+
+            // Choosing the other mode switches once; choosing it again keeps it.
+            calendar.onIntent(CalendarIntent.SetCalendarHebrewMode(true))
+            awaitUntil { calendar.state.value.calendarHebrewMode && !calendar.state.value.isLoading }
+            calendar.onIntent(CalendarIntent.SetCalendarHebrewMode(true))
+            settle()
+            assertTrue(calendar.state.value.calendarHebrewMode)
+            assertTrue(runBlocking { preferences.preferences.first() }.calendarHebrewMode)
+            assertEquals(date, calendar.state.value.selectedDate)
+            assertEquals(HebrewYearMonth.from(date), calendar.state.value.hebrewYearMonth)
+
+            calendar.onIntent(CalendarIntent.SetCalendarHebrewMode(false))
+            awaitUntil { !calendar.state.value.calendarHebrewMode && !calendar.state.value.isLoading }
+            assertFalse(runBlocking { preferences.preferences.first() }.calendarHebrewMode)
+            assertEquals(date, calendar.state.value.selectedDate)
+            assertEquals(YearMonth.from(date), calendar.state.value.currentMonth)
         } finally {
             runBlocking { preferences.saveCalendarHebrewMode(false) }
         }
