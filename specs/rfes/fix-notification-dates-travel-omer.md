@@ -230,3 +230,65 @@ stayed English in Hebrew app language (and said "1 weeks", "1 days").
 Late-zman display context in the day panel/zmanim screen (`levana-aw1`); candle-lighting
 wording for post-midnight lighting; receiver lateness guards for alarms that fire during a
 clock jump before reconciliation runs.
+
+## Verification (2026-10-23)
+
+Production commits: `d6eb7f6` (levana-3kn), `f0b9266` (levana-yal, -jh0, -clp, -1bl).
+
+### JVM / Robolectric
+
+`./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --offline` (Android
+Studio JBR): **608 tests in 84 suites, 0 failures, errors or skips**; lint passed (warnings
+only, none new in the changed code); debug APK built.
+
+New suites: `PostMidnightCandleLightingTest` (9), `PostMidnightHavdalahTest` (6),
+`ShiftedWindowReconciliationTest` (7), `OmerTravelDeliveryTest` (6), `OmerCardTextTest` (4).
+Mutation check, reverting one fix at a time in place: 5/9, 3/6, 5/7 and 5/6 of the
+respective notification suites fail. One existing expectation changed on purpose:
+`VerifyLookaheadPathTest` "daily runs slide the window" previously expected alarms for dates
+that had slid out of the window to stay pending; they are now reconciled, except the
+previous evening's Omer evening alarm.
+
+### Emulator
+
+Owned disposable `Levana_Agent_Template_API_36_1` (read-only), `emulator-5554`, Android 16 /
+API 36, production `user` build (no root). APK 0.3.0-debug (300), SHA-256
+`4283bec7b78790cf0497c0a3fe5b843b9f7e54fdb8290ce0478dcbd4d365d3d2`, installed hash
+matched. The device clock and zone were changed with `cmd alarm set-time` /
+`set-timezone` (real `TIME_SET` / `TIMEZONE_CHANGED` broadcasts); no dev date override
+was used, and every delivery below is a real AlarmManager delivery to the manifest
+receiver. Evidence (outside the repository): `/tmp/levana-emu-h3rx7pgl/artifacts/`
+(`commands.log` with host UTC timestamps, `dumpsys alarm` / `notification` dumps,
+screenshots, UI XML).
+
+- **yal**: St. Petersburg, 1 hour before, device 2031-05-28 12:00 MSK. Shavuot day 2
+  candles are lit at 2031-05-29 00:45:10; the alarm was set for **2031-05-28 23:45:10.189**
+  and delivered at 23:45:25 as `candle_lighting/2031-05-28` ("Candle Lighting at 12:45 AM";
+  no end shown because there is no nightfall after Shavuot day 2 in white nights).
+- **jh0**: same location, device 2026-07-17. Delivered `candle_lighting/2026-07-17`:
+  "Candle Lighting at 9:43 PM · Shabbat ends **Sunday** 12:13 AM".
+- **clp**: the −5-year clock jump to 2026 cancelled the pending 2031-05-30 alarm. Tokyo →
+  New York (zone change, then city change): the 1 June alarms outside the new 24–31 May
+  window were cancelled, the rest moved to New York times without duplicates. Turning
+  Sefirat HaOmer off left no app alarm pending.
+- **1bl**: Tokyo, 24/25 May 2027: evening and morning count-33 notices both delivered.
+  Notifications cleared, process killed (`am kill`), zone → New York (the broadcast
+  started a new process). The rebuild replanned the 24 May evening (21:02 EDT) and
+  25 May morning (07:00 EDT); both fired (AlarmManager stats: 2 Omer evening + 2 morning
+  deliveries) and posted nothing. The 25 May evening (count 34) then posted.
+- **3kn**: 25 May 2027 English "Day 33, which is 4 weeks and 5 days of the Omer"; after
+  `cmd locale set-app-locales … iw` (same process, activity recreated) Hebrew RTL
+  "ל״ג בעומר, שהם 4 שבועות ו־5 ימים"; 20 May in Hebrew "כ״ח בעומר, שהם 4 שבועות"; back
+  to English on the same date "Day 28, which is 4 weeks of the Omer".
+
+### Limitations
+
+- The emulator is not a physical device; OEM alarm policies and Doze were not exercised.
+  `setAndAllowWhileIdle` alarms have a one-hour window (existing behaviour); deliveries
+  here happened at the trigger time.
+- A previous-version alarm more than 14 days outside the window cannot be found by the
+  one-time upgrade probe (AlarmManager cannot list alarms); it is reconciled once its date
+  enters a window.
+- Observed during verification, filed separately: a forward clock jump fires alarms that
+  became past before reconciliation runs (`levana-vdq`); an identity kept as overdue may
+  still fire later at an old-zone trigger after eastward travel (`levana-kq3`).
