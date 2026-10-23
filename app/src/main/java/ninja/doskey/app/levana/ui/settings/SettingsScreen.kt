@@ -84,6 +84,7 @@ import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
+import ninja.doskey.app.levana.ui.targetedLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -243,7 +244,7 @@ fun LocationsSettingsScreen(
 }
 
 @Composable
-private fun LocationsSettingsContent(
+internal fun LocationsSettingsContent(
     currentLocationName: String,
     hasLocationPermission: Boolean,
     savedLocations: List<SavedLocation>,
@@ -287,7 +288,14 @@ private fun LocationsSettingsContent(
                     },
                     trailingContent = {
                         IconButton(onClick = { onDelete(saved.id) }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.location_delete))
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = targetedLabel(
+                                    R.string.a11y_delete_saved_location,
+                                    saved.location.name,
+                                    R.string.location_delete
+                                )
+                            )
                         }
                     }
                 )
