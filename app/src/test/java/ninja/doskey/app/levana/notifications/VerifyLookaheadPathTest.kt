@@ -188,8 +188,10 @@ class VerifyLookaheadPathTest {
         val keys = alarms().map { it.key() }
         assertEquals(keys.size, keys.toSet().size)
         val last = start.plusDays(3)
+        // Dates that slid out of the window are reconciled too (levana-clp); only the previous
+        // evening's Omer alarm, whose nightfall may still be ahead, stays wanted
         val expected = (0..7L).flatMap { listOf(ACTION_E to last.plusDays(it), ACTION_M to last.plusDays(it)) }.toSet() +
-            (0..2L).flatMap { listOf(ACTION_E to start.plusDays(it), ACTION_M to start.plusDays(it)) }
+            (ACTION_E to last.minusDays(1))
         assertEquals(expected, keys.toSet())
 
         val e = alarmFor(ACTION_E, last.plusDays(7))

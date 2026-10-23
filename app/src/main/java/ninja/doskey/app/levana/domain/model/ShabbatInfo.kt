@@ -20,9 +20,14 @@ data class ShabbatInfo(
         get() = havdalahTime != null
 }
 
-/** The end of consecutive Shabbat / Yom Tov days: havdalah at [time] on [date]. */
+/**
+ * The end of consecutive Shabbat / Yom Tov days: havdalah at [time] on the civil [date], in
+ * the location's zone. [lastDay] is the last holy day, whose nightfall ends them; [date] is
+ * the following day when that nightfall is after midnight. Without a time, [date] is [lastDay].
+ */
 data class ObservanceEnd(
     val date: LocalDate,
     val time: LocalTime?,
-    val includesYomTov: Boolean
+    val includesYomTov: Boolean,
+    val lastDay: LocalDate = date
 )

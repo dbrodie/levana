@@ -12,6 +12,7 @@ import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,9 +117,12 @@ class NotificationAlarmRebuilder(
     ) = mutex.withLock {
         val prefs = preferences.first()
         val current = clock()
+        val location = prefs.activeLocation
+        val locationNow = current.withZone(ZoneId.of(location.timezoneId))
         val plan = planReminderAlarms(
             prefs.devDateOverride ?: LocalDate.now(current), current.instant(), current.zone,
-            prefs.activeLocation, prefs, zmanimRepository, calendarRepository
+            location, prefs, zmanimRepository, calendarRepository,
+            locationToday = prefs.devDateOverride ?: LocalDate.now(locationNow)
         )
         if (deliveryLog != null && postCandleLighting != null) {
             applyReminderAlarmPlan(plan, alarmScheduler, deliveryLog, postCandleLighting)

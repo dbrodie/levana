@@ -11,11 +11,19 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-class NotificationAlarmScheduler(
+class NotificationAlarmScheduler internal constructor(
     private val context: Context,
+    private val registry: ScheduledAlarmRegistry,
     private val now: () -> Long = System::currentTimeMillis
 ) {
+
+    constructor(context: Context, now: () -> Long = System::currentTimeMillis) :
+        this(context, ScheduledAlarmRegistry(context), now)
+
+    private val mutex = Mutex()
 
     companion object {
         const val ACTION_CANDLE_LIGHTING = "ninja.doskey.app.levana.CANDLE_LIGHTING_ALARM"
@@ -25,7 +33,10 @@ class NotificationAlarmScheduler(
         const val EXTRA_DATE_EPOCH_DAY = "date_epoch_day"
         const val EXTRA_CANDLE_LIGHTING_TIME = "candle_lighting_time"
         const val EXTRA_END_TIME = "end_time"
+        /** The last holy day; also the end's date for alarms set by previous versions. */
         const val EXTRA_END_DATE_EPOCH_DAY = "end_date_epoch_day"
+        /** The civil date havdalah falls on, after [EXTRA_END_DATE_EPOCH_DAY] past midnight. */
+        const val EXTRA_END_CIVIL_DATE_EPOCH_DAY = "end_civil_date_epoch_day"
         const val EXTRA_END_INCLUDES_YOM_TOV = "end_includes_yom_tov"
         const val EXTRA_OMER_DAY = "omer_day"
 
@@ -38,6 +49,12 @@ class NotificationAlarmScheduler(
 
         /** Days either side of the given date whose alarms [cancelAll] cancels. */
         private const val CANCEL_WINDOW_DAYS = 7L
+
+        /**
+         * Days either side of a plan's window searched once for alarms set before the
+         * registry existed. Earlier versions only scheduled inside their own window.
+         */
+        private const val LEGACY_SWEEP_DAYS = 14L
 
         private fun requestCode(action: String) = when (action) {
             ACTION_CANDLE_LIGHTING -> REQUEST_CANDLE_LIGHTING
@@ -60,7 +77,7 @@ class NotificationAlarmScheduler(
                 .build()
     }
 
-    internal fun schedule(alarm: ReminderAlarm) {
+    private fun schedule(alarm: ReminderAlarm) {
         val trigger = alarm.triggerAt.atZone(ZoneId.systemDefault())
         schedule(actionFor(alarm), alarm.date, trigger) {
             when (alarm) {
@@ -68,7 +85,8 @@ class NotificationAlarmScheduler(
                     putExtra(EXTRA_CANDLE_LIGHTING_TIME, alarm.candleLightingTime.toString())
                     putExtra(EXTRA_END_TIME, alarm.end?.time?.toString())
                     alarm.end?.let {
-                        putExtra(EXTRA_END_DATE_EPOCH_DAY, it.date.toEpochDay())
+                        putExtra(EXTRA_END_DATE_EPOCH_DAY, it.lastDay.toEpochDay())
+                        putExtra(EXTRA_END_CIVIL_DATE_EPOCH_DAY, it.date.toEpochDay())
                         putExtra(EXTRA_END_INCLUDES_YOM_TOV, it.includesYomTov)
                     }
                 }
@@ -79,30 +97,60 @@ class NotificationAlarmScheduler(
     }
 
     /**
-     * Reconciles the alarms for [plan]'s window, and the evening Omer alarm of its previous
-     * evening: schedules every planned alarm and cancels the ones the plan no longer wants
-     * (e.g. the Omer has ended, or a reminder was turned off).
+     * Reconciles every reminder alarm with [plan]: schedules each planned alarm and cancels
+     * every other one that may be pending — on any date, not only in the plan's window (e.g.
+     * after a date-changing time-zone move), for reminders that were turned off too.
      * Overdue alarms, including today's due candle-lighting notice, are left alone, so one
      * Android has not delivered yet still fires. Use this rather than [cancelAll] followed by a
      * rebuild, which would drop such alarms.
      */
-    internal fun scheduleAll(plan: ReminderAlarmPlan) {
-        val wanted = (plan.alarms + plan.overdue + listOfNotNull(plan.dueCandleLighting))
-            .map { actionFor(it) to it.date }
-            .toSet()
-        for (date in plan.window) {
-            for (action in ACTIONS) {
-                if (action to date !in wanted) cancel(action, date)
+    internal suspend fun scheduleAll(plan: ReminderAlarmPlan) = mutex.withLock {
+        val wantedAlarms = plan.alarms + plan.overdue + listOfNotNull(plan.dueCandleLighting)
+        val wanted = wantedAlarms.map { it.id() }.toSet()
+        val candidates = buildSet {
+            addAll(registry.ids())
+            // Previous versions kept no registry; their alarms are around the planned dates
+            for (date in plan.window + listOfNotNull(plan.previousEvening)) {
+                ACTIONS.forEach { add(AlarmId(it, date)) }
             }
+            if (!registry.isSwept()) addAll(pendingLegacyAlarms(plan))
         }
-        plan.previousEvening?.let { date ->
-            if (ACTION_OMER to date !in wanted) cancel(ACTION_OMER, date)
-        }
+        val stale = candidates - wanted
+        stale.forEach { cancel(it.action, it.date) }
+        registry.remove(stale)
+        // Recorded before being set, so a crash cannot leave an alarm the registry misses
+        registry.add(wanted)
         plan.alarms.forEach(::schedule)
+        registry.markSwept()
     }
 
     /** Cancels the pending alarm for [alarm]'s reminder and date, if any. */
-    internal fun cancel(alarm: ReminderAlarm) = cancel(actionFor(alarm), alarm.date)
+    internal suspend fun cancel(alarm: ReminderAlarm) = mutex.withLock {
+        val id = alarm.id()
+        cancel(id.action, id.date)
+        registry.remove(listOf(id))
+    }
+
+    /** Alarms pending on the dates around [plan]'s window, found without a registry. */
+    private fun pendingLegacyAlarms(plan: ReminderAlarmPlan): List<AlarmId> {
+        val dates = plan.window + listOfNotNull(plan.previousEvening)
+        val first = dates.min().minusDays(LEGACY_SWEEP_DAYS)
+        val last = dates.max().plusDays(LEGACY_SWEEP_DAYS)
+        return generateSequence(first) { it.plusDays(1) }
+            .takeWhile { !it.isAfter(last) }
+            .flatMap { date -> ACTIONS.map { AlarmId(it, date) } }
+            .filter { isPending(it) }
+            .toList()
+    }
+
+    private fun isPending(id: AlarmId): Boolean = PendingIntent.getBroadcast(
+        context,
+        requestCode(id.action),
+        alarmIntent(id.action, id.date),
+        PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+    ) != null
+
+    private fun ReminderAlarm.id() = AlarmId(actionFor(this), date)
 
     private fun cancel(action: String, date: LocalDate) {
         cancelExisting(context.getSystemService(AlarmManager::class.java),
@@ -136,7 +184,8 @@ class NotificationAlarmScheduler(
             putExtra(EXTRA_CANDLE_LIGHTING_TIME, candleLightingTime.toString())
             putExtra(EXTRA_END_TIME, end?.time?.toString())
             end?.let {
-                putExtra(EXTRA_END_DATE_EPOCH_DAY, it.date.toEpochDay())
+                putExtra(EXTRA_END_DATE_EPOCH_DAY, it.lastDay.toEpochDay())
+                putExtra(EXTRA_END_CIVIL_DATE_EPOCH_DAY, it.date.toEpochDay())
                 putExtra(EXTRA_END_INCLUDES_YOM_TOV, it.includesYomTov)
             }
         }

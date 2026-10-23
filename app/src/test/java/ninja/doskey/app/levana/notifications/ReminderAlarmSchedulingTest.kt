@@ -139,9 +139,9 @@ class ReminderAlarmSchedulingTest {
 
     @Test
     fun `overdue alarms in the plan are kept while unplanned ones are cancelled`() {
-        scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening, omerMorning), null))
+        runBlocking { scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening, omerMorning), null)) }
         val overdueEvening = omerEvening.copy(triggerAt = now.minusSeconds(60))
-        scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles), null, overdue = listOf(overdueEvening)))
+        runBlocking { scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles), null, overdue = listOf(overdueEvening))) }
 
         val actions = scheduled().map { shadowOf(it.operation).savedIntent.action }.toSet()
         assertEquals(
@@ -157,9 +157,11 @@ class ReminderAlarmSchedulingTest {
 
     @Test
     fun `every planned alarm is registered at its instant with its extras`() {
-        scheduler.scheduleAll(
-            ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening, omerMorning), null)
-        )
+        runBlocking {
+            scheduler.scheduleAll(
+                ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening, omerMorning), null)
+            )
+        }
 
         val alarms = scheduled().associateBy { shadowOf(it.operation).savedIntent.action }
         assertEquals(3, alarms.size)
@@ -186,22 +188,22 @@ class ReminderAlarmSchedulingTest {
     @Test
     fun `passed triggers are not registered`() {
         val past = omerEvening.copy(date = window[0], triggerAt = now.minusSeconds(60))
-        scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(past), null))
+        runBlocking { scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(past), null)) }
         assertTrue(scheduled().isEmpty())
     }
 
     @Test
     fun `rerunning a plan replaces alarms instead of duplicating them`() {
         val plan = ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening), null)
-        scheduler.scheduleAll(plan)
-        scheduler.scheduleAll(plan)
+        runBlocking { scheduler.scheduleAll(plan) }
+        runBlocking { scheduler.scheduleAll(plan) }
         assertEquals(2, scheduled().size)
     }
 
     @Test
     fun `alarms in the window that are no longer planned are cancelled`() {
-        scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening), null))
-        scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles), null))
+        runBlocking { scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles, omerEvening), null)) }
+        runBlocking { scheduler.scheduleAll(ReminderAlarmPlan(window, listOf(newYearCandles), null)) }
 
         val actions = scheduled().map { shadowOf(it.operation).savedIntent.action }
         assertEquals(listOf(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING), actions)
