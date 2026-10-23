@@ -72,3 +72,28 @@ SettingsCheckboxRow(
   node per calendar with name/account; label/row/checkbox taps flip once;
   keyboard toggles; selection persists across force-stop/relaunch. TalkBack
   spoken output only claimed if actually run.
+
+## Verification (2026-10-23)
+
+- Robolectric: `CalendarSelectionScreenTest` 10/10, `SettingsCheckboxRowTest`
+  11/11; full `:app:testDebugUnitTest` 536 tests, 0 failures, 0 errors
+  (75 suites); `:app:assembleDebug` and `:app:lintDebug` succeed (0 lint
+  errors, 84 warnings, none in changed files).
+- Emulator `emulator-5562` (commit `463386e`, own read-only session), two local
+  calendars. English: the real permission prompt still appears and grants; each
+  calendar is one checkable/clickable/focusable node with no separate checkbox
+  node; tapping the name, account, checkbox, color dot and empty row space each
+  flips the state once; D-pad focus lands on each row (visible highlight), Enter
+  and D-pad center toggle once (Space does nothing, as in the Settings rows);
+  selection survives force-stop and relaunch.
+- Hebrew (`iw` app locale): RTL with the checkbox on the left and the color dot
+  on the right; name, account, checkbox and dot taps each flip once.
+- TalkBack 16 (verbose log): keyboard focus on a row speaks e.g.
+  "not checked. Personal, me@example.com" with hint "Double-tap to toggle" and
+  `ROLE_CHECK_BOX`; same in the Hebrew app locale (state words in English, the
+  system language). Gap: after keyboard Enter / Alt+Enter toggles a row,
+  TalkBack speaks nothing for the new state (state-change event source is
+  `ROLE_NONE` and not focused). Not verified: TalkBack double-tap gesture (adb
+  gestures bypass touch exploration on this image), and whether existing
+  Settings checkbox rows share the silent-toggle behavior (tracked in
+  `levana-bhe`).
