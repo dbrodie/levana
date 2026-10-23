@@ -144,10 +144,11 @@ alarms.
 
 ### Tests (Robolectric, real `AlarmManager` shadow)
 
-- Eastward date jump (Honolulu → Tokyo device zone, location Tokyo): a morning alarm for a
-  date now before the window is cancelled; westward jump: alarms for a date after the new
-  window are rescheduled to the new zone (not left at the old time), none duplicated.
-- A manual clock jump of +30 days cancels every old registered alarm; arbitrary dates.
+- Westward date jump (Tokyo → Honolulu, device zone and location): the morning alarm for the
+  date now after the new window is cancelled instead of firing at the old zone's time; the
+  window's dates are rescheduled in the new zone, none duplicated.
+- Manual clock jumps of +30 and −30 days cancel every old registered alarm (arbitrary
+  dates, far outside any fixed window) and schedule the new window.
 - Disabling Omer / candle lighting after a shift cancels out-of-window alarms of that
   category only.
 - An overdue undelivered in-window alarm survives the shift; a location-zone alarm still
