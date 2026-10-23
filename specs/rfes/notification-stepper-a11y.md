@@ -57,6 +57,10 @@ internal fun SettingsStepperRow(
   - Each button exposes `stateDescription = valueText`, so the current value is
     read with the button and TalkBack can announce the new value after
     activation while focus stays on the button.
+- Keyboard: a disabled button drops focus (on device it jumped to the toolbar
+  Back button). When a keyboard activation reaches a bound, focus is first
+  moved to the opposite button of the row; only in keyboard input mode, so
+  touch and TalkBack focus are unaffected.
 - New strings live in `values/accessibility_419_strings.xml` and
   `values-iw/accessibility_419_strings.xml` to avoid merge conflicts.
 
@@ -85,3 +89,34 @@ mode dialog, switch rows, the morning-time formatting itself.
   both bounds, confirm disabled state in the UI hierarchy and screenshot, labels
   and value in hierarchy, keyboard activation, value persists after force-stop.
   TalkBack spoken output only claimed if actually run.
+
+## Verification (2026-10-23)
+
+- Robolectric: `SettingsStepperRowTest` 16/16 (row semantics, both bounds for
+  the row and for each of the four settings through `NotificationsSection`,
+  one emission per activation, accessibility `OnClick`, keyboard Enter,
+  keyboard focus kept in the row at a bound (fails without the fix), touch does
+  not move focus, RTL order, Hebrew labels). Full `:app:testDebugUnitTest`
+  541 tests, 0 failures; `:app:assembleDebug` and `:app:lintDebug` succeed with
+  no lint issues in the touched files.
+- Emulator `emulator-5558` (own read-only session), English: each setting
+  stepped to both bounds; the boundary button is `enabled=false` in the
+  hierarchy, visibly dimmed, and a tap on it does nothing; 5 taps from 1 h and
+  14 taps from 0 days produced exactly 5 and 14 steps. Values survive
+  force-stop/relaunch; a change triggers `DailyNotificationWorker` (SUCCESS).
+  Keyboard: Tab reaches each enabled button, Enter and D-pad center step once,
+  Space does nothing (Compose default); reaching a bound keeps focus on the
+  other button.
+- TalkBack 16 (verbose log output, focus moved by keyboard): buttons are spoken
+  as "5 hours before sunset, Increase, Hours before, Button"; activating speaks
+  the new value "6 hours before sunset", then "6 hours before sunset, Decrease,
+  Hours before, Button". Hebrew: "12 ימים לפני. הגדלה, ימים לפני. Button", and
+  activation speaks "13 ימים לפני".
+- Hebrew RTL: labels localized, decrease on the right, disabled "+" dimmed.
+  Font scale 2.0 in English and Hebrew: rows wrap without clipping.
+- Not verified: TalkBack's spoken output for a *disabled* boundary button.
+  Injected input cannot drive explore-by-touch or TalkBack's own linear
+  navigation, and keyboard focus skips disabled controls; the disabled state is
+  covered by the hierarchy (`enabled=false`) and Robolectric only.
+- Pre-existing, unchanged: 720 min reads "At 12:00 AM" and singular values read
+  "1 hours"/"1 days" (`levana-851`).
