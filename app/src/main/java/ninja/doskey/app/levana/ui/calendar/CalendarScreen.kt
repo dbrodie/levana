@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -224,7 +223,7 @@ private fun GregorianCalendarContent(
                 onOpenDrawer = onOpenDrawer,
                 onGoToToday = { onIntent(CalendarIntent.GoToToday) },
                 onGoToDate = { onIntent(CalendarIntent.OpenGoToDateDialog) },
-                onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
+                onSelectMode = { onIntent(CalendarIntent.SetCalendarHebrewMode(it)) },
                 onAddEvent = { dayDetailState.dayInfo?.hebrewDay?.let { onAddEvent(it.day, it.month.jewishDateValue, it.year) } },
             )
         },
@@ -291,7 +290,7 @@ private fun HebrewCalendarContent(
                 onOpenDrawer = onOpenDrawer,
                 onGoToToday = { onIntent(CalendarIntent.GoToToday) },
                 onGoToDate = { onIntent(CalendarIntent.OpenGoToDateDialog) },
-                onToggleMode = { onIntent(CalendarIntent.ToggleCalendarHebrewMode) },
+                onSelectMode = { onIntent(CalendarIntent.SetCalendarHebrewMode(it)) },
                 onAddEvent = { dayDetailState.dayInfo?.hebrewDay?.let { onAddEvent(it.day, it.month.jewishDateValue, it.year) } },
             )
         },
@@ -321,7 +320,7 @@ private fun GregorianMonthHeader(
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
     onGoToDate: () -> Unit,
-    onToggleMode: () -> Unit,
+    onSelectMode: (Boolean) -> Unit,
     onAddEvent: () -> Unit
 ) {
     val locale = LocalConfiguration.current.locales[0]
@@ -330,7 +329,7 @@ private fun GregorianMonthHeader(
         subtitle = remember(state.monthDays, locale) { CalendarHeaderFormatter.hebrewMonthRange(state.monthDays, locale) },
         selectedHebrew = false,
         onOpenDrawer = onOpenDrawer, onGoToToday = onGoToToday, onGoToDate = onGoToDate,
-        onToggleMode = onToggleMode, onAddEvent = onAddEvent
+        onSelectMode = onSelectMode, onAddEvent = onAddEvent
     )
 }
 
@@ -342,13 +341,13 @@ private fun HebrewMonthHeader(
     onOpenDrawer: () -> Unit,
     onGoToToday: () -> Unit,
     onGoToDate: () -> Unit,
-    onToggleMode: () -> Unit,
+    onSelectMode: (Boolean) -> Unit,
     onAddEvent: () -> Unit
 ) {
     CalendarMonthHeader(
         title = hebrewHeader, subtitle = gregorianHeader, selectedHebrew = true,
         onOpenDrawer = onOpenDrawer, onGoToToday = onGoToToday, onGoToDate = onGoToDate,
-        onToggleMode = onToggleMode, onAddEvent = onAddEvent
+        onSelectMode = onSelectMode, onAddEvent = onAddEvent
     )
 }
 
@@ -356,7 +355,7 @@ private fun HebrewMonthHeader(
 private fun CalendarMonthHeader(
     title: String, subtitle: String, selectedHebrew: Boolean,
     onOpenDrawer: () -> Unit, onGoToToday: () -> Unit, onGoToDate: () -> Unit,
-    onToggleMode: () -> Unit, onAddEvent: () -> Unit
+    onSelectMode: (Boolean) -> Unit, onAddEvent: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
         Row(
@@ -376,13 +375,7 @@ private fun CalendarMonthHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.calendar_mode_hebrew), Modifier.heightIn(min = 48.dp).background(if (selectedHebrew) MaterialTheme.colorScheme.primaryContainer else Color.Transparent).clickable(enabled = !selectedHebrew, role = Role.Tab, onClick = onToggleMode).semantics { selected = selectedHebrew }.padding(horizontal = 12.dp, vertical = 14.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                Text(stringResource(R.string.calendar_mode_gregorian), Modifier.heightIn(min = 48.dp).background(if (!selectedHebrew) MaterialTheme.colorScheme.primaryContainer else Color.Transparent).clickable(enabled = selectedHebrew, role = Role.Tab, onClick = onToggleMode).semantics { selected = !selectedHebrew }.padding(horizontal = 12.dp, vertical = 14.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-            }
+            CalendarModeSelector(hebrewSelected = selectedHebrew, onSelectMode = onSelectMode)
         }
     }
 }
