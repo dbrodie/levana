@@ -4,9 +4,12 @@ import android.app.Application
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -25,6 +28,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
@@ -157,6 +161,49 @@ class SettingsStepperRowTest {
         increase.assertIsFocused()
         increase.performKeyInput { pressKey(Key.Enter) }
         assertEquals(listOf(510), values)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @Test
+    fun keyboardFocusStaysInRowWhenReachingBound() {
+        // Hoisted value, as in SettingsScreen, so the button really becomes disabled.
+        compose.setContent {
+            inputModeManager = LocalInputModeManager.current
+            MaterialTheme {
+                var value by remember { mutableStateOf(690) }
+                Column {
+                    // Another focusable control before the row, like the toolbar's Back button.
+                    TextButton(onClick = {}) { Text("Back") }
+                    SettingsStepperRow(
+                        title = TITLE,
+                        valueText = "Value $value",
+                        value = value,
+                        range = 360..720,
+                        step = 30,
+                        decreaseAction = "Earlier",
+                        increaseAction = "Later",
+                        onValueChange = { values += it; value = it }
+                    )
+                }
+            }
+        }
+        compose.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
+        increase.requestFocus()
+        increase.performKeyInput { pressKey(Key.Enter) }
+
+        assertEquals(listOf(720), values)
+        increase.assertIsNotEnabled()
+        decrease.assertIsFocused()
+        decrease.performKeyInput { pressKey(Key.Enter) }
+        assertEquals(listOf(720, 690), values)
+    }
+
+    @Test
+    fun touchReachingBoundDoesNotMoveFocus() {
+        setRow(value = 690)
+        increase.performClick()
+        assertEquals(listOf(720), values)
+        decrease.assertIsNotFocused()
     }
 
     @Test
