@@ -13,7 +13,8 @@ import androidx.compose.ui.semantics.Role
 /**
  * A settings row with a trailing checkbox. The whole row is one toggleable element
  * (Role.Checkbox), so a tap anywhere toggles it once and TalkBack reads one checkbox
- * with its label. The Checkbox itself only displays the state.
+ * with its label. The Checkbox itself only displays the state. [leadingContent] is
+ * for decorative content (e.g. a color dot) and should not add semantics.
  */
 @Composable
 internal fun SettingsCheckboxRow(
@@ -22,7 +23,8 @@ internal fun SettingsCheckboxRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    description: String? = null
+    description: String? = null,
+    leadingContent: (@Composable () -> Unit)? = null
 ) {
     val colors = if (enabled) {
         ListItemDefaults.colors()
@@ -34,6 +36,7 @@ internal fun SettingsCheckboxRow(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = description?.let { { Text(it) } },
+        leadingContent = leadingContent,
         trailingContent = {
             Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
         },
