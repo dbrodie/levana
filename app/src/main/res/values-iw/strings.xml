@@ -25,8 +25,6 @@
     <!-- Settings -->
     <string name="settings_location">מיקום</string>
     <string name="settings_change">שנה</string>
-    <string name="settings_minhag">מנהג</string>
-    <string name="settings_minhag_desc">משפיע על מנהגי תפילה ושמירת חגים</string>
     <string name="settings_israel_diaspora">ארץ ישראל / חו״ל</string>
     <string name="settings_israel_desc">משפיע על יום טוב שני ופרשיות</string>
     <string name="settings_in_israel">בארץ ישראל</string>

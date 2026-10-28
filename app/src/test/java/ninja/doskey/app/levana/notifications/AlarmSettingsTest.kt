@@ -1,7 +1,6 @@
 package ninja.doskey.app.levana.notifications
 
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import org.junit.Assert.assertEquals
@@ -33,7 +32,7 @@ class AlarmSettingsTest {
         assertEquals("starting value", 0, rebuilds)
 
         // Unrelated changes, including the categories posted by the daily worker
-        set { it.copy(minhag = Minhag.SEPHARDI) }
+        set { it.copy(calendarHebrewMode = true) }
         set { it.copy(dynamicHolidayTheme = false) }
         set { it.copy(notifyHolidays = true, holidayNotifyDaysBefore = 3) }
         set { it.copy(notifyFasts = true, notifyPersonalEvents = true) }

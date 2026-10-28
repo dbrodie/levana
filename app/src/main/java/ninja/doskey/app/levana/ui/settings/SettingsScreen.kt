@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GpsFixed
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NoFood
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
@@ -44,7 +42,6 @@ import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -86,7 +83,7 @@ import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
-import ninja.doskey.app.levana.domain.model.Minhag
+import ninja.doskey.app.levana.ui.targetedLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -246,7 +243,7 @@ fun LocationsSettingsScreen(
 }
 
 @Composable
-private fun LocationsSettingsContent(
+internal fun LocationsSettingsContent(
     currentLocationName: String,
     hasLocationPermission: Boolean,
     savedLocations: List<SavedLocation>,
@@ -290,7 +287,14 @@ private fun LocationsSettingsContent(
                     },
                     trailingContent = {
                         IconButton(onClick = { onDelete(saved.id) }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.location_delete))
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = targetedLabel(
+                                    R.string.a11y_delete_saved_location,
+                                    saved.location.name,
+                                    R.string.location_delete
+                                )
+                            )
                         }
                     }
                 )
@@ -321,7 +325,6 @@ fun SettingsContent(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showMinhagDialog by remember { mutableStateOf(false) }
     var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
     var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
     var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
@@ -398,21 +401,7 @@ fun SettingsContent(
         )
         }
 
-        val minhagLabel = minhagLabel(state.minhag)
-        SettingsGroup(stringResource(R.string.settings_group_minhag)) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_minhag_label)) },
-            supportingContent = { Text(minhagLabel) },
-            leadingContent = {
-                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
-            },
-            trailingContent = {
-                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
-            },
-            modifier = Modifier.clickable { showMinhagDialog = true }
-        )
-        // Yahrzeit Adar rules: global, and independent of the Minhag above
-        SettingsRowDivider()
+        SettingsGroup(stringResource(R.string.settings_group_yahrzeit)) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.settings_yahrzeit_leap_label)) },
             supportingContent = { Text(yahrzeitLeapLabel(state.yahrzeitRules.leapYearAdar)) },
@@ -585,17 +574,6 @@ fun SettingsContent(
         )
     }
 
-    if (showMinhagDialog) {
-        MinhagDialog(
-            selected = state.minhag,
-            onSelect = {
-                onIntent(SettingsIntent.SetMinhag(it))
-                showMinhagDialog = false
-            },
-            onDismiss = { showMinhagDialog = false }
-        )
-    }
-
     if (showAppLanguageDialog) {
         AppLanguageDialog(
             selected = state.appLanguage,
@@ -694,46 +672,6 @@ private fun SettingsSectionHeader(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 12.dp, top = 20.dp, bottom = 6.dp)
-    )
-}
-
-@Composable
-private fun MinhagDialog(
-    selected: Minhag,
-    onSelect: (Minhag) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_minhag_label)) },
-        text = {
-            Column(modifier = Modifier.selectableGroup()) {
-                Minhag.entries.forEach { minhag ->
-                    val label = minhagLabel(minhag)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = minhag == selected,
-                                onClick = { onSelect(minhag) },
-                                role = Role.RadioButton
-                            )
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = minhag == selected, onClick = null)
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 12.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        }
     )
 }
 
@@ -947,16 +885,6 @@ private fun CandleLightingModeDialog(
 }
 
 @Composable
-private fun minhagLabel(minhag: Minhag): String = stringResource(
-    when (minhag) {
-        Minhag.ASHKENAZI -> R.string.settings_minhag_ashkenazi
-        Minhag.SEPHARDI -> R.string.settings_minhag_sephardi
-        Minhag.YEMENITE -> R.string.settings_minhag_yemenite
-        Minhag.CHABAD -> R.string.settings_minhag_chabad
-    }
-)
-
-@Composable
 internal fun HalachicTimesSection(
     selectedZmanim: Set<String>,
     onToggle: (name: String, enabled: Boolean) -> Unit
@@ -975,10 +903,10 @@ internal fun HalachicTimesSection(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
-                ListItem(
-                    headlineContent = { Text(text = zmanName.displayName(hebrewUi).primary) },
-                    trailingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle(name, it) }) },
-                    modifier = Modifier.clickable { onToggle(name, !checked) }
+                SettingsCheckboxRow(
+                    title = zmanName.displayName(hebrewUi).primary,
+                    checked = checked,
+                    onCheckedChange = { onToggle(name, it) }
                 )
             }
         }
@@ -986,7 +914,7 @@ internal fun HalachicTimesSection(
 }
 
 @Composable
-private fun NotificationsSection(
+internal fun NotificationsSection(
     state: SettingsState,
     onIntent: (SettingsIntent) -> Unit,
     onShowModeDialog: () -> Unit
@@ -1052,78 +980,28 @@ private fun NotificationsSection(
                 minutes,
                 hours
             )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_notification_time)) },
-                supportingContent = { Text(timeLabel) },
-                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingMorningTime > 360) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingMorningTime(
-                                            state.candleLightingMorningTime - 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_earlier))
-                        }
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingMorningTime < 720) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingMorningTime(
-                                            state.candleLightingMorningTime + 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_later))
-                        }
-                    }
-                }
+            SettingsStepperRow(
+                title = stringResource(R.string.settings_notification_time),
+                valueText = timeLabel,
+                value = state.candleLightingMorningTime,
+                range = 360..720,
+                step = 30,
+                decreaseAction = stringResource(R.string.settings_earlier),
+                increaseAction = stringResource(R.string.settings_later),
+                onValueChange = { onIntent(SettingsIntent.SetCandleLightingMorningTime(it)) }
             )
         }
 
         if (state.candleLightingNotifyMode == "hours_before") {
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_hours_before)) },
-                supportingContent = { Text(stringResource(R.string.settings_hours_before_sunset, state.candleLightingHoursBefore)) },
-                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingHoursBefore > 1) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingHoursBefore(
-                                            state.candleLightingHoursBefore - 1
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_decrease))
-                        }
-                        IconButton(
-                            onClick = {
-                                if (state.candleLightingHoursBefore < 6) {
-                                    onIntent(
-                                        SettingsIntent.SetCandleLightingHoursBefore(
-                                            state.candleLightingHoursBefore + 1
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_increase))
-                        }
-                    }
-                }
+            SettingsStepperRow(
+                title = stringResource(R.string.settings_hours_before),
+                valueText = stringResource(R.string.settings_hours_before_sunset, state.candleLightingHoursBefore),
+                value = state.candleLightingHoursBefore,
+                range = 1..6,
+                step = 1,
+                decreaseAction = stringResource(R.string.settings_decrease),
+                increaseAction = stringResource(R.string.settings_increase),
+                onValueChange = { onIntent(SettingsIntent.SetCandleLightingHoursBefore(it)) }
             )
         }
     }
@@ -1139,40 +1017,15 @@ private fun NotificationsSection(
     )
 
     if (state.notifyHolidays) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_days_before)) },
-            supportingContent = { Text(stringResource(R.string.settings_days_before_value, state.holidayNotifyDaysBefore)) },
-            leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-            trailingContent = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = {
-                            if (state.holidayNotifyDaysBefore > 0) {
-                                onIntent(
-                                    SettingsIntent.SetHolidayNotifyDaysBefore(
-                                        state.holidayNotifyDaysBefore - 1
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_decrease))
-                    }
-                    IconButton(
-                        onClick = {
-                            if (state.holidayNotifyDaysBefore < 14) {
-                                onIntent(
-                                    SettingsIntent.SetHolidayNotifyDaysBefore(
-                                        state.holidayNotifyDaysBefore + 1
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_increase))
-                    }
-                }
-            }
+        SettingsStepperRow(
+            title = stringResource(R.string.settings_days_before),
+            valueText = stringResource(R.string.settings_days_before_value, state.holidayNotifyDaysBefore),
+            value = state.holidayNotifyDaysBefore,
+            range = 0..14,
+            step = 1,
+            decreaseAction = stringResource(R.string.settings_decrease),
+            increaseAction = stringResource(R.string.settings_increase),
+            onValueChange = { onIntent(SettingsIntent.SetHolidayNotifyDaysBefore(it)) }
         )
     }
 
@@ -1230,40 +1083,15 @@ private fun NotificationsSection(
                 minutes,
                 hours
             )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_reminder_time)) },
-                supportingContent = { Text(timeLabel) },
-                leadingContent = { Spacer(modifier = Modifier.padding(start = 16.dp)) },
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = {
-                                if (state.notifyOmerMorningTime > 360) {
-                                    onIntent(
-                                        SettingsIntent.SetNotifyOmerMorningTime(
-                                            state.notifyOmerMorningTime - 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.settings_earlier))
-                        }
-                        IconButton(
-                            onClick = {
-                                if (state.notifyOmerMorningTime < 720) {
-                                    onIntent(
-                                        SettingsIntent.SetNotifyOmerMorningTime(
-                                            state.notifyOmerMorningTime + 30
-                                        )
-                                    )
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.settings_later))
-                        }
-                    }
-                }
+            SettingsStepperRow(
+                title = stringResource(R.string.settings_reminder_time),
+                valueText = timeLabel,
+                value = state.notifyOmerMorningTime,
+                range = 360..720,
+                step = 30,
+                decreaseAction = stringResource(R.string.settings_earlier),
+                increaseAction = stringResource(R.string.settings_later),
+                onValueChange = { onIntent(SettingsIntent.SetNotifyOmerMorningTime(it)) }
             )
         }
     }

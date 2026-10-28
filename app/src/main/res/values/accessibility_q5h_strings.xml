@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Accessibility-only labels for delete icon buttons; %1$s is the target's name. -->
+    <string name="a11y_remove_birthday_for">Remove Hebrew birthday for %1$s</string>
+    <string name="a11y_delete_event">Delete event %1$s</string>
+    <string name="a11y_delete_saved_location">Delete saved location %1$s</string>
+</resources>

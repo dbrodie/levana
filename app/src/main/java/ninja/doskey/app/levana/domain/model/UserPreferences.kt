@@ -5,7 +5,6 @@ data class UserPreferences(
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
     val candleLightingOffset: Double = 18.0,
-    val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val calendarHebrewMode: Boolean = false,

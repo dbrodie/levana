@@ -78,10 +78,6 @@
     <string name="settings_omer_at_tzait">בצאת הכוכבים</string>
     <string name="settings_omer_morning_reminder">תזכורת בבוקר</string>
     <string name="settings_reminder_time">שעת התזכורת</string>
-    <string name="settings_minhag_ashkenazi">אשכנז</string>
-    <string name="settings_minhag_sephardi">ספרד</string>
-    <string name="settings_minhag_yemenite">תימן</string>
-    <string name="settings_minhag_chabad">חב״ד</string>
 
     <!-- About -->
     <string name="about_version">גרסה</string>
@@ -96,7 +92,7 @@
     <string name="settings_yahrzeit_leap_both">שני האדרים</string>
     <string name="settings_yahrzeit_first_year_label">יארצייט ראשון בשנה מעוברת</string>
     <string name="settings_yahrzeit_first_year_description">כאשר הפטירה הייתה באדר של שנה פשוטה והשנה שאחריה מעוברת, היארצייט הראשון:</string>
-    <string name="settings_yahrzeit_first_year_follow">לפי המנהג השנתי</string>
+    <string name="settings_yahrzeit_first_year_follow">לפי הגדרת אדר בשנה מעוברת</string>
     <string name="settings_yahrzeit_first_year_adar_i">ציון ראשון באדר א׳</string>
     <string name="settings_yahrzeit_first_year_both">לסמן את שני התאריכים בשנה הראשונה</string>
     <string name="settings_yahrzeit_nisan_label">לסמן גם את א׳ ניסן</string>
@@ -147,19 +143,22 @@
     <string name="notification_omer_tonight_with_weeks">הלילה %1$s (%2$s)</string>
     <string name="notification_omer_today">היום %1$s</string>
     <string name="notification_omer_today_with_weeks">היום %1$s (%2$s)</string>
-    <plurals name="notification_omer_weeks">
+    <plurals name="omer_weeks">
         <item quantity="one">שבוע אחד</item>
         <item quantity="two">שני שבועות</item>
         <item quantity="many">%d שבועות</item>
         <item quantity="other">%d שבועות</item>
     </plurals>
-    <plurals name="notification_omer_and_days">
+    <plurals name="omer_and_days">
         <item quantity="one">ויום אחד</item>
         <item quantity="two">ושני ימים</item>
         <item quantity="many">ו־%d ימים</item>
         <item quantity="other">ו־%d ימים</item>
     </plurals>
-    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="omer_weeks_and_days">%1$s %2$s</string>
+    <!-- Day panel Omer card (see ui/OmerCountText.kt); the plurals above are shared -->
+    <string name="omer_card_day">%1$s</string>
+    <string name="omer_card_day_with_weeks">%1$s, שהם %2$s</string>
     <string name="notification_update_title">עדכון זמין</string>
     <string name="notification_update_body">גרסה %1$s של לבנה זמינה \u2014 יש להקיש להורדה</string>
     <!-- Notification channels (shown in system settings) -->

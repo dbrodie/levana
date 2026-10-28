@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.ui.settings
 
-import ninja.doskey.app.levana.domain.model.Minhag
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import java.time.LocalDate
@@ -11,7 +10,6 @@ data class SettingsState(
     val currentLocationName: String = "",
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
-    val minhag: Minhag = Minhag.ASHKENAZI,
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val appLanguage: AppLanguage = AppLanguage.SYSTEM,

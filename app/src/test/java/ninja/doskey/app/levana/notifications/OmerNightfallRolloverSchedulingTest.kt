@@ -104,9 +104,11 @@ class OmerNightfallRolloverSchedulingTest {
 
         val off = prefs.copy(notifyOmerTzait = false)
         val now = ZonedDateTime.of(may25, LocalTime.of(0, 1), zone).toInstant()
-        NotificationAlarmScheduler(context) { now.toEpochMilli() }.scheduleAll(
-            planReminderAlarms(may25, now, zone, stPetersburg, off, zmanim, CalendarRepository())
-        )
+        runBlocking {
+            NotificationAlarmScheduler(context) { now.toEpochMilli() }.scheduleAll(
+                planReminderAlarms(may25, now, zone, stPetersburg, off, zmanim, CalendarRepository())
+            )
+        }
 
         assertTrue(eveningAlarms(may24).isEmpty())
         assertTrue(eveningAlarms(may25).isEmpty())

@@ -100,9 +100,9 @@ class CalendarViewModel(
             is CalendarIntent.SelectDay -> {
                 _state.value = _state.value.copy(selectedDate = intent.date)
             }
-            is CalendarIntent.ToggleCalendarHebrewMode -> {
-                viewModelScope.launch {
-                    preferencesRepository.saveCalendarHebrewMode(!currentPrefs.calendarHebrewMode)
+            is CalendarIntent.SetCalendarHebrewMode -> {
+                if (intent.hebrew != currentPrefs.calendarHebrewMode) {
+                    viewModelScope.launch { preferencesRepository.saveCalendarHebrewMode(intent.hebrew) }
                 }
             }
             is CalendarIntent.OpenGoToDateDialog -> {

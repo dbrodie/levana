@@ -38,15 +38,18 @@ object NotificationPoster {
         )
     }
 
-    /** Posts the candle-lighting reminder; [context] should already carry the app language. */
+    /**
+     * Posts the candle-lighting reminder; [context] should already carry the app language.
+     * Returns whether it could be posted (see [post]).
+     */
     fun postCandleLighting(
         context: Context,
         date: LocalDate,
         candleLightingTime: LocalTime,
         end: ObservanceEnd?
-    ) {
+    ): Boolean {
         val text = candleLightingNotificationText(context, date, candleLightingTime, end)
-        post(
+        return post(
             context,
             NotificationChannels.CANDLE_LIGHTING,
             NotificationKeys.candleLighting(date),
@@ -135,9 +138,9 @@ object NotificationPoster {
     }
 
     /** Posts the tzait Omer reminder; [context] should already carry the app language. */
-    fun postOmer(context: Context, date: LocalDate, omerDay: Int) {
+    fun postOmer(context: Context, date: LocalDate, omerDay: Int): Boolean {
         val text = omerNotificationText(context, omerDay, tonight = true)
-        post(
+        return post(
             context,
             NotificationChannels.OMER,
             NotificationKeys.omerTzait(date),
@@ -148,9 +151,9 @@ object NotificationPoster {
     }
 
     /** Posts the morning Omer reminder; [context] should already carry the app language. */
-    fun postOmerMorning(context: Context, date: LocalDate, omerDay: Int) {
+    fun postOmerMorning(context: Context, date: LocalDate, omerDay: Int): Boolean {
         val text = omerNotificationText(context, omerDay, tonight = false)
-        post(
+        return post(
             context,
             NotificationChannels.OMER,
             NotificationKeys.omerMorning(date),
@@ -191,6 +194,10 @@ object NotificationPoster {
         return true
     }
 
+    /**
+     * Posts a reminder. Returns whether the user can be shown it: false without the
+     * notification permission or with notifications or [channelId] turned off.
+     */
     private fun post(
         context: Context,
         channelId: String,
@@ -198,13 +205,13 @@ object NotificationPoster {
         title: String,
         body: String,
         date: LocalDate
-    ) {
+    ): Boolean {
         if (ContextCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            return
+            return false
         }
 
         val notification = NotificationCompat.Builder(context, channelId)
@@ -220,5 +227,8 @@ object NotificationPoster {
         // Drop the untagged copy a previous version posted for this same reminder
         manager.cancel(key.legacyId)
         manager.notify(key.tag, key.id, notification)
+        return manager.areNotificationsEnabled() &&
+            manager.getNotificationChannelCompat(channelId)?.importance !=
+            NotificationManagerCompat.IMPORTANCE_NONE
     }
 }

@@ -72,6 +72,7 @@ import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
+import ninja.doskey.app.levana.ui.targetedLabel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -317,7 +318,7 @@ fun EventsScreen(
 
 /** Returns true if the content looks like CSV rather than JSON. */
 @Composable
-private fun BirthdaysTab(
+internal fun BirthdaysTab(
     birthdays: List<ContactBirthday>,
     hasPermission: Boolean,
     onEditBirthday: (String) -> Unit,
@@ -485,7 +486,11 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.common_delete),
+                    contentDescription = targetedLabel(
+                        R.string.a11y_remove_birthday_for,
+                        birthday.contactName,
+                        R.string.common_delete
+                    ),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -494,7 +499,7 @@ private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelet
 }
 
 @Composable
-private fun CustomEventsTab(
+internal fun CustomEventsTab(
     events: List<PersonalEvent>,
     isLoading: Boolean,
     onEditEvent: (Long) -> Unit,
@@ -614,7 +619,11 @@ private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () ->
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.common_delete),
+                    contentDescription = targetedLabel(
+                        R.string.a11y_delete_event,
+                        event.title,
+                        R.string.common_delete
+                    ),
                     tint = MaterialTheme.colorScheme.error
                 )
             }

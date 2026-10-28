@@ -78,10 +78,6 @@
     <string name="settings_omer_at_tzait">At tzait (nightfall)</string>
     <string name="settings_omer_morning_reminder">Morning reminder</string>
     <string name="settings_reminder_time">Reminder time</string>
-    <string name="settings_minhag_ashkenazi">Ashkenazi</string>
-    <string name="settings_minhag_sephardi">Sephardi</string>
-    <string name="settings_minhag_yemenite">Yemenite</string>
-    <string name="settings_minhag_chabad">Chabad</string>
 
     <!-- About -->
     <string name="about_version">Version</string>
@@ -96,7 +92,7 @@
     <string name="settings_yahrzeit_leap_both">Both Adars</string>
     <string name="settings_yahrzeit_first_year_label">First yahrzeit in a leap year</string>
     <string name="settings_yahrzeit_first_year_description">When the death was in Adar of an ordinary year and the next year is a leap year, the first yahrzeit:</string>
-    <string name="settings_yahrzeit_first_year_follow">Follow annual minhag</string>
+    <string name="settings_yahrzeit_first_year_follow">Follow the leap-year Adar setting</string>
     <string name="settings_yahrzeit_first_year_adar_i">First observance in Adar I</string>
     <string name="settings_yahrzeit_first_year_both">Mark both first-year dates</string>
     <string name="settings_yahrzeit_nisan_label">Also mark 1 Nissan</string>
@@ -145,15 +141,18 @@
     <string name="notification_omer_tonight_with_weeks">Tonight is day %1$s of the Omer (%2$s)</string>
     <string name="notification_omer_today">Today is day %1$s of the Omer</string>
     <string name="notification_omer_today_with_weeks">Today is day %1$s of the Omer (%2$s)</string>
-    <plurals name="notification_omer_weeks">
+    <plurals name="omer_weeks">
         <item quantity="one">%d week</item>
         <item quantity="other">%d weeks</item>
     </plurals>
-    <plurals name="notification_omer_and_days">
+    <plurals name="omer_and_days">
         <item quantity="one">and %d day</item>
         <item quantity="other">and %d days</item>
     </plurals>
-    <string name="notification_omer_weeks_and_days">%1$s %2$s</string>
+    <string name="omer_weeks_and_days">%1$s %2$s</string>
+    <!-- Day panel Omer card (see ui/OmerCountText.kt); the plurals above are shared -->
+    <string name="omer_card_day">Day %1$s of the Omer</string>
+    <string name="omer_card_day_with_weeks">Day %1$s, which is %2$s of the Omer</string>
     <string name="notification_update_title">Update Available</string>
     <string name="notification_update_body">Levana v%1$s is available \u2014 tap to download</string>
     <!-- Notification channels (shown in system settings) -->

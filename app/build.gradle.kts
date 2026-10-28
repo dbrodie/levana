@@ -98,6 +98,12 @@ android {
         compose = true
     }
 
+    sourceSets {
+        // Exported Room schemas for MigrationTestHelper. Robolectric only reads the
+        // variant's merged assets, so they ship in debug builds but never in release.
+        getByName("debug").assets.srcDir("$projectDir/schemas")
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -106,6 +112,10 @@ android {
             }
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -147,6 +157,8 @@ dependencies {
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
+    kspTest(libs.androidx.room.compiler)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)
@@ -156,4 +168,9 @@ dependencies {
 
 tasks.matching { it.name == "testReleaseUnitTest" }.configureEach {
     enabled = false
+}
+
+// KSP writes newly exported Room schemas into the debug assets directory above.
+tasks.matching { it.name == "mergeDebugAssets" }.configureEach {
+    dependsOn("kspDebugKotlin")
 }

@@ -2,11 +2,11 @@ package ninja.doskey.app.levana.notifications
 
 import android.content.Context
 import android.text.format.DateFormat
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
-import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
+import ninja.doskey.app.levana.ui.omerDayLabel
+import ninja.doskey.app.levana.ui.omerWeeksText
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -126,28 +126,14 @@ fun personalEventNotificationText(context: Context, eventTitle: String): Notific
         context.getString(R.string.notification_personal_event_body, eventTitle)
     )
 
-private val omerFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
-
 /**
  * The Omer count for [omerDay] (1–49). [tonight] is the tzait reminder; otherwise the
  * morning reminder. In Hebrew the day is written the traditional way by KosherJava
  * (e.g. "ח׳ בעומר", "ל״ג בעומר").
  */
 fun omerNotificationText(context: Context, omerDay: Int, tonight: Boolean): NotificationText {
-    val hebrew = context.isHebrewLanguage()
-    val day = if (hebrew) hebrewOmerDay(omerDay) else omerDay.toString()
-    val weeks = omerDay / 7
-    val remaining = omerDay % 7
-    val res = context.resources
-    val weeksText = when {
-        weeks == 0 -> null
-        remaining == 0 -> res.getQuantityString(R.plurals.notification_omer_weeks, weeks, weeks)
-        else -> context.getString(
-            R.string.notification_omer_weeks_and_days,
-            res.getQuantityString(R.plurals.notification_omer_weeks, weeks, weeks),
-            res.getQuantityString(R.plurals.notification_omer_and_days, remaining, remaining)
-        )
-    }
+    val day = omerDayLabel(context, omerDay)
+    val weeksText = omerWeeksText(context, omerDay)
     val body = when {
         weeksText == null && tonight -> context.getString(R.string.notification_omer_tonight, day)
         weeksText == null -> context.getString(R.string.notification_omer_today, day)
@@ -155,17 +141,6 @@ fun omerNotificationText(context: Context, omerDay: Int, tonight: Boolean): Noti
         else -> context.getString(R.string.notification_omer_today_with_weeks, day, weeksText)
     }
     return NotificationText(context.getString(R.string.notification_omer_title), body)
-}
-
-/** KosherJava's Hebrew Omer day, e.g. "ח׳ בעומר", via a calendar date on that day. */
-private fun hebrewOmerDay(omerDay: Int): String {
-    // 16 Nisan is day 1. Nisan always has 30 days and Iyar 29, so any year works
-    val jc = when {
-        omerDay <= 15 -> JewishCalendar(5786, JewishCalendar.NISSAN, 15 + omerDay)
-        omerDay <= 44 -> JewishCalendar(5786, JewishCalendar.IYAR, omerDay - 15)
-        else -> JewishCalendar(5786, JewishCalendar.SIVAN, omerDay - 44)
-    }
-    return omerFormatter.formatOmer(jc)
 }
 
 fun updateAvailableNotificationText(context: Context, latestVersion: String): NotificationText =
