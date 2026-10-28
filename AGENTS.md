@@ -41,15 +41,21 @@ levana/
 └── gradle/libs.versions.toml         # Centralized dependency versions
 ```
 
-## Feature Development Workflow
+## Task Workflow
 
-1. **Plan** — work in plan mode; research the codebase and design the approach
-2. **Create worktree** — `git worktree add .claude/worktrees/<feature-name> -b <feature-name>`
-3. **Save spec** — write the spec to `specs/rfes/<feature-name>.md` **inside the worktree** (`.claude/worktrees/<feature-name>/specs/rfes/<feature-name>.md`), never in the main repo
-4. **Commit spec** — commit the spec file to the branch before any code
-5. **Develop** — implement the feature on the branch inside the worktree; all work happens inside `.claude/worktrees/<feature-name>/`
-6. **Approve & merge** — once the feature is approved, merge to `master`
-7. **Delete worktree** — `git worktree remove .claude/worktrees/<feature-name>`
+- **One Beads task → one agent, branch and worktree/workspace**, created through Paseo. Group only with explicit user instruction; sequence dependent tasks or queue them when concurrency is limited. Do not nest worktrees.
+- **Task agent:** claim, plan, commit `specs/rfes/<task>.md` inside its worktree before implementation, then implement, verify and commit. The coordinator owns integration and closure.
+- **Verification:** tests, lint/build checks and relevant runtime checks using the Android debugging skill. Each task owns its emulator. Record tested commits, results, limitations and evidence outside disposable worktrees.
+- **Coordinator:** review changes/evidence, integrate sequentially and test the combined result. With authorization: merge to `master` → push/confirm → close/sync Beads → archive workspace/agent → delete merged branch. Do not request approval already granted. Retain the workspace if blocked or awaiting approval.
+
+## Task Tracking
+
+Use the shared project Beads database (`bd`); run `bd prime` for CLI guidance.
+
+- Claim with `bd update <id> --claim`; record agent/workspace IDs, branch and base commit. Refresh active claims.
+- Update status and append notes at phase changes, blockers and handoff, including commits, verification evidence and pending work.
+- `open`: queued; `in_progress`: implementation through integration; `blocked`: concrete blocker; `deferred`: postponed; `closed`: verified, merged and pushed. Agent completion alone does not close a task.
+- File separate discoveries as linked tasks; retain unmet acceptance criteria on the original task unless the user approves a scope change. Record merge and cleanup outcomes.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker

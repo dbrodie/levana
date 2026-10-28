@@ -1,6 +1,6 @@
-# Project Instructions for AI Agents
+# Project Instructions
 
-This file provides instructions and context for AI coding agents working on this project.
+Read and follow [AGENTS.md](AGENTS.md), the authoritative project and task workflow.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:1105d646 -->
 ## Beads Issue Tracker
