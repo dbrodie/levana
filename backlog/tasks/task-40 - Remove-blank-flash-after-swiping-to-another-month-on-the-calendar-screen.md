@@ -1,11 +1,11 @@
 ---
 id: TASK-40
 title: Remove blank flash after swiping to another month on the calendar screen
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T11:02:00Z'
-updated_date: '2026-10-29T11:40:00Z'
+updated_date: '2026-10-29T14:37:00Z'
 labels:
   - calendar
   - ui
