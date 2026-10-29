@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.ui.theme
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -61,6 +62,22 @@ internal val DarkColorScheme = darkColorScheme(
     scrim = Color.Black,
 )
 
+/**
+ * The app's color scheme: the holiday accents when [holidayTheme] is set, otherwise
+ * [dynamicScheme] (wallpaper colors) when given, otherwise Levana's own colors. Shared by
+ * [LevanaTheme] and the home-screen widgets so both always color alike.
+ */
+fun levanaColorScheme(
+    darkTheme: Boolean,
+    holidayTheme: HolidayTheme?,
+    dynamicScheme: ColorScheme? = null,
+): ColorScheme = when {
+    holidayTheme != null -> if (darkTheme) holidayTheme.darkScheme() else holidayTheme.lightScheme()
+    dynamicScheme != null -> dynamicScheme
+    darkTheme -> DarkColorScheme
+    else -> LightColorScheme
+}
+
 @Composable
 fun LevanaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -68,15 +85,13 @@ fun LevanaTheme(
     holidayTheme: HolidayTheme? = null,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        holidayTheme != null -> if (darkTheme) holidayTheme.darkScheme() else holidayTheme.lightScheme()
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val dynamicScheme = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val context = LocalContext.current
+        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    } else {
+        null
     }
+    val colorScheme = levanaColorScheme(darkTheme, holidayTheme, dynamicScheme)
     MaterialTheme(
         colorScheme = colorScheme,
         typography = LevanaTypography,

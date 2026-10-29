@@ -18,6 +18,7 @@ import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
 import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
 import ninja.doskey.app.levana.update.UpdateChecker
+import ninja.doskey.app.levana.widget.TodayWidgetSnapshots
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
@@ -68,6 +69,7 @@ val dataModule = module {
         NotificationAlarmRebuilder(get<PreferencesRepository>().preferences, get(), get(), get())
     }
     single { UpdateChecker(androidContext()) }
+    single { TodayWidgetSnapshots(get(), get()) }
 }
 
 val viewModelModule = module {

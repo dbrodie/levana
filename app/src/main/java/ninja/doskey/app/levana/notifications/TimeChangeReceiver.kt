@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import ninja.doskey.app.levana.widget.WidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,9 +12,9 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * Re-plans the reminder alarms when the device time zone or clock is changed. Registered in
- * the manifest so it also runs when the app is not open. Only the alarms are reconciled; no
- * notification is posted.
+ * Re-plans the reminder alarms and redraws the home-screen widgets when the device time zone
+ * or clock is changed. Registered in the manifest so it also runs when the app is not open.
+ * Only the alarms are reconciled; no notification is posted.
  */
 class TimeChangeReceiver : BroadcastReceiver(), KoinComponent {
 
@@ -23,6 +24,7 @@ class TimeChangeReceiver : BroadcastReceiver(), KoinComponent {
         if (intent.action != Intent.ACTION_TIMEZONE_CHANGED &&
             intent.action != Intent.ACTION_TIME_CHANGED
         ) return
+        WidgetUpdater.requestUpdate(context)
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {

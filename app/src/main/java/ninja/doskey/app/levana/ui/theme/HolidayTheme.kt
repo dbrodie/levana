@@ -5,6 +5,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.domain.model.UserPreferences
 import java.time.LocalDate
 import java.util.GregorianCalendar
 
@@ -58,6 +59,18 @@ enum class HolidayTheme(
         inversePrimary = lightPrimary,
         surfaceTint = darkPrimary,
     )
+}
+
+/**
+ * The holiday theme the app shows on [date]: the Developer Settings forced theme when set,
+ * otherwise the date's holiday when dynamic holiday colors are on. Shared by the app and
+ * the home-screen widgets.
+ */
+fun activeHolidayTheme(prefs: UserPreferences, date: LocalDate): HolidayTheme? {
+    val forced = prefs.devForceHolidayTheme?.let { name ->
+        HolidayTheme.entries.firstOrNull { it.name == name }
+    }
+    return forced ?: if (prefs.dynamicHolidayTheme) HolidayThemeResolver.resolve(date) else null
 }
 
 object HolidayThemeResolver {
