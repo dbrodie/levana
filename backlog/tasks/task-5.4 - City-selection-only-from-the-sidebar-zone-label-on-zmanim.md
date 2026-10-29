@@ -2,8 +2,10 @@
 id: TASK-5.4
 title: City selection only from the sidebar; zone label on zmanim
 status: To Do
-assignee: []
+assignee:
+  - '@claude'
 created_date: '2026-10-29T18:47:00Z'
+updated_date: '2026-10-29T18:54:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -24,3 +26,12 @@ TASK-5 case table row 9 and the owner's Settings decisions. Adding a city in Set
 - [ ] #2 The Settings Location row no longer shows the current city as secondary text
 - [ ] #3 Zone label appears only when zones differ, in English and Hebrew; tests and emulator screenshots recorded
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+- PreferencesRepository.addSavedLocation no longer sets active_location_id; removal fallback unchanged. CityPicker/Locations settings unchanged otherwise; selection only via drawer.
+- SettingsScreen main Location row: drop the secondary current-city text (and the now unused state field); other wording kept.
+- Zone label: displayCityZoneLabel(displayCity, deviceZone): null when zones are equal, else "<city> time" (EN) / "שעון <city>" (HE). Shown on the Zmanim screen header and the day panel times section. ZmanimState/DayDetailState carry it; VMs compute it from DeviceContext.now().zone.
+- Tests: add-city doesn't select; remove selected falls back; label null/non-null; VM sets the label; emulator screenshots EN/HE.
+<!-- SECTION:PLAN:END -->

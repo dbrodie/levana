@@ -1,10 +1,11 @@
 ---
 id: TASK-5
 title: Device context owns dates and notifications; selected city is display-only
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-21T11:19:29Z'
-updated_date: '2026-10-29T18:47:00Z'
+updated_date: '2026-10-29T18:53:00Z'
 labels:
   - curated-import
   - source-specs
@@ -64,6 +65,12 @@ Implementation is split into subtasks TASK-5.1 to TASK-5.4, done in order on one
 - [ ] #4 PROJECT_SPEC.md states the device-vs-display-city rule and the developer-override semantics; ARCHITECTURE_SPEC.md names the abstraction and where each concept may be used
 - [ ] #5 Build, unit tests and lint pass; emulator checks cover a device time-zone change, crossing midnight with the app backgrounded, dev override plus reboot, and selecting a different-zone city (only Zmanim/day-panel times change)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Done in order on branch task-5-device-context, one commit (or more) per subtask: 5.1 device context + notifications + specs; 5.2 refresh today; 5.3 Israel/Diaspora three-way; 5.4 sidebar-only city selection + zone label. See each subtask's plan. Interpretation recorded for review: the developer override becomes a whole-day shift of the device clock (stored as a day count), so the as-if clock keeps running (time of day and midnight roll-over are real, only the date is shifted); AlarmManager triggers are mapped back to real time by the same shift.
+<!-- SECTION:PLAN:END -->
 
 ## Beads history
 
