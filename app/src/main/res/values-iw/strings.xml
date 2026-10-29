@@ -71,4 +71,6 @@
     <string name="widget_zmanim_name">לבנה · זמנים</string>
     <string name="widget_zmanim_description">הזמנים הנבחרים של היום, והזמן הבא מודגש</string>
     <string name="widget_zmanim_empty">לא נבחרו זמנים</string>
+    <string name="widget_zman_next">%1$s, %2$s, הבא</string>
+    <string name="widget_zman_past">%1$s, %2$s, עבר</string>
 </resources>

@@ -71,4 +71,6 @@
     <string name="widget_zmanim_name">Levana · Zmanim</string>
     <string name="widget_zmanim_description">Today\'s selected zmanim, with the next one highlighted</string>
     <string name="widget_zmanim_empty">No zmanim selected</string>
+    <string name="widget_zman_next">%1$s, %2$s, next</string>
+    <string name="widget_zman_past">%1$s, %2$s, passed</string>
 </resources>

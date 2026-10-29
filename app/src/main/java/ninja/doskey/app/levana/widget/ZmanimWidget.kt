@@ -30,6 +30,8 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -164,7 +166,15 @@ private fun ZmanRow(name: String, time: String, state: ZmanState, mirror: Boolea
         ZmanState.UPCOMING -> GlanceTheme.colors.onSurface
     }
     val weight = if (state == ZmanState.NEXT) FontWeight.Bold else FontWeight.Normal
+    // The highlight and dimming are only color, so screen readers are told in words
+    val context = LocalContext.current
+    val description = when (state) {
+        ZmanState.PAST -> context.getString(R.string.widget_zman_past, name, time)
+        ZmanState.NEXT -> context.getString(R.string.widget_zman_next, name, time)
+        ZmanState.UPCOMING -> "$name, $time"
+    }
     var modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
+        .semantics { contentDescription = description }
     if (state == ZmanState.NEXT) {
         modifier = modifier.cornerRadius(12.dp).background(GlanceTheme.colors.primaryContainer)
     }
