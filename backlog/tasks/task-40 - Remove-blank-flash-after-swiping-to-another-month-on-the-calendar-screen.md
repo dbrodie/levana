@@ -1,10 +1,11 @@
 ---
 id: TASK-40
 title: Remove blank flash after swiping to another month on the calendar screen
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-29T11:02:00Z'
-updated_date: '2026-10-29T11:17:00Z'
+updated_date: '2026-10-29T11:31:00Z'
 labels:
   - calendar
   - ui
@@ -40,6 +41,15 @@ Suggested direction: when the target month is already in the cache, set monthDay
 - [ ] #4 Go-to-date / Today jumps to an uncached month still show a loading state and then the correct month
 - [ ] #5 ViewModel unit test: LoadMonth/LoadHebrewMonth for a month already in the cache never emits a state with empty monthDays or isLoading=true, and does not drop the neighbouring months from the cache
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. CalendarViewModel.loadMonth/loadHebrewMonth: when the target month is in gregorianMonthCache/hebrewMonthCache, the synchronous step sets monthDays from the cache with isLoading=false; only clear monthDays and set isLoading=true when the month is not cached (Go-to-date/Today to a far month).
+2. loadJob merges the reloaded month into the existing cache instead of replacing it with mapOf(target), so neighbours stay available until adjacentJob replaces the cache with the prev/current/next window.
+3. Add CalendarMonthSwipeTest (Robolectric-free JVM test like ReactiveCalendarRefreshTest): collect every emitted state while sending LoadMonth/LoadHebrewMonth for a cached neighbour; assert no emission has empty monthDays or isLoading=true and the cache keeps neighbours; plus a test that an uncached jump still goes through the loading state.
+4. Build/test/lint, then emulator check with swipe_blank_check.sh (12 Gregorian + 12 Hebrew swipes) and Today/Go-to-date check.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

@@ -231,10 +231,12 @@ class CalendarViewModel(
         adjacentJob?.cancel()
 
         if (!keepContent) {
+            // A month swiped to is usually prefetched; show it at once rather than blanking the page.
+            val cached = _state.value.gregorianMonthCache[yearMonth]
             _state.value = _state.value.copy(
-                isLoading = true,
+                isLoading = cached == null,
                 currentMonth = yearMonth,
-                monthDays = emptyList()
+                monthDays = cached.orEmpty()
             )
         }
 
@@ -245,11 +247,8 @@ class CalendarViewModel(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 isLoading = false,
-                gregorianMonthCache = if (keepContent) {
-                    current.gregorianMonthCache + (yearMonth to markedDays)
-                } else {
-                    mapOf(yearMonth to markedDays)
-                }
+                // Keep the neighbours until the adjacent prefetch replaces them.
+                gregorianMonthCache = current.gregorianMonthCache + (yearMonth to markedDays)
             )
         }
 
@@ -322,10 +321,12 @@ class CalendarViewModel(
         adjacentJob?.cancel()
 
         if (!keepContent) {
+            // A month swiped to is usually prefetched; show it at once rather than blanking the page.
+            val cached = _state.value.hebrewMonthCache[hym]
             _state.value = _state.value.copy(
-                isLoading = true,
+                isLoading = cached == null,
                 hebrewYearMonth = hym,
-                monthDays = emptyList()
+                monthDays = cached.orEmpty()
             )
         }
 
@@ -336,11 +337,8 @@ class CalendarViewModel(
                 monthDays = markedDays,
                 today = currentPrefs.devDateOverride ?: LocalDate.now(),
                 isLoading = false,
-                hebrewMonthCache = if (keepContent) {
-                    current.hebrewMonthCache + (hym to markedDays)
-                } else {
-                    mapOf(hym to markedDays)
-                }
+                // Keep the neighbours until the adjacent prefetch replaces them.
+                hebrewMonthCache = current.hebrewMonthCache + (hym to markedDays)
             )
         }
 
