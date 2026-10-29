@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T11:02:00Z'
-updated_date: '2026-10-29T11:31:00Z'
+updated_date: '2026-10-29T11:40:00Z'
 labels:
   - calendar
   - ui
@@ -35,11 +35,11 @@ Suggested direction: when the target month is already in the cache, set monthDay
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On-device check passes in Gregorian mode: swipe_blank_check.sh (see notes) over 12 alternating swipes reports RESULT 0/12 (every swipe widest_empty_span < 300px). Baseline before fix: 11/19 recorded swipes blank.
-- [ ] #2 On-device check passes in Hebrew mode: 0/12 blank. Baseline before fix: 17/18 recorded swipes blank.
-- [ ] #3 Neither the incoming nor the outgoing month page ever renders empty (spinner only) during or after a swipe when that month was already loaded; the header subtitle (Hebrew month range / Gregorian date range) never disappears during a swipe
-- [ ] #4 Go-to-date / Today jumps to an uncached month still show a loading state and then the correct month
-- [ ] #5 ViewModel unit test: LoadMonth/LoadHebrewMonth for a month already in the cache never emits a state with empty monthDays or isLoading=true, and does not drop the neighbouring months from the cache
+- [x] #1 On-device check passes in Gregorian mode: swipe_blank_check.sh (see notes) over 12 alternating swipes reports RESULT 0/12 (every swipe widest_empty_span < 300px). Baseline before fix: 11/19 recorded swipes blank.
+- [x] #2 On-device check passes in Hebrew mode: 0/12 blank. Baseline before fix: 17/18 recorded swipes blank.
+- [x] #3 Neither the incoming nor the outgoing month page ever renders empty (spinner only) during or after a swipe when that month was already loaded; the header subtitle (Hebrew month range / Gregorian date range) never disappears during a swipe
+- [x] #4 Go-to-date / Today jumps to an uncached month still show a loading state and then the correct month
+- [x] #5 ViewModel unit test: LoadMonth/LoadHebrewMonth for a month already in the cache never emits a state with empty monthDays or isLoading=true, and does not drop the neighbouring months from the cache
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -105,4 +105,22 @@ echo "RESULT: $hits/$N swipes showed a blank month page"
 ```
 
 To run in Hebrew mode, tap the 'Hebrew' segment of the mode selector first (at about 657,285 on this AVD).
+
+## Fix verification (2026-10-29, tested commit cbd548a)
+
+Change: CalendarViewModel.loadMonth/loadHebrewMonth show the cached month at once (no isLoading, no clearing) when the target is in gregorianMonthCache/hebrewMonthCache; only uncached targets clear monthDays and set isLoading. loadJob merges the reloaded month into the cache instead of replacing it with mapOf(target), so neighbours stay until adjacentJob installs the prev/current/next window. CalendarScreen is unchanged.
+
+Build: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` passes (655 unit tests, 0 failures; lint clean).
+
+Unit test: CalendarMonthSwipeTest (Robolectric) records every emitted state. LoadMonth/LoadHebrewMonth to a cached neighbour never emits isLoading=true or empty monthDays and keeps the month swiped away from in the cache; GoToDate to an uncached month (Gregorian and Hebrew) emits the loading state and ends on the right month. Without the fix the two swipe tests fail ('never loading' / 'the cached month is shown at once').
+
+Emulator (AVD Levana_Agent_Template_API_36_1, emulator-5582, 1080x2400, today 2026-10-29), swipe_blank_check.sh, 12 alternating swipes per mode:
+- Gregorian: RESULT 0/12 (widest_empty_span 68px every swipe). Before: 11/19 blank.
+- Hebrew: RESULT 0/12 (66px every swipe). Before: 17/18 blank.
+- Header subtitle (new /tmp/levana-task40/subtitle_check.py: frames with no dark pixel in x 42..529, y 266..303): after 0/12 Gregorian + 0/12 Hebrew recordings lose the subtitle; same detector on the baseline recordings in evidence/: 10/30.
+- AC4: Hebrew mode, swiped 3 months ahead (Shevat), tapped Today -> one empty loading frame, then Cheshvan 5787 with today selected (after/today/hebrew_today_strip.png). Gregorian Go-to-date 29 Oct 2029 -> October 2029 / Tishrei-Cheshvan 5790 (after/today/gregorian_gotodate_strip.png); the uncached load finished between recorded frames there, so the loading frame is covered by the unit test rather than the recording.
+
+Evidence: /tmp/levana-task40/after/{gregorian,hebrew}/swipe_*.mp4, /tmp/levana-task40/after/today/*.mp4 and *_strip.png, scripts /tmp/levana-task40/{swipe_blank_check.sh,subtitle_check.py,frame_spans.py}.
+
+Limitations: screenrecord captures only some composed frames (hence 12 swipes per mode). A swipe made before adjacentJob finishes (~sub-second after a jump) can still reach an unprefetched month and show the loading state; that is genuine missing data, as the task allows.
 <!-- SECTION:NOTES:END -->
