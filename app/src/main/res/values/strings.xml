@@ -66,4 +66,6 @@
     <string name="widget_today_description">Hebrew date, next zman and Shabbat times</string>
     <string name="widget_next_zman">Next: %1$s</string>
     <string name="widget_next_zman_none">Next zman</string>
+    <string name="widget_month_name">Levana · Month</string>
+    <string name="widget_month_description">Hebrew month calendar with holidays</string>
 </resources>

@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.widget
 
-import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
 import android.text.format.DateFormat
@@ -9,7 +8,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.core.text.layoutDirection
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,7 +76,9 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
             val prefs by preferencesRepository.preferences.collectAsState(initialPrefs)
             val refreshes by WidgetUpdater.refreshes.collectAsState()
             val snapshot = remember(prefs, refreshes) { snapshot(prefs) }
-            LaunchedEffect(snapshot.refreshAt) { WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt) }
+            LaunchedEffect(snapshot.refreshAt) {
+                WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt, TodayWidgetReceiver::class.java)
+            }
             val colors = remember(snapshot.holidayTheme) {
                 ColorProviders(
                     light = levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme),
@@ -104,13 +104,9 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
 @Composable
 private fun TodayContent(snapshot: TodayWidgetSnapshot) {
     val context = LocalContext.current
-    val locale = context.resources.configuration.locales[0]
-    val hebrewUi = locale.language in setOf("he", "iw")
-    // The launcher lays the widget out in the device's direction; mirror it when the app
-    // language reads the other way (e.g. Hebrew app language on an English device)
-    val deviceLocale = context.getSystemService(LocaleManager::class.java)?.systemLocales?.get(0) ?: locale
-    val mirror = context.resources.configuration.layoutDirection !=
-        deviceLocale.layoutDirection
+    val locale = context.widgetLocale()
+    val hebrewUi = locale.isHebrewUi()
+    val mirror = context.widgetMirrored()
     val full = LocalSize.current.height >= TodayWidget.FULL.height &&
         LocalSize.current.width >= TodayWidget.FULL.width
 
@@ -301,13 +297,6 @@ private fun timeOnDay(
     timeFormatter: DateTimeFormatter,
     dayFormatter: DateTimeFormatter,
 ): String = "${date.format(dayFormatter)} ${at?.format(timeFormatter) ?: NO_TIME}"
-
-private fun openCalendar(context: Context, today: LocalDate): Action =
-    actionStartActivity(
-        Intent(context, MainActivity::class.java)
-            .putExtra(NotificationPoster.EXTRA_DATE_EPOCH_DAY, today.toEpochDay())
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-    )
 
 private fun openZmanim(context: Context, today: LocalDate): Action =
     actionStartActivity(

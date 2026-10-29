@@ -66,4 +66,6 @@
     <string name="widget_today_description">תאריך עברי, הזמן הבא וזמני שבת</string>
     <string name="widget_next_zman">הבא: %1$s</string>
     <string name="widget_next_zman_none">הזמן הבא</string>
+    <string name="widget_month_name">לבנה · חודש</string>
+    <string name="widget_month_description">לוח חודש עברי עם חגים</string>
 </resources>

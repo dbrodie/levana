@@ -32,8 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.Flow
 import androidx.compose.ui.Alignment
@@ -125,6 +128,8 @@ fun CalendarScreen(
     onShowZmanim: (LocalDate) -> Unit = {},
     onAddEvent: (Int, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
+    /** A day to select on opening (a widget or notification deep link), or null for today. */
+    initialDate: LocalDate? = null,
     viewModel: CalendarViewModel = koinViewModel(),
     dayDetailViewModel: DayDetailViewModel = koinViewModel()
 ) {
@@ -135,6 +140,16 @@ fun CalendarScreen(
     val today = state.today
     LaunchedEffect(state.selectedDate, today != null) {
         if (today != null) dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+    }
+
+    // Selected once the device date is known, as the first load selects today; only once,
+    // so returning to the screen or rotating keeps the user's own selection
+    var initialDateShown by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialDate, today != null) {
+        if (today != null && initialDate != null && !initialDateShown) {
+            initialDateShown = true
+            if (initialDate != today) viewModel.onIntent(CalendarIntent.GoToDate(initialDate))
+        }
     }
 
     // Changes to events made elsewhere (or a newly granted permission) refresh on return.
@@ -249,7 +264,7 @@ private fun GregorianCalendarContent(
                 }
             } else {
                 GregorianMonthGrid(
-                    monthDays = days, currentMonth = pageMonth,
+                    monthDays = days,
                     today = today, selectedDate = state.selectedDate,
                     onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
                 )
@@ -395,18 +410,13 @@ private fun CalendarMonthHeader(
 @Composable
 private fun GregorianMonthGrid(
     monthDays: List<HebrewDay>,
-    currentMonth: YearMonth,
     today: LocalDate,
     selectedDate: LocalDate,
     onDayClick: (LocalDate) -> Unit
 ) {
-    val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek
-    val leadingEmptyCells = firstDayOfWeek.value % 7
-    val allCells: List<HebrewDay?> = List(leadingEmptyCells) { null } + monthDays
-
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
         DayHeaderRow(LocalConfiguration.current.locales[0])
-        allCells.chunked(7).forEach { row ->
+        monthGridWeeks(monthDays).forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 row.forEach { day ->
                     if (day != null) {
@@ -423,9 +433,6 @@ private fun GregorianMonthGrid(
                         Box(modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
-                repeat(7 - row.size) {
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight())
-                }
             }
         }
     }
@@ -439,13 +446,10 @@ private fun HebrewMonthGrid(
     onDayClick: (LocalDate) -> Unit
 ) {
     if (monthDays.isEmpty()) return
-    val firstDate = monthDays.first().gregorianDate
-    val leadingEmptyCells = firstDate.dayOfWeek.value % 7
-    val allCells: List<HebrewDay?> = List(leadingEmptyCells) { null } + monthDays
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
         DayHeaderRow(HEBREW_LOCALE)
-        allCells.chunked(7).forEach { row ->
+        monthGridWeeks(monthDays).forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 row.forEach { day ->
                     if (day != null) {
@@ -461,9 +465,6 @@ private fun HebrewMonthGrid(
                     } else {
                         Box(modifier = Modifier.weight(1f).fillMaxHeight())
                     }
-                }
-                repeat(7 - row.size) {
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
         }
@@ -577,10 +578,5 @@ private fun DayCell(
 }
 
 @Composable
-private fun holidayCategoryColor(category: HolidayCategory): Color = when (category) {
-    HolidayCategory.TORAH -> MaterialTheme.colorScheme.primary
-    HolidayCategory.RABBINIC -> MaterialTheme.colorScheme.secondary
-    HolidayCategory.FAST -> MaterialTheme.colorScheme.error
-    HolidayCategory.MINOR -> MaterialTheme.colorScheme.tertiary
-    HolidayCategory.MODERN_ISRAELI -> MaterialTheme.colorScheme.primary
-}
+private fun holidayCategoryColor(category: HolidayCategory): Color =
+    holidayCategoryColor(category, MaterialTheme.colorScheme)
