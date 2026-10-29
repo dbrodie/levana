@@ -6,13 +6,11 @@ import ninja.doskey.app.levana.device.DeviceNow
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.ui.theme.activeHolidayTheme
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -58,8 +56,6 @@ class TodayWidgetSnapshots(
         val position = device.position
         val dayInfo = calendarRepository.getDayInfo(today, prefs.isInIsrael, prefs.showModernIsraeliHolidays)
         val nextZman = nextZman(prefs, position, today, device.instant)
-        val nextMidnight = today.plusDays(1).atStartOfDay(device.zone).toInstant()
-        val staleAt = nextZman?.at?.toInstant()?.takeIf { it < nextMidnight } ?: nextMidnight
         return TodayWidgetSnapshot(
             today = today,
             hebrewDay = dayInfo.hebrewDay,
@@ -68,28 +64,13 @@ class TodayWidgetSnapshots(
             nextZman = nextZman,
             shabbat = shabbatTimes(prefs, position, today),
             holidayTheme = activeHolidayTheme(prefs, today),
-            refreshAt = device.toSystemInstant(staleAt),
+            refreshAt = widgetRefreshAt(device, nextZman),
         )
     }
 
-    /**
-     * The first selected zman after [now], from [today]'s list and then tomorrow's. A night
-     * zman before noon (halachic midnight after civil midnight) belongs to the next civil day.
-     */
-    internal fun nextZman(prefs: UserPreferences, location: Location, today: LocalDate, now: Instant): NextZman? {
-        val zone = ZoneId.of(location.timezoneId)
-        return listOf(today, today.plusDays(1)).firstNotNullOfOrNull { date ->
-            zmanimRepository.getZmanim(date, location, prefs.candleLightingOffset, prefs.isInIsrael)
-                .filter { it.name in prefs.selectedZmanim }
-                .mapNotNull { zman ->
-                    val time = zman.time ?: return@mapNotNull null
-                    val day = if (zman.category == ZmanCategory.NIGHT && time < LocalTime.NOON) date.plusDays(1) else date
-                    NextZman(zman.name, zman.hebrewName, day.atTime(time).atZone(zone))
-                }
-                .filter { it.at.toInstant() > now }
-                .minByOrNull { it.at }
-        }
-    }
+    /** The first selected zman after [now], from [today]'s list and then tomorrow's. */
+    internal fun nextZman(prefs: UserPreferences, location: Location, today: LocalDate, now: Instant): NextZman? =
+        zmanimRepository.nextSelectedZman(prefs, location, today, now)
 
     /**
      * The run of Shabbat / Yom Tov days shown on [today]: the first whose havdalah falls on

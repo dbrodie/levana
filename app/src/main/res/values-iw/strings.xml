@@ -68,4 +68,9 @@
     <string name="widget_next_zman_none">הזמן הבא</string>
     <string name="widget_month_name">לבנה · חודש</string>
     <string name="widget_month_description">לוח חודש עברי עם חגים</string>
+    <string name="widget_zmanim_name">לבנה · זמנים</string>
+    <string name="widget_zmanim_description">הזמנים הנבחרים של היום, והזמן הבא מודגש</string>
+    <string name="widget_zmanim_empty">לא נבחרו זמנים</string>
+    <string name="widget_zman_next">%1$s, %2$s, הבא</string>
+    <string name="widget_zman_past">%1$s, %2$s, עבר</string>
 </resources>

@@ -27,6 +27,7 @@ object WidgetUpdater {
     private val receivers: List<Class<out GlanceAppWidgetReceiver>> = listOf(
         TodayWidgetReceiver::class.java,
         MonthWidgetReceiver::class.java,
+        ZmanimWidgetReceiver::class.java,
     )
 
     /** Asks every widget receiver to redraw; safe to call from any receiver or thread. */
