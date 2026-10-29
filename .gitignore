@@ -17,12 +17,5 @@ keystore.properties
 *.keystore
 release.keystore
 
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
-.beads/proxieddb/
-*.gate.lock*
-
 # Machine-local paths; copied into new worktrees via .worktreeinclude
 .env

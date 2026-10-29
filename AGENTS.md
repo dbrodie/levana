@@ -33,17 +33,17 @@ set -a && . ./.env && set +a && ./gradlew :app:assembleDebug :app:testDebugUnitT
 
 ## Task Workflow
 
-- **One Beads task → one agent, branch and worktree/workspace**, created through Paseo. Group only with explicit user instruction; sequence dependent tasks or queue them when concurrency is limited. Do not nest worktrees.
-- **Task agent:** claim, plan, commit `specs/rfes/<task>.md` inside its worktree before implementation, then implement, verify and commit on the task branch. Leave merging, pushing, closing and Beads sync to the coordinator.
-- **Verification:** the build and test commands above, plus runtime checks with the `android-debug` skill when the change is visible on a device. Each task uses its own emulator. Record the tested commit, results, limitations and evidence in the Beads task notes; keep larger artifacts outside the worktree and reference their paths.
-- **Coordinator:** review changes/evidence, integrate sequentially and test the combined result. With authorization: merge to `master` → push/confirm → close/sync Beads → archive workspace/agent → delete merged branch. Do not request approval already granted. Retain the workspace if blocked or awaiting approval.
+- **One task → one agent, branch and worktree/workspace**, created through Paseo. Group only with explicit user instruction; sequence dependent tasks or queue them when concurrency is limited. Do not nest worktrees.
+- **Task agent:** claim, plan, commit `specs/rfes/<task>.md` inside its worktree before implementation, then implement, verify and commit on the task branch. Leave merging, pushing and completion to the coordinator.
+- **Verification:** the build and test commands above, plus runtime checks with the `android-debug` skill when the change is visible on a device. Each task uses its own emulator. Record the tested commit, results, limitations and evidence in the task notes; keep larger artifacts outside the worktree and reference their paths.
+- **Coordinator:** review changes/evidence, integrate sequentially and test the combined result. With authorization: merge to `master` → push/confirm → mark the task Done and push the task update → archive workspace/agent → delete merged branch. Do not request approval already granted. Retain the workspace if blocked or awaiting approval.
 
 ## Task Tracking
 
-Track all work in the shared project Beads database (`bd`), not in markdown or tool-specific todo lists. This section overrides generic Beads guidance, including the session-close steps printed by `bd prime`.
+Use Backlog.md (`backlog`) for all task tracking. Tasks live in `backlog/` and are committed with the work. Install the CLI with `npm install -g backlog.md`, or use `npx backlog.md`.
 
-- Find work with `bd ready` and `bd show <id>`. Claim with `bd update <id> --claim`, then record agent/workspace IDs, branch and base commit.
-- Add notes with `bd update <id> --append-notes` at phase changes, blockers and handoff: commits, verification evidence and pending work.
-- `open`: queued; `in_progress`: implementation through integration; `blocked`: concrete blocker; `deferred`: postponed; `closed`: verified, merged and pushed. Agent completion alone does not close a task.
-- File separate discoveries with `bd create` and link them with `bd dep add`; keep unmet acceptance criteria on the original task unless the user approves a scope change.
-- Only the coordinator runs `bd close` and `bd dolt push`, after the merge is pushed, and records merge and cleanup outcomes.
+- Run `backlog instructions overview` for usage guidance; this file governs the project workflow.
+- Find work with `backlog task list --plain` and read it with `backlog task <id> --plain`.
+- Assign the task and mark it `In Progress` when starting. Keep plans, progress, verification evidence and handoff notes in the task; link its RFE in `specs/rfes/`.
+- File new discoveries as tasks, using dependencies only for work that actually blocks them.
+- Only the coordinator marks tasks `Done`, after verification, integration and a confirmed push. Agent completion alone does not mark a task Done.
