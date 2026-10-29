@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -183,11 +184,13 @@ private fun ZmanRow(
         ZmanState.NEXT -> context.getString(R.string.widget_zman_next, name, time)
         ZmanState.UPCOMING -> "$name, $time"
     }
-    var modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
+    // Every row sets its background: the launcher reuses list rows, and a row without one
+    // would keep the highlight of the zman that was next before
+    val background = if (state == ZmanState.NEXT) GlanceTheme.colors.primaryContainer else NO_BACKGROUND
+    val modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
+        .cornerRadius(12.dp)
+        .background(background)
         .semantics { contentDescription = description }
-    if (state == ZmanState.NEXT) {
-        modifier = modifier.cornerRadius(12.dp).background(GlanceTheme.colors.primaryContainer)
-    }
     Column(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 1.dp)) {
         Row(modifier = modifier.clickable(action), verticalAlignment = Alignment.CenterVertically) {
             val label = @Composable {
@@ -219,6 +222,8 @@ private fun ZmanRow(
 }
 
 private const val PAST_ALPHA = 0.5f
+
+private val NO_BACKGROUND = ColorProvider(Color.Transparent)
 
 class ZmanimWidgetReceiver : RefreshingWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ZmanimWidget()
