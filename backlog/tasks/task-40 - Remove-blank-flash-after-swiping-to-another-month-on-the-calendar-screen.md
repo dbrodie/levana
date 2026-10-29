@@ -4,6 +4,7 @@ title: Remove blank flash after swiping to another month on the calendar screen
 status: To Do
 assignee: []
 created_date: '2026-10-29T11:02:00Z'
+updated_date: '2026-10-29T11:17:00Z'
 labels:
   - calendar
   - ui
@@ -33,9 +34,65 @@ Suggested direction: when the target month is already in the cache, set monthDay
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Swiping to an adjacent month in Gregorian mode shows no blank/flash of the grid or header subtitle after the swipe settles
-- [ ] #2 Same for Hebrew mode
-- [ ] #3 Rapid consecutive swipes do not land on an empty page when neighbour data was already loaded
+- [ ] #1 On-device check passes in Gregorian mode: swipe_blank_check.sh (see notes) over 12 alternating swipes reports RESULT 0/12 (every swipe widest_empty_span < 300px). Baseline before fix: 11/19 recorded swipes blank.
+- [ ] #2 On-device check passes in Hebrew mode: 0/12 blank. Baseline before fix: 17/18 recorded swipes blank.
+- [ ] #3 Neither the incoming nor the outgoing month page ever renders empty (spinner only) during or after a swipe when that month was already loaded; the header subtitle (Hebrew month range / Gregorian date range) never disappears during a swipe
 - [ ] #4 Go-to-date / Today jumps to an uncached month still show a loading state and then the correct month
-- [ ] #5 ViewModel unit test covers: loading a cached month keeps monthDays non-empty and isLoading=false throughout
+- [ ] #5 ViewModel unit test: LoadMonth/LoadHebrewMonth for a month already in the cache never emits a state with empty monthDays or isLoading=true, and does not drop the neighbouring months from the cache
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Reproduction on emulator (2026-10-29, commit b18e7b2)
+
+Environment: AVD Levana_Agent_Template_API_36_1 (API 36, 1080x2400), started read-only on emulator-5580; debug APK from assembleDebug; location + notification permissions granted; today = 2026-10-29.
+
+Steps: open the app on the month calendar, then swipe a month horizontally (adb shell input swipe 900 900 150 900 250 for next, reverse for prev) while recording with adb screenrecord.
+
+Observed (frame-by-frame from the recordings):
+- Incoming page blank: mid-to-late slide, the header flips to the new month (CalendarIntent.LoadMonth fired from settledPage) and the incoming month page goes completely empty, showing only the loading spinner dot, for 1 to 3 recorded frames (~70-150 ms), then the days reappear and the slide finishes. The header subtitle (e.g. 'Cheshvan-Kislev 5787' or 'Nov 11, 2026 - Dec 10, 2026') vanishes during the same frames.
+- Outgoing page blank: in other swipes the page sliding off-screen goes empty instead. This happens because loadJob replaces gregorianMonthCache/hebrewMonthCache with mapOf(target to days), which drops the neighbours until adjacentJob finishes.
+- In Hebrew mode the incoming page was sometimes already blank before the header flipped, so a neighbour was missing from the cache before the swipe.
+- Rates: Gregorian 11/19 recorded swipes showed a blank page; Hebrew 17/18. screenrecord only captures some composed frames, so a 'no' on a single swipe is not proof; use 12+ swipes per mode.
+
+Detector: widest horizontal span of the month grid (y 445..1650) that has no dark pixel (gray < 140). Rendered months, including mid-slide frames: always 66-68px. Blank page: 374-740px. Threshold 300px.
+
+Evidence (outside the worktree): /tmp/levana-task40/evidence/. Key files: gregorian_strip.png (frames 6-11, Oct->Nov, blank Nov page + missing subtitle), g_prev_3_strip.png (Dec->Nov), heb_strip.png (Cheshvan->Kislev), calib.png (incoming vs outgoing blank), *.mp4 raw recordings.
+
+Verification script (copy to a file and chmod +x; requires ffmpeg and python3):
+
+```zsh
+#!/bin/zsh
+# TASK-40 month-swipe blank check. Usage: swipe_blank_check.sh <adb-serial> <swipes> [outdir]
+# Precondition: Levana open on the month calendar (Gregorian or Hebrew), 1080x2400 screen.
+# Records each swipe (alternating next/prev) and reports the widest empty (no dark pixel) horizontal span
+# in the month grid (y 445..1650). Rendered months never exceed ~70px; a blank page gives 370-740px.
+S=$1; N=$2; OUT=${3:-/tmp/levana-task40/run}; mkdir -p $OUT; hits=0
+adb(){ ~/Library/Android/sdk/platform-tools/adb -s $S "$@"; }
+for i in $(seq 1 $N); do
+  adb shell rm -f /sdcard/r.mp4
+  adb shell screenrecord --bit-rate 20000000 --time-limit 4 /sdcard/r.mp4 & sleep 1.2
+  if (( i % 2 )); then adb shell input swipe 900 900 150 900 250; else adb shell input swipe 150 900 900 900 250; fi
+  wait; adb pull /sdcard/r.mp4 $OUT/swipe_$i.mp4 >/dev/null; sleep 1
+  r=$(python3 -I - $OUT/swipe_$i.mp4 <<'PY'
+import subprocess, sys
+W,H=1080,2400
+raw=subprocess.run(["ffmpeg","-v","error","-i",sys.argv[1],"-fps_mode","passthrough","-f","rawvideo","-pix_fmt","gray","-"],capture_output=True).stdout
+worst=(0,-1)
+for i in range(len(raw)//(W*H)):
+    b=i*W*H; run=best=0
+    for x in range(0,W,2):
+        run=0 if any(raw[b+y*W+x]<140 for y in range(445,1650,3)) else run+2; best=max(best,run)
+    worst=max(worst,(best,i))
+print(worst[0], worst[1])
+PY
+)
+  span=${r%% *}; v=ok; (( span > 300 )) && { v=BLANK; hits=$((hits+1)); }
+  echo "swipe $i $([[ $((i%2)) = 1 ]] && echo next || echo prev): widest_empty_span=${span}px (frame ${r##* }) $v"
+done
+echo "RESULT: $hits/$N swipes showed a blank month page"
+```
+
+To run in Hebrew mode, tap the 'Hebrew' segment of the mode selector first (at about 657,285 on this AVD).
+<!-- SECTION:NOTES:END -->
