@@ -16,10 +16,11 @@ Make `AGENTS.md` the single, agent-agnostic instruction file and make the Beads 
 ## Changes
 
 - `AGENTS.md`: replace the generated Beads and `bv` blocks with a short project Beads section; add build and test commands; clarify verification evidence and the skill name; remove the file list.
-- `.beads/PRIME.md`: override `bd prime` with a concise command reference that defers to `AGENTS.md` for workflow rules.
+- Remove the generated Beads integrations for Claude, Codex and Cursor; `AGENTS.md` states that its Beads rules override generic `bd prime` guidance.
+- Add a tracked `.env` with the machine paths Gradle needs, and reference it from `AGENTS.md`.
 - Remove `specs/TASKS.md`.
-- Remove `CLAUDE.md` once the owner confirms.
+- Remove `CLAUDE.md`.
 
 ## Expected outcome
 
-Every agent loads the same instructions, and the Beads context matches the project's completion rules.
+Every agent loads the same instructions, the Beads rules match the project's completion workflow, and Gradle runs in any worktree.
