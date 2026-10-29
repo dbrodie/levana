@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T20:22:00Z'
+updated_date: '2026-10-29T20:42:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -57,4 +57,53 @@ Third subtask of TASK-9; see TASK-9 for product decisions and shared design. Use
 
 <!-- SECTION:NOTES:BEGIN -->
 TASK-5 owner decision (2026-10-29): widgets show the device position (not the selected city); the 'active location in header' here should read the device position, as the Today widget now does.
+
+## Implementation (commits 56da488, e56d204)
+- `widget/WidgetZmanim.kt` is shared and extracted from the 9.1 code:
+  - `selectedZmanimOn`: the day-details filter in the same order, with a night zman before noon dated to the next civil day; uncomputable times stay listed with a null time.
+  - `nextSelectedZman`: today, then tomorrow.
+  - `widgetRefreshAt`: the next zman or the device midnight, on the real clock.
+  - `TodayWidgetSnapshots` now delegates to these, with no behavior change; its 15 tests still pass.
+- `ZmanimWidgetSnapshots` (pure, Koin) gives today, the Hebrew day, the device position name, rows (PAST/NEXT/UPCOMING), the holiday theme and refreshAt. NEXT is the same next zman the Today widget shows, highlighted when it falls in today's list. Null times are never dimmed.
+- `ZmanimWidget` (Glance):
+  - Header: the Hebrew day/month · location. Tapping it opens the calendar on today.
+  - Rows are a `LazyColumn`. Past rows use onSurfaceVariant; the next row uses primaryContainer, bold. Each row opens the Zmanim screen for today (`EXTRA_OPEN_ZMANIM`). Mirroring and the time format are shared with TodayWidget (helpers made internal, plus a new `mirrored()`).
+  - An empty selection shows "No zmanim selected".
+  - Each row has a content description ending in "next"/"passed" (Hebrew "הבא"/"עבר"), because the dimming and highlight are color only.
+- Refresh plumbing:
+  - `LevanaWidgetReceiver` is a base class for Today and Zmanim.
+  - `requestUpdate` broadcasts to every receiver.
+  - `scheduleRefresh`/`cancelRefresh` take the receiver class, so each widget kind has its own alarm.
+  - Manifest receiver, `zmanim_widget_info.xml` (min 2x2, target 3x3, resizable), en/iw strings.
+  - **Merge note for 9.2:** `WidgetUpdater.scheduleRefresh` now needs a receiver argument and `receivers` lists the widget receivers. The month widget should subclass `LevanaWidgetReceiver` and add itself to that list.
+
+## Verification (tested commit e56d204)
+**Build/test/lint:** `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL, 731 tests, 0 failures/errors. No lint issues in widget code or the new strings; the remaining warnings are pre-existing.
+
+**New unit tests** (`ZmanimWidgetSnapshotsTest`, 8 tests):
+- past/next/upcoming in day-details order;
+- the highlight equals the Today widget's next zman, refresh happens when it passes, and the highlight then moves on;
+- Chatzot HaLaylah after civil midnight (Jerusalem, July, 23:30) is NEXT, dated the next day, with refresh at midnight first;
+- all passed means no highlight and refresh at midnight;
+- an empty selection gives no rows;
+- polar (Tromsø, 21 Jun): Sunrise/Sunset null and not dimmed, Chatzot past;
+- developer override: the fixed date's list, with refresh on the real clock;
+- selecting New York in the sidebar gives a snapshot identical to the device-position one.
+
+**Emulator** (dedicated read-only instance of `Levana_Agent_Template_API_36_1`, emulator-5592, Asia/Jerusalem, 2026-10-29 22:25–23:35, GPS fix set to Jerusalem; evidence is UI XML dumps via uiautomator, as the android-debug skill forbids screenshots):
+- The widget picker lists "Levana · Zmanim", 3 × 3, with its description. It was placed on the Pixel launcher home screen.
+- Initial: `18 Cheshvan · Current Location`, Sunrise/Sunset/Nightfall. After a GPS fix to Jerusalem, the widget redrew itself with Jerusalem times (5:52 / 4:52 / 5:29 PM).
+- Selection change (Settings → Halachic Times, +Alot, Chatzot, Candle Lighting, Chatzot HaLaylah): the widget redrew itself. Candle lighting is correctly absent on Thursday. Descriptions at 22:33: Alot…Nightfall `passed`, `Chatzot HaLaylah, 11:22 PM, next`.
+- Taps: a row opened the Zmanim screen; the header opened the calendar. After scrolling, a lazy row still opened the Zmanim screen.
+- Sidebar city switched to New York (sidebar shows ACTIVE CITY New York): the widget was unchanged (Current Location, Jerusalem times, same states). The Zmanim screen opened from the widget shows New York ("New York time"), which is the app's selected-city lens per TASK-5.
+- Hebrew app language (`cmd locale set-app-locales … iw`): `י״ח חשון`, Hebrew names, 24h times, `…, עבר` / `חצות הלילה, 23:22, הבא`. Mirrored: time on the left, name on the right, date on the right of the header. English is not mirrored.
+- Dark mode and forced Purim theme (Developer settings): redraws with no errors, and 0 FATAL EXCEPTION in logcat.
+- Resize 3x3 → 2x2: the date stays whole and the location truncates. The 6th row moved off-screen and scrolling the list brought it into view.
+- Time zone → Pacific/Kiritimati (`service call alarm 3`): the widget redrew itself immediately to `19 Cheshvan` (Friday). Candle Lighting 4:33 PM appeared and `Alot HaShachar, 4:40 AM, next`. The refresh alarm moved to 16:40 +14 (= 04:40 Jerusalem). Back to Jerusalem: 18 Cheshvan, alarm 23:22:49.
+- Alarms (`dumpsys alarm`): `widget.REFRESH` RTC at 23:22:49 with a 10 min window, separate from the app's DATE_ROLLOVER. With the Today widget also placed there are two REFRESH alarms (one per receiver), both at 23:22:49, and the two widgets agree on the next zman (`Next: Chatzot HaLaylah`).
+
+**Limitations**
+- Colors (light/dark, Purim theme, highlight background, dimming) were not visually inspected: no screenshots per the android-debug skill, and UI XML has no colors. States are confirmed via the row descriptions. Colors come structurally from `levanaColorScheme`/`activeHolidayTheme`, as in 9.1. A human eyeball check is recommended.
+- Times are in the position's zone. After a zone change the GPS fix keeps its original zone (Kiritimati showed Jerusalem-zone times for Friday). This is pre-existing DeviceContext behavior and is the same in the Today widget.
+- The location name is "Current Location" (stored name, no reverse-geocoded name on this emulator), the same as the app.
 <!-- SECTION:NOTES:END -->

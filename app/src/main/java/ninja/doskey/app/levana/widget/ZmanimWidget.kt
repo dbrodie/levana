@@ -21,6 +21,7 @@ import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
@@ -36,6 +37,7 @@ import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
@@ -66,14 +68,14 @@ class ZmanimWidget : GlanceAppWidget(), KoinComponent {
             LaunchedEffect(snapshot.refreshAt) {
                 WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt, ZmanimWidgetReceiver::class.java)
             }
-            val colors = remember(snapshot.holidayTheme) {
-                ColorProviders(
-                    light = levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme),
-                    dark = levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme),
-                )
+            val light = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme) }
+            val dark = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme) }
+            // Passed times fade out of the scheme's text color; onSurfaceVariant is too close to it
+            val pastColor = remember(light, dark) {
+                ColorProvider(day = light.onSurface.copy(alpha = PAST_ALPHA), night = dark.onSurface.copy(alpha = PAST_ALPHA))
             }
-            GlanceTheme(colors = colors) {
-                ZmanimContent(snapshot)
+            GlanceTheme(colors = remember(light, dark) { ColorProviders(light = light, dark = dark) }) {
+                ZmanimContent(snapshot, pastColor)
             }
         }
     }
@@ -84,7 +86,7 @@ class ZmanimWidget : GlanceAppWidget(), KoinComponent {
 }
 
 @Composable
-private fun ZmanimContent(snapshot: ZmanimWidgetSnapshot) {
+private fun ZmanimContent(snapshot: ZmanimWidgetSnapshot, pastColor: ColorProvider) {
     val context = LocalContext.current
     val hebrewUi = context.widgetLocale().isHebrewUi()
     val mirror = context.widgetMirrored()
@@ -114,6 +116,7 @@ private fun ZmanimContent(snapshot: ZmanimWidgetSnapshot) {
                         name = zmanDisplayName(row.name, row.hebrewName, hebrewUi).primary,
                         time = row.at?.format(timeFormatter) ?: NO_TIME,
                         state = row.state,
+                        pastColor = pastColor,
                         mirror = mirror,
                         action = openZmanim,
                     )
@@ -159,9 +162,16 @@ private fun Header(snapshot: ZmanimWidgetSnapshot, hebrewUi: Boolean, mirror: Bo
 }
 
 @Composable
-private fun ZmanRow(name: String, time: String, state: ZmanState, mirror: Boolean, action: Action) {
+private fun ZmanRow(
+    name: String,
+    time: String,
+    state: ZmanState,
+    pastColor: ColorProvider,
+    mirror: Boolean,
+    action: Action,
+) {
     val color = when (state) {
-        ZmanState.PAST -> GlanceTheme.colors.onSurfaceVariant
+        ZmanState.PAST -> pastColor
         ZmanState.NEXT -> GlanceTheme.colors.onPrimaryContainer
         ZmanState.UPCOMING -> GlanceTheme.colors.onSurface
     }
@@ -207,6 +217,8 @@ private fun ZmanRow(name: String, time: String, state: ZmanState, mirror: Boolea
         }
     }
 }
+
+private const val PAST_ALPHA = 0.5f
 
 class ZmanimWidgetReceiver : RefreshingWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = ZmanimWidget()
