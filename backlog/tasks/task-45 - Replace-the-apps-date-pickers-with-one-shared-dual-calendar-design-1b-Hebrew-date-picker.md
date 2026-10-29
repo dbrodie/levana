@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-29T21:22:00Z'
-updated_date: '2026-10-29T21:29:00Z'
+updated_date: '2026-10-29T21:34:00Z'
 labels: []
 dependencies:
   - TASK-24
@@ -23,7 +23,7 @@ Owner request 2026-10-29. Implement variant **1b "Dual calendar"** from the Clau
 **Design source**
 - Claude Design project (needs login, agents can't open it): https://claude.ai/design/p/fe15c347-4eef-410e-9639-d561a1ff21b0?file=Hebrew+Date+Picker.dc.html
 - Export supplied by the owner: `/Users/daniel/.paseo/uploads/upload_0e207f57-2a44-49ec-a29f-7146dcb2479e/Jewish Calendar App Design.html`. It is a self-unpacking bundle; open it in Chrome to use the live mockups. Variants 1a, 1c and 1d on the same page are NOT chosen.
-- Rendered references (coordinator, 2026-10-29): `/tmp/levana-design-45/crop1b.png` (variant 1b at 2x) and `/tmp/levana-design-45/full.png` (all four variants). If /tmp was cleared, re-render the export with headless Chrome.
+- Rendered references (coordinator, 2026-10-29): `/tmp/levana-design-45/crop1b.png` (variant 1b at 2x), `/tmp/levana-design-45/full.png` (all four variants) and the interaction states in `/tmp/levana-design-45/states/` (listed below). They were driven with `/tmp/levana-design-45-scripts/drive.mjs` (Node + headless Chrome via DevTools protocol: `node drive.mjs <export.html> <outDir> '<steps json>'`). If /tmp was cleared, copy the export to a fresh dir and re-run it.
 
 **Variant 1b spec** (read from the export's markup and logic)
 - **Modal dialog** in M3 style, rounded, over a scrim.
@@ -32,7 +32,7 @@ Owner request 2026-10-29. Implement variant **1b "Dual calendar"** from the Clau
   - Large leading-calendar title with a dropdown arrow. Hebrew mode: Hebrew month and year in Hebrew letters (e.g. חשוון ה׳תשפ״ז). Gregorian mode: e.g. "October 2026".
   - Below it, the other calendar's matching span. Hebrew mode shows the Gregorian range (e.g. "Oct – Nov 2026"). Gregorian mode shows the Hebrew month(s) the Gregorian month spans (e.g. "Tishrei – Cheshvan 5787").
   - Previous/next chevrons step one month of the leading calendar.
-- **Year view:** tapping the title toggles between the day grid and a scrollable year list (arrow flips up/down; chevrons hidden). The list scrolls to the selected year; the selected and current years are visually marked. Hebrew years show the Hebrew-letter year plus the number (e.g. ה׳תשפ״ז 5787); Gregorian years show the number. Picking a year returns to the day grid with the same month kept, adjusted if that month doesn't exist in the new year (e.g. Adar I/II vs Adar). The mockup's ranges were 5600–5900 / 1840–2140; real bounds come from the TASK-24 year-range policy.
+- **Year view:** tapping the month title switches the grid area to a year list; see "Interaction behavior" below. Real bounds come from the TASK-24 year-range policy (the mockup used 5600–5900 / 1840–2140).
 - **Day grid:** 7-column week grid starting Sunday, with weekday initials. Each cell has two lines:
   - Hebrew mode: the Hebrew day in letters (large) over the Gregorian day (small). The Gregorian line adds the month name on the 1st of a Gregorian month and on the first cell (e.g. "12 Oct", "1 Nov").
   - Gregorian mode: the Gregorian number (large) over the Hebrew day in letters (small), with the Hebrew month name on Hebrew day 1.
@@ -43,6 +43,20 @@ Owner request 2026-10-29. Implement variant **1b "Dual calendar"** from the Clau
   - When the selected day has a holiday, a small tinted chip with the category icon and holiday name.
   - **Cancel** and **OK** text buttons.
 - **Visual language:** follow the app's Material 3 theme and the existing calendar screen rather than the mockup's literal hex values and fonts. The mockup's neutral slate palette and Manrope font are placeholders. Holiday-dot colours, holiday names and icons reuse the app's existing holiday categories, colours and strings.
+
+**Interaction behavior** (observed by driving the live mockup, 2026-10-29; screenshots in `/tmp/levana-design-45/states/`)
+- **Hebrew-led** (`01-hebrew-initial`): title "חשוון ה׳תשפ״ז", subtitle "Oct – Nov 2026". Cells are Hebrew letters over the Gregorian day; the Gregorian month name appears on Hebrew day 1 and on the 1st of a Gregorian month ("12 Oct", "1 Nov"). The footer reads "י״ח חשוון  Thu, 29 Oct 2026".
+- **Gregorian-led** (`02-gregorian-initial`): title "October 2026", subtitle "Tishrei – Cheshvan 5787" (Hebrew months transliterated in the subtitle). Cells are the Gregorian number over the Hebrew day in letters, with the Hebrew month name on Hebrew day 1 (e.g. "חשוון" on 12 Oct). The footer flips its order: "Thu, 29 Oct 2026  י״ח חשוון". The toggle highlights the active segment.
+- **Month navigation** (`03-gregorian-next-month`): the chevrons step the leading calendar's month (October → November 2026; the subtitle becomes "Cheshvan – Kislev 5787"). In Hebrew-led mode they step Hebrew months, including Adar I → Adar II in a leap year (`10-hebrew-adar-i-5787-leap`, `11-…`).
+- **Selecting** (`04-gregorian-pick-nov15`): tapping a day selects it (filled circle) and updates the footer immediately. Nothing is committed until OK; Cancel discards.
+- **Switching the leading calendar re-anchors on the selection** (`05-hebrew-after-switch`, `13-gregorian-after-switch-purim`): after picking 15 Nov 2026 in Gregorian mode, switching to Hebrew shows Kislev 5787, the month containing the selection, not the previously viewed Hebrew month. Switching back to Gregorian after browsing to another Hebrew year likewise shows March 2027, where the selection is.
+- **Year list** (`06-hebrew-year-list`, `08-gregorian-year-list`): tapping the title (arrow flips to ▲, chevrons hide, subtitle stays) replaces the grid with a 3-column scrollable grid of years. It is **single-select**, not multi-select. Hebrew mode shows the Hebrew-letter year over the number (ה׳תשפ״ז / 5787); Gregorian mode shows numbers only. The list opens scrolled to the viewed year, which is a filled pill; the current year has its own marker. The footer and the selection stay visible.
+- **Picking a year changes only the viewed month, not the selection** (`07-hebrew-after-pick-5784`, `09-gregorian-after-pick-2030`, `12-hebrew-pick-5786-month-fit`): the grid returns showing the same month in the chosen year (Kislev 5787 → Kislev 5784, Nov 2026 → Nov 2030), with no selected cell visible if the selection lies elsewhere. The footer still shows the old selection until the user taps a day.
+- **Month fitting across leap years** (`12-hebrew-pick-5786-month-fit`): viewing Adar II 5787 (leap) and picking 5786 (non-leap) shows "אדר ה׳תשפ״ו" (plain Adar). Going the other way, the equivalent Adar is shown. The selection (14 Adar II 5787) is unchanged.
+- **Holidays** (`11-hebrew-adar-ii-purim-selected`, `13-…`): days with a holiday or fast have a category-coloured dot under the date (white on the selected day; e.g. a dark dot for Ta'anit Esther, an accent dot for Purim/Shushan Purim, Sukkot and Chanukah). Selecting a holiday shows a tinted chip with its icon and name under the footer summary ("Purim").
+- **Leap-year labels**: "אדר א׳ / אדר ב׳" in Hebrew; "Adar I – Adar II 5787" in the Gregorian subtitle.
+
+**Open product question** (implementing agent: confirm with the owner before coding). In the mockup, picking a year only moves the view, and the selection stays put until a day is tapped. The alternative is to move the selection to the same day and month in the new year. The mockup's behavior is the default unless the owner decides otherwise.
 
 **Scope:** replace both of today's date-entry UIs with this one shared picker component.
 1. The stepper-based Hebrew day/month/year picker in the add/edit personal event screen and the contact birthday editor.
