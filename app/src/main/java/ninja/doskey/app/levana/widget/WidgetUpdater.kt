@@ -23,9 +23,15 @@ object WidgetUpdater {
     /** Counts refresh requests; a running widget recomputes what it shows on each one. */
     val refreshes = MutableStateFlow(0)
 
-    /** Asks the widget receiver to redraw; safe to call from any receiver or thread. */
+    /** Every widget's receiver; each one redraws its own widgets. */
+    private val receivers: List<Class<out GlanceAppWidgetReceiver>> = listOf(
+        TodayWidgetReceiver::class.java,
+        MonthWidgetReceiver::class.java,
+    )
+
+    /** Asks every widget receiver to redraw; safe to call from any receiver or thread. */
     fun requestUpdate(context: Context) {
-        context.sendBroadcast(refreshIntent(context))
+        receivers.forEach { context.sendBroadcast(refreshIntent(context, it)) }
     }
 
     /**
@@ -33,24 +39,25 @@ object WidgetUpdater {
      * is awake, when the widget can be seen. Without an exact-alarm permission Android allows
      * a window of no less than 10 minutes, so a passed zman shows at most that long.
      */
-    fun scheduleRefresh(context: Context, at: Instant) {
+    fun scheduleRefresh(context: Context, at: Instant, receiver: Class<out GlanceAppWidgetReceiver>) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
-        alarmManager.setWindow(AlarmManager.RTC, at.toEpochMilli(), REFRESH_WINDOW_MS, refreshPendingIntent(context))
+        alarmManager.setWindow(AlarmManager.RTC, at.toEpochMilli(), REFRESH_WINDOW_MS, refreshPendingIntent(context, receiver))
     }
 
     private const val REFRESH_WINDOW_MS = 10 * 60 * 1000L
 
-    fun cancelRefresh(context: Context) {
-        context.getSystemService(AlarmManager::class.java)?.cancel(refreshPendingIntent(context))
+    fun cancelRefresh(context: Context, receiver: Class<out GlanceAppWidgetReceiver>) {
+        context.getSystemService(AlarmManager::class.java)?.cancel(refreshPendingIntent(context, receiver))
     }
 
-    private fun refreshIntent(context: Context) =
-        Intent(context, TodayWidgetReceiver::class.java).setAction(ACTION_REFRESH)
+    private fun refreshIntent(context: Context, receiver: Class<out GlanceAppWidgetReceiver>) =
+        Intent(context, receiver).setAction(ACTION_REFRESH)
 
-    private fun refreshPendingIntent(context: Context) = PendingIntent.getBroadcast(
+    // One alarm per receiver: the intents name different components, so they don't replace each other
+    private fun refreshPendingIntent(context: Context, receiver: Class<out GlanceAppWidgetReceiver>) = PendingIntent.getBroadcast(
         context,
         0,
-        refreshIntent(context),
+        refreshIntent(context, receiver),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
@@ -69,9 +76,8 @@ object WidgetUpdater {
     }
 }
 
-class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = TodayWidget()
-
+/** A widget receiver that redraws on refresh requests and locale changes. */
+abstract class RefreshingWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             WidgetUpdater.ACTION_REFRESH,
@@ -82,6 +88,10 @@ class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        WidgetUpdater.cancelRefresh(context)
+        WidgetUpdater.cancelRefresh(context, javaClass)
     }
+}
+
+class TodayWidgetReceiver : RefreshingWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = TodayWidget()
 }

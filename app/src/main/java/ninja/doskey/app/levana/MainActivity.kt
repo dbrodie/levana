@@ -228,7 +228,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
         }
     }
 
-    // Handle notification deep-link — open calendar (day detail is inline)
+    // Handle notification and widget deep links: open the calendar on that day (day detail is inline)
     LaunchedEffect(deepLinkEpochDay) {
         if (deepLinkEpochDay != 0L) {
             navController.navigate(CalendarRoute) {
@@ -465,6 +465,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
 
                 composable<CalendarRoute> {
                     CalendarScreen(
+                        initialDate = deepLinkEpochDay.takeIf { it != 0L }?.let(LocalDate::ofEpochDay),
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onShowZmanim = { date ->
                             navController.navigate(ZmanimRoute(date.toEpochDay()))
