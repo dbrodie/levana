@@ -1,109 +1,48 @@
-# Levana - Architecture Specification
+# Levana — Architecture Specification
 
-## Document Status
+## Stack
 
-**Version:** 1.0
-**Status:** Draft
+Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/compile API 36; JVM target 17. Dependency versions live in `gradle/libs.versions.toml`.
 
----
+| Area | Decision |
+|---|---|
+| UI | Jetpack Compose + Material 3; Navigation Compose |
+| Screen architecture | MVI: State / Intent / ViewModel / Screen |
+| Dependency injection | Koin |
+| Calendar and zmanim | KosherJava, wrapped by repositories |
+| Storage | Room for personal events; DataStore for preferences and saved locations |
+| Async | Kotlin Coroutines + Flow |
+| Reminders | WorkManager + AlarmManager |
+| Quality | Android Lint and ktlint |
+| Tests | JUnit4, Robolectric, Compose testing APIs and Roborazzi snapshots |
 
-## 1. Overview
+## Application Structure
 
-This document defines the technical architecture decisions for Levana, a Hebrew calendar Android application.
+- Composables render immutable screen state and send explicit intents to ViewModels.
+- ViewModels coordinate repositories and expose state through flows. Domain models and calculation helpers represent calendar and event rules.
+- Repositories own persistence, Android provider access and KosherJava integration.
+- Koin modules provide repositories, shared services and screen ViewModels.
+- Room flows and Contacts/Calendar content observers drive lifecycle-aware, debounced refresh of affected screens.
 
----
+## Data Ownership and Safety
 
-## 2. Technology Stack
+- Room stores local personal events. Commit exported schemas and provide explicit migrations for schema changes; never use destructive migration fallback.
+- DataStore stores settings, current/saved locations, calendar selection and notification preferences.
+- Bundled `assets/cities.json` supplies city coordinates, elevation and timezone.
+- Contacts stores custom Hebrew-birthday fields; Calendar Provider supplies read-only device events. Permissions gate both integrations.
+- Personal-event import/export uses JSON/CSV through Android document URIs; it does not back up all app data.
+- Provider and file IO must be cancellable and run off the main thread.
 
-| Area | Decision | Rationale |
-|------|----------|-----------|
-| Language | Kotlin | Modern, null-safe, coroutines, required for Compose |
-| UI Framework | Jetpack Compose | Declarative, Material 3 native, aligns with MVI |
-| Architecture | MVI | Predictable state, testable, single source of truth |
-| Dependency Injection | Koin | Simple, fast builds, no annotation processing |
-| Local Storage | Room + DataStore | Room for structured data, DataStore for preferences |
-| Navigation | Navigation Compose | Official, well-supported |
-| Hebrew Calendar | KosherJava | Battle-tested, comprehensive, handles all edge cases |
-| Async/Reactive | Coroutines + Flow | Kotlin-native, Compose integration |
-| Build System | Gradle Kotlin DSL | Type-safe, IDE autocomplete |
-| Code Quality | ktlint | Standard Kotlin linting |
-| City Database | KosherJava built-in | Start simple, expand later |
+## Dates and Notifications
 
----
+- Use the selected location's timezone for zmanim and preserve absolute instants for reminder triggers, including DST and post-midnight nightfall.
+- Display dates, source observance dates and trigger instants are distinct. Shared date/time handling is still being consolidated; do not assume every path uses a single clock or zone.
+- WorkManager refreshes reminder plans and delivers daily holiday, fast and personal-event notices.
+- Inexact AlarmManager alarms deliver candle-lighting and Omer reminders. Reconcile alarms after relevant settings changes, reboot and device clock/timezone changes.
+- Persistent alarm identities and delivery records support cancellation and duplicate suppression.
 
-## 3. Testing Stack
+## Verification
 
-| Purpose | Tool |
-|---------|------|
-| Unit Tests | JUnit4 |
-| Assertions | Truth |
-| Mocking | MockK |
-| Snapshot Testing | Paparazzi |
-| Compose UI Tests | Compose Testing APIs |
-| Flow Testing | Turbine |
-| DI Validation | koin-test (required since Koin lacks compile-time checks) |
+Unit and Robolectric tests cover calendar rules, repositories, provider IO, migrations, ViewModels and reminder planning. Compose tests cover UI behavior and semantics; Roborazzi supplies snapshots. Device checks remain necessary for platform behavior and accessibility.
 
----
-
-## 4. Architecture Pattern: MVI
-
-### 4.1 Core Principles
-
-| Principle | Description |
-|-----------|-------------|
-| Single State | Each screen has one immutable state object |
-| Unidirectional Flow | State flows down, events flow up |
-| Pure UI | Composables are pure functions of state |
-| Explicit Intents | All user actions are explicit intent objects |
-| Deterministic | Same state always produces same UI |
-
-### 4.2 Data Flow
-
-```
-Intent → ViewModel → State → UI
-   ↑                         │
-   └─────────────────────────┘
-         User Events
-```
-
----
-
-## 5. Architecture Layers
-
-| Layer | Responsibility |
-|-------|----------------|
-| **UI** | Render state, capture user events |
-| **State** | Manage screen state, process intents |
-| **Domain** | Business logic, use cases |
-| **Data** | Data access, storage, KosherJava integration |
-
-Dependencies flow inward: UI → State → Domain → Data
-
----
-
-## 6. Storage Strategy
-
-| Data Type | Storage | Examples |
-|-----------|---------|----------|
-| Structured data | Room | Personal events (birthdays, yahrzeits) |
-| User preferences | DataStore | Location, Israel/Diaspora, yahrzeit rules, notification settings |
-| City locations | KosherJava built-in | Initial implementation, expand later |
-
----
-
-## 7. Testing Strategy
-
-### 7.1 State Catalog Pattern
-
-Each screen will define explicit state catalogs for:
-- Automated snapshot testing of all UI variations
-- Predictable, reproducible test cases
-- Documentation of possible screen states
-
-### 7.2 Koin Validation
-
-DI configuration must be validated via koin-test to catch runtime errors that would otherwise be missed due to lack of compile-time checking.
-
----
-
-*This document should be updated as architecture decisions evolve.*
+Build/test commands and agent workflow live in `AGENTS.md`; feature plans and verification evidence live in Backlog.md.
