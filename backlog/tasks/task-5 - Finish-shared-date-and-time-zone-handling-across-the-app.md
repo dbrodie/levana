@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:29Z'
-updated_date: '2026-10-29T20:02:00Z'
+updated_date: '2026-10-29T20:17:00Z'
 labels:
   - curated-import
   - source-specs
@@ -101,6 +101,19 @@ Limitations: TalkBack was not run with speech; semantics checked from the access
 Open questions for the coordinator/owner:
 1. Widget next-zman/Shabbat rows: selected city or device position? Left as the selected city behind UserPreferences.widgetTimesLocation() (widget/TodayWidgetSnapshot.kt).
 2. Device zones without a bundled city fall back to Jerusalem (pre-existing CityRepository.defaultForTimeZone), so Auto-detect then reads Israel. Not a regression (the old auto value used the same fallback when no city was saved) but worth a follow-up: e.g. a neutral fallback or Auto-detect by the device zone.
+
+Owner follow-ups implemented (82706a4):
+F1 resolveIsInIsrael(mode, deviceZone): AUTO = device zone has Asia/Jerusalem's rules (Asia/Tel_Aviv and Israel aliases included). Choice: the device zone wins over a GPS position (a fix carries the device zone anyway, case 10); a fallback city can never make a device Israeli. CityRepository.defaultForTimeZone(zone, now) -> fallbackCity: a bundled city in the zone, else one in an alias (same rules, e.g. Europe/Kiev -> Kyiv), else the closest current UTC offset; ties: outside Israel first, then at/west of the device offset, then by name. Tests (data/IsraelModeTest): Dublin -> London, Perth -> Hong Kong, Dubai -> Moscow, Cairo not Jerusalem, Kiev alias, all Diaspora; Asia/Jerusalem, Asia/Tel_Aviv, Israel = Israel; a Jerusalem position in a New York zone stays Diaspora. Israel tests now pin the JVM zone.
+F2 Widget: TodayWidgetSnapshots.build uses device.position for next zman, Shabbat/havdalah and the place name; widgetTimesLocation() removed; WidgetSettings keys on the device position. Tests updated (selected city changes neither snapshot nor settings). Decision noted on TASK-9 and TASK-9.3.
+F3 Override = fixed date: UserPreferences.devDateOverride (key dev_date_override, the original storage; the unreleased day-shift key/migration removed). DeviceContext.now: that date at the real time of day; DeviceNow.devOverride + devDayShift (current distance, used by toSystemInstant: same time of day on the real day). Plans with the override cover only that date; DateChangeReceiver (DATE_CHANGED / DateRollover at the real midnight) re-plans alarms while it is on. todayUpdates waits for the real midnight and emits nothing there (distinct). Specs updated. Tests: DeviceContextTest (fixed date across a real midnight, mapping on a DST date, override equal to today), DeviceTodayUpdatesTest (no roll at midnight; timer on the real midnight with a DST override date), CalendarTodayRefreshTest, DeviceVsDisplayCityTest row 12 (window = the fixed date; next real day plans it again for that day).
+Remaining devDateOverride reads outside DeviceContext are change-detection keys (AlarmSettings, DailyCategory, WidgetSettings) and the Settings display, not date calculations.
+Limitation: with the override on, an Omer notice already delivered for that date is not repeated on later real days (delivery dedupe by date) - test tool only.
+
+Verification on 82706a4: assembleDebug + testDebugUnitTest (723 tests, 0 failures) + lintDebug passed.
+Emulator (fresh read-only session, emulator-5584, location denied; evidence /tmp/levana-task5-evidence/13-18):
+- Asia/Dubai: current location 'Moscow' (13), Israel 'Auto-detect (Diaspora)' (14). Europe/Dublin live: Diaspora; Asia/Tel_Aviv live: 'Auto-detect (Israel)'.
+- Widget placed on the Pixel launcher home screen (Levana · Today 4x2), device in Dublin (fallback London), New York selected in the sidebar: '18 Cheshvan, 5787 / Thursday, October 29, 2026 · London', candle lighting Fri 4:19 PM, havdalah Sat 5:26 PM (London's times) (16).
+- Override 26 Cheshvan (Fri 6 Nov) with morning candle reminders: icon Day26; the past as-if 08:00 had no pending alarm and the real-Friday alarm was cancelled. Clock set to 23:59 (Dublin), app backgrounded: after the real midnight the icon stayed Day26, the candle alarm was re-planned for real Fri 30 Oct 08:00, the next roll-over set for 31 Oct; the widget still showed 26 Cheshvan / Friday, November 6 (17) and the app's today stayed 6 Nov (18).
 <!-- SECTION:NOTES:END -->
 
 ## Beads history
