@@ -1,10 +1,10 @@
 ---
 id: TASK-37
 title: Keep implementation plans and design in Backlog tasks
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-10-29T10:37:00Z'
-updated_date: '2026-10-29T10:39:00Z'
+updated_date: '2026-10-29T10:53:00Z'
 labels: []
 dependencies: []
 type: docs
@@ -23,4 +23,6 @@ Remove the per-task RFE requirement from AGENTS.md and describe parent tasks and
 Updated AGENTS.md to keep requirements, design and implementation plans in Backlog.md, using parent tasks and subtasks for larger changes. Existing specs remain optional references. Verified git diff --check, backlog doctor, assembleDebug, testDebugUnitTest and lintDebug; all passed. Awaiting integration.
 
 Simplified the wording further: removed RFE workflow guidance, leaving only a short historical-reference note in the project section. Required build, tests and lint passed again.
+
+Merged and pushed to origin/master at d0af209. Combined assembleDebug, testDebugUnitTest and lintDebug passed; backlog doctor passed. Evidence: /tmp/levana-spec-integration-checks.log.
 <!-- SECTION:NOTES:END -->
