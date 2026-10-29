@@ -76,7 +76,7 @@ class AlarmSettingsTest {
 
     @Test
     fun devOverrideAndIsraelAreAlarmSettings() {
-        assertTrue(base.alarmSettings() != base.copy(devDayShift = 3).alarmSettings())
+        assertTrue(base.alarmSettings() != base.copy(devDateOverride = java.time.LocalDate.of(2030, 1, 4)).alarmSettings())
         assertTrue(base.alarmSettings() != base.copy(isInIsrael = !base.isInIsrael).alarmSettings())
     }
 

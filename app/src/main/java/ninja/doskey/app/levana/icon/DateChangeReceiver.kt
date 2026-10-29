@@ -6,6 +6,7 @@ import android.content.Intent
 import ninja.doskey.app.levana.widget.WidgetUpdater
 import android.util.Log
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.quicktile.requestHebrewDateTileRefresh
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ import org.koin.core.component.inject
 class DateChangeReceiver : BroadcastReceiver(), KoinComponent {
 
     private val deviceContext: DeviceContext by inject()
+    private val alarmRebuilder: NotificationAlarmRebuilder by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_DATE_CHANGED && intent.action != DateRollover.ACTION) return
@@ -30,6 +32,8 @@ class DateChangeReceiver : BroadcastReceiver(), KoinComponent {
                 val device = deviceContext.now()
                 DateRollover.schedule(context, device)
                 DynamicIconManager.update(context, device.today)
+                // The override's date stays fixed, so plan its reminders again for the new real day
+                if (device.devOverride) alarmRebuilder.rebuild()
                 WidgetUpdater.requestUpdate(context)
                 requestHebrewDateTileRefresh(context)
             } catch (e: Exception) {

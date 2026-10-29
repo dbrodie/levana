@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:29Z'
-updated_date: '2026-10-29T19:51:00Z'
+updated_date: '2026-10-29T20:02:00Z'
 labels:
   - curated-import
   - source-specs
@@ -70,6 +70,11 @@ Implementation is split into subtasks TASK-5.1 to TASK-5.4, done in order on one
 
 <!-- SECTION:PLAN:BEGIN -->
 Done in order on branch task-5-device-context, one commit (or more) per subtask: 5.1 device context + notifications + specs; 5.2 refresh today; 5.3 Israel/Diaspora three-way; 5.4 sidebar-only city selection + zone label. See each subtask's plan. Interpretation recorded for review: the developer override becomes a whole-day shift of the device clock (stored as a day count), so the as-if clock keeps running (time of day and midnight roll-over are real, only the date is shifted); AlarmManager triggers are mapped back to real time by the same shift.
+
+Owner follow-ups (2026-10-29, after coordinator review):
+F1 Israel auto-detect / fallback: resolveIsInIsrael(mode, deviceZone) - AUTO is Israel only when the device's time zone has Asia/Jerusalem's rules (covers Asia/Tel_Aviv, Israel aliases); the device zone wins over a GPS position (a GPS fix carries the device zone anyway, case 10). CityRepository.defaultForTimeZone(zone, now): same zone or alias (same rules) first, else the bundled city with the closest current UTC offset; ties -> the city whose offset is at or behind the device's (west), then by name. Tests: Dublin/Perth/Dubai without GPS = Diaspora with nearest-offset cities; Asia/Jerusalem and aliases = Israel; Europe/Kiev alias.
+F2 Widget: next-zman and Shabbat/havdalah rows and the place name use the device position (device.position); widgetTimesLocation() seam removed; WidgetSettings keys on the device position; widget tests and TASK-9/9.1 wording updated.
+F3 Developer override is a fixed as-if date: stored as dev_date_override (UserPreferences.devDateOverride, read only by DeviceContext); now = that date at the real time of day; DeviceNow.devDayShift is the current offset (override - real date) used by toSystemInstant. The date never advances; todayUpdates waits for the real midnight (no spin, no roll); DateRollover stays on the real midnight and, with the override on, also re-plans the alarms so each real day gets the as-if day's reminders. With the override on the plan covers only the as-if day (no lookahead), since later as-if days never come. The day-shift key/migration from 5.1 is removed (never released). Specs and tests updated.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

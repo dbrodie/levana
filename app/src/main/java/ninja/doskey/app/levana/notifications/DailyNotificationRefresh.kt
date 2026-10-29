@@ -23,10 +23,10 @@ enum class DailyCategory {
     internal fun settings(prefs: UserPreferences): Any? {
         if (!isEnabled(prefs)) return null
         return when (this) {
-            HOLIDAYS -> listOf(prefs.holidayNotifyDaysBefore, prefs.isInIsrael, prefs.devDayShift)
+            HOLIDAYS -> listOf(prefs.holidayNotifyDaysBefore, prefs.isInIsrael, prefs.devDateOverride)
             // Fast times are at the device position; the selected city does not matter
-            FASTS -> listOf(prefs.isInIsrael, prefs.currentLocation, prefs.devDayShift)
-            PERSONAL_EVENTS -> listOf(prefs.yahrzeitRules, prefs.devDayShift)
+            FASTS -> listOf(prefs.isInIsrael, prefs.currentLocation, prefs.devDateOverride)
+            PERSONAL_EVENTS -> listOf(prefs.yahrzeitRules, prefs.devDateOverride)
         }
     }
 

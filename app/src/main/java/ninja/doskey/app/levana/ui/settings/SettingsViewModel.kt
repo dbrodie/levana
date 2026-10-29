@@ -58,7 +58,7 @@ class SettingsViewModel(
                 is SettingsIntent.SetDynamicHolidayTheme ->
                     preferencesRepository.saveDynamicHolidayTheme(intent.enabled)
                 is SettingsIntent.SetDevDateOverride ->
-                    preferencesRepository.saveDevDayShift(deviceContext.devDayShiftFor(intent.date))
+                    preferencesRepository.saveDevDateOverride(intent.date)
                 is SettingsIntent.SetDevForceHolidayTheme ->
                     preferencesRepository.saveDevForceHolidayTheme(intent.theme)
                 is SettingsIntent.SetNotifyCandleLighting ->
@@ -117,7 +117,7 @@ class SettingsViewModel(
                     dynamicHolidayTheme = prefs.dynamicHolidayTheme,
                     showDeveloperSettings = prefs.showDeveloperSettings,
                     deviceToday = device.today,
-                    overriddenDeviceDate = device.today.takeIf { device.devDayShift != 0L },
+                    overriddenDeviceDate = prefs.devDateOverride,
                     devForceHolidayTheme = prefs.devForceHolidayTheme,
                     notifyCandleLighting = prefs.notifyCandleLighting,
                     candleLightingNotifyMode = prefs.candleLightingNotifyMode,

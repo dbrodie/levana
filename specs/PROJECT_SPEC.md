@@ -10,7 +10,7 @@ This document describes the current product and its core requirements. Planned w
 
 - Monthly Hebrew-primary and Gregorian-primary calendars, with day details.
 - Jewish holidays, fasts, Rosh Chodesh, weekly parsha, special-Shabbat indications, Omer counts and molad information on Shabbat Mevarchim.
-- Israel/Diaspora observance: Auto-detect (the default, from the device's position), Israel or Diaspora; modern Israeli holidays can be hidden.
+- Israel/Diaspora observance: Auto-detect (the default: Israel exactly when the device's time zone is Israel's), Israel or Diaspora; modern Israeli holidays can be hidden.
 - Location-based zmanim, including dawn, sunrise, Shema and prayer deadlines, midday, Mincha, Plag, sunset, nightfall and halachic midnight.
 - Users choose which zmanim appear in day details. Calculation methods are currently fixed; both GRA and MGA Shema times are available.
 - Candle lighting and havdalah follow consecutive Shabbat/Yom Tov transitions. The pre-sunset candle-lighting offset is adjustable, defaulting to 18 minutes.
@@ -19,9 +19,9 @@ This document describes the current product and its core requirements. Planned w
 
 The device decides everything; the selected city is a display lens only.
 
-- **Device:** the device clock, the device time zone and the device position (the current location, or the time zone's default city without location permission). It decides today's date everywhere (calendar highlight, theme, launcher icon, quick tile), every date calculation, when each notification fires and the times its text shows, and Israel/Diaspora detection.
+- **Device:** the device clock, the device time zone and the device position (the current location; without location permission, a bundled city in the device's time zone, or else the one with the closest UTC offset). It decides today's date everywhere (calendar highlight, theme, launcher icon, quick tile, home-screen widget, including the widget's times and place name), every date calculation, when each notification fires and the times its text shows, and Israel/Diaspora detection.
 - **Selected city:** chosen only in the sidebar; adding a city in Settings does not select it. It changes only the zmanim on the Zmanim screen and the day panel's times, which use the device's date and are shown in the city's own clock, labelled (e.g. "Jerusalem time") when its time zone differs from the device's. It never affects notifications, holiday dates or Israel/Diaspora.
-- **Developer date override (testing only):** an "as if" device clock moved by whole days. The time of day and midnight stay real; everything that reads the device, notifications and their alarms included, behaves as if it were that date.
+- **Developer date override (testing only):** a fixed "as if" date. Until it is cleared the device is on that date at the real time of day, every day; the date does not advance at midnight. Everything that reads the device, notifications and their alarms included, behaves as if it were that date.
 
 ## Locations
 

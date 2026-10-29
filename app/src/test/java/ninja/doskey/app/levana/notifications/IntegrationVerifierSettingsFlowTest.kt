@@ -54,7 +54,7 @@ class IntegrationVerifierSettingsFlowTest {
             prefs.saveNotifyOmer(false)
             prefs.saveNotifyOmerMorningTime(420)
             prefs.saveIsraelMode(IsraelMode.ISRAEL)
-            prefs.saveDevDayShift(0)
+            prefs.saveDevDateOverride(null)
         }
         val log = Collections.synchronizedList(mutableListOf<String>())
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

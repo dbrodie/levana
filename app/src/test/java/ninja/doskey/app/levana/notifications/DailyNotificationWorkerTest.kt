@@ -173,7 +173,7 @@ class DailyNotificationWorkerTest {
             updateCurrentLocation(newYork)
             setActiveLocation(null)
             saveIsraelMode(IsraelMode.DIASPORA)
-            saveDevDayShift(0)
+            saveDevDateOverride(null)
             saveNotifyHolidays(false)
             saveHolidayNotifyDaysBefore(1)
             saveNotifyFasts(false)

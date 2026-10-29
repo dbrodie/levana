@@ -9,6 +9,9 @@ import kotlinx.coroutines.runBlocking
 import ninja.doskey.app.levana.device.resolveIsInIsrael
 import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
+import java.time.ZoneId
+import java.util.TimeZone
+import org.junit.Before
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,8 +36,15 @@ class IsraelModeTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private val repository by lazy { PreferencesRepository(app, CityRepository(app)) }
 
+    private val savedZone = TimeZone.getDefault()
+
+    // Auto-detect reads the device zone; start every test in New York
+    @Before
+    fun setUp() = TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+
     @After
     fun tearDown() = runBlocking {
+        TimeZone.setDefault(savedZone)
         // DataStore is shared by the whole JVM
         repository.saveIsraelMode(IsraelMode.AUTO)
         repository.preferences.first().savedLocations.forEach { repository.removeSavedLocation(it.id) }
@@ -42,11 +52,36 @@ class IsraelModeTest {
     }
 
     @Test
-    fun autoFollowsTheDevicePositionOnly() {
-        assertTrue(resolveIsInIsrael(IsraelMode.AUTO, Location.JERUSALEM))
-        assertFalse(resolveIsInIsrael(IsraelMode.AUTO, newYork))
-        assertTrue(resolveIsInIsrael(IsraelMode.ISRAEL, newYork))
-        assertFalse(resolveIsInIsrael(IsraelMode.DIASPORA, Location.JERUSALEM))
+    fun autoFollowsTheDeviceZoneOnly() {
+        for (israel in listOf("Asia/Jerusalem", "Asia/Tel_Aviv", "Israel")) {
+            assertTrue(israel, resolveIsInIsrael(IsraelMode.AUTO, ZoneId.of(israel)))
+        }
+        for (zone in listOf("America/New_York", "Europe/Dublin", "Australia/Perth", "Asia/Dubai", "Asia/Amman")) {
+            assertFalse(zone, resolveIsInIsrael(IsraelMode.AUTO, ZoneId.of(zone)))
+        }
+        assertTrue(resolveIsInIsrael(IsraelMode.ISRAEL, ZoneId.of("America/New_York")))
+        assertFalse(resolveIsInIsrael(IsraelMode.DIASPORA, ZoneId.of("Asia/Jerusalem")))
+    }
+
+    // Without a location fix the position is a bundled stand-in city; it must be a sensible
+    // one and must never make the device Israeli
+    @Test
+    fun zonesWithoutABundledCityGetTheClosestOffsetAndStayDiaspora() {
+        val cities = CityRepository(app)
+        val now = java.time.Instant.parse("2026-10-29T12:00:00Z")
+        fun fallback(zone: String) = cities.defaultForTimeZone(ZoneId.of(zone), now)
+        assertEquals("London", fallback("Europe/Dublin").name)
+        assertEquals("Hong Kong", fallback("Australia/Perth").name)
+        assertEquals("Moscow", fallback("Asia/Dubai").name)
+        // A zone shared with Jerusalem's offset prefers a city outside Israel
+        assertFalse(fallback("Africa/Cairo").timezoneId == "Asia/Jerusalem")
+        // Aliases of a bundled zone use that zone's city
+        assertEquals("Europe/Kyiv", fallback("Europe/Kiev").timezoneId)
+        assertEquals("Asia/Jerusalem", fallback("Asia/Tel_Aviv").timezoneId)
+        assertEquals("New York", fallback("America/New_York").name)
+        for (zone in listOf("Europe/Dublin", "Australia/Perth", "Asia/Dubai")) {
+            assertFalse(zone, resolveIsInIsrael(IsraelMode.AUTO, ZoneId.of(zone)))
+        }
     }
 
     @Test
@@ -60,8 +95,10 @@ class IsraelModeTest {
         assertEquals(IsraelMode.AUTO, prefs.israelMode)
         assertFalse(prefs.isInIsrael)
 
-        // The device moving to Jerusalem is what makes it Israel
+        // A Jerusalem position alone does not (the zone decides); the device zone does
         repository.updateCurrentLocation(Location.JERUSALEM)
+        assertFalse(repository.preferences.first().isInIsrael)
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Jerusalem"))
         assertTrue(repository.preferences.first().isInIsrael)
     }
 

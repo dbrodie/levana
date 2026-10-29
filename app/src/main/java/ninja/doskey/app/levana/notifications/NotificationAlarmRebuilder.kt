@@ -39,7 +39,7 @@ internal data class AlarmSettings(
     /** The device position; the selected city has no say in reminders. */
     val devicePosition: Location,
     val isInIsrael: Boolean,
-    val devDayShift: Long
+    val devDateOverride: java.time.LocalDate?
 )
 
 internal fun UserPreferences.alarmSettings() = AlarmSettings(
@@ -54,7 +54,7 @@ internal fun UserPreferences.alarmSettings() = AlarmSettings(
     notifyOmerMorningTime = notifyOmerMorningTime,
     devicePosition = currentLocation,
     isInIsrael = isInIsrael,
-    devDayShift = devDayShift
+    devDateOverride = devDateOverride
 )
 
 /**

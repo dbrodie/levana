@@ -19,10 +19,10 @@ data class UserPreferences(
     val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,
     /**
-     * TEST ONLY — the developer override: whole days the device clock is shifted by, 0 when
-     * off. Applied solely by [ninja.doskey.app.levana.device.DeviceContext].
+     * TEST ONLY — the developer override: the fixed date the device acts as if it is on, null
+     * when off. Applied solely by [ninja.doskey.app.levana.device.DeviceContext].
      */
-    val devDayShift: Long = 0,
+    val devDateOverride: java.time.LocalDate? = null,
     val devForceHolidayTheme: String? = null,
     val notifyCandleLighting: Boolean = false,
     val candleLightingNotifyMode: String = "morning",

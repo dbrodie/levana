@@ -53,7 +53,7 @@ class DisplayCityZmanimTest {
         runBlocking {
             preferences.preferences.first().savedLocations.forEach { preferences.removeSavedLocation(it.id) }
             preferences.updateCurrentLocation(newYork)
-            preferences.saveDevDayShift(0)
+            preferences.saveDevDateOverride(null)
         }
     }
 

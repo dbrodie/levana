@@ -59,7 +59,7 @@ class DailyCategorySettingsTest {
         )
         assertEquals(
             listOf(setOf(HOLIDAYS, FASTS, PERSONAL_EVENTS)),
-            set { it.copy(devDayShift = 30) }
+            set { it.copy(devDateOverride = java.time.LocalDate.of(2030, 9, 1)) }
         )
 
         // Unrelated settings, including the alarm-backed categories

@@ -96,7 +96,8 @@ internal fun planReminderAlarms(
     val deviceZone = device.zone
     val location = device.position
     val start = today
-    val end = today.plusDays(lookaheadDays.toLong())
+    // The override's fixed date never advances, so later days would never come
+    val end = today.plusDays(if (device.devOverride) 0L else lookaheadDays.toLong())
     val window = generateSequence(start) { it.plusDays(1) }.takeWhile { !it.isAfter(end) }.toList()
     val alarms = mutableListOf<ReminderAlarm>()
     val overdue = mutableListOf<ReminderAlarm>()
@@ -193,7 +194,7 @@ private fun candleLightingAlarm(
     )
 }
 
-/** This plan on the real clock: the triggers [device]'s developer override shifted mapped back. */
+/** This plan on the real clock: triggers on [device]'s override date mapped to the real day. */
 internal fun ReminderAlarmPlan.onSystemClock(device: DeviceNow): ReminderAlarmPlan {
     if (device.devDayShift == 0L) return this
     fun ReminderAlarm.mapped(): ReminderAlarm = when (this) {

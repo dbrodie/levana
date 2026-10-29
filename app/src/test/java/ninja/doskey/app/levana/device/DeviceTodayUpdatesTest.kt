@@ -63,11 +63,25 @@ class DeviceTodayUpdatesTest {
 
     @Test
     fun theOverrideMovesTodayAtOnceAndOffAgain() = collect { seen ->
-        prefs.value = prefs.value.copy(devDayShift = 7)
+        prefs.value = prefs.value.copy(devDateOverride = day.plusDays(7))
         await { seen.size == 2 }
-        prefs.value = prefs.value.copy(devDayShift = 0)
+        // A real midnight does not move the override's fixed date
+        clock = fixedClock(day.plusDays(1), LocalTime.of(0, 0, 5), nyZone)
+        signals.emit(Unit)
+        kotlinx.coroutines.delay(200)
+        assertEquals(listOf(day, day.plusDays(7)), seen)
+        prefs.value = prefs.value.copy(devDateOverride = null)
         await { seen.size == 3 }
-        assertEquals(listOf(day, day.plusDays(7), day), seen)
+        assertEquals(listOf(day, day.plusDays(7), day.plusDays(1)), seen)
+    }
+
+    @Test
+    fun withTheOverrideTheMidnightTimerWaitsForTheRealMidnight() {
+        // Real 23:59:30; the override date is a DST day, which must not change the wait
+        val override = prefs.value.copy(devDateOverride = LocalDate.of(2026, 11, 1))
+        val now = DeviceContext(prefs) { clock }.now(override)
+        assertEquals(LocalDate.of(2026, 11, 1), now.today)
+        assertEquals(31.seconds, DeviceContext.untilNextDay(now))
     }
 
     @Test

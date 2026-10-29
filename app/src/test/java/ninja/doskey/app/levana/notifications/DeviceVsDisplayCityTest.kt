@@ -150,18 +150,26 @@ class DeviceVsDisplayCityTest {
     }
 
     @Test
-    fun `row 12 - with the override on, alarms are planned as if on the shifted date`() {
-        // The real clock reads Tuesday; the override makes it the Friday three days later
+    fun `row 12 - with the override on, the fixed date's reminders are set for the real day`() {
+        // The real clock reads Tuesday 00:30; the override makes it the Friday of that week
         val tuesday = friday.minusDays(3)
-        val shifted = base.copy(devDayShift = 3, candleLightingNotifyMode = "morning")
+        val shifted = base.copy(devDateOverride = friday, candleLightingNotifyMode = "morning")
         val plan = plan(shifted, tuesday)
-        assertEquals(friday, plan.window.first())
-        // Friday's 09:00 notice fires when the as-if clock reads 09:00, i.e. real Tuesday 09:00
+        // Only the fixed date: later as-if days never come
+        assertEquals(listOf(friday), plan.window)
+        // Friday's 09:00 notice fires when the device reads Friday 09:00, i.e. real Tuesday 09:00
         val candle = plan.candle(friday)
         assertEquals(ZonedDateTime.of(tuesday, LocalTime.of(9, 0), nyZone).toInstant(), candle.triggerAt)
+        // The next real day plans the same date again, for that day
+        val wednesday = plan(shifted, tuesday.plusDays(1))
+        assertEquals(listOf(friday), wednesday.window)
+        assertEquals(
+            ZonedDateTime.of(tuesday.plusDays(1), LocalTime.of(9, 0), nyZone).toInstant(),
+            wednesday.candle(friday).triggerAt
+        )
 
         // Off again: Tuesday's own plan on the real clock
-        val off = plan(shifted.copy(devDayShift = 0), tuesday)
+        val off = plan(shifted.copy(devDateOverride = null), tuesday)
         assertEquals(tuesday, off.window.first())
         assertEquals(
             ZonedDateTime.of(friday, LocalTime.of(9, 0), nyZone).toInstant(),

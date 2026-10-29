@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:31Z'
-updated_date: '2026-10-29T18:23:00Z'
+updated_date: '2026-10-29T20:08:00Z'
 labels:
   - curated-import
   - source-specs
@@ -79,6 +79,12 @@ Source: specs/TASKS.md original backlog #16. Related: specs/rfes/quick-tile-hebr
 - [ ] #3 Widgets refresh on date, time zone, location, preference change and when the displayed next zman or Shabbat window passes
 - [ ] #4 Defined behavior for uncomputable times: dates always shown; — for missing zman/candle/havdalah; no location prompt (app always has a location)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-5 owner decision (2026-10-29): the widget's 'Location' and its next-zman and candle lighting/havdalah rows use the device position (current location or the time zone's fallback city), not the selected city; the selected city remains a Zmanim-screen/day-panel lens only. Implemented on branch task-5-device-context (TodayWidgetSnapshots.build reads DeviceNow.position).
+<!-- SECTION:NOTES:END -->
 
 ## Beads history
 

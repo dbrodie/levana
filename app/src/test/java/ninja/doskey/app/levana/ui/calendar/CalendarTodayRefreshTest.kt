@@ -66,7 +66,7 @@ class CalendarTodayRefreshTest {
         preferences = PreferencesRepository(app, CityRepository(app))
         runBlocking {
             preferences.saveCalendarHebrewMode(false)
-            preferences.saveDevDayShift(0)
+            preferences.saveDevDateOverride(null)
         }
     }
 
@@ -74,7 +74,7 @@ class CalendarTodayRefreshTest {
     fun tearDown() {
         store.clear()
         db.close()
-        runBlocking { preferences.saveDevDayShift(0) }
+        runBlocking { preferences.saveDevDateOverride(null) }
     }
 
     private fun calendarViewModel(): CalendarViewModel {
@@ -139,9 +139,15 @@ class CalendarTodayRefreshTest {
     @Test
     fun `the developer override moves the highlight and turning it off restores it`() {
         val vm = calendarViewModel()
-        runBlocking { preferences.saveDevDayShift(3) }
+        runBlocking { preferences.saveDevDateOverride(day.plusDays(3)) }
         awaitUntil { vm.state.value.today == day.plusDays(3) }
-        runBlocking { preferences.saveDevDayShift(0) }
-        awaitUntil { vm.state.value.today == day }
+        // The override's date stays put across a real midnight
+        clock = fixedClock(day.plusDays(1), LocalTime.of(0, 0, 5), nyZone)
+        signals.tryEmit(Unit)
+        vm.onIntent(CalendarIntent.Resume)
+        assertEquals(day.plusDays(3), vm.state.value.today)
+        // Off again: the real date, which has moved on meanwhile
+        runBlocking { preferences.saveDevDateOverride(null) }
+        awaitUntil { vm.state.value.today == day.plusDays(1) }
     }
 }

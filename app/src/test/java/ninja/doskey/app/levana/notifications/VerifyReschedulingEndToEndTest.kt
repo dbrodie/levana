@@ -119,7 +119,7 @@ class VerifyReschedulingEndToEndTest {
             updateCurrentLocation(newYork)
             setActiveLocation(null)
             saveIsraelMode(IsraelMode.DIASPORA)
-            saveDevDayShift(0)
+            saveDevDateOverride(null)
             saveNotifyCandleLighting(false)
             saveNotifyOmer(false)
             saveNotifyOmerTzait(true)
@@ -144,7 +144,7 @@ class VerifyReschedulingEndToEndTest {
         // The DataStore outlives this test; restore what other suites may read
         save {
             saveIsraelMode(IsraelMode.DIASPORA)
-            saveDevDayShift(0)
+            saveDevDateOverride(null)
             saveCandleLightingOffset(18.0)
             saveNotifyCandleLighting(false)
             saveNotifyOmer(false)

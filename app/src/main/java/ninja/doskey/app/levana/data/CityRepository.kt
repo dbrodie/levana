@@ -2,6 +2,8 @@ package ninja.doskey.app.levana.data
 
 import android.content.Context
 import ninja.doskey.app.levana.domain.model.Location
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -20,9 +22,8 @@ class CityRepository(private val context: Context) {
         }
     }
 
-    /** Best guess before the device reports a location: the first bundled city in [timezoneId]. */
-    fun defaultForTimeZone(timezoneId: String): Location =
-        cities.firstOrNull { it.timezoneId == timezoneId } ?: Location.JERUSALEM
+    /** The device position without a location fix; see [fallbackCity]. */
+    fun defaultForTimeZone(zone: ZoneId, now: Instant): Location = fallbackCity(cities, zone, now)
 
     private fun loadCities(): List<Location> {
         val json = context.assets.open("cities.json")
@@ -50,3 +51,27 @@ class CityRepository(private val context: Context) {
         )
     }
 }
+
+/**
+ * The best stand-in for the device position when there is no location fix: the first city in
+ * the device's [zone] (or an alias of it, i.e. the same rules), otherwise the city whose UTC
+ * offset at [now] is closest to the zone's. Ties go to a city outside Israel (a fallback must
+ * not put a foreign device on Jerusalem's times), then to the city at or west of the device's
+ * offset, then by name, so the choice is deterministic.
+ */
+internal fun fallbackCity(cities: List<Location>, zone: ZoneId, now: Instant): Location {
+    val rules = zone.rules
+    cities.firstOrNull { it.timezoneId == zone.id }?.let { return it }
+    cities.firstOrNull { ZoneId.of(it.timezoneId).rules == rules }?.let { return it }
+    val offset = rules.getOffset(now).totalSeconds
+    fun Location.offset() = ZoneId.of(timezoneId).rules.getOffset(now).totalSeconds
+    return cities.minWithOrNull(
+        compareBy<Location> { Math.abs(it.offset() - offset) }
+            .thenBy { it.timezoneId == ISRAEL_ZONE }
+            .thenBy { it.offset() > offset }
+            .thenBy { it.name }
+    ) ?: Location.JERUSALEM
+}
+
+private const val ISRAEL_ZONE = "Asia/Jerusalem"
+
