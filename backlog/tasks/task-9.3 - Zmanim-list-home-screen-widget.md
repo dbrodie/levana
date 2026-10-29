@@ -1,11 +1,11 @@
 ---
 id: TASK-9.3
 title: Zmanim list home-screen widget
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T21:29:00Z'
+updated_date: '2026-10-29T21:36:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -141,3 +141,15 @@ Screenshots are in /tmp/task93-widget-shots/, outside the worktree: `NN-*.png` i
 - Screenshot 13-he-today-and-month-page: Today and Month in Hebrew next to each other. The Arabic location name (TASK-44) runs into the year in Today's date line; noted on TASK-44.
 - Evidence: /tmp/task93-widget-shots/01–13.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T21:36:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed diff (no direct clock/zone/override/displayCity reads) and screenshots; merged onto master as 5c81af4. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 744 tests, 0 failures/errors. Agent verified all three widgets coexist with separate refresh alarms.
+
+---
+<!-- COMMENTS:END -->
