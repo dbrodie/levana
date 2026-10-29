@@ -52,6 +52,16 @@ class CalendarViewModel(
 
     init {
         observePreferences()
+        observeToday()
+    }
+
+    /** Moves the today highlight when the device date changes while the app is alive. */
+    private fun observeToday() {
+        viewModelScope.launch {
+            deviceContext.todayUpdates.collect { today ->
+                if (preferencesLoaded) _state.value = _state.value.copy(today = today)
+            }
+        }
     }
 
     private fun today(): LocalDate = deviceContext.now(currentPrefs).today
@@ -129,7 +139,11 @@ class CalendarViewModel(
                     loadMonth(target)
                 }
             }
-            is CalendarIntent.Resume -> changeRefresher.onResume()
+            is CalendarIntent.Resume -> {
+                // The process may have been frozen across midnight or a time-zone change
+                if (preferencesLoaded) _state.value = _state.value.copy(today = today())
+                changeRefresher.onResume()
+            }
             is CalendarIntent.Pause -> changeRefresher.onPause()
         }
     }

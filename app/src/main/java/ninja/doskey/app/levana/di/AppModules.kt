@@ -13,6 +13,7 @@ import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.device.systemTimeChanges
 import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
 import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
@@ -41,7 +42,12 @@ val dataModule = module {
     single { CityRepository(get()) }
     single { PreferencesRepository(get(), get()) }
     // The device's now/today/zone/position; the only clock the app reads
-    single { DeviceContext(get<PreferencesRepository>().preferences) }
+    single {
+        DeviceContext(
+            get<PreferencesRepository>().preferences,
+            systemTimeChanges = systemTimeChanges(androidContext())
+        )
+    }
     single { LocationService(get()) }
     single { ZmanimRepository() }
     single {

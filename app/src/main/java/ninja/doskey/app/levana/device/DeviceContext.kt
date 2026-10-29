@@ -8,8 +8,18 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.transformLatest
 
 /**
  * The device's own moment: what the app treats as "now", in the device time zone, at the
@@ -53,6 +63,8 @@ data class DeviceNow(
  */
 class DeviceContext(
     private val preferences: Flow<UserPreferences>,
+    /** Signals that the system date, clock or time zone changed (see [systemTimeChanges]). */
+    private val systemTimeChanges: Flow<Unit> = emptyFlow(),
     private val systemClock: () -> Clock = { realClock() }
 ) {
     suspend fun now(): DeviceNow = now(preferences.first())
@@ -68,11 +80,34 @@ class DeviceContext(
 
     suspend fun today(): LocalDate = now().today
 
+    /**
+     * The device date, kept current: re-read when the preferences (override, position) change,
+     * when the system date, clock or time zone changes, and at each device midnight.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val todayUpdates: Flow<LocalDate> =
+        combine(preferences, merge(flowOf(Unit), systemTimeChanges)) { prefs, _ -> prefs }
+            .transformLatest { prefs ->
+                while (true) {
+                    val now = now(prefs)
+                    emit(now.today)
+                    delay(untilNextDay(now))
+                }
+            }
+            .distinctUntilChanged()
+
     /** The developer-override shift that makes the device date read [date]; 0 for null. */
     fun devDayShiftFor(date: LocalDate?): Long =
         date?.let { ChronoUnit.DAYS.between(LocalDate.now(systemClock()), it) } ?: 0L
 
     companion object {
+        /** Time from [now] to just after the next device midnight, never under a second. */
+        internal fun untilNextDay(now: DeviceNow): Duration {
+            val midnight = now.today.plusDays(1).atStartOfDay(now.zone).toInstant()
+            val wait = java.time.Duration.between(now.instant, midnight).toMillis() + 1_000
+            return wait.coerceAtLeast(1_000).milliseconds
+        }
+
         /** The real device clock in the device's current time zone. */
         fun realClock(): Clock = Clock.systemDefaultZone()
 

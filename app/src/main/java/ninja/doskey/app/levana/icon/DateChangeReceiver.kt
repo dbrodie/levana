@@ -6,6 +6,7 @@ import android.content.Intent
 import ninja.doskey.app.levana.widget.WidgetUpdater
 import android.util.Log
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.quicktile.requestHebrewDateTileRefresh
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -13,7 +14,8 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * Updates the launcher icon and home-screen widgets when the system date rolls over to a new day.
+ * Updates the launcher icon, home-screen widgets and the quick tile when the system date rolls
+ * over to a new day.
  * Registered in the manifest for ACTION_DATE_CHANGED so it fires at midnight
  * even when the app is not running.
  */
@@ -28,6 +30,7 @@ class DateChangeReceiver : BroadcastReceiver(), KoinComponent {
             try {
                 DynamicIconManager.update(context, deviceContext.today())
                 WidgetUpdater.requestUpdate(context)
+                requestHebrewDateTileRefresh(context)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update the launcher icon", e)
             } finally {

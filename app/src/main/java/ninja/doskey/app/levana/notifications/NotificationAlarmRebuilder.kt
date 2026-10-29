@@ -104,7 +104,7 @@ class NotificationAlarmRebuilder(
         alarmScheduler: NotificationAlarmScheduler,
         clock: () -> Clock = { DeviceContext.realClock() }
     ) : this(
-        preferences, DeviceContext(preferences, clock), zmanimRepository, calendarRepository,
+        preferences, DeviceContext(preferences, systemClock = clock), zmanimRepository, calendarRepository,
         alarmScheduler
     )
 

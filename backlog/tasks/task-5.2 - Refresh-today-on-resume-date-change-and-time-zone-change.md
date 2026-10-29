@@ -1,11 +1,11 @@
 ---
 id: TASK-5.2
 title: Refresh today on resume, date change and time-zone change
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T18:54:00Z'
+updated_date: '2026-10-29T19:19:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -35,3 +35,15 @@ TASK-5 case table row 13. The calendar today highlight goes stale past midnight 
 - TimeChangeReceiver also refreshes the launcher icon (TIMEZONE_CHANGED/TIME_SET). Tile reads DeviceContext on every onStartListening (already per-show) and requests a listening state refresh via TileService.requestListeningState on date change.
 - Tests: fake clock + signal flow cover the midnight advance in CalendarViewModel and DeviceContext.today; zone change moves the date.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (5.2):
+- DeviceContext.todayUpdates: Flow<LocalDate> (distinct) re-read on preference changes (override/position), on systemTimeChanges and after each device midnight (untilNextDay: to 1 s past the next device midnight, DST-aware). device/SystemTimeChanges.kt: runtime receiver for DATE_CHANGED / TIME_SET / TIMEZONE_CHANGED, wired in Koin.
+- CalendarViewModel collects it (state.today only; the selection stays) and re-reads today on Resume (covers a frozen process across midnight).
+- MainActivity: holiday theme from todayUpdates (collectAsStateWithLifecycle, so it also refreshes on start); launcher icon updated from todayUpdates under repeatOnLifecycle(STARTED) (replaces the resume-only update).
+- TimeChangeReceiver (manifest; TIMEZONE_CHANGED/TIME_SET) now also updates the icon and asks the tile to refresh; DateChangeReceiver refreshes the tile too (requestHebrewDateTileRefresh -> TileService.requestListeningState). The tile already reads DeviceContext in every onStartListening.
+Tests: device/DeviceTodayUpdatesTest (midnight signal, zone change, override on/off, no repeats, midnight delay incl. DST day); ui/calendar/CalendarTodayRefreshTest (opens on device date, midnight advance with fake clock, resume re-read, zone change, override on/off).
+Verification: assembleDebug + testDebugUnitTest (685, 0 failures) + lintDebug (no new issues). Emulator evidence: see TASK-5 notes.
+<!-- SECTION:NOTES:END -->
