@@ -1,11 +1,11 @@
 ---
 id: TASK-42
 title: Serve one android-debug skill to Claude and Codex agents
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T20:54:00Z'
-updated_date: '2026-10-29T20:58:00Z'
+updated_date: '2026-10-29T20:59:00Z'
 labels:
   - tooling
 dependencies: []
@@ -37,4 +37,6 @@ Verified: fresh 'claude -p' session in this worktree lists only the current andr
 Before merge: the main checkout (/Users/daniel/projects/levana) still has the untracked stale .claude/skills/android-debug/SKILL.md. It must be removed (owner approval) or 'git merge' there will refuse to overwrite it, and Claude agents started from the main checkout keep seeing 'Never take screenshots'.
 
 2026-10-29: owner removed the stale copy from the main checkout; .claude/skills there is now empty, so the merge can add the symlink.
+
+Merged to master as 9575adb and pushed.
 <!-- SECTION:NOTES:END -->
