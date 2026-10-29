@@ -41,6 +41,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.HebrewDay
@@ -160,7 +161,12 @@ private fun MonthContent(snapshot: MonthWidgetSnapshot, markers: Map<HolidayCate
                                 isToday = day.gregorianDate == snapshot.today,
                                 full = full,
                                 marker = day.holidayCategory?.let { markers[it] },
-                                description = dayDescription(day, locale, dateFormatter),
+                                description = dayDescription(
+                                    day,
+                                    locale,
+                                    dateFormatter,
+                                    today = if (day.gregorianDate == snapshot.today) context.getString(R.string.calendar_today) else null,
+                                ),
                             )
                         }
                     }
@@ -249,7 +255,8 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, full: Boolean, marker: Col
     }
 }
 
-private fun dayDescription(day: HebrewDay, locale: Locale, dateFormatter: DateTimeFormatter): String {
+/** What a screen reader says for a cell; [today] marks the highlighted day. */
+private fun dayDescription(day: HebrewDay, locale: Locale, dateFormatter: DateTimeFormatter, today: String?): String {
     val holiday = if (locale.isHebrewUi()) day.holidayLabelHebrew else day.holidayLabel
-    return listOfNotNull(day.hebrewFormatted, day.gregorianDate.format(dateFormatter), holiday).joinToString(", ")
+    return listOfNotNull(today, day.hebrewFormatted, day.gregorianDate.format(dateFormatter), holiday).joinToString(", ")
 }
