@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-29T21:03:00Z'
+updated_date: '2026-10-29T21:29:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -23,3 +24,9 @@ Found during TASK-9.3 emulator verification (2026-10-29). With a GPS fix at Jeru
 <!-- AC:BEGIN -->
 - [ ] #1 Current-location name is shown in the app language (English or Hebrew) or a sensible fallback, never an unrelated script
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Also seen 2026-10-29: in the Today widget's Hebrew Gregorian line the Arabic name runs into the year without separation ('…באוקטובר 2026 · القدس' renders as 'القدس2026 ·'), a bidi-isolation issue when the location's script differs from the app language. Screenshot: /tmp/task93-widget-shots/13-he-today-and-month-page.png
+<!-- SECTION:NOTES:END -->

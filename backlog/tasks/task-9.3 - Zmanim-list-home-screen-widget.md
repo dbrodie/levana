@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T21:03:00Z'
+updated_date: '2026-10-29T21:29:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -120,4 +120,24 @@ Screenshots are in /tmp/task93-widget-shots/, outside the worktree: `NN-*.png` i
 **Discovery:** after reverse geocoding, the current-location name became "القدس" (Arabic), in the sidebar and the widget header alike. This is not widget code. Filed as TASK-44 (low; possibly the emulator's geocoder).
 
 **Glance note:** each redraw resets the list's scroll to the top (Glance LazyColumn has no scroll-position API). At small sizes the next row can be below the fold after a refresh. It is acceptable at the default 3x3, where all six default+extra rows fit.
+
+## Highlight advance observed live (pre-rebase build 69e5f5f, 2026-10-29)
+- The 23:22:49 refresh alarm fired. At 23:23:11 the widget showed `חצות הלילה, 23:22, עבר` (all rows passed), and the next REFRESH alarm moved to 2026-10-30 00:00. Polling dumps are in the task output; screenshot 09-he-light-after-chatzot-halaylah.
+- **Bug found and fixed (see the fix commit after the rebase):** screenshot 09 shows the row correctly dimmed and not bold, but still on the highlight pill. Glance/RemoteViews reuses lazy-list rows and doesn't clear a background a row no longer sets; a fresh render (10) was clean. Every row now sets its background (transparent unless next), with the same corner radius.
+- Re-tested in a live session with a zone round-trip:
+  - Kiritimati: Friday, `עלות השחר, 04:40, הבא` with a pill (11);
+  - back to Jerusalem: no row is next and the pill is gone (12).
+
+## Rebase onto origin/master fcf8da5 (after TASK-9.2)
+- Took 9.2's `WidgetUpdater.kt` (`RefreshingWidgetReceiver`, one alarm per receiver) and added `ZmanimWidgetReceiver` to `receivers`. My `LevanaWidgetReceiver` was dropped; `ZmanimWidgetReceiver` (in ZmanimWidget.kt, like MonthWidgetReceiver) extends `RefreshingWidgetReceiver`.
+- ZmanimWidget uses 9.2's `WidgetCommon.kt` helpers (`widgetLocale`/`isHebrewUi`/`widgetMirrored`/`openCalendar`). The helpers shared by Today and Zmanim (`openZmanim`, `NO_TIME`, `textAlign`, `timeFormatter`) moved from TodayWidget's private functions into `WidgetCommon.kt`, so neither keeps a duplicate.
+- Manifest, Koin, strings: both sides kept. TASK-44 does not collide (master has up to TASK-43).
+- The earlier "merge note for 9.2" is obsolete.
+
+## Verification after rebase (tested commit: the highlight fix on top of fcf8da5)
+- Build/test/lint: BUILD SUCCESSFUL, 744 tests, 0 failures/errors, no lint issues in widget code.
+- Emulator (emulator-5592, rebased build installed): Zmanim (page 1), Today and Month (page 2) all placed. `dumpsys appwidget` shows ids 2/3/4 bound to Zmanim/Today/MonthWidgetReceiver.
+- `dumpsys alarm` shows 3 separate `widget.REFRESH` RTC alarms (10 min window), all at 2026-10-30 00:00 since no zman is left today. `dumpsys activity intents` maps them to `cmp=.widget.MonthWidgetReceiver`, `.TodayWidgetReceiver` and `.ZmanimWidgetReceiver`, one alarm per widget kind.
+- Screenshot 13-he-today-and-month-page: Today and Month in Hebrew next to each other. The Arabic location name (TASK-44) runs into the year in Today's date line; noted on TASK-44.
+- Evidence: /tmp/task93-widget-shots/01–13.
 <!-- SECTION:NOTES:END -->
