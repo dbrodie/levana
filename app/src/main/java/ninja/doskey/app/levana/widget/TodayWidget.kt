@@ -29,11 +29,11 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
-import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.material3.ColorProviders
@@ -170,7 +170,14 @@ private fun DateBlock(
     mirror: Boolean,
     action: Action,
 ) {
-    val hebrewDate = if (hebrewUi) snapshot.hebrewDay.hebrewFormatted else snapshot.hebrewDay.transliterated
+    val day = snapshot.hebrewDay
+    // The compact size has room for the day and month only; the year would be cut off
+    val hebrewDate = when {
+        full && hebrewUi -> day.hebrewFormatted
+        full -> day.transliterated
+        hebrewUi -> "${day.hebrewDayOfMonthFormatted} ${day.month.hebrewName}"
+        else -> "${day.day} ${day.month.englishName}"
+    }
     val gregorian = snapshot.today.format(
         if (full) DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)
         else DateTimeFormatter.ofPattern("EEE d MMM", locale)
@@ -208,17 +215,31 @@ private fun DateBlock(
                 holidayLabel()
             }
         }
-        Text(
-            text = "$gregorian · ${snapshot.locationName}",
-            maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, textAlign = textAlign(mirror)),
-            modifier = GlanceModifier.fillMaxWidth(),
-        )
+        // When space runs out, the location is cut short rather than the date
+        Row(modifier = GlanceModifier.fillMaxWidth()) {
+            val secondaryStyle = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp)
+            val date = @Composable { Text(text = gregorian, maxLines = 1, style = secondaryStyle) }
+            val location = @Composable {
+                Text(
+                    text = " · ${snapshot.locationName}",
+                    maxLines = 1,
+                    style = secondaryStyle.copy(textAlign = textAlign(mirror)),
+                    modifier = GlanceModifier.defaultWeight(),
+                )
+            }
+            if (mirror) {
+                location()
+                date()
+            } else {
+                date()
+                location()
+            }
+        }
     }
 }
 
 @Composable
-private fun ColumnScope.TimeRow(
+private fun TimeRow(
     label: String,
     value: String,
     action: Action,
@@ -226,8 +247,9 @@ private fun ColumnScope.TimeRow(
     secondaryLabel: String? = null,
     secondaryValue: String? = null,
 ) {
+    Spacer(GlanceModifier.height(8.dp))
     Row(
-        modifier = GlanceModifier.fillMaxWidth().defaultWeight().clickable(action),
+        modifier = GlanceModifier.fillMaxWidth().padding(vertical = 4.dp).clickable(action),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val items = listOfNotNull(
