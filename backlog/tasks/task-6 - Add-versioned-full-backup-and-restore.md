@@ -3,15 +3,15 @@ id: TASK-6
 title: Add versioned full backup and restore
 status: To Do
 assignee: []
-created_date: "2026-10-21T11:19:30Z"
-updated_date: "2026-10-21T11:19:30Z"
+created_date: '2026-10-21T11:19:30Z'
+updated_date: '2026-10-29T20:35:00Z'
 labels:
   - curated-import
   - source-specs
 dependencies: []
 references:
   - levana-a10
-priority: medium
+priority: low
 type: feature
 ordinal: 6000
 ---

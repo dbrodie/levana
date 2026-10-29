@@ -3,15 +3,15 @@ id: TASK-10
 title: Add per-event birthday and yahrzeit reminders
 status: To Do
 assignee: []
-created_date: "2026-10-21T11:19:32Z"
-updated_date: "2026-10-21T11:19:32Z"
+created_date: '2026-10-21T11:19:32Z'
+updated_date: '2026-10-29T20:35:00Z'
 labels:
   - curated-import
   - source-specs
 dependencies: []
 references:
   - levana-hlf
-priority: medium
+priority: low
 type: feature
 ordinal: 10000
 ---
