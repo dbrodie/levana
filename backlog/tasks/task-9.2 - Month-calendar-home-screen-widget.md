@@ -1,11 +1,11 @@
 ---
 id: TASK-9.2
 title: Month calendar home-screen widget
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T21:04:00Z'
+updated_date: '2026-10-29T21:05:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -148,3 +148,15 @@ Owner decision 2026-10-29: Hebrew weekday letters and the Hebrew-letter month ti
 
 **Build/test/lint after the fixes**: BUILD SUCCESSFUL, 736 tests, 0 failures/errors, and no lint issues in the widget code. AC #1 is now checked.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T21:05:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed diff (no direct clock/zone/override/displayCity reads), screenshots 05 and 12 checked; merged onto master as f919fc2. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 736 tests, 0 failures/errors. Behavior change accepted: the calendar deep link now selects the passed date (notification taps open their day).
+
+---
+<!-- COMMENTS:END -->
