@@ -23,3 +23,6 @@ release.keystore
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Machine-local paths; copied into new worktrees via .worktreeinclude
+.env
