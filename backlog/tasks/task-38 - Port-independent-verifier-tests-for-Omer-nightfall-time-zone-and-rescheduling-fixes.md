@@ -3,11 +3,11 @@ id: TASK-38
 title: >-
   Port independent verifier tests for Omer nightfall, time-zone and rescheduling
   fixes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T10:50:00Z'
-updated_date: '2026-10-29T10:59:00Z'
+updated_date: '2026-10-29T11:00:00Z'
 labels:
   - test
 dependencies: []
@@ -65,4 +65,6 @@ Removed:
 - Markdown verification reports not ported.
 
 No production bugs found; no new tasks filed.
+
+Coordinator: verified 651 tests/0 failures, assembleDebug and lintDebug on 161dc0f (app tree identical to tested 8797360). Merged to master at cd785ad and pushed to origin/master.
 <!-- SECTION:NOTES:END -->
