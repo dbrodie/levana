@@ -7,7 +7,7 @@ import java.time.LocalDate
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayIntent
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import org.junit.Assert.assertEquals
@@ -49,7 +49,7 @@ class VerifyBirthdayEditorRaceTest {
     }
 
     private fun vm() = ContactBirthdayViewModel(
-        ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) }
+        ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1))
     )
 
     private fun finishLoad(vm: ContactBirthdayViewModel, done: () -> Boolean) {

@@ -13,7 +13,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.FakeContactsProvider
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,7 +53,7 @@ class ContactBirthdayViewModelIoTest {
 
     private fun viewModel() = ContactBirthdayViewModel(
         ContactBirthdayRepository(RuntimeEnvironment.getApplication()),
-        TodayProvider { LocalDate.of(2026, 10, 20) }
+        deviceContextOn(LocalDate.of(2026, 10, 20))
     )
 
     @Test
@@ -119,7 +119,7 @@ class ContactBirthdayViewModelIoTest {
                 override suspend fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) =
                     throw SecurityException("Permission denied")
             },
-            TodayProvider { LocalDate.of(2026, 10, 20) }
+            deviceContextOn(LocalDate.of(2026, 10, 20))
         )
         vm.onIntent(ContactBirthdayIntent.ContactSelected(FakeContactsProvider.KEY, FakeContactsProvider.NAME, null))
 
@@ -361,7 +361,7 @@ class ContactBirthdayViewModelIoTest {
     }
 
     private fun gatedViewModel(repository: GatedRepository) =
-        ContactBirthdayViewModel(repository, TodayProvider { LocalDate.of(2026, 10, 20) })
+        ContactBirthdayViewModel(repository, deviceContextOn(LocalDate.of(2026, 10, 20)))
 
     @Test
     fun aSlowEarlierPickNeverReplacesALaterPick() {

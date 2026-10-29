@@ -8,7 +8,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import ninja.doskey.app.levana.domain.model.Location
-import java.util.TimeZone
+import ninja.doskey.app.levana.device.DeviceContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellationException
@@ -44,7 +44,8 @@ class LocationService(
             latitude = fix.latitude,
             longitude = fix.longitude,
             elevation = fix.altitude,
-            timezoneId = TimeZone.getDefault().id,
+            // A fix is in the device zone (TASK-5 case 10)
+            timezoneId = DeviceContext.realZone().id,
             name = resolvePlaceName(geocoder, fix.latitude, fix.longitude),
             country = ""
         )

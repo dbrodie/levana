@@ -16,7 +16,10 @@ data class SettingsState(
     val candleLightingOffset: Double = 18.0,
     val dynamicHolidayTheme: Boolean = true,
     val showDeveloperSettings: Boolean = false,
-    val devDateOverride: LocalDate? = null,
+    /** The device date when preferences were last read, for the override picker. */
+    val deviceToday: LocalDate? = null,
+    /** The device date while the developer override is on, otherwise null. */
+    val overriddenDeviceDate: LocalDate? = null,
     val devForceHolidayTheme: String? = null,
     val notifyCandleLighting: Boolean = false,
     val candleLightingNotifyMode: String = "morning",

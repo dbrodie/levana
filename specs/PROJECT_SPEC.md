@@ -10,14 +10,22 @@ This document describes the current product and its core requirements. Planned w
 
 - Monthly Hebrew-primary and Gregorian-primary calendars, with day details.
 - Jewish holidays, fasts, Rosh Chodesh, weekly parsha, special-Shabbat indications, Omer counts and molad information on Shabbat Mevarchim.
-- Israel/Diaspora observance inferred from the active location's timezone, with a manual override; modern Israeli holidays can be hidden.
+- Israel/Diaspora observance inferred from the device's position, with a manual override; modern Israeli holidays can be hidden.
 - Location-based zmanim, including dawn, sunrise, Shema and prayer deadlines, midday, Mincha, Plag, sunset, nightfall and halachic midnight.
 - Users choose which zmanim appear in day details. Calculation methods are currently fixed; both GRA and MGA Shema times are available.
 - Candle lighting and havdalah follow consecutive Shabbat/Yom Tov transitions. The pre-sunset candle-lighting offset is adjustable, defaulting to 18 minutes.
 
+## Device and Selected City
+
+The device decides everything; the selected city is a display lens only.
+
+- **Device:** the device clock, the device time zone and the device position (the current location, or the time zone's default city without location permission). It decides today's date everywhere (calendar highlight, theme, launcher icon, quick tile), every date calculation, when each notification fires and the times its text shows, and Israel/Diaspora detection.
+- **Selected city:** chosen in the sidebar. It changes only the zmanim on the Zmanim screen and the day panel's times, which use the device's date and are shown in the city's own clock. It never affects notifications, holiday dates or Israel/Diaspora.
+- **Developer date override (testing only):** an "as if" device clock moved by whole days. The time of day and midnight stay real; everything that reads the device, notifications and their alarms included, behaves as if it were that date.
+
 ## Locations
 
-- Device location and bundled city search; multiple saved cities with one active location.
+- Device location and bundled city search; multiple saved cities, one of them (or the current location) selected for display.
 - Persist coordinates, elevation and timezone for calculations.
 - Calendar calculations remain available without location permission or connectivity. Device positioning and place-name lookup depend on available platform services.
 
@@ -36,7 +44,9 @@ Notifications are enabled by category and require Android notification permissio
 - Candle lighting: a morning notice or a configurable number of hours before lighting.
 - Holidays: configurable advance days; fasts: the day before.
 - Local personal events and contact birthdays: on the occurrence date.
-- Omer: at location nightfall and/or a configurable device-local morning time.
+- Omer: at nightfall at the device position and/or a configurable device-local morning time.
+
+Reminder times and texts follow the device: candle lighting and nightfall at the device position, morning notices and all displayed times in the device time zone, dates by the device clock.
 
 Delivery follows Android scheduling restrictions and is not guaranteed at an exact time.
 

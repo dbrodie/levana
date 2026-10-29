@@ -86,7 +86,8 @@ import androidx.navigation.toRoute
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.icon.DynamicIconManager
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.displayCity
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayScreen
 import ninja.doskey.app.levana.ui.calendar.CalendarScreen
@@ -116,7 +117,6 @@ import ninja.doskey.app.levana.ui.theme.LevanaTheme
 import ninja.doskey.app.levana.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -136,11 +136,12 @@ class MainActivity : ComponentActivity() {
         val openZmanim = intent?.getBooleanExtra(EXTRA_OPEN_ZMANIM, false) ?: false
         setContent {
             val preferencesRepository: PreferencesRepository = koinInject()
+            val deviceContext: DeviceContext = koinInject()
             val prefs by preferencesRepository.preferences.collectAsState(
                 initial = null
             )
             val holidayTheme = prefs?.let {
-                activeHolidayTheme(it, it.devDateOverride ?: LocalDate.now())
+                activeHolidayTheme(it, deviceContext.now(it).today)
             }
             val configuration = LocalConfiguration.current
             val layoutDirection = if (configuration.layoutDirection == android.util.LayoutDirection.RTL) {
@@ -173,12 +174,14 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
 
     val preferencesRepository: PreferencesRepository = koinInject()
     val locationService: LocationService = koinInject()
+    val deviceContext: DeviceContext = koinInject()
     val prefs by preferencesRepository.preferences.collectAsState(
         initial = null
     )
 
     val currentPrefs = prefs ?: return
-    val locationName = currentPrefs.activeLocation.name
+    // The drawer's selected-city picker; only the Zmanim screen and day panel use the city
+    val locationName = currentPrefs.displayCity.name
 
     // Ask for location once per launch; the dialog pauses the activity, so a grant is
     // picked up by the ON_RESUME refresh below.
@@ -205,8 +208,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
                         ?.let { preferencesRepository.updateCurrentLocation(it) }
                 }
                 scope.launch(Dispatchers.IO) {
-                    val currentPrefs = preferencesRepository.preferences.first()
-                    DynamicIconManager.update(context, currentPrefs.devDateOverride)
+                    DynamicIconManager.update(context, deviceContext.today())
                 }
             }
         }

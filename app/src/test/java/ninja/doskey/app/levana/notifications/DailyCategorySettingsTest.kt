@@ -10,7 +10,6 @@ import ninja.doskey.app.levana.notifications.DailyCategory.HOLIDAYS
 import ninja.doskey.app.levana.notifications.DailyCategory.PERSONAL_EVENTS
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -45,20 +44,22 @@ class DailyCategorySettingsTest {
         assertEquals(listOf(setOf(PERSONAL_EVENTS)), set { it.copy(notifyPersonalEvents = true) })
         assertEquals(listOf(setOf(HOLIDAYS)), set { it.copy(holidayNotifyDaysBefore = 3) })
         assertEquals(listOf(setOf(HOLIDAYS, FASTS)), set { it.copy(isInIsrael = true) })
+        // Fast times are the device position's; the selected city is display-only (TASK-5)
         assertEquals(
-            "active location",
-            listOf(setOf(FASTS)),
+            "selected city",
+            emptyList<Set<DailyCategory>>(),
             set {
                 it.copy(savedLocations = listOf(SavedLocation("ny", newYork)), activeLocationId = "ny")
             }
         )
+        assertEquals("device position", listOf(setOf(FASTS)), set { it.copy(currentLocation = newYork) })
         assertEquals(
             listOf(setOf(PERSONAL_EVENTS)),
             set { it.copy(yahrzeitRules = YahrzeitRules(firstYear = YahrzeitFirstYear.entries.last())) }
         )
         assertEquals(
             listOf(setOf(HOLIDAYS, FASTS, PERSONAL_EVENTS)),
-            set { it.copy(devDateOverride = LocalDate.of(2030, 9, 1)) }
+            set { it.copy(devDayShift = 30) }
         )
 
         // Unrelated settings, including the alarm-backed categories

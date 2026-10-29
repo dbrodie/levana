@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T18:53:00Z'
+updated_date: '2026-10-29T19:14:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -22,10 +22,10 @@ Per TASK-5's rule and case table rows 1-5, 7, 8, 11, 12. Introduce the single in
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All date/now/zone reads outside the abstraction are gone (grep evidence recorded)
-- [ ] #2 Notification triggers and text use the device position and zone; the selected city has no effect (tests with New York device vs Jerusalem city)
-- [ ] #3 Dev override behaves as an as-if device clock everywhere, including receivers and alarm triggers
-- [ ] #4 PROJECT_SPEC.md and ARCHITECTURE_SPEC.md updated
+- [x] #1 All date/now/zone reads outside the abstraction are gone (grep evidence recorded)
+- [x] #2 Notification triggers and text use the device position and zone; the selected city has no effect (tests with New York device vs Jerusalem city)
+- [x] #3 Dev override behaves as an as-if device clock everywhere, including receivers and alarm triggers
+- [x] #4 PROJECT_SPEC.md and ARCHITECTURE_SPEC.md updated
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,3 +50,31 @@ Tests: convert tests that used devDateOverride=X with the real clock to an injec
 
 Specs: PROJECT_SPEC.md (Calendar/Locations/Reminders: device-vs-display-city rule, override semantics); ARCHITECTURE_SPEC.md (Dates and Notifications: DeviceContext/DeviceNow, displayCity and where each may be used).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (5.1):
+- New device/DeviceContext.kt: DeviceNow (instant, zone, position, devDayShift; today, dateTime, toSystemInstant) and DeviceContext (now(), now(prefs), today(), devDayShiftFor(date); companion realClock/realZone/realToday are the only real-clock reads). Koin single. TodayProvider deleted.
+- Dev override is now UserPreferences.devDayShift (key dev_clock_shift_days); DevDateOverrideMigration converts an old dev_date_override date into a shift from the migration day. Settings picker stores devDayShiftFor(date).
+- UserPreferences.activeLocation renamed displayCity (KDoc: display only). Readers: ZmanimViewModel, DayDetailViewModel (day panel times), drawer/Settings/Calendar names.
+- planReminderAlarms(device: DeviceNow, ...) – window = device today..+7 (locationToday removed); candle/nightfall from device.position; morning modes and candle text in device.zone; ReminderAlarmPlan.onSystemClock(device) maps triggers through the override before scheduling. Rebuilder takes a DeviceContext (secondary ctor with a Clock lambda kept for tests); unused candleLightingTimes() removed. AlarmSettings keys on devicePosition (currentLocation), not the selected city.
+- DailyNotificationWorker: device today; fast times from device.position; DailyCategory FASTS keyed on currentLocation. isInIsrael auto now from the device position's zone (three-way comes in 5.3).
+- Moved to DeviceContext: CalendarViewModel (+ state.today nullable; selection starts on device today; screen waits for it; pager anchor from state.today), ZmanimViewModel/State, MainActivity theme + resume icon, HolidayThemeResolver (no default), DynamicIconManager.update(context, today), HebrewDateTileService, DateChangeReceiver + BootReceiver (goAsync, override honoured), AddEdit/ContactBirthday VMs (state placeholders use realToday), LocationService/PreferencesRepository/SystemCalendarRepository zone, NotificationAlarmScheduler (schedules by Instant; real clock via DeviceContext.realClock). HebrewYearMonth.now() removed.
+
+Grep evidence (AC1), app/src/main, pattern LocalDate.now(|YearMonth.now(|HebrewYearMonth.now(|ZoneId.systemDefault(|TimeZone.getDefault(|Clock.systemDefaultZone(|System.currentTimeMillis|devDateOverride ?:|activeLocation: only device/DeviceContext.kt (devDayShiftFor uses the injected clock; realClock/realToday/realZone).
+
+Changed test expectations (old selected-city behaviour -> device rule):
+- AlarmSettingsTest: selecting a saved city no longer rebuilds alarms; moving the device position does (was: active city rebuilds, current location ignored while a city is active).
+- DailyCategorySettingsTest: selecting a city no longer refreshes FASTS; a device-position change does.
+- DailyNotificationWorkerTest: 'fasts follow the active location' -> addSavedLocation leaves the fast notice, updateCurrentLocation refreshes it; fixed device clock replaces the date override. New fastNoticeTimesAreTheDevicePositionsNotTheSelectedCitys (row 7).
+- NotificationAlarmRebuilderTest: changingTheActiveLocationMovesTheAlarm -> selectingACityLeavesTheAlarmAndMovingTheDeviceMovesIt; fixed Jerusalem device clock replaces the date override.
+- TimeZoneChangeReminderTest: morning candle notice now moves to 09:30 Moscow on a zone change (was: stayed 09:30 New York, the city's zone); Koin singleton test uses an overridden DeviceContext with a fixed instant reading the JVM zone instead of the date override.
+- VerifyTimeZoneSingletonTest: same rule (candle morning follows the device zone); window starts on the New York device date; fixed instant instead of the date override.
+- VerifyLookaheadPlanTest: 'candles in location zone' -> wall-clock times in the device zone, nightfall at the device position; LA/Jerusalem late-run limitation replaced: Friday's 09:30 device-time notice is scheduled on Thursday's late run.
+- VerifyReschedulingEndToEndTest: saved/selected city changes no longer move the candle alarm; GPS updates do (also while a city is selected); device clock fixed in New York; Omer morning asserted in the device zone (New York) instead of the JVM zone.
+- Renamed only (expectations unchanged, location now means device position): ReminderAlarmPlanTest omer morning/tzait, PostMidnightCandleLightingTest DST, OmerNightfallRolloverTest DST. ShiftedWindowReconciliationTest, PostMidnight*, OmerNightfallRollover*, VerifyTimeZoneCrossingTest, OmerTravelDeliveryTest pass unchanged: their location was already the device's position and zone.
+- Mechanical: TodayProvider fakes -> deviceContextOn(date); planReminderAlarms(today, now, zone, position, ...) test overload (PlanReminderAlarmsAt.kt) requires today == device date; CalendarViewModel tests pass a DeviceContext.
+New tests: device/DeviceContextTest (system clock, zone change, midnight, as-if shift incl. DST, off, devDayShiftFor, migration); notifications/DeviceVsDisplayCityTest (NY device vs Jerusalem city: rows 1-5, 11, 12, DST day, midnight boundary).
+Verification: assembleDebug + testDebugUnitTest (675 tests, 0 failures) + lintDebug (0 errors; no warnings in changed files).
+<!-- SECTION:NOTES:END -->

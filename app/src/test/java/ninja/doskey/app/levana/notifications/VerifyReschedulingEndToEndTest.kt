@@ -9,6 +9,7 @@ import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.fixedClock
 import ninja.doskey.app.levana.domain.model.Location
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -99,7 +100,10 @@ class VerifyReschedulingEndToEndTest {
     fun setUp() {
         repo = PreferencesRepository(app, CityRepository(app))
         scheduler = NotificationAlarmScheduler(app)
-        val rebuilder = NotificationAlarmRebuilder(repo.preferences, zmanim, calendar, scheduler)
+        // The device is in New York; its clock reads the start of [date]
+        val rebuilder = NotificationAlarmRebuilder(repo.preferences, zmanim, calendar, scheduler) {
+            fixedClock(date, LocalTime.MIDNIGHT, ZoneId.of(newYork.timezoneId))
+        }
         startKoin {
             modules(module {
                 single { repo }
@@ -114,7 +118,7 @@ class VerifyReschedulingEndToEndTest {
             updateCurrentLocation(newYork)
             setActiveLocation(null)
             saveIsInIsrael(false)
-            saveDevDateOverride(date)
+            saveDevDayShift(0)
             saveNotifyCandleLighting(false)
             saveNotifyOmer(false)
             saveNotifyOmerTzait(true)
@@ -139,7 +143,7 @@ class VerifyReschedulingEndToEndTest {
         // The DataStore outlives this test; restore what other suites may read
         save {
             saveIsInIsrael(false)
-            saveDevDateOverride(null)
+            saveDevDayShift(0)
             saveCandleLightingOffset(18.0)
             saveNotifyCandleLighting(false)
             saveNotifyOmer(false)
@@ -193,52 +197,52 @@ class VerifyReschedulingEndToEndTest {
                 millis(candle40.minusHours(4), newYork.timezoneId)
         }
 
-        // Active location: add (and activate) a saved location
+        // TASK-5: reminders follow the device; selecting a city (previously it moved the
+        // alarm to that city's candle lighting) changes nothing
+        val candleNy40 = alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime
         save { addSavedLocation(london) }
-        val candleLondon = zmanim.getShabbatInfo(date, london, 40.0).candleLightingTime!!
-        awaitCondition("candle alarm follows saved London location") {
-            val a = alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)
-            a?.triggerAtTime == millis(candleLondon.minusHours(4), london.timezoneId) &&
-                shadowOf(a.operation).savedIntent.getStringExtra(
-                    NotificationAlarmScheduler.EXTRA_CANDLE_LIGHTING_TIME
-                ) == candleLondon.toString()
-        }
+        settle()
+        assertEquals(candleNy40, alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime)
         assertEquals(1, alarmsOnDate.size)
 
-        // GPS/current-location update while a saved location is active must not change the alarm
-        val before = alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime
+        // A device-position update moves it, even while a saved city is selected
         save { updateCurrentLocation(newYork.copy(latitude = 40.8)) }
+        val nyMoved = newYork.copy(latitude = 40.8)
+        val candleNyMoved = zmanim.getShabbatInfo(date, nyMoved, 40.0).candleLightingTime!!
+        awaitCondition("candle alarm follows the device position") {
+            val a = alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)
+            a?.triggerAtTime == millis(candleNyMoved.minusHours(4), newYork.timezoneId) &&
+                shadowOf(a.operation).savedIntent.getStringExtra(
+                    NotificationAlarmScheduler.EXTRA_CANDLE_LIGHTING_TIME
+                ) == candleNyMoved.toString()
+        }
+
+        // Switching the selected city back to the current location changes nothing
+        val before = alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime
+        save { setActiveLocation(null) }
         settle()
         assertEquals(before, alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime)
 
-        // Switch back to the current location
-        save { setActiveLocation(null) }
-        val nyMoved = newYork.copy(latitude = 40.8)
-        val candleNyMoved = zmanim.getShabbatInfo(date, nyMoved, 40.0).candleLightingTime!!
-        awaitCondition("candle alarm follows current location again") {
-            alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)?.triggerAtTime ==
-                millis(candleNyMoved.minusHours(4), newYork.timezoneId)
-        }
-
-        // Current-location (GPS) update while it is active
+        // The device moves to London
         save { updateCurrentLocation(london.copy(name = "GPS")) }
-        awaitCondition("candle alarm follows GPS update of active current location") {
+        val candleLondon = zmanim.getShabbatInfo(date, london, 40.0).candleLightingTime!!
+        awaitCondition("candle alarm follows a GPS update of the device position") {
             alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)?.triggerAtTime ==
                 millis(candleLondon.minusHours(4), london.timezoneId)
         }
 
-        // Removing the active saved location falls back to the current location
+        // Adding, selecting and removing a saved city never moves it
         save { addSavedLocation(newYork) }
-        awaitCondition("NY saved active") {
-            alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)?.triggerAtTime ==
-                millis(candle40.minusHours(4), newYork.timezoneId)
-        }
-        val nyId = runBlocking { repo.preferences.first().activeLocationId!! }
+        settle()
+        val nyId = runBlocking { repo.preferences.first().savedLocations.last().id }
+        save { setActiveLocation(nyId) }
+        settle()
         save { removeSavedLocation(nyId) }
-        awaitCondition("fallback to current (London GPS) after removing active saved") {
-            alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)?.triggerAtTime ==
-                millis(candleLondon.minusHours(4), london.timezoneId)
-        }
+        settle()
+        assertEquals(
+            millis(candleLondon.minusHours(4), london.timezoneId),
+            alarmFor(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)!!.triggerAtTime
+        )
 
         // Omer: enable category (tzait sub-option defaults on)
         save { saveNotifyOmer(true) }
@@ -252,17 +256,17 @@ class VerifyReschedulingEndToEndTest {
         )
         assertTrue(alarmFor(NotificationAlarmScheduler.ACTION_OMER_MORNING) == null)
 
-        // Omer morning sub-option on
+        // Omer morning sub-option on (the device clock is in New York)
         save { saveNotifyOmerMorning(true) }
         awaitCondition("omer morning alarm at 07:00") {
             alarmFor(NotificationAlarmScheduler.ACTION_OMER_MORNING)?.triggerAtTime ==
-                millis(LocalTime.of(7, 0), ZoneId.systemDefault().id)
+                millis(LocalTime.of(7, 0), newYork.timezoneId)
         }
         // Omer morning time change
         save { saveNotifyOmerMorningTime(6 * 60 + 15) }
         awaitCondition("omer morning alarm moved to 06:15") {
             alarmFor(NotificationAlarmScheduler.ACTION_OMER_MORNING)?.triggerAtTime ==
-                millis(LocalTime.of(6, 15), ZoneId.systemDefault().id)
+                millis(LocalTime.of(6, 15), newYork.timezoneId)
         }
         assertEquals(3, alarmsOnDate.size)
 

@@ -1,6 +1,10 @@
 package ninja.doskey.app.levana.domain.model
 
 data class UserPreferences(
+    /**
+     * The device position: the last current-location fix, or the device time zone's fallback
+     * city without one. Read it through [ninja.doskey.app.levana.device.DeviceNow.position].
+     */
     val currentLocation: Location = Location.JERUSALEM,
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
@@ -11,7 +15,11 @@ data class UserPreferences(
     val dynamicHolidayTheme: Boolean = true,
     val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,
-    val devDateOverride: java.time.LocalDate? = null,
+    /**
+     * TEST ONLY — the developer override: whole days the device clock is shifted by, 0 when
+     * off. Applied solely by [ninja.doskey.app.levana.device.DeviceContext].
+     */
+    val devDayShift: Long = 0,
     val devForceHolidayTheme: String? = null,
     val notifyCandleLighting: Boolean = false,
     val candleLightingNotifyMode: String = "morning",
@@ -29,6 +37,11 @@ data class UserPreferences(
     val yahrzeitRules: YahrzeitRules = YahrzeitRules()
 )
 
-/** The selected saved location, or the current location when none is selected. */
-val UserPreferences.activeLocation: Location
+/**
+ * The selected (display) city: the saved city chosen in the sidebar, or the current location
+ * when none is. It is a display lens only — read it for the Zmanim screen, the day panel's
+ * times and the city pickers, never for dates, notifications or Israel/Diaspora, which follow
+ * the device ([ninja.doskey.app.levana.device.DeviceContext]).
+ */
+val UserPreferences.displayCity: Location
     get() = savedLocations.find { it.id == activeLocationId }?.location ?: currentLocation

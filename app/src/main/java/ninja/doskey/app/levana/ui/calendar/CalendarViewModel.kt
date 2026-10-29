@@ -8,10 +8,11 @@ import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.domain.model.displayCity
 import ninja.doskey.app.levana.ui.ChangeRefresher
 import java.time.LocalDate
 import java.time.YearMonth
@@ -29,6 +30,7 @@ class CalendarViewModel(
     private val personalEventRepository: PersonalEventRepository,
     private val contactBirthdayRepository: ContactBirthdayRepository,
     private val systemCalendarRepository: SystemCalendarRepository,
+    private val deviceContext: DeviceContext,
     eventDataChanges: EventDataChanges
 ) : ViewModel() {
 
@@ -52,7 +54,7 @@ class CalendarViewModel(
         observePreferences()
     }
 
-    private fun today(): LocalDate = currentPrefs.devDateOverride ?: LocalDate.now()
+    private fun today(): LocalDate = deviceContext.now(currentPrefs).today
 
     fun onIntent(intent: CalendarIntent) {
         when (intent) {
@@ -150,10 +152,15 @@ class CalendarViewModel(
                 val modeChanged =
                     currentPrefs.calendarHebrewMode != prefs.calendarHebrewMode
                 currentPrefs = prefs
+                val firstLoad = !preferencesLoaded
                 preferencesLoaded = true
+                val today = today()
                 _state.value = _state.value.copy(
-                    locationName = prefs.activeLocation.name,
-                    calendarHebrewMode = prefs.calendarHebrewMode
+                    locationName = prefs.displayCity.name,
+                    calendarHebrewMode = prefs.calendarHebrewMode,
+                    today = today,
+                    // The calendar opens on the device's today
+                    selectedDate = if (firstLoad) today else _state.value.selectedDate
                 )
                 if (_state.value.monthDays.isEmpty()) {
                     onIntent(CalendarIntent.LoadToday)
@@ -245,7 +252,7 @@ class CalendarViewModel(
             val current = _state.value
             _state.value = current.copy(
                 monthDays = markedDays,
-                today = currentPrefs.devDateOverride ?: LocalDate.now(),
+                today = today(),
                 isLoading = false,
                 // Keep the neighbours until the adjacent prefetch replaces them.
                 gregorianMonthCache = current.gregorianMonthCache + (yearMonth to markedDays)
@@ -335,7 +342,7 @@ class CalendarViewModel(
             val current = _state.value
             _state.value = current.copy(
                 monthDays = markedDays,
-                today = currentPrefs.devDateOverride ?: LocalDate.now(),
+                today = today(),
                 isLoading = false,
                 // Keep the neighbours until the adjacent prefetch replaces them.
                 hebrewMonthCache = current.hebrewMonthCache + (hym to markedDays)

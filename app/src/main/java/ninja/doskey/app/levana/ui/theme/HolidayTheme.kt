@@ -75,7 +75,8 @@ fun activeHolidayTheme(prefs: UserPreferences, date: LocalDate): HolidayTheme? {
 
 object HolidayThemeResolver {
 
-    fun resolve(date: LocalDate = LocalDate.now()): HolidayTheme? {
+    /** The theme for the device's [date] ([ninja.doskey.app.levana.device.DeviceContext]). */
+    fun resolve(date: LocalDate): HolidayTheme? {
         val gc = GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
         val jc = JewishCalendar(gc)
         return resolveFromCalendar(jc)

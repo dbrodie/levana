@@ -30,7 +30,7 @@ import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.loadContactPhoto
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayIntent
@@ -383,7 +383,7 @@ class VerifyCandidateIoTest {
     fun pickedContactIsResolvedOffMain() {
         contacts.add(9, "k9", "Leah")
         contactsProvider.gate = CountDownLatch(1)
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         val ms = timeMs { vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/9"))) }
         assertTrue(ms < 1_000)
         awaitEntered(contactsProvider, 1)
@@ -418,7 +418,7 @@ class VerifyCandidateIoTest {
             if (uri.lastPathSegment == "1") slowA.await(5, TimeUnit.SECONDS)
             contacts.respond(uri, proj, sel, args)
         }
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/1")))
         awaitEntered(contactsProvider, 1)
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/2")))
@@ -433,7 +433,7 @@ class VerifyCandidateIoTest {
     fun aSlowBirthdayLoadDoesNotDiscardAnEditMadeWhileLoading() {
         contacts.add(7, "k7", "Rivka", Triple(12, 3, 5750))
         contactsProvider.gate = CountDownLatch(1)
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(contactsProvider, 1)
         vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))

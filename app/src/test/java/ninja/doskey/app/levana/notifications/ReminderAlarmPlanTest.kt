@@ -183,7 +183,7 @@ class ReminderAlarmPlanTest {
     }
 
     @Test
-    fun `omer morning uses the device zone and tzait the location zone`() {
+    fun `omer morning uses the device zone and tzait the device position`() {
         val jerusalemZone = ZoneId.of(Location.JERUSALEM.timezoneId)
         val today = hebrew(JewishCalendar.IYAR, 1)
         val result = plan(today, LocalTime.of(0, 1), omerPrefs, Location.JERUSALEM, deviceZone = nyZone)

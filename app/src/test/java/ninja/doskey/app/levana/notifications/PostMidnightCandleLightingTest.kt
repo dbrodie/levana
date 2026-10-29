@@ -164,7 +164,7 @@ class PostMidnightCandleLightingTest {
     }
 
     @Test
-    fun `triggers follow DST in the location zone and ignore the device zone`() {
+    fun `hours-before triggers follow DST at the device position whatever the device zone`() {
         // EU spring-forward on Sun 29 Mar 2026: Fridays 27 Mar (+02:00) and 3 Apr (+03:00)
         val tallinn = Location(59.4370, 24.7536, timezoneId = "Europe/Tallinn", name = "Tallinn")
         val today = LocalDate.of(2026, 3, 27)

@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.notifications
 
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceNow
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.UserPreferences
@@ -24,7 +25,7 @@ internal sealed interface ReminderAlarm {
 
     /**
      * Candle lighting on the evening of [date], at [candleLightingAt], which may be after the
-     * following civil midnight; [candleLightingTime] is its wall time in the location's zone.
+     * following civil midnight; [candleLightingTime] is its wall time in the device zone.
      */
     data class CandleLighting(
         override val date: LocalDate,
@@ -71,10 +72,12 @@ internal data class ReminderAlarmPlan(
 )
 
 /**
- * Plans the candle-lighting and Omer reminder alarms for the civil dates from the earlier of
- * [today] (device) and [locationToday] (active location) to [lookaheadDays] after the later
- * one. Each trigger is resolved in its own date's offset, so DST changes inside the window
- * are handled. Triggers after [now] go to [ReminderAlarmPlan.alarms] and passed ones to
+ * Plans the candle-lighting and Omer reminder alarms for the civil dates from the [device]'s
+ * today to [lookaheadDays] after it. Everything follows the device: candle lighting and
+ * nightfall at its position, morning times and notice texts in its zone; the selected city
+ * plays no part. Triggers are on the device clock (see [DeviceNow.toSystemInstant]). Each is
+ * resolved in its own date's offset, so DST changes inside the window are handled. Triggers
+ * after the device's now go to [ReminderAlarmPlan.alarms] and passed ones to
  * [ReminderAlarmPlan.overdue]; the exception is today's morning-mode candle-lighting notice,
  * returned as [ReminderAlarmPlan.dueCandleLighting] so it can still be posted late. Never
  * yields notices for future dates. The evening of the day before the window is planned too,
@@ -82,21 +85,18 @@ internal data class ReminderAlarmPlan(
  * the candles are still to be lit.
  */
 internal fun planReminderAlarms(
-    today: LocalDate,
-    now: Instant,
-    deviceZone: ZoneId,
-    location: Location,
+    device: DeviceNow,
     prefs: UserPreferences,
     zmanimRepository: ZmanimRepository,
     calendarRepository: CalendarRepository,
-    lookaheadDays: Int = REMINDER_LOOKAHEAD_DAYS,
-    locationToday: LocalDate = today
+    lookaheadDays: Int = REMINDER_LOOKAHEAD_DAYS
 ): ReminderAlarmPlan {
-    val locationZone = ZoneId.of(location.timezoneId)
-    // Location-zone reminders the location has not reached yet stay wanted when the device
-    // zone is ahead of it, and vice versa
-    val start = minOf(today, locationToday)
-    val end = maxOf(today, locationToday).plusDays(lookaheadDays.toLong())
+    val today = device.today
+    val now = device.instant
+    val deviceZone = device.zone
+    val location = device.position
+    val start = today
+    val end = today.plusDays(lookaheadDays.toLong())
     val window = generateSequence(start) { it.plusDays(1) }.takeWhile { !it.isAfter(end) }.toList()
     val alarms = mutableListOf<ReminderAlarm>()
     val overdue = mutableListOf<ReminderAlarm>()
@@ -114,14 +114,14 @@ internal fun planReminderAlarms(
     }
     // ... and so can its candle lighting at nightfall; once lit, its reminder is stale
     if (prefs.notifyCandleLighting) {
-        candleLightingAlarm(previousEvening, locationZone, location, prefs, zmanimRepository)
+        candleLightingAlarm(previousEvening, deviceZone, location, prefs, zmanimRepository)
             ?.takeIf { it.candleLightingAt.isAfter(now) }
             ?.let { if (it.triggerAt.isAfter(now)) alarms += it else overdue += it }
     }
 
     for (date in window) {
         if (prefs.notifyCandleLighting) {
-            candleLightingAlarm(date, locationZone, location, prefs, zmanimRepository)?.let {
+            candleLightingAlarm(date, deviceZone, location, prefs, zmanimRepository)?.let {
                 when {
                     it.triggerAt.isAfter(now) -> alarms += it
                     date == today && prefs.candleLightingNotifyMode == "morning" ->
@@ -157,7 +157,7 @@ internal fun planReminderAlarms(
 
 private fun candleLightingAlarm(
     date: LocalDate,
-    locationZone: ZoneId,
+    deviceZone: ZoneId,
     location: Location,
     prefs: UserPreferences,
     zmanimRepository: ZmanimRepository
@@ -178,18 +178,36 @@ private fun candleLightingAlarm(
         "morning" -> ZonedDateTime.of(
             date,
             minutesToTime(prefs.candleLightingMorningTime),
-            locationZone
+            deviceZone
         )
-        "hours_before" -> candleLightingAt.atZone(locationZone)
+        "hours_before" -> candleLightingAt.atZone(deviceZone)
             .minusHours(prefs.candleLightingHoursBefore.toLong())
         else -> return null
     }
     return ReminderAlarm.CandleLighting(
         date,
         trigger.toInstant(),
-        candleLightingAt.atZone(locationZone).toLocalTime(),
+        candleLightingAt.atZone(deviceZone).toLocalTime(),
         end,
         candleLightingAt
+    )
+}
+
+/** This plan on the real clock: the triggers [device]'s developer override shifted mapped back. */
+internal fun ReminderAlarmPlan.onSystemClock(device: DeviceNow): ReminderAlarmPlan {
+    if (device.devDayShift == 0L) return this
+    fun ReminderAlarm.mapped(): ReminderAlarm = when (this) {
+        is ReminderAlarm.CandleLighting -> copy(
+            triggerAt = device.toSystemInstant(triggerAt),
+            candleLightingAt = device.toSystemInstant(candleLightingAt)
+        )
+        is ReminderAlarm.OmerEvening -> copy(triggerAt = device.toSystemInstant(triggerAt))
+        is ReminderAlarm.OmerMorning -> copy(triggerAt = device.toSystemInstant(triggerAt))
+    }
+    return copy(
+        alarms = alarms.map { it.mapped() },
+        dueCandleLighting = dueCandleLighting?.mapped() as ReminderAlarm.CandleLighting?,
+        overdue = overdue.map { it.mapped() }
     )
 }
 

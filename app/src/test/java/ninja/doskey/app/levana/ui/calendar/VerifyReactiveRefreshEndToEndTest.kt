@@ -98,7 +98,7 @@ class VerifyReactiveRefreshEndToEndTest {
         runBlocking {
             preferences.saveSelectedCalendarIds(setOf(1L))
             preferences.saveCalendarHebrewMode(false)
-            preferences.saveDevDateOverride(null)
+            preferences.saveDevDayShift(0)
         }
     }
 

@@ -6,7 +6,8 @@ import android.os.LocaleList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.PreferencesRepository
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.displayCity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val preferencesRepository: PreferencesRepository,
+    private val deviceContext: DeviceContext,
     private val context: Context
 ) : ViewModel() {
 
@@ -57,7 +59,7 @@ class SettingsViewModel(
                 is SettingsIntent.SetDynamicHolidayTheme ->
                     preferencesRepository.saveDynamicHolidayTheme(intent.enabled)
                 is SettingsIntent.SetDevDateOverride ->
-                    preferencesRepository.saveDevDateOverride(intent.date)
+                    preferencesRepository.saveDevDayShift(deviceContext.devDayShiftFor(intent.date))
                 is SettingsIntent.SetDevForceHolidayTheme ->
                     preferencesRepository.saveDevForceHolidayTheme(intent.theme)
                 is SettingsIntent.SetNotifyCandleLighting ->
@@ -104,8 +106,9 @@ class SettingsViewModel(
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
+                val device = deviceContext.now(prefs)
                 _state.value = _state.value.copy(
-                    locationName = prefs.activeLocation.name,
+                    locationName = prefs.displayCity.name,
                     currentLocationName = prefs.currentLocation.name,
                     savedLocations = prefs.savedLocations,
                     activeLocationId = prefs.activeLocationId,
@@ -114,7 +117,8 @@ class SettingsViewModel(
                     candleLightingOffset = prefs.candleLightingOffset,
                     dynamicHolidayTheme = prefs.dynamicHolidayTheme,
                     showDeveloperSettings = prefs.showDeveloperSettings,
-                    devDateOverride = prefs.devDateOverride,
+                    deviceToday = device.today,
+                    overriddenDeviceDate = device.today.takeIf { device.devDayShift != 0L },
                     devForceHolidayTheme = prefs.devForceHolidayTheme,
                     notifyCandleLighting = prefs.notifyCandleLighting,
                     candleLightingNotifyMode = prefs.candleLightingNotifyMode,

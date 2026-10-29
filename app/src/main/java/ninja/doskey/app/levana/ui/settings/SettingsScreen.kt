@@ -150,7 +150,7 @@ fun DeveloperSettingsScreen(
             headlineContent = { Text("Date Override") },
             supportingContent = {
                 Text(
-                    state.devDateOverride?.let { date ->
+                    state.overriddenDeviceDate?.let { date ->
                         val jd = JewishDate(
                             GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
                         )
@@ -193,7 +193,7 @@ fun DeveloperSettingsScreen(
 
     if (showDateDialog) {
         GoToDateDialog(
-            initialDate = state.devDateOverride ?: LocalDate.now(),
+            initialDate = state.overriddenDeviceDate ?: state.deviceToday ?: return,
             calendarHebrewMode = true,
             onConfirm = { date ->
                 viewModel.onIntent(SettingsIntent.SetDevDateOverride(date))

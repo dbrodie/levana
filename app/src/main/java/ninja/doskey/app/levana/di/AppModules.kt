@@ -9,11 +9,10 @@ import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
-import ninja.doskey.app.levana.data.PreferencesTodayProvider
-import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
 import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
@@ -41,7 +40,8 @@ val dataModule = module {
     single { CalendarRepository() }
     single { CityRepository(get()) }
     single { PreferencesRepository(get(), get()) }
-    single<TodayProvider> { PreferencesTodayProvider(get()) }
+    // The device's now/today/zone/position; the only clock the app reads
+    single { DeviceContext(get<PreferencesRepository>().preferences) }
     single { LocationService(get()) }
     single { ZmanimRepository() }
     single {
@@ -66,18 +66,20 @@ val dataModule = module {
     single { NotificationAlarmScheduler(androidContext()) }
     single { NotificationDeliveryLog(androidContext()) }
     single {
-        NotificationAlarmRebuilder(get<PreferencesRepository>().preferences, get(), get(), get())
+        NotificationAlarmRebuilder(
+            get<PreferencesRepository>().preferences, get<DeviceContext>(), get(), get(), get()
+        )
     }
     single { UpdateChecker(androidContext()) }
     single { TodayWidgetSnapshots(get(), get()) }
 }
 
 val viewModelModule = module {
-    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
-    viewModel { ZmanimViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), androidContext()) }
+    viewModel { ZmanimViewModel(get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), androidContext()) }
     viewModel { EventsViewModel(get(), get(), get()) }
     viewModel { AddEditEventViewModel(get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }

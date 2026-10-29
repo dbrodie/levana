@@ -131,8 +131,10 @@ fun CalendarScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dayDetailState by dayDetailViewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.selectedDate) {
-        dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+    // Nothing is shown until the view model has the device date
+    val today = state.today
+    LaunchedEffect(state.selectedDate, today != null) {
+        if (today != null) dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
     }
 
     // Changes to events made elsewhere (or a newly granted permission) refresh on return.
@@ -145,6 +147,11 @@ fun CalendarScreen(
         }
     }
 
+    if (today == null) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Crossfade(
             targetState = state.calendarHebrewMode,
@@ -153,6 +160,7 @@ fun CalendarScreen(
             if (hebrewMode) {
                 HebrewCalendarContent(
                     state = state,
+                    today = today,
                     onIntent = viewModel::onIntent,
                     scrollTarget = viewModel.hebrewScrollTarget,
                     onOpenDrawer = onOpenDrawer,
@@ -164,6 +172,7 @@ fun CalendarScreen(
             } else {
                 GregorianCalendarContent(
                     state = state,
+                    today = today,
                     onIntent = viewModel::onIntent,
                     scrollTarget = viewModel.gregorianScrollTarget,
                     onOpenDrawer = onOpenDrawer,
@@ -189,6 +198,7 @@ fun CalendarScreen(
 @Composable
 private fun GregorianCalendarContent(
     state: CalendarState,
+    today: LocalDate,
     onIntent: (CalendarIntent) -> Unit,
     scrollTarget: Flow<YearMonth>,
     onOpenDrawer: () -> Unit,
@@ -198,7 +208,8 @@ private fun GregorianCalendarContent(
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = PAGER_INITIAL_PAGE, pageCount = { PAGER_PAGE_COUNT })
-    val baseMonth = remember { YearMonth.now() }
+    // The pager is anchored on the device's month when it is first shown
+    val baseMonth = remember { YearMonth.from(today) }
     val currentState by rememberUpdatedState(state)
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
@@ -239,7 +250,7 @@ private fun GregorianCalendarContent(
             } else {
                 GregorianMonthGrid(
                     monthDays = days, currentMonth = pageMonth,
-                    today = state.today, selectedDate = state.selectedDate,
+                    today = today, selectedDate = state.selectedDate,
                     onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
                 )
             }
@@ -250,6 +261,7 @@ private fun GregorianCalendarContent(
 @Composable
 private fun HebrewCalendarContent(
     state: CalendarState,
+    today: LocalDate,
     onIntent: (CalendarIntent) -> Unit,
     scrollTarget: Flow<HebrewYearMonth>,
     onOpenDrawer: () -> Unit,
@@ -259,7 +271,7 @@ private fun HebrewCalendarContent(
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = PAGER_INITIAL_PAGE, pageCount = { PAGER_PAGE_COUNT })
-    val baseMonth = remember { HebrewYearMonth.now() }
+    val baseMonth = remember { HebrewYearMonth.from(today) }
     val currentState by rememberUpdatedState(state)
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
@@ -306,7 +318,7 @@ private fun HebrewCalendarContent(
             } else {
                 HebrewMonthGrid(
                     monthDays = days,
-                    today = state.today, selectedDate = state.selectedDate,
+                    today = today, selectedDate = state.selectedDate,
                     onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
                 )
             }

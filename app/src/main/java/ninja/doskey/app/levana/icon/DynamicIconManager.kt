@@ -41,8 +41,8 @@ object DynamicIconManager {
         }
     }
 
-    fun update(context: Context, devDateOverride: LocalDate? = null) {
-        val today = devDateOverride ?: LocalDate.now()
+    /** Shows the Hebrew day of the device's [today] ([ninja.doskey.app.levana.device.DeviceContext]). */
+    fun update(context: Context, today: LocalDate) {
         val jc = JewishCalendar(
             GregorianCalendar(today.year, today.monthValue - 1, today.dayOfMonth)
         )

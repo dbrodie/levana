@@ -16,9 +16,8 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.HolidayMapper
-import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.notifications.NotificationPoster
-import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.GregorianCalendar
 import java.util.Locale
@@ -26,21 +25,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class HebrewDateTileService : TileService() {
 
-    private val preferencesRepository: PreferencesRepository by inject()
+    private val deviceContext: DeviceContext by inject()
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onStartListening() {
         val tile = qsTile ?: return
 
         serviceScope.launch {
-            val prefs = preferencesRepository.preferences.first()
-            val today = prefs.devDateOverride ?: LocalDate.now()
+            val today = deviceContext.today()
             val jc = JewishCalendar(GregorianCalendar(today.year, today.monthValue - 1, today.dayOfMonth))
 
             val localeManager = getSystemService(LocaleManager::class.java)
@@ -105,8 +102,7 @@ class HebrewDateTileService : TileService() {
         val tile = qsTile ?: return
 
         serviceScope.launch {
-            val prefs = preferencesRepository.preferences.first()
-            val today = prefs.devDateOverride ?: LocalDate.now()
+            val today = deviceContext.today()
             val intent = Intent(this@HebrewDateTileService, MainActivity::class.java).apply {
                 putExtra(NotificationPoster.EXTRA_DATE_EPOCH_DAY, today.toEpochDay())
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

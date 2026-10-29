@@ -35,8 +35,10 @@ Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/
 
 ## Dates and Notifications
 
-- Use the selected location's timezone for zmanim and preserve absolute instants for reminder triggers, including DST and post-midnight nightfall.
-- Display dates, source observance dates and trigger instants are distinct. Shared date/time handling is still being consolidated; do not assume every path uses a single clock or zone.
+- `device/DeviceContext` is the one source of now, today, the device time zone and the device position. `DeviceContext.now()` returns a `DeviceNow` (instant, zone, position, developer day shift). Every date, reminder plan, notification text, theme/icon/tile date and Israel/Diaspora decision reads it; nothing else calls `LocalDate.now()`, `Clock.systemDefaultZone()` or `ZoneId.systemDefault()` (only its `realClock`/`realZone`/`realToday` helpers do).
+- `UserPreferences.displayCity` is the selected city. Only the Zmanim screen, the day panel's times and the city pickers read it; using it for dates, notifications or Israel/Diaspora is a defect. Its zmanim are computed in its own zone for the device's date.
+- The developer override is a whole-day shift of the device clock (`devDayShift`, test only). Reminder alarms are planned on the device clock and mapped back to real instants with `DeviceNow.toSystemInstant` before AlarmManager sees them.
+- Preserve absolute instants for reminder triggers, including DST and post-midnight nightfall. Display dates, source observance dates and trigger instants are distinct.
 - WorkManager refreshes reminder plans and delivers daily holiday, fast and personal-event notices.
 - Inexact AlarmManager alarms deliver candle-lighting and Omer reminders. Reconcile alarms after relevant settings changes, reboot and device clock/timezone changes.
 - Persistent alarm identities and delivery records support cancellation and duplicate suppression.

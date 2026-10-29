@@ -8,6 +8,7 @@ import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
+import ninja.doskey.app.levana.device.fixedClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -45,15 +46,16 @@ class NotificationAlarmRebuilderTest {
     private val prefs = MutableStateFlow(
         UserPreferences(
             currentLocation = Location.JERUSALEM,
-            devDateOverride = friday,
             candleLightingNotifyMode = "hours_before",
             candleLightingHoursBefore = 2
         )
     )
 
+    // The device is in Jerusalem; its clock reads midnight on [today]
+    private var today = friday
     private val rebuilder = NotificationAlarmRebuilder(
         prefs, zmanim, calendar, NotificationAlarmScheduler(app)
-    )
+    ) { fixedClock(today, LocalTime.MIDNIGHT, ZoneId.of(Location.JERUSALEM.timezoneId)) }
 
     private fun rebuild(update: (UserPreferences) -> UserPreferences) = runBlocking {
         prefs.value = update(prefs.value)
@@ -109,8 +111,10 @@ class NotificationAlarmRebuilderTest {
         )
     }
 
+    // TASK-5: previously selecting New York moved the alarm to New York's candle lighting.
+    // The selected city is display-only; only the device position moves it.
     @Test
-    fun changingTheActiveLocationMovesTheAlarm() {
+    fun selectingACityLeavesTheAlarmAndMovingTheDeviceMovesIt() {
         rebuild { it.copy(notifyCandleLighting = true) }
         val jerusalem = alarmsOn(friday).single().triggerAtMs
 
@@ -120,7 +124,9 @@ class NotificationAlarmRebuilderTest {
                 activeLocationId = "ny"
             )
         }
+        assertEquals(jerusalem, alarmsOn(friday).single().triggerAtMs)
 
+        rebuild { it.copy(currentLocation = newYork) }
         val alarm = alarmsOn(friday).single()
         assertNotEquals(jerusalem, alarm.triggerAtMs)
         assertEquals(millis(friday, candleLighting(newYork).minusHours(2), newYork), alarm.triggerAtMs)
@@ -140,7 +146,8 @@ class NotificationAlarmRebuilderTest {
 
     @Test
     fun omerAlarmsFollowTheirSettings() {
-        rebuild { it.copy(devDateOverride = omerDate, notifyOmer = true, notifyOmerMorning = true) }
+        today = omerDate
+        rebuild { it.copy(notifyOmer = true, notifyOmerMorning = true) }
         assertEquals(
             setOf(NotificationAlarmScheduler.ACTION_OMER, NotificationAlarmScheduler.ACTION_OMER_MORNING),
             alarms().map { it.action() }.toSet()

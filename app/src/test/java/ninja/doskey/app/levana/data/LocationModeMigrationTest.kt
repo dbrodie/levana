@@ -6,7 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.domain.model.displayCity
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -58,11 +58,11 @@ class LocationModeMigrationTest {
     }
 
     @Test
-    fun activeLocationFallsBackToTheCurrentLocation() {
+    fun displayCityFallsBackToTheCurrentLocation() {
         val telAviv = SavedLocation("ta", Location.JERUSALEM.copy(name = "Tel Aviv"))
         val prefs = UserPreferences(savedLocations = listOf(telAviv))
-        assertEquals(Location.JERUSALEM, prefs.activeLocation)
-        assertEquals(telAviv.location, prefs.copy(activeLocationId = "ta").activeLocation)
-        assertEquals(Location.JERUSALEM, prefs.copy(activeLocationId = "deleted").activeLocation)
+        assertEquals(Location.JERUSALEM, prefs.displayCity)
+        assertEquals(telAviv.location, prefs.copy(activeLocationId = "ta").displayCity)
+        assertEquals(Location.JERUSALEM, prefs.copy(activeLocationId = "deleted").displayCity)
     }
 }

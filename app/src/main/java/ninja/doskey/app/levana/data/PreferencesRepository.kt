@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
@@ -20,7 +21,6 @@ import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import java.time.LocalDate
-import java.util.TimeZone
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -32,7 +32,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences",
-    produceMigrations = { listOf(LocationModeMigration) }
+    produceMigrations = { listOf(LocationModeMigration, DevDateOverrideMigration()) }
 )
 
 class PreferencesRepository(
@@ -62,8 +62,8 @@ class PreferencesRepository(
             booleanPreferencesKey("dynamic_holiday_theme")
         val SHOW_DEVELOPER_SETTINGS =
             booleanPreferencesKey("show_developer_settings")
-        val DEV_DATE_OVERRIDE =
-            longPreferencesKey("dev_date_override")
+        // Test only; see UserPreferences.devDayShift
+        val DEV_DAY_SHIFT = longPreferencesKey(DEV_DAY_SHIFT_KEY)
         val DEV_FORCE_HOLIDAY_THEME =
             stringPreferencesKey("dev_force_holiday_theme")
         val SELECTED_CALENDAR_IDS =
@@ -112,19 +112,18 @@ class PreferencesRepository(
         val savedLocations = decodeSavedLocations(prefs)
         val currentLocation = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
-        } ?: cityRepository.defaultForTimeZone(TimeZone.getDefault().id)
+        } ?: cityRepository.defaultForTimeZone(DeviceContext.realZone().id)
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
 
         val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
-        val activeLocation = savedLocations.find { it.id == activeLocationId }?.location
-            ?: currentLocation
 
         val isManualIsrael = prefs[Keys.IS_IN_ISRAEL_MANUAL] ?: false
         val isInIsrael = if (isManualIsrael) {
             prefs[Keys.IS_IN_ISRAEL] ?: false
         } else {
-            activeLocation.timezoneId == "Asia/Jerusalem"
+            // The device position decides, never the selected city
+            currentLocation.timezoneId == "Asia/Jerusalem"
         }
 
         UserPreferences(
@@ -139,9 +138,7 @@ class PreferencesRepository(
             selectedCalendarIds = prefs[Keys.SELECTED_CALENDAR_IDS]
                 ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet(),
             showDeveloperSettings = prefs[Keys.SHOW_DEVELOPER_SETTINGS] ?: true,
-            devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let {
-                LocalDate.ofEpochDay(it)
-            },
+            devDayShift = prefs[Keys.DEV_DAY_SHIFT] ?: 0L,
             devForceHolidayTheme = prefs[Keys.DEV_FORCE_HOLIDAY_THEME],
             notifyCandleLighting = prefs[Keys.NOTIFY_CANDLE_LIGHTING] ?: false,
             candleLightingNotifyMode = prefs[Keys.CANDLE_LIGHTING_NOTIFY_MODE] ?: "morning",
@@ -271,12 +268,13 @@ class PreferencesRepository(
         }
     }
 
-    suspend fun saveDevDateOverride(date: LocalDate?) {
+    /** Test only: shifts the device clock by [days]; 0 turns the developer override off. */
+    suspend fun saveDevDayShift(days: Long) {
         context.dataStore.edit { prefs ->
-            if (date != null) {
-                prefs[Keys.DEV_DATE_OVERRIDE] = date.toEpochDay()
+            if (days != 0L) {
+                prefs[Keys.DEV_DAY_SHIFT] = days
             } else {
-                prefs.remove(Keys.DEV_DATE_OVERRIDE)
+                prefs.remove(Keys.DEV_DAY_SHIFT)
             }
         }
     }
@@ -406,6 +404,31 @@ internal object LocationModeMigration : DataMigration<Preferences> {
             mode["id"]?.jsonPrimitive?.content?.let { prefs[ACTIVE_LOCATION_ID] = it }
         }
         prefs.remove(LOCATION_MODE)
+        return prefs.toPreferences()
+    }
+
+    override suspend fun cleanUp() = Unit
+}
+
+private const val DEV_DAY_SHIFT_KEY = "dev_clock_shift_days"
+
+/**
+ * Replaces the developer override's old fixed date (`dev_date_override`, an epoch day) with the
+ * day shift of the "as if" device clock, measured from [today] when the migration runs.
+ */
+internal class DevDateOverrideMigration(
+    private val today: () -> LocalDate = DeviceContext::realToday
+) : DataMigration<Preferences> {
+    private val oldOverride = longPreferencesKey("dev_date_override")
+    private val dayShift = longPreferencesKey(DEV_DAY_SHIFT_KEY)
+
+    override suspend fun shouldMigrate(currentData: Preferences) = oldOverride in currentData
+
+    override suspend fun migrate(currentData: Preferences): Preferences {
+        val prefs = currentData.toMutablePreferences()
+        val shift = prefs[oldOverride]!! - today().toEpochDay()
+        if (shift != 0L) prefs[dayShift] = shift
+        prefs.remove(oldOverride)
         return prefs.toPreferences()
     }
 

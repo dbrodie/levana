@@ -7,7 +7,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -46,9 +45,12 @@ class AlarmSettingsTest {
         set { it.copy(candleLightingHoursBefore = 3) }
         assertEquals(3, rebuilds)
         set { it.copy(savedLocations = listOf(SavedLocation("ny", newYork))) }
-        assertEquals("saving a location that is not active", 3, rebuilds)
+        assertEquals("saving a location", 3, rebuilds)
+        // Reminders follow the device; the selected city is display-only (TASK-5)
         set { it.copy(activeLocationId = "ny") }
-        assertEquals(4, rebuilds)
+        assertEquals("selecting a city", 3, rebuilds)
+        set { it.copy(currentLocation = newYork) }
+        assertEquals("the device moved", 4, rebuilds)
         set { it.copy(notifyOmer = true) }
         assertEquals(5, rebuilds)
         set { it.copy(notifyOmerMorningTime = 6 * 60) }
@@ -60,25 +62,21 @@ class AlarmSettingsTest {
     }
 
     @Test
-    fun currentLocationFixMattersOnlyWhenItIsActive() {
+    fun theDevicePositionMattersAndTheSelectedCityDoesNot() {
         val moved = base.copy(currentLocation = newYork)
         assertTrue(base.alarmSettings() != moved.alarmSettings())
 
-        val savedActive = base.copy(
-            savedLocations = listOf(SavedLocation("j", Location.JERUSALEM)),
-            activeLocationId = "j"
+        val nySelected = base.copy(
+            savedLocations = listOf(SavedLocation("ny", newYork)),
+            activeLocationId = "ny"
         )
-        assertEquals(
-            savedActive.alarmSettings(),
-            savedActive.copy(currentLocation = newYork).alarmSettings()
-        )
+        assertEquals(base.alarmSettings(), nySelected.alarmSettings())
+        assertTrue(nySelected.alarmSettings() != nySelected.copy(currentLocation = newYork).alarmSettings())
     }
 
     @Test
-    fun devDateOverrideAndIsraelAreAlarmSettings() {
-        assertTrue(
-            base.alarmSettings() != base.copy(devDateOverride = LocalDate.of(2030, 1, 4)).alarmSettings()
-        )
+    fun devOverrideAndIsraelAreAlarmSettings() {
+        assertTrue(base.alarmSettings() != base.copy(devDayShift = 3).alarmSettings())
         assertTrue(base.alarmSettings() != base.copy(isInIsrael = !base.isInIsrael).alarmSettings())
     }
 
