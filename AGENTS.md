@@ -6,6 +6,7 @@ Levana is an open-source Android Hebrew calendar app for Orthodox Jewish users (
 
 - Full product vision: `specs/PROJECT_SPEC.md`
 - Technical decisions: `specs/ARCHITECTURE_SPEC.md`
+- Existing RFEs in `specs/rfes/` are historical references.
 
 ## Critical Frameworks
 
@@ -45,6 +46,6 @@ Use Backlog.md (`backlog`) for all task tracking. Tasks live in `backlog/` and a
 - Run `backlog instructions overview` for usage guidance; this file governs the project workflow.
 - Find work with `backlog task list --plain` and read it with `backlog task <id> --plain`.
 - Assign the task and mark it `In Progress` when starting. Keep requirements, acceptance criteria, design, implementation plans, progress, verification evidence and handoff notes in the task.
-- For larger changes, use a parent task for the overall requirements and design, with subtasks for implementation. Separate RFE specs are not required; existing specs may be linked as references.
+- For larger changes, use a parent task for the overall requirements and design, with subtasks for implementation.
 - File new discoveries as tasks, using dependencies only for work that actually blocks them.
 - Only the coordinator marks tasks `Done`, after verification, integration and a confirmed push. Agent completion alone does not mark a task Done.
