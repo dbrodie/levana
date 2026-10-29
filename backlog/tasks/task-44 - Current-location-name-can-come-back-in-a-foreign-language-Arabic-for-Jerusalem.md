@@ -1,0 +1,25 @@
+---
+id: TASK-44
+title: >-
+  Current-location name can come back in a foreign language (Arabic for
+  Jerusalem)
+status: To Do
+assignee: []
+created_date: '2026-10-29T21:03:00Z'
+labels: []
+dependencies: []
+priority: low
+type: bug
+ordinal: 48000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Found during TASK-9.3 emulator verification (2026-10-29). With a GPS fix at Jerusalem (31.7683, 35.2137) on the Levana_Agent_Template_API_36_1 emulator (device locale en-US), the reverse-geocoded current-location name was stored as 'القدس' (Arabic). It shows in the sidebar's ACTIVE CITY and in the Today/Zmanim widgets' headers, in both the English and Hebrew app languages. AndroidReverseGeocoder (data/ReverseGeocoder.kt) calls Geocoder(context, Locale.getDefault()). It may be the emulator's geocoder backend; check on a real device first. Screenshot: /tmp/task93-widget-shots/07-he-dark-purim-crop.png
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Current-location name is shown in the app language (English or Hebrew) or a sensible fallback, never an unrelated script
+<!-- AC:END -->

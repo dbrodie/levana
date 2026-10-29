@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T20:42:00Z'
+updated_date: '2026-10-29T21:03:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -106,4 +106,18 @@ TASK-5 owner decision (2026-10-29): widgets show the device position (not the se
 - Colors (light/dark, Purim theme, highlight background, dimming) were not visually inspected: no screenshots per the android-debug skill, and UI XML has no colors. States are confirmed via the row descriptions. Colors come structurally from `levanaColorScheme`/`activeHolidayTheme`, as in 9.1. A human eyeball check is recommended.
 - Times are in the position's zone. After a zone change the GPS fix keeps its original zone (Kiritimati showed Jerusalem-zone times for Friday). This is pre-existing DeviceContext behavior and is the same in the Today widget.
 - The location name is "Current Location" (stored name, no reverse-geocoded name on this emulator), the same as the app.
+
+## Visual check with screenshots (owner allowed screenshots; tested commit 69e5f5f)
+Screenshots are in /tmp/task93-widget-shots/, outside the worktree: `NN-*.png` is the full screen and `NN-*-crop.png` is the widget only. The widget is 3x3 at 22:52–23:01 IST, with Chatzot HaLaylah 23:22 as next.
+- 01-en-light-purim, 02-en-dark-purim: forced Purim. Date in the Purim primary; next row on a Purim primaryContainer pill (pink in light, plum in dark), bold.
+- 03-en-dark-default, 04-en-light-default: the default scheme (blue-grey primary and pill).
+- 05-he-light-default, 06-he-dark-default, 07-he-dark-purim, 08-he-light-purim: Hebrew, mirrored. Times on the left, names on the right, date at the right of the header. 24h times.
+- **Fix found by the visual check (69e5f5f):** the first screenshot showed past rows (onSurfaceVariant) barely distinguishable from upcoming ones, especially in dark mode. Past rows now use the scheme's onSurface at 50% alpha, built from the same `levanaColorScheme` light/dark schemes. They are clearly dimmed in all 8 shots. Build/test/lint passed again: 731 tests, 0 failures, no widget lint issues.
+- The earlier 2x2 screenshot (taken before the fix, since deleted) showed truncation working: "18 Cheshvan · Curr…", "Chatzot H… 11:22 PM".
+
+**Emulator restart:** the emulator was stopped by the 30-minute background-command limit. It is a read-only instance, so all state was lost, and the setup was repeated: install, grants, Jerusalem fix, the same 6 zmanim, widget placed. The Today widget was not re-added.
+
+**Discovery:** after reverse geocoding, the current-location name became "القدس" (Arabic), in the sidebar and the widget header alike. This is not widget code. Filed as TASK-44 (low; possibly the emulator's geocoder).
+
+**Glance note:** each redraw resets the list's scroll to the top (Glance LazyColumn has no scroll-position API). At small sizes the next row can be below the fold after a refresh. It is acceptable at the default 3x3, where all six default+extra rows fit.
 <!-- SECTION:NOTES:END -->
