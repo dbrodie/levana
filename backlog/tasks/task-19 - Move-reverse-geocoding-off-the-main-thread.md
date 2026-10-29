@@ -1,11 +1,11 @@
 ---
 id: TASK-19
 title: Move reverse geocoding off the main thread
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:37Z'
-updated_date: '2026-10-29T19:08:00Z'
+updated_date: '2026-10-29T19:30:00Z'
 labels:
   - curated-import
   - source-specs
@@ -63,6 +63,8 @@ Verification:
   * No Choreographer 'Skipped frames', StrictMode, ANR or FATAL lines in the app process during the resume cycle. Logcat: /tmp/task19-resume-logcat.txt; emulator log: /tmp/task19-emulator.log.
 
 Limitations: the timeout and cancellation paths are covered by unit tests only (cannot force a hung GMS geocoder on the emulator). No StrictMode instrumentation was added; the off-main claim rests on using the async Geocoder API plus the clean frame log.
+
+Coordinator: merged to master as e9b671a (tree identical to tested commit 151bf3c) and pushed to origin.
 <!-- SECTION:NOTES:END -->
 
 ## Beads history
