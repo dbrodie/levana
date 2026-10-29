@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:22:00Z'
+updated_date: '2026-10-29T19:51:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -24,7 +24,7 @@ TASK-5 case table row 6. Replace the 'In Israel' switch with Auto-detect (defaul
 <!-- AC:BEGIN -->
 - [x] #1 Three-way setting persists; Auto-detect follows the device, not the selected city
 - [x] #2 Migration of existing manual and automatic users is tested
-- [ ] #3 English/Hebrew UI and TalkBack semantics verified
+- [x] #3 English/Hebrew UI and TalkBack semantics verified
 <!-- AC:END -->
 
 ## Implementation Plan

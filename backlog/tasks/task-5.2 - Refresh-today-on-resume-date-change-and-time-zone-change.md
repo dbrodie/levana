@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:46:00Z'
+updated_date: '2026-10-29T19:51:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -22,8 +22,8 @@ TASK-5 case table row 13. The calendar today highlight goes stale past midnight 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 With the app alive across midnight or a zone change, the calendar highlight, icon, tile and theme all show the new device date after resume, without restart
-- [ ] #2 Unit tests with a fake clock cover the midnight advance; emulator evidence recorded
+- [x] #1 With the app alive across midnight or a zone change, the calendar highlight, icon, tile and theme all show the new device date after resume, without restart
+- [x] #2 Unit tests with a fake clock cover the midnight advance; emulator evidence recorded
 <!-- AC:END -->
 
 ## Implementation Plan

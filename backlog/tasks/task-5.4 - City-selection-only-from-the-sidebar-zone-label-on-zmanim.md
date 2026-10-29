@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:25:00Z'
+updated_date: '2026-10-29T19:51:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -23,8 +23,8 @@ TASK-5 case table row 9 and the owner's Settings decisions. Adding a city in Set
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Adding a city does not change the selected city; removing the selected city still falls back to Current location
-- [ ] #2 The Settings Location row no longer shows the current city as secondary text
-- [ ] #3 Zone label appears only when zones differ, in English and Hebrew; tests and emulator screenshots recorded
+- [x] #2 The Settings Location row no longer shows the current city as secondary text
+- [x] #3 Zone label appears only when zones differ, in English and Hebrew; tests and emulator screenshots recorded
 <!-- AC:END -->
 
 ## Implementation Plan
