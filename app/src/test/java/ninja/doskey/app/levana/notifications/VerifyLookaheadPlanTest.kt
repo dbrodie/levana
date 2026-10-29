@@ -209,32 +209,35 @@ class VerifyLookaheadPlanTest {
 
     // --- Zones and DST ---------------------------------------------------------------------
 
+    // TASK-5: these used the selected city's zone for candle lighting; now the device zone
+    // sets every wall-clock time and the device position only the astronomical instants
     @Test
-    fun `zone mismatch - candles and tzait in location zone, omer morning in device zone`() {
+    fun `zone mismatch - wall-clock times in the device zone, nightfall at the device position`() {
         val today = firstNightCivil.plusDays(2)
         val p = run(today, LocalTime.of(1, 0), omer.copy(notifyCandleLighting = true, candleLightingNotifyMode = "morning", candleLightingMorningTime = 9 * 60 + 30), location = jlm, device = utc)
         p.mornings().forEach { assertEquals(ZonedDateTime.of(it.date, LocalTime.of(6, 45), utc).toInstant(), it.triggerAt) }
         p.evenings().forEach {
             assertEquals(ZonedDateTime.of(it.date, zmanim.getTzaitTime(it.date, jlm)!!, jlmZone).toInstant(), it.triggerAt)
         }
-        p.candles().forEach { assertEquals(ZonedDateTime.of(it.date, LocalTime.of(9, 30), jlmZone).toInstant(), it.triggerAt) }
+        p.candles().forEach { assertEquals(ZonedDateTime.of(it.date, LocalTime.of(9, 30), utc).toInstant(), it.triggerAt) }
         assertTrue(p.candles().isNotEmpty())
     }
 
     /**
-     * Characterization (limitation): device in Los Angeles, location Jerusalem. Late on
-     * Thursday (device) Friday's 09:30 Jerusalem trigger has already passed, so this run
-     * neither schedules nor posts Friday's notice; it is only posted by Friday's (device) run.
+     * Device clock in Los Angeles at a Jerusalem position. Late on Thursday the Friday 09:30
+     * morning notice is still ahead on the device clock, so this run schedules it (it was
+     * previously in Jerusalem time, already passed, and deferred to Friday's run).
      */
     @Test
-    fun `zone mismatch late run - location-ahead Friday is deferred to Friday's run`() {
+    fun `zone mismatch late run - Friday's morning notice is on the device clock`() {
         val la = ZoneId.of("America/Los_Angeles")
         val thu = fri.minusDays(1)
         val p = run(thu, LocalTime.of(23, 30), morningCandles, location = jlm, device = la)
-        assertFalse(p.candles().any { it.date == fri })
+        assertEquals(
+            ZonedDateTime.of(fri, LocalTime.of(9, 30), la).toInstant(),
+            p.candles().single { it.date == fri }.triggerAt
+        )
         assertNull(p.dueCandleLighting)
-        val next = run(fri, LocalTime.of(0, 30), morningCandles, location = jlm, device = la)
-        assertEquals(fri, next.dueCandleLighting?.date)
     }
 
     @Test

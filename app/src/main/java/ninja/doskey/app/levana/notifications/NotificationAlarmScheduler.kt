@@ -5,8 +5,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -17,10 +19,11 @@ import kotlinx.coroutines.sync.withLock
 class NotificationAlarmScheduler internal constructor(
     private val context: Context,
     private val registry: ScheduledAlarmRegistry,
-    private val now: () -> Long = System::currentTimeMillis
+    // The real clock: AlarmManager triggers are real instants (see DeviceNow.toSystemInstant)
+    private val now: () -> Long = { DeviceContext.realClock().millis() }
 ) {
 
-    constructor(context: Context, now: () -> Long = System::currentTimeMillis) :
+    constructor(context: Context, now: () -> Long = { DeviceContext.realClock().millis() }) :
         this(context, ScheduledAlarmRegistry(context), now)
 
     private val mutex = Mutex()
@@ -78,8 +81,7 @@ class NotificationAlarmScheduler internal constructor(
     }
 
     private fun schedule(alarm: ReminderAlarm) {
-        val trigger = alarm.triggerAt.atZone(ZoneId.systemDefault())
-        schedule(actionFor(alarm), alarm.date, trigger) {
+        schedule(actionFor(alarm), alarm.date, alarm.triggerAt) {
             when (alarm) {
                 is ReminderAlarm.CandleLighting -> {
                     putExtra(EXTRA_CANDLE_LIGHTING_TIME, alarm.candleLightingTime.toString())
@@ -180,7 +182,7 @@ class NotificationAlarmScheduler internal constructor(
     ) {
         val zoneId = ZoneId.of(location.timezoneId)
         val triggerZoned = ZonedDateTime.of(date, triggerTime, zoneId)
-        schedule(ACTION_CANDLE_LIGHTING, date, triggerZoned) {
+        schedule(ACTION_CANDLE_LIGHTING, date, triggerZoned.toInstant()) {
             putExtra(EXTRA_CANDLE_LIGHTING_TIME, candleLightingTime.toString())
             putExtra(EXTRA_END_TIME, end?.time?.toString())
             end?.let {
@@ -199,7 +201,7 @@ class NotificationAlarmScheduler internal constructor(
     ) {
         val zoneId = ZoneId.of(location.timezoneId)
         val triggerZoned = ZonedDateTime.of(date, tzaitTime, zoneId)
-        schedule(ACTION_OMER, date, triggerZoned) {
+        schedule(ACTION_OMER, date, triggerZoned.toInstant()) {
             putExtra(EXTRA_OMER_DAY, omerDay)
         }
     }
@@ -207,10 +209,11 @@ class NotificationAlarmScheduler internal constructor(
     fun scheduleOmerMorningReminder(
         date: LocalDate,
         morningTime: LocalTime,
-        omerDay: Int
+        omerDay: Int,
+        deviceZone: ZoneId = DeviceContext.realZone()
     ) {
-        val triggerZoned = ZonedDateTime.of(date, morningTime, ZoneId.systemDefault())
-        schedule(ACTION_OMER_MORNING, date, triggerZoned) {
+        val triggerZoned = ZonedDateTime.of(date, morningTime, deviceZone)
+        schedule(ACTION_OMER_MORNING, date, triggerZoned.toInstant()) {
             putExtra(EXTRA_OMER_DAY, omerDay)
         }
     }
@@ -218,10 +221,10 @@ class NotificationAlarmScheduler internal constructor(
     private fun schedule(
         action: String,
         date: LocalDate,
-        trigger: ZonedDateTime,
+        trigger: Instant,
         extras: Intent.() -> Unit
     ) {
-        val triggerMillis = trigger.toInstant().toEpochMilli()
+        val triggerMillis = trigger.toEpochMilli()
 
         if (triggerMillis <= now()) return
 
@@ -251,7 +254,7 @@ class NotificationAlarmScheduler internal constructor(
      * Cancels the alarms for the days around [around] (alarms are only set for the current
      * date) and every alarm set by a previous version, which used day-of-year request codes.
      */
-    fun cancelAll(around: LocalDate = LocalDate.now()) {
+    fun cancelAll(around: LocalDate) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
 
         for (action in ACTIONS) {

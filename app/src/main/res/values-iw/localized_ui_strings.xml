@@ -180,4 +180,9 @@
     <string name="crash_dialog_send">שליחת דוח</string>
     <string name="crash_dialog_dont_send">לא לשלוח</string>
     <string name="crash_report_subject">דוח קריסה של לבנה (%1$s)</string>
+    <string name="settings_israel_mode_auto">זיהוי אוטומטי</string>
+    <string name="settings_israel_mode_auto_detected">זיהוי אוטומטי (%1$s)</string>
+    <string name="settings_israel_mode_israel">ארץ ישראל</string>
+    <string name="settings_israel_mode_diaspora">חוץ לארץ</string>
+    <string name="zmanim_city_clock">שעון %1$s</string>
 </resources>

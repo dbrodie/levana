@@ -5,14 +5,10 @@ import android.util.Log
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.Location
-import ninja.doskey.app.levana.domain.model.ObservanceEnd
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.Clock
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,9 +36,10 @@ internal data class AlarmSettings(
     val notifyOmerTzait: Boolean,
     val notifyOmerMorning: Boolean,
     val notifyOmerMorningTime: Int,
-    val location: Location,
+    /** The device position; the selected city has no say in reminders. */
+    val devicePosition: Location,
     val isInIsrael: Boolean,
-    val devDateOverride: LocalDate?
+    val devDateOverride: java.time.LocalDate?
 )
 
 internal fun UserPreferences.alarmSettings() = AlarmSettings(
@@ -55,7 +52,7 @@ internal fun UserPreferences.alarmSettings() = AlarmSettings(
     notifyOmerTzait = notifyOmerTzait,
     notifyOmerMorning = notifyOmerMorning,
     notifyOmerMorningTime = notifyOmerMorningTime,
-    location = activeLocation,
+    devicePosition = currentLocation,
     isInIsrael = isInIsrael,
     devDateOverride = devDateOverride
 )
@@ -84,22 +81,33 @@ internal fun isAlarmEnabled(action: String?, prefs: UserPreferences): Boolean = 
     else -> false
 }
 
-data class CandleLightingTimes(val candleLighting: LocalTime, val end: ObservanceEnd?)
-
 /**
  * Owns the pending candle-lighting and Omer alarms: [rebuild] replaces them with the ones the
- * current preferences call for. It never posts a notification itself.
+ * current preferences call for, planned on the [deviceContext]. It never posts a notification
+ * itself.
  *
- * [clock] is read on every rebuild, so the device time zone in effect at that moment is used
- * even when it changed after this (singleton) instance was created.
+ * The device is read on every rebuild, so the device time zone in effect at that moment is
+ * used even when it changed after this (singleton) instance was created.
  */
 class NotificationAlarmRebuilder(
     private val preferences: Flow<UserPreferences>,
+    private val deviceContext: DeviceContext,
     private val zmanimRepository: ZmanimRepository,
     private val calendarRepository: CalendarRepository,
-    private val alarmScheduler: NotificationAlarmScheduler,
-    private val clock: () -> Clock = Clock::systemDefaultZone
+    private val alarmScheduler: NotificationAlarmScheduler
 ) {
+    /** Plans on [clock] (the real device clock by default) instead of a shared context. */
+    constructor(
+        preferences: Flow<UserPreferences>,
+        zmanimRepository: ZmanimRepository,
+        calendarRepository: CalendarRepository,
+        alarmScheduler: NotificationAlarmScheduler,
+        clock: () -> Clock = { DeviceContext.realClock() }
+    ) : this(
+        preferences, DeviceContext(preferences, systemClock = clock), zmanimRepository, calendarRepository,
+        alarmScheduler
+    )
+
     constructor(
         preferences: Flow<UserPreferences>,
         zmanimRepository: ZmanimRepository,
@@ -116,33 +124,15 @@ class NotificationAlarmRebuilder(
         postCandleLighting: ((ReminderAlarm.CandleLighting) -> Unit)? = null
     ) = mutex.withLock {
         val prefs = preferences.first()
-        val current = clock()
-        val location = prefs.activeLocation
-        val locationNow = current.withZone(ZoneId.of(location.timezoneId))
-        val plan = planReminderAlarms(
-            prefs.devDateOverride ?: LocalDate.now(current), current.instant(), current.zone,
-            location, prefs, zmanimRepository, calendarRepository,
-            locationToday = prefs.devDateOverride ?: LocalDate.now(locationNow)
-        )
+        val device = deviceContext.now(prefs)
+        val plan = planReminderAlarms(device, prefs, zmanimRepository, calendarRepository)
+            .onSystemClock(device)
         if (deliveryLog != null && postCandleLighting != null) {
             applyReminderAlarmPlan(plan, alarmScheduler, deliveryLog, postCandleLighting)
         } else {
             alarmScheduler.scheduleAll(plan)
         }
     }
-
-    /** Today's candle-lighting and end times, or null when no candles are lit [date]. */
-    fun candleLightingTimes(date: LocalDate, prefs: UserPreferences): CandleLightingTimes? {
-        if (!zmanimRepository.hasCandles(date, prefs.isInIsrael)) return null
-        val location = prefs.activeLocation
-        val candleLighting = zmanimRepository
-            .getShabbatInfo(date, location, prefs.candleLightingOffset, prefs.isInIsrael)
-            .candleLightingTime ?: return null
-        val end = zmanimRepository.getObservanceEnd(date, location, prefs.isInIsrael)
-        return CandleLightingTimes(candleLighting, end)
-    }
-
-
 }
 
 /**

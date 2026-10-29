@@ -148,7 +148,8 @@ class IntegrationVerifierSupersededLoadTest {
             override fun <T : ViewModel> create(modelClass: Class<T>): T = DayDetailViewModel(
                 CalendarRepository(), ZmanimRepository(), prefs,
                 PersonalEventRepository(db.personalEventDao()),
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), noChanges
+                ContactBirthdayRepository(app), SystemCalendarRepository(app),
+                ninja.doskey.app.levana.device.DeviceContext(prefs.preferences), noChanges
             ) as T
         })[DayDetailViewModel::class.java]
 

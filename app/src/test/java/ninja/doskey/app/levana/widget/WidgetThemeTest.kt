@@ -40,5 +40,13 @@ class WidgetThemeTest {
         val base = UserPreferences()
         assertEquals(base.widgetSettings(), base.copy(notifyOmer = true).widgetSettings())
         assert(base.widgetSettings() != base.copy(selectedZmanim = setOf("Sunrise")).widgetSettings())
+        // The widget shows the device position (TASK-5): selecting a city changes nothing
+        val newYork = ninja.doskey.app.levana.domain.model.Location(40.7128, -74.006, 0.0, "America/New_York", "New York")
+        val nySelected = base.copy(
+            savedLocations = listOf(ninja.doskey.app.levana.domain.model.SavedLocation("ny", newYork)),
+            activeLocationId = "ny"
+        )
+        assertEquals(base.widgetSettings(), nySelected.widgetSettings())
+        assert(base.widgetSettings() != base.copy(currentLocation = newYork).widgetSettings())
     }
 }

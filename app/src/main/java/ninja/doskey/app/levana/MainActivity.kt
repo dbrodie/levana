@@ -76,6 +76,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -85,8 +87,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.icon.DateRollover
 import ninja.doskey.app.levana.icon.DynamicIconManager
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.displayCity
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayScreen
 import ninja.doskey.app.levana.ui.calendar.CalendarScreen
@@ -116,8 +120,8 @@ import ninja.doskey.app.levana.ui.theme.LevanaTheme
 import ninja.doskey.app.levana.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
@@ -136,12 +140,13 @@ class MainActivity : ComponentActivity() {
         val openZmanim = intent?.getBooleanExtra(EXTRA_OPEN_ZMANIM, false) ?: false
         setContent {
             val preferencesRepository: PreferencesRepository = koinInject()
+            val deviceContext: DeviceContext = koinInject()
             val prefs by preferencesRepository.preferences.collectAsState(
                 initial = null
             )
-            val holidayTheme = prefs?.let {
-                activeHolidayTheme(it, it.devDateOverride ?: LocalDate.now())
-            }
+            // Follows midnight, clock and time-zone changes while the app is open
+            val deviceToday by deviceContext.todayUpdates.collectAsStateWithLifecycle(initialValue = null)
+            val holidayTheme = prefs?.let { p -> deviceToday?.let { activeHolidayTheme(p, it) } }
             val configuration = LocalConfiguration.current
             val layoutDirection = if (configuration.layoutDirection == android.util.LayoutDirection.RTL) {
                 LayoutDirection.Rtl
@@ -173,12 +178,14 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
 
     val preferencesRepository: PreferencesRepository = koinInject()
     val locationService: LocationService = koinInject()
+    val deviceContext: DeviceContext = koinInject()
     val prefs by preferencesRepository.preferences.collectAsState(
         initial = null
     )
 
     val currentPrefs = prefs ?: return
-    val locationName = currentPrefs.activeLocation.name
+    // The drawer's selected-city picker; only the Zmanim screen and day panel use the city
+    val locationName = currentPrefs.displayCity.name
 
     // Ask for location once per launch; the dialog pauses the activity, so a grant is
     // picked up by the ON_RESUME refresh below.
@@ -204,14 +211,21 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
                     locationService.getCurrentLocationOrNull()
                         ?.let { preferencesRepository.updateCurrentLocation(it) }
                 }
-                scope.launch(Dispatchers.IO) {
-                    val currentPrefs = preferencesRepository.preferences.first()
-                    DynamicIconManager.update(context, currentPrefs.devDateOverride)
-                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // The launcher icon shows the device's Hebrew day; kept current while the app is started
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            deviceContext.todayUpdates.collect { today ->
+                withContext(Dispatchers.IO) { DynamicIconManager.update(context, today) }
+                // Keeps the icon turning over at midnight once the app is in the background
+                DateRollover.schedule(context, deviceContext.now())
+            }
+        }
     }
 
     // Handle notification deep-link — open calendar (day detail is inline)

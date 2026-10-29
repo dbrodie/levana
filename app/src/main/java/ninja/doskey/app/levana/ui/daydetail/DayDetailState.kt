@@ -12,5 +12,7 @@ data class DayDetailState(
     /** Full location-derived list; the compact sheet needs reliable sunrise/sunset. */
     val allZmanim: List<ZmanTime> = emptyList(),
     val halachicTimes: List<ZmanTime> = emptyList(),
+    /** Set when the city's clock differs from the device's; see [ninja.doskey.app.levana.ui.otherClockCityName]. */
+    val otherClockCityName: String? = null,
     val isLoading: Boolean = true
 )

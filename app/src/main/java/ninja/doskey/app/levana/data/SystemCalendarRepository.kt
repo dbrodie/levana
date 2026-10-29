@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.DeviceCalendar
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import kotlinx.coroutines.CoroutineDispatcher
@@ -79,7 +80,7 @@ class SystemCalendarRepository(
             return emptyList()
         }
 
-        val zone = ZoneId.systemDefault()
+        val zone = DeviceContext.realZone()
         return queryInstances(date, date, calendarIds, zone)
             .filter { it.coveredDates.overlaps(date, date) }
             .map { it.event }
@@ -94,7 +95,7 @@ class SystemCalendarRepository(
             return emptyMap()
         }
 
-        val zone = ZoneId.systemDefault()
+        val zone = DeviceContext.realZone()
         val instances = queryInstances(start, end, calendarIds, zone)
 
         val result = mutableMapOf<LocalDate, MutableSet<Int>>()

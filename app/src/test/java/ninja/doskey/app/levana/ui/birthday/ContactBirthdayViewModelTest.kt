@@ -4,7 +4,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
@@ -21,7 +21,7 @@ class ContactBirthdayViewModelTest {
 
     private fun viewModel(today: LocalDate = LocalDate.now()) = ContactBirthdayViewModel(
         ContactBirthdayRepository(RuntimeEnvironment.getApplication()),
-        TodayProvider { today }
+        deviceContextOn(today)
     )
 
     @Test
@@ -115,7 +115,7 @@ class ContactBirthdayViewModelTest {
 
     private fun open(stored: ContactBirthday): Pair<ContactBirthdayViewModel, FakeRepository> {
         val repository = FakeRepository(stored)
-        val vm = ContactBirthdayViewModel(repository, TodayProvider { LocalDate.of(2027, 3, 1) })
+        val vm = ContactBirthdayViewModel(repository, deviceContextOn(LocalDate.of(2027, 3, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
         return vm to repository
     }

@@ -17,6 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -24,12 +25,12 @@ import java.time.ZonedDateTime
 import java.util.TimeZone
 
 /**
- * Independent verification (device time-zone reminders). Written against the public surface the
- * baseline already had — the 4-argument constructor Koin uses — so the same file compiles and
- * runs on baseline to show the bug.
+ * Independent verification (device time-zone reminders): one rebuilder instance, created in New
+ * York, plans in the zone in effect at each rebuild.
  *
- * The plan is pinned to the 2030 Omer with devDateOverride, so every trigger is in the future
- * relative to the real wall clock the default constructor reads.
+ * The device clock is fixed in the 2030 Omer (00:05 in Moscow, 17:05 the day before in New
+ * York) and reads the JVM's zone at each rebuild, as the real clock does. TASK-5: the planning
+ * window is the device date only and candle lighting's morning notice is in the device zone.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -55,19 +56,19 @@ class VerifyTimeZoneSingletonTest {
             notifyOmer = true,
             notifyOmerTzait = true,
             notifyOmerMorning = true,
-            notifyOmerMorningTime = 7 * 60,
-            devDateOverride = today
+            notifyOmerMorningTime = 7 * 60
         )
     )
+    private val instant = ZonedDateTime.of(today, LocalTime.of(0, 5), moscow).toInstant()
     private lateinit var singleton: NotificationAlarmRebuilder
 
     @Before
     fun setUp() {
         setZone(ny)
-        // Exactly how di/AppModule.kt builds it: the singleton is created in New York
+        // The singleton is created in New York; its clock reads the zone at each rebuild
         singleton = NotificationAlarmRebuilder(
             prefs, ZmanimRepository(), CalendarRepository(), NotificationAlarmScheduler(app)
-        )
+        ) { Clock.fixed(instant, ZoneId.systemDefault()) }
     }
 
     @After
@@ -95,9 +96,13 @@ class VerifyTimeZoneSingletonTest {
     @Test
     fun singletonCreatedInNewYorkPlansMorningAlarmsInMoscowAfterZoneChange() {
         runBlocking { singleton.rebuild() }
-        assertEquals(window.associateWith { listOf(at7(it, ny)) }, morning())
+        // In New York it is still the day before; that morning has passed
+        assertEquals(window.dropLast(1).associateWith { listOf(at7(it, ny)) }, morning())
         val tzait = alarms(NotificationAlarmScheduler.ACTION_OMER)
-        val candle = alarms(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)
+        assertEquals(
+            listOf(ZonedDateTime.of(today, LocalTime.of(9, 0), ny).toInstant().toEpochMilli()),
+            alarms(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING).getValue(today)
+        )
 
         setZone(moscow)
         runBlocking { singleton.rebuild() }
@@ -108,12 +113,13 @@ class VerifyTimeZoneSingletonTest {
             window.associateWith { listOf(at7(it, moscow)) },
             morning()
         )
-        // Nightfall and candle lighting follow the location (New York), not the device
-        assertEquals(tzait, alarms(NotificationAlarmScheduler.ACTION_OMER))
-        assertEquals(candle, alarms(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING))
+        // Nightfall stays at the device position (New York); dates planned both times keep it
+        val tzaitAfter = alarms(NotificationAlarmScheduler.ACTION_OMER)
+        (tzait.keys intersect tzaitAfter.keys).forEach { assertEquals(tzait[it], tzaitAfter[it]) }
+        // The morning candle-lighting notice moves to 09:00 in the device's new zone
         assertEquals(
-            listOf(ZonedDateTime.of(today, LocalTime.of(9, 0), ny).toInstant().toEpochMilli()),
-            candle.getValue(today)
+            listOf(ZonedDateTime.of(today, LocalTime.of(9, 0), moscow).toInstant().toEpochMilli()),
+            alarms(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING).getValue(today)
         )
     }
 }

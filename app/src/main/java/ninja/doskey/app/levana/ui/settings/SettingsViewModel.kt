@@ -6,7 +6,7 @@ import android.os.LocaleList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.PreferencesRepository
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.device.DeviceContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val preferencesRepository: PreferencesRepository,
+    private val deviceContext: DeviceContext,
     private val context: Context
 ) : ViewModel() {
 
@@ -37,8 +38,8 @@ class SettingsViewModel(
     fun onIntent(intent: SettingsIntent) {
         viewModelScope.launch {
             when (intent) {
-                is SettingsIntent.SetIsInIsrael ->
-                    preferencesRepository.saveIsInIsrael(intent.inIsrael)
+                is SettingsIntent.SetIsraelMode ->
+                    preferencesRepository.saveIsraelMode(intent.mode)
                 is SettingsIntent.SetShowModernIsraeli ->
                     preferencesRepository.saveShowModernIsraeliHolidays(intent.show)
                 is SettingsIntent.SetAppLanguage -> {
@@ -104,17 +105,19 @@ class SettingsViewModel(
     private fun observePreferences() {
         viewModelScope.launch {
             preferencesRepository.preferences.collect { prefs ->
+                val device = deviceContext.now(prefs)
                 _state.value = _state.value.copy(
-                    locationName = prefs.activeLocation.name,
                     currentLocationName = prefs.currentLocation.name,
                     savedLocations = prefs.savedLocations,
                     activeLocationId = prefs.activeLocationId,
+                    israelMode = prefs.israelMode,
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
                     candleLightingOffset = prefs.candleLightingOffset,
                     dynamicHolidayTheme = prefs.dynamicHolidayTheme,
                     showDeveloperSettings = prefs.showDeveloperSettings,
-                    devDateOverride = prefs.devDateOverride,
+                    deviceToday = device.today,
+                    overriddenDeviceDate = prefs.devDateOverride,
                     devForceHolidayTheme = prefs.devForceHolidayTheme,
                     notifyCandleLighting = prefs.notifyCandleLighting,
                     candleLightingNotifyMode = prefs.candleLightingNotifyMode,

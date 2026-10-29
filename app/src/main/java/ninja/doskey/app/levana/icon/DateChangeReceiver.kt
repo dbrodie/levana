@@ -4,18 +4,47 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import ninja.doskey.app.levana.widget.WidgetUpdater
+import android.util.Log
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
+import ninja.doskey.app.levana.quicktile.requestHebrewDateTileRefresh
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
- * Updates the launcher icon and home-screen widgets when the system date rolls over to a new day.
- * Registered in the manifest for ACTION_DATE_CHANGED so it fires at midnight
- * even when the app is not running.
+ * Updates the launcher icon, home-screen widgets and the quick tile when the device date rolls
+ * over to a new day, then schedules the next roll-over. Runs on ACTION_DATE_CHANGED while the
+ * app is running and on the [DateRollover] alarm when it is not.
  */
-class DateChangeReceiver : BroadcastReceiver() {
+class DateChangeReceiver : BroadcastReceiver(), KoinComponent {
+
+    private val deviceContext: DeviceContext by inject()
+    private val alarmRebuilder: NotificationAlarmRebuilder by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_DATE_CHANGED) {
-            DynamicIconManager.update(context)
-            WidgetUpdater.requestUpdate(context)
+        if (intent.action != Intent.ACTION_DATE_CHANGED && intent.action != DateRollover.ACTION) return
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val device = deviceContext.now()
+                DateRollover.schedule(context, device)
+                DynamicIconManager.update(context, device.today)
+                // The override's date stays fixed, so plan its reminders again for the new real day
+                if (device.devOverride) alarmRebuilder.rebuild()
+                WidgetUpdater.requestUpdate(context)
+                requestHebrewDateTileRefresh(context)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update the launcher icon", e)
+            } finally {
+                pendingResult.finish()
+            }
         }
+    }
+
+    private companion object {
+        const val TAG = "DateChangeReceiver"
     }
 }

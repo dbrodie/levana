@@ -1,6 +1,6 @@
 package ninja.doskey.app.levana.ui.events
 
-import java.time.LocalDate
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 
 data class AddEditEventState(
@@ -10,9 +10,9 @@ data class AddEditEventState(
     val hebrewDay: Int = 1,
     // Tishrei
     val hebrewMonth: Int = 7,
-    // Starts as the current Hebrew year; the view model replaces it with the
-    // app's "today" (date override) year, also used for a stored unknown year
-    val hebrewYear: Int = HebrewDateMatcher.hebrewYearOf(LocalDate.now()),
+    // Starts as the real current Hebrew year; the view model replaces it with the
+    // device's (developer override included) year, also used for a stored unknown year
+    val hebrewYear: Int = HebrewDateMatcher.hebrewYearOf(DeviceContext.realToday()),
     val notes: String = "",
     val useYahrzeitRules: Boolean = false,
     val isSaving: Boolean = false,

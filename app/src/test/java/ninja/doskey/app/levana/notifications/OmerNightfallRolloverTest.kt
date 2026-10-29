@@ -205,7 +205,7 @@ class OmerNightfallRolloverTest {
     }
 
     @Test
-    fun `nightfall instant is kept across a DST change in the location zone`() {
+    fun `nightfall instant is kept across a DST change in the position's zone`() {
         // Chile leaves DST on 5 April 2026, during the first week of the Omer
         val zone = ZoneId.of(santiago.timezoneId)
         val result = plan(LocalDate.of(2026, 4, 1), LocalTime.NOON, location = santiago)

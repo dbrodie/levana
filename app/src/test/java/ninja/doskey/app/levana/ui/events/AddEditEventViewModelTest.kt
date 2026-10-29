@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.ui.EditorDayClampCases
@@ -41,7 +41,7 @@ class AddEditEventViewModelTest {
     private val regularToday = LocalDate.of(2026, 3, 1)
 
     private fun viewModel(dao: FakeDao = FakeDao(), today: LocalDate = LocalDate.now()) =
-        AddEditEventViewModel(PersonalEventRepository(dao), TodayProvider { today })
+        AddEditEventViewModel(PersonalEventRepository(dao), deviceContextOn(today))
 
     private fun stored(month: Int, year: Int, yahrzeit: Boolean = false) = PersonalEvent(
         id = 1,

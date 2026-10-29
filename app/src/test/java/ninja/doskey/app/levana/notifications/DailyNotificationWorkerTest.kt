@@ -18,15 +18,19 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.device.fixedClock
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.domain.model.HolidayCategory
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.notifications.DailyCategory.FASTS
 import ninja.doskey.app.levana.notifications.DailyCategory.HOLIDAYS
 import ninja.doskey.app.levana.notifications.DailyCategory.PERSONAL_EVENTS
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -42,6 +46,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.GregorianCalendar
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
@@ -145,12 +150,15 @@ class DailyNotificationWorkerTest {
     fun setUp() {
         repo = PreferencesRepository(app, CityRepository(app))
         val zmanim = ZmanimRepository()
+        // The device clock reads the start of [date]
+        val device = DeviceContext(repo.preferences) { fixedClock(date, LocalTime.MIDNIGHT) }
         val rebuilder = NotificationAlarmRebuilder(
-            repo.preferences, zmanim, calendar, NotificationAlarmScheduler(app)
+            repo.preferences, device, zmanim, calendar, NotificationAlarmScheduler(app)
         )
         startKoin {
             modules(module {
                 single { repo }
+                single { device }
                 single { zmanim }
                 single { calendar }
                 single { PersonalEventRepository(dao) }
@@ -164,8 +172,8 @@ class DailyNotificationWorkerTest {
             preferences.first().savedLocations.forEach { removeSavedLocation(it.id) }
             updateCurrentLocation(newYork)
             setActiveLocation(null)
-            saveIsInIsrael(false)
-            saveDevDateOverride(date)
+            saveIsraelMode(IsraelMode.DIASPORA)
+            saveDevDateOverride(null)
             saveNotifyHolidays(false)
             saveHolidayNotifyDaysBefore(1)
             saveNotifyFasts(false)
@@ -235,14 +243,18 @@ class DailyNotificationWorkerTest {
         assertSame(personal, notification(personalId))
         val holiday2 = notification(holidayId)
 
+        // TASK-5: fast times follow the device position; selecting a city changes nothing
         save { addSavedLocation(london) }
-        awaitCondition("fasts follow the active location") { notification(fastId) !== fast }
+        settle()
+        assertSame(fast, notification(fastId))
+        save { updateCurrentLocation(london) }
+        awaitCondition("fasts follow the device position") { notification(fastId) !== fast }
         assertEquals(setOf(FASTS), refreshes.last())
         assertSame(holiday2, notification(holidayId))
         assertSame(personal, notification(personalId))
         val fast2 = notification(fastId)
 
-        save { saveIsInIsrael(true) }
+        save { saveIsraelMode(IsraelMode.ISRAEL) }
         awaitCondition("Israel refreshes holidays and fasts") {
             notification(holidayId) !== holiday2 && notification(fastId) !== fast2
         }
@@ -254,6 +266,26 @@ class DailyNotificationWorkerTest {
         save { saveNotifyPersonalEvents(false) }
         settle()
         assertEquals(count, refreshes.size)
+    }
+
+    // TASK-5 case 7: the fast notice uses the device date and the device position's times
+    @Test
+    fun fastNoticeTimesAreTheDevicePositionsNotTheSelectedCitys() {
+        fun body() = notification(fastId)!!.let {
+            (it.extras.getCharSequence(Notification.EXTRA_BIG_TEXT)
+                ?: it.extras.getCharSequence(Notification.EXTRA_TEXT)).toString()
+        }
+        save { saveNotifyFasts(true) }
+        runWorker(setOf(FASTS))
+        val inNewYork = body()
+
+        save { addSavedLocation(Location.JERUSALEM) }
+        runWorker(setOf(FASTS))
+        assertEquals("selecting Jerusalem changes nothing", inNewYork, body())
+
+        save { updateCurrentLocation(london) }
+        runWorker(setOf(FASTS))
+        assertNotEquals("the device moved", inNewYork, body())
     }
 
     @Test

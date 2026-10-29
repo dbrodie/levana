@@ -9,11 +9,11 @@ import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
-import ninja.doskey.app.levana.data.PreferencesTodayProvider
-import ninja.doskey.app.levana.data.TodayProvider
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.device.systemTimeChanges
 import ninja.doskey.app.levana.notifications.NotificationAlarmRebuilder
 import ninja.doskey.app.levana.notifications.NotificationAlarmScheduler
 import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
@@ -30,18 +30,35 @@ import ninja.doskey.app.levana.ui.settings.SettingsViewModel
 import ninja.doskey.app.levana.ui.zmanim.ZmanimViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+
+private val SYSTEM_TIME_CHANGES = named("systemTimeChanges")
 
 val dataModule = module {
     single { LevanaDatabase.build(get()) }
     single { get<LevanaDatabase>().personalEventDao() }
     single { CalendarRepository() }
     single { CityRepository(get()) }
-    single { PreferencesRepository(get(), get()) }
-    single<TodayProvider> { PreferencesTodayProvider(get()) }
+    // One runtime receiver for the date, clock and zone signals, shared by every collector
+    single<Flow<Unit>>(SYSTEM_TIME_CHANGES) {
+        systemTimeChanges(androidContext())
+            .shareIn(CoroutineScope(SupervisorJob() + Dispatchers.Default), SharingStarted.WhileSubscribed())
+    }
+    single { PreferencesRepository(get(), get(), get(SYSTEM_TIME_CHANGES)) }
+    // The device's now/today/zone/position; the only clock the app reads
+    single {
+        DeviceContext(
+            get<PreferencesRepository>().preferences,
+            systemTimeChanges = get(SYSTEM_TIME_CHANGES)
+        )
+    }
     single { LocationService(get()) }
     single { ZmanimRepository() }
     single {
@@ -66,18 +83,20 @@ val dataModule = module {
     single { NotificationAlarmScheduler(androidContext()) }
     single { NotificationDeliveryLog(androidContext()) }
     single {
-        NotificationAlarmRebuilder(get<PreferencesRepository>().preferences, get(), get(), get())
+        NotificationAlarmRebuilder(
+            get<PreferencesRepository>().preferences, get<DeviceContext>(), get(), get(), get()
+        )
     }
     single { UpdateChecker(androidContext()) }
     single { TodayWidgetSnapshots(get(), get()) }
 }
 
 val viewModelModule = module {
-    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
-    viewModel { ZmanimViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), androidContext()) }
+    viewModel { ZmanimViewModel(get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), androidContext()) }
     viewModel { EventsViewModel(get(), get(), get()) }
     viewModel { AddEditEventViewModel(get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }

@@ -2,7 +2,6 @@ package ninja.doskey.app.levana.notifications
 
 import androidx.work.Data
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,7 +24,8 @@ enum class DailyCategory {
         if (!isEnabled(prefs)) return null
         return when (this) {
             HOLIDAYS -> listOf(prefs.holidayNotifyDaysBefore, prefs.isInIsrael, prefs.devDateOverride)
-            FASTS -> listOf(prefs.isInIsrael, prefs.activeLocation, prefs.devDateOverride)
+            // Fast times are at the device position; the selected city does not matter
+            FASTS -> listOf(prefs.isInIsrael, prefs.currentLocation, prefs.devDateOverride)
             PERSONAL_EVENTS -> listOf(prefs.yahrzeitRules, prefs.devDateOverride)
         }
     }

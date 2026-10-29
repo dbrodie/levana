@@ -99,6 +99,7 @@ fun DayDetailContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DaySheetBadges(dayInfo)
+                    state.otherClockCityName?.let { CityClockLabel(it, Modifier.padding(bottom = 8.dp)) }
                     QuickZmanimCards(state.allZmanim, dayInfo.shabbatInfo?.takeIf { it.showCandleLighting }?.candleLightingTime)
                     Spacer(modifier = Modifier.height(24.dp))
                     HalachicTimesSection(
@@ -156,6 +157,17 @@ fun DayDetailContent(
             }
         }
     }
+}
+
+/** "Jerusalem time": the times shown are in the selected city's clock, not the device's. */
+@Composable
+fun CityClockLabel(cityName: String, modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.zmanim_city_clock, cityName),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.fillMaxWidth()
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

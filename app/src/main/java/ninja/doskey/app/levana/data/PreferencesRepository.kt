@@ -12,6 +12,10 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.device.resolveIsInIsrael
+import ninja.doskey.app.levana.device.systemTimeChanges
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
@@ -20,11 +24,12 @@ import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import java.time.LocalDate
-import java.util.TimeZone
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -32,12 +37,14 @@ import kotlinx.serialization.json.jsonPrimitive
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences",
-    produceMigrations = { listOf(LocationModeMigration) }
+    produceMigrations = { listOf(LocationModeMigration, IsraelModeMigration) }
 )
 
 class PreferencesRepository(
     private val context: Context,
-    private val cityRepository: CityRepository
+    private val cityRepository: CityRepository,
+    /** Re-reads the preferences, so the zone's fallback city follows a time-zone change. */
+    systemTimeChanges: Flow<Unit> = systemTimeChanges(context)
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -52,9 +59,7 @@ class PreferencesRepository(
             doublePreferencesKey("candle_lighting_offset")
         // The removed general Minhag selection stored "minhag". Older stores may still
         // contain it; it is deliberately left unread and in place (DataStore keeps unknown keys).
-        val IS_IN_ISRAEL = booleanPreferencesKey("is_in_israel")
-        val IS_IN_ISRAEL_MANUAL =
-            booleanPreferencesKey("is_in_israel_manual")
+        val ISRAEL_MODE = stringPreferencesKey(ISRAEL_MODE_KEY)
         val SHOW_MODERN_ISRAELI =
             booleanPreferencesKey("show_modern_israeli")
         val CALENDAR_HEBREW_MODE = booleanPreferencesKey("hebrew_primary")
@@ -62,8 +67,8 @@ class PreferencesRepository(
             booleanPreferencesKey("dynamic_holiday_theme")
         val SHOW_DEVELOPER_SETTINGS =
             booleanPreferencesKey("show_developer_settings")
-        val DEV_DATE_OVERRIDE =
-            longPreferencesKey("dev_date_override")
+        // Test only; see UserPreferences.devDateOverride
+        val DEV_DATE_OVERRIDE = longPreferencesKey("dev_date_override")
         val DEV_FORCE_HOLIDAY_THEME =
             stringPreferencesKey("dev_force_holiday_theme")
         val SELECTED_CALENDAR_IDS =
@@ -108,40 +113,37 @@ class PreferencesRepository(
             stringPreferencesKey("last_notified_update_version")
     }
 
-    val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
+    val preferences: Flow<UserPreferences> = combine(
+        context.dataStore.data,
+        systemTimeChanges.onStart { emit(Unit) }
+    ) { prefs, _ -> prefs }.map { prefs ->
         val savedLocations = decodeSavedLocations(prefs)
         val currentLocation = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
-        } ?: cityRepository.defaultForTimeZone(TimeZone.getDefault().id)
+        } ?: cityRepository.defaultForTimeZone(DeviceContext.realZone(), DeviceContext.realClock().instant())
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
 
         val activeLocationId = prefs[Keys.ACTIVE_LOCATION_ID]
-        val activeLocation = savedLocations.find { it.id == activeLocationId }?.location
-            ?: currentLocation
 
-        val isManualIsrael = prefs[Keys.IS_IN_ISRAEL_MANUAL] ?: false
-        val isInIsrael = if (isManualIsrael) {
-            prefs[Keys.IS_IN_ISRAEL] ?: false
-        } else {
-            activeLocation.timezoneId == "Asia/Jerusalem"
-        }
+        val israelMode = IsraelMode.entries.firstOrNull { it.name == prefs[Keys.ISRAEL_MODE] }
+            ?: IsraelMode.AUTO
 
         UserPreferences(
             currentLocation = currentLocation,
             savedLocations = savedLocations,
             activeLocationId = activeLocationId,
             candleLightingOffset = candleOffset,
-            isInIsrael = isInIsrael,
+            israelMode = israelMode,
+            // Auto-detect follows the device position, never the selected city
+            isInIsrael = resolveIsInIsrael(israelMode, DeviceContext.realZone()),
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
             calendarHebrewMode = prefs[Keys.CALENDAR_HEBREW_MODE] ?: false,
             dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true,
             selectedCalendarIds = prefs[Keys.SELECTED_CALENDAR_IDS]
                 ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet(),
             showDeveloperSettings = prefs[Keys.SHOW_DEVELOPER_SETTINGS] ?: true,
-            devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let {
-                LocalDate.ofEpochDay(it)
-            },
+            devDateOverride = prefs[Keys.DEV_DATE_OVERRIDE]?.let { LocalDate.ofEpochDay(it) },
             devForceHolidayTheme = prefs[Keys.DEV_FORCE_HOLIDAY_THEME],
             notifyCandleLighting = prefs[Keys.NOTIFY_CANDLE_LIGHTING] ?: false,
             candleLightingNotifyMode = prefs[Keys.CANDLE_LIGHTING_NOTIFY_MODE] ?: "morning",
@@ -197,12 +199,11 @@ class PreferencesRepository(
             runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
         } ?: emptyList()
 
-    /** Saves [location] and makes it the active location. */
+    /** Saves [location]. It is not selected: the city is chosen only in the sidebar. */
     suspend fun addSavedLocation(location: Location) {
         val newEntry = SavedLocation(id = UUID.randomUUID().toString(), location = location)
         context.dataStore.edit { prefs ->
             prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(decodeSavedLocations(prefs) + newEntry)
-            prefs[Keys.ACTIVE_LOCATION_ID] = newEntry.id
         }
     }
 
@@ -240,10 +241,9 @@ class PreferencesRepository(
         }
     }
 
-    suspend fun saveIsInIsrael(inIsrael: Boolean) {
+    suspend fun saveIsraelMode(mode: IsraelMode) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.IS_IN_ISRAEL] = inIsrael
-            prefs[Keys.IS_IN_ISRAEL_MANUAL] = true
+            prefs[Keys.ISRAEL_MODE] = mode.name
         }
     }
 
@@ -271,6 +271,7 @@ class PreferencesRepository(
         }
     }
 
+    /** Test only: the developer override's fixed date; null turns it off. */
     suspend fun saveDevDateOverride(date: LocalDate?) {
         context.dataStore.edit { prefs ->
             if (date != null) {
@@ -406,6 +407,34 @@ internal object LocationModeMigration : DataMigration<Preferences> {
             mode["id"]?.jsonPrimitive?.content?.let { prefs[ACTIVE_LOCATION_ID] = it }
         }
         prefs.remove(LOCATION_MODE)
+        return prefs.toPreferences()
+    }
+
+    override suspend fun cleanUp() = Unit
+}
+
+private const val ISRAEL_MODE_KEY = "israel_mode"
+
+/**
+ * Replaces the old "In Israel" switch (`is_in_israel`, made manual for good by
+ * `is_in_israel_manual`) with the three-way setting: a manual choice is kept as Israel or
+ * Diaspora; everyone else gets Auto-detect.
+ */
+internal object IsraelModeMigration : DataMigration<Preferences> {
+    private val inIsrael = booleanPreferencesKey("is_in_israel")
+    private val manual = booleanPreferencesKey("is_in_israel_manual")
+    private val mode = stringPreferencesKey(ISRAEL_MODE_KEY)
+
+    override suspend fun shouldMigrate(currentData: Preferences) =
+        inIsrael in currentData || manual in currentData
+
+    override suspend fun migrate(currentData: Preferences): Preferences {
+        val prefs = currentData.toMutablePreferences()
+        if (prefs[manual] == true && mode !in prefs) {
+            prefs[mode] = if (prefs[inIsrael] == true) IsraelMode.ISRAEL.name else IsraelMode.DIASPORA.name
+        }
+        prefs.remove(inIsrael)
+        prefs.remove(manual)
         return prefs.toPreferences()
     }
 

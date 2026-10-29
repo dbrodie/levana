@@ -10,7 +10,9 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.CalendarEvent
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.displayCity
+import ninja.doskey.app.levana.ui.otherClockCityName
 import ninja.doskey.app.levana.ui.ChangeRefresher
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,7 @@ class DayDetailViewModel(
     private val personalEventRepository: PersonalEventRepository,
     private val contactBirthdayRepository: ContactBirthdayRepository,
     private val systemCalendarRepository: SystemCalendarRepository,
+    private val deviceContext: DeviceContext,
     eventDataChanges: EventDataChanges
 ) : ViewModel() {
 
@@ -64,7 +67,8 @@ class DayDetailViewModel(
         loadJob = viewModelScope.launch {
             if (!keepContent) _state.value = _state.value.copy(isLoading = true)
             val prefs = preferencesRepository.preferences.first()
-            val location = prefs.activeLocation
+            // The day panel's times are the selected city's; everything else follows the device
+            val location = prefs.displayCity
             val dayInfo = calendarRepository.getDayInfo(
                 date,
                 prefs.isInIsrael,
@@ -116,6 +120,7 @@ class DayDetailViewModel(
                 systemEvents = systemEvents,
                 allZmanim = allZmanim,
                 halachicTimes = halachicTimes,
+                otherClockCityName = otherClockCityName(location, deviceContext.now(prefs).zone),
                 isLoading = false
             )
         }

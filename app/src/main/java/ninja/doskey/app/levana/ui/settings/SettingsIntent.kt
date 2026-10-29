@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -7,7 +8,7 @@ import java.time.LocalDate
 
 
 sealed interface SettingsIntent {
-    data class SetIsInIsrael(val inIsrael: Boolean) : SettingsIntent
+    data class SetIsraelMode(val mode: IsraelMode) : SettingsIntent
     data class SetShowModernIsraeli(val show: Boolean) : SettingsIntent
     data class SetAppLanguage(val language: AppLanguage) : SettingsIntent
     data class SetCandleLightingOffset(val offset: Double) : SettingsIntent

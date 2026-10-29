@@ -22,6 +22,7 @@ import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.data.db.LevanaDatabase
 import ninja.doskey.app.levana.data.db.PersonalEvent
@@ -106,7 +107,8 @@ class ReactiveCalendarRefreshTest {
         val vm = create {
             CalendarViewModel(
                 CalendarRepository(), preferences, events,
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), changes
+                ContactBirthdayRepository(app), SystemCalendarRepository(app),
+                DeviceContext(preferences.preferences), changes
             )
         }
         awaitUntil { !vm.state.value.isLoading && vm.state.value.monthDays.isNotEmpty() }
@@ -118,7 +120,8 @@ class ReactiveCalendarRefreshTest {
         val vm = create {
             DayDetailViewModel(
                 CalendarRepository(), ZmanimRepository(), preferences, events,
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), changes
+                ContactBirthdayRepository(app), SystemCalendarRepository(app),
+                ninja.doskey.app.levana.device.DeviceContext(preferences.preferences), changes
             )
         }
         vm.onIntent(DayDetailIntent.LoadDay(date))

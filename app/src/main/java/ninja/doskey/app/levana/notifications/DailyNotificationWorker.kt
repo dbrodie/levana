@@ -13,10 +13,10 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
 import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -36,6 +36,7 @@ class DailyNotificationWorker(
     private val contactBirthdayRepository: ContactBirthdayRepository by inject()
     private val alarmRebuilder: NotificationAlarmRebuilder by inject()
     private val deliveryLog: NotificationDeliveryLog by inject()
+    private val deviceContext: DeviceContext by inject()
 
     override suspend fun doWork(): Result {
         // A refresh run lists the categories whose settings changed; the daily/boot run has none
@@ -57,18 +58,17 @@ class DailyNotificationWorker(
             // Read the saved settings again so a category switched off meanwhile isn't posted
             val prefs = preferencesRepository.preferences.first()
             if (!category.isEnabled(prefs)) continue
-            val today = prefs.today()
+            val device = deviceContext.now(prefs)
+            val today = device.today
             when (category) {
                 DailyCategory.HOLIDAYS -> handleHolidays(localized, today, prefs)
-                DailyCategory.FASTS -> handleFasts(localized, today, prefs.activeLocation, prefs)
+                DailyCategory.FASTS -> handleFasts(localized, today, device.position, prefs)
                 DailyCategory.PERSONAL_EVENTS -> handlePersonalEvents(localized, today)
             }
         }
 
         return Result.success()
     }
-
-    private fun UserPreferences.today(): LocalDate = devDateOverride ?: LocalDate.now()
 
     private fun handleHolidays(localized: Context, today: LocalDate, prefs: UserPreferences) {
         val daysBefore = prefs.holidayNotifyDaysBefore
@@ -96,15 +96,15 @@ class DailyNotificationWorker(
 
     private fun handleFasts(
         localized: Context,
-        today: LocalDate, location: Location, prefs: UserPreferences) {
-        // All fasts: notify the day before
+        today: LocalDate, devicePosition: Location, prefs: UserPreferences) {
+        // All fasts: notify the day before, with the times at the device position
         val tomorrow = today.plusDays(1)
         val tomorrowInfo = calendarRepository.getDayInfo(tomorrow, inIsrael = prefs.isInIsrael)
 
         for (holiday in tomorrowInfo.holidays) {
             if (holiday.category != HolidayCategory.FAST) continue
 
-            val fastTimes = zmanimRepository.getFastTimes(tomorrow, location)
+            val fastTimes = zmanimRepository.getFastTimes(tomorrow, devicePosition)
             NotificationPoster.postFast(
                 localized,
                 tomorrow,

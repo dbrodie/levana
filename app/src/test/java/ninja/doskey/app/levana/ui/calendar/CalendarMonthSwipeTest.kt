@@ -23,6 +23,7 @@ import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.data.db.LevanaDatabase
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import org.junit.After
@@ -77,7 +78,8 @@ class CalendarMonthSwipeTest {
             @Suppress("UNCHECKED_CAST")
             override fun <V : ViewModel> create(modelClass: Class<V>): V = CalendarViewModel(
                 CalendarRepository(), preferences, PersonalEventRepository(db.personalEventDao()),
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), NoChanges
+                ContactBirthdayRepository(app), SystemCalendarRepository(app),
+                DeviceContext(preferences.preferences), NoChanges
             ) as V
         })[CalendarViewModel::class.java]
         awaitUntil {

@@ -1,16 +1,27 @@
 package ninja.doskey.app.levana.domain.model
 
 data class UserPreferences(
+    /**
+     * The device position: the last current-location fix, or the device time zone's fallback
+     * city without one. Read it through [ninja.doskey.app.levana.device.DeviceNow.position].
+     */
     val currentLocation: Location = Location.JERUSALEM,
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
     val candleLightingOffset: Double = 18.0,
+    /** The Israel / Diaspora setting; [isInIsrael] is its result for the device. */
+    val israelMode: IsraelMode = IsraelMode.AUTO,
+    /** Whether Israel's calendar applies, resolved by [ninja.doskey.app.levana.device.resolveIsInIsrael]. */
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val calendarHebrewMode: Boolean = false,
     val dynamicHolidayTheme: Boolean = true,
     val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,
+    /**
+     * TEST ONLY — the developer override: the fixed date the device acts as if it is on, null
+     * when off. Applied solely by [ninja.doskey.app.levana.device.DeviceContext].
+     */
     val devDateOverride: java.time.LocalDate? = null,
     val devForceHolidayTheme: String? = null,
     val notifyCandleLighting: Boolean = false,
@@ -29,6 +40,11 @@ data class UserPreferences(
     val yahrzeitRules: YahrzeitRules = YahrzeitRules()
 )
 
-/** The selected saved location, or the current location when none is selected. */
-val UserPreferences.activeLocation: Location
+/**
+ * The selected (display) city: the saved city chosen in the sidebar, or the current location
+ * when none is. It is a display lens only — read it for the Zmanim screen, the day panel's
+ * times and the city pickers, never for dates, notifications or Israel/Diaspora, which follow
+ * the device ([ninja.doskey.app.levana.device.DeviceContext]).
+ */
+val UserPreferences.displayCity: Location
     get() = savedLocations.find { it.id == activeLocationId }?.location ?: currentLocation

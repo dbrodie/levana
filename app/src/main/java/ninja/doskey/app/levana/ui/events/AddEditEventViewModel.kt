@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.DeviceContext
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import ninja.doskey.app.levana.data.db.PersonalEvent
@@ -15,16 +15,16 @@ import kotlinx.coroutines.launch
 
 class AddEditEventViewModel(
     private val repository: PersonalEventRepository,
-    private val todayProvider: TodayProvider
+    private val deviceContext: DeviceContext
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddEditEventState())
     val state: StateFlow<AddEditEventState> = _state.asStateFlow()
 
-    // The app's current Hebrew year (honours the developer date override),
+    // The device's current Hebrew year (developer override included),
     // resolved once when the editor opens
     private val currentYear: Deferred<Int> = viewModelScope.async {
-        HebrewDateMatcher.hebrewYearOf(todayProvider.today())
+        HebrewDateMatcher.hebrewYearOf(deviceContext.today())
     }
 
     // True once the year came from the user, a prefill or a stored item, so

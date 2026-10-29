@@ -4,8 +4,6 @@ import android.content.Context
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
-import ninja.doskey.app.levana.domain.model.activeLocation
-import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,18 +30,19 @@ object WidgetRefreshing : KoinComponent {
 
 /** The settings the widgets show, compared to skip unrelated preference changes. */
 internal data class WidgetSettings(
-    val location: Location,
+    /** The device position, whose times the widget shows. */
+    val devicePosition: Location,
     val isInIsrael: Boolean,
     val showModernIsraeliHolidays: Boolean,
     val candleLightingOffset: Double,
     val selectedZmanim: Set<String>,
     val dynamicHolidayTheme: Boolean,
     val devForceHolidayTheme: String?,
-    val devDateOverride: LocalDate?,
+    val devDateOverride: java.time.LocalDate?,
 )
 
 internal fun UserPreferences.widgetSettings() = WidgetSettings(
-    location = activeLocation,
+    devicePosition = currentLocation,
     isInIsrael = isInIsrael,
     showModernIsraeliHolidays = showModernIsraeliHolidays,
     candleLightingOffset = candleLightingOffset,

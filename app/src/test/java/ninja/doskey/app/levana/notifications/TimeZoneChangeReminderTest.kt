@@ -16,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.di.allModules
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
@@ -45,7 +46,7 @@ import java.util.TimeZone
 
 /**
  * Device time-zone changes in a running process. Friday 26 Apr 2030 is the 8th day of the Omer
- * and a candle-lighting day; the active location is New York.
+ * and a candle-lighting day; the device position is New York.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -169,14 +170,26 @@ class TimeZoneChangeReminderTest {
 
     @Test
     fun koinSingletonUsesTheDeviceZoneCurrentAtRebuildTime() = runBlocking {
-        val koin = startKoin { androidContext(app); modules(allModules) }.koin
+        // The app's modules, with the device clock fixed at Friday 00:30 in Moscow (Thursday
+        // evening in New York) but reading the JVM's zone on every call, like the real one
+        instant = ZonedDateTime.of(friday, LocalTime.of(0, 30), moscowZone).toInstant()
+        val koin = startKoin {
+            androidContext(app)
+            allowOverride(true)
+            modules(allModules + module {
+                single {
+                    DeviceContext(get<PreferencesRepository>().preferences) {
+                        Clock.fixed(instant, ZoneId.systemDefault())
+                    }
+                }
+            })
+        }.koin
         val repository = koin.get<PreferencesRepository>()
         repository.saveNotifyCandleLighting(false)
         repository.saveNotifyOmer(true)
         repository.saveNotifyOmerTzait(false)
         repository.saveNotifyOmerMorning(true)
         repository.saveNotifyOmerMorningTime(7 * 60)
-        repository.saveDevDateOverride(friday)
         try {
             val singleton = koin.get<NotificationAlarmRebuilder>()
             singleton.rebuild()
@@ -190,13 +203,12 @@ class TimeZoneChangeReminderTest {
             assertEquals((0..7L).map { friday.plusDays(it) }.toSet(), moved.keys)
             moved.forEach { (date, trigger) -> assertEquals(sevenAm(date, moscowZone), trigger) }
         } finally {
-            repository.saveDevDateOverride(null)
             repository.saveNotifyOmer(false)
         }
     }
 
     @Test
-    fun timeZoneBroadcastMovesMorningAlarmsAndKeepsLocationZoneAlarms() {
+    fun timeZoneBroadcastMovesDeviceZoneAlarmsAndKeepsNightfall() {
         startKoinWithRebuilder()
         initializeWorkManager()
         // Thursday 22:00 in New York is Friday 05:00 in Moscow
@@ -223,10 +235,15 @@ class TimeZoneChangeReminderTest {
         window.dropLast(1).forEach {
             assertEquals("nightfall $it", tzait.getValue(it), tzaitAfter.getValue(it))
         }
+        // TASK-5: the morning candle-lighting notice is in the device zone, so it moves too
+        // (it previously stayed at 09:30 in the selected city's zone)
         val candlesAfter = triggers(NotificationAlarmScheduler.ACTION_CANDLE_LIGHTING)
-        assertEquals(candles.getValue(friday), candlesAfter.getValue(friday))
         assertEquals(
             ZonedDateTime.of(friday, LocalTime.of(9, 30), nyZone).toInstant().toEpochMilli(),
+            candles.getValue(friday)
+        )
+        assertEquals(
+            ZonedDateTime.of(friday, LocalTime.of(9, 30), moscowZone).toInstant().toEpochMilli(),
             candlesAfter.getValue(friday)
         )
 

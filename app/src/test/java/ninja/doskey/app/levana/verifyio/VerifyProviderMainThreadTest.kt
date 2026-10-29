@@ -11,7 +11,7 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayIntent
@@ -91,7 +91,7 @@ class VerifyProviderMainThreadTest {
     fun contactBirthdayLoadRunsOffMain() {
         contacts.add(7, "k7", "Rivka", Triple(12, 3, 5750))
         contactsProvider.gate = CountDownLatch(1)
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
 
         val ms = timeMs { vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7")) }
         assertTrue("LoadBirthday blocked ${ms}ms", ms < 1_000)
@@ -111,7 +111,7 @@ class VerifyProviderMainThreadTest {
     @Test
     fun editingABirthdaySavesOffMainAndUpdatesTheProvider() {
         val c = contacts.add(7, "k7", "Rivka", Triple(12, 3, 5750))
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         idleUntil(what = "load") { vm.state.value.isEditing }
         vm.onIntent(ContactBirthdayIntent.SetHebrewDay(14))
@@ -136,7 +136,7 @@ class VerifyProviderMainThreadTest {
     @Test
     fun addingABirthdayToANewContactInsertsOffMain() {
         val c = contacts.add(8, "k8", "Moshe")
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactSelected("k8", "Moshe", null))
         vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5760))
         vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(1))
@@ -151,7 +151,7 @@ class VerifyProviderMainThreadTest {
     fun saveFailureIsReportedNotCrashing() {
         contacts.add(7, "k7", "Rivka", Triple(12, 3, 5750))
         contactsProvider.batchFailure = { IllegalStateException("provider exploded") }
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactSelected("k7", "Rivka", null))
         vm.onIntent(ContactBirthdayIntent.Save)
         idleUntil(what = "save failure") { !vm.state.value.isSaving }
@@ -176,6 +176,7 @@ class VerifyProviderMainThreadTest {
             CalendarRepository(), ZmanimRepository(), prefs,
             PersonalEventRepository(FakeDao()),
             ContactBirthdayRepository(app()), SystemCalendarRepository(app()),
+            ninja.doskey.app.levana.device.DeviceContext(prefs.preferences),
             object : ninja.doskey.app.levana.data.EventDataChanges {
                 override val changes = kotlinx.coroutines.flow.emptyFlow<Unit>()
                 override fun recheckPermissions() = Unit

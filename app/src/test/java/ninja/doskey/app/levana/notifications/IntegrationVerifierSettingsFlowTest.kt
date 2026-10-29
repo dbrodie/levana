@@ -11,6 +11,7 @@ import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.di.allModules
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
@@ -52,7 +53,7 @@ class IntegrationVerifierSettingsFlowTest {
             prefs.saveNotifyCandleLighting(false)
             prefs.saveNotifyOmer(false)
             prefs.saveNotifyOmerMorningTime(420)
-            prefs.saveIsInIsrael(true)
+            prefs.saveIsraelMode(IsraelMode.ISRAEL)
             prefs.saveDevDateOverride(null)
         }
         val log = Collections.synchronizedList(mutableListOf<String>())
@@ -84,7 +85,7 @@ class IntegrationVerifierSettingsFlowTest {
             step(listOf("refresh:[HOLIDAYS]")) { prefs.saveHolidayNotifyDaysBefore(3) }
             step(listOf("refresh:[PERSONAL_EVENTS]")) { prefs.saveNotifyPersonalEvents(true) }
             // Default location is Jerusalem; a Diaspora override changes alarms and holiday dates only
-            step(listOf("rebuild", "refresh:[HOLIDAYS]")) { prefs.saveIsInIsrael(false) }
+            step(listOf("rebuild", "refresh:[HOLIDAYS]")) { prefs.saveIsraelMode(IsraelMode.DIASPORA) }
             step(listOf("off:[HOLIDAYS]")) { prefs.saveNotifyHolidays(false) }
             step(listOf("rebuild")) { prefs.saveNotifyCandleLighting(true) }
             step(listOf("rebuild")) { prefs.saveNotifyCandleLighting(false) }

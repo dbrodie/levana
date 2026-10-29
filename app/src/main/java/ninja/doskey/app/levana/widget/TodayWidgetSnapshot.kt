@@ -2,11 +2,12 @@ package ninja.doskey.app.levana.widget
 
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceNow
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.ZmanCategory
-import ninja.doskey.app.levana.domain.model.activeLocation
+import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.ui.theme.activeHolidayTheme
 import java.time.Instant
@@ -38,7 +39,7 @@ data class TodayWidgetSnapshot(
     val nextZman: NextZman?,
     val shabbat: ShabbatTimes?,
     val holidayTheme: HolidayTheme?,
-    /** When the snapshot goes stale: the next zman passing, or the next midnight. */
+    /** When the snapshot goes stale, on the real clock: the next zman passing, or midnight. */
     val refreshAt: Instant,
 )
 
@@ -47,24 +48,27 @@ class TodayWidgetSnapshots(
     private val calendarRepository: CalendarRepository,
 ) {
 
-    fun build(
-        prefs: UserPreferences,
-        today: LocalDate,
-        now: Instant,
-        deviceZone: ZoneId = ZoneId.systemDefault(),
-    ): TodayWidgetSnapshot {
+    /**
+     * The snapshot for the [device]: its date and moment (developer override included), and
+     * the zmanim and Shabbat times at its position (owner decision, TASK-5), never the
+     * selected city's.
+     */
+    fun build(prefs: UserPreferences, device: DeviceNow): TodayWidgetSnapshot {
+        val today = device.today
+        val position = device.position
         val dayInfo = calendarRepository.getDayInfo(today, prefs.isInIsrael, prefs.showModernIsraeliHolidays)
-        val nextZman = nextZman(prefs, today, now)
-        val nextMidnight = today.plusDays(1).atStartOfDay(deviceZone).toInstant()
+        val nextZman = nextZman(prefs, position, today, device.instant)
+        val nextMidnight = today.plusDays(1).atStartOfDay(device.zone).toInstant()
+        val staleAt = nextZman?.at?.toInstant()?.takeIf { it < nextMidnight } ?: nextMidnight
         return TodayWidgetSnapshot(
             today = today,
             hebrewDay = dayInfo.hebrewDay,
             holiday = dayInfo.holidays.firstOrNull(),
-            locationName = prefs.activeLocation.name,
+            locationName = position.name,
             nextZman = nextZman,
-            shabbat = shabbatTimes(prefs, today),
+            shabbat = shabbatTimes(prefs, position, today),
             holidayTheme = activeHolidayTheme(prefs, today),
-            refreshAt = nextZman?.at?.toInstant()?.takeIf { it < nextMidnight } ?: nextMidnight,
+            refreshAt = device.toSystemInstant(staleAt),
         )
     }
 
@@ -72,8 +76,7 @@ class TodayWidgetSnapshots(
      * The first selected zman after [now], from [today]'s list and then tomorrow's. A night
      * zman before noon (halachic midnight after civil midnight) belongs to the next civil day.
      */
-    internal fun nextZman(prefs: UserPreferences, today: LocalDate, now: Instant): NextZman? {
-        val location = prefs.activeLocation
+    internal fun nextZman(prefs: UserPreferences, location: Location, today: LocalDate, now: Instant): NextZman? {
         val zone = ZoneId.of(location.timezoneId)
         return listOf(today, today.plusDays(1)).firstNotNullOfOrNull { date ->
             zmanimRepository.getZmanim(date, location, prefs.candleLightingOffset, prefs.isInIsrael)
@@ -92,8 +95,7 @@ class TodayWidgetSnapshots(
      * The run of Shabbat / Yom Tov days shown on [today]: the first whose havdalah falls on
      * [today] or later, so it stays through the civil day of havdalah and then rolls on.
      */
-    internal fun shabbatTimes(prefs: UserPreferences, today: LocalDate): ShabbatTimes? {
-        val location = prefs.activeLocation
+    internal fun shabbatTimes(prefs: UserPreferences, location: Location, today: LocalDate): ShabbatTimes? {
         val zone = ZoneId.of(location.timezoneId)
         val inIsrael = prefs.isInIsrael
         // A run starts on an evening with candles that isn't itself a holy day's evening

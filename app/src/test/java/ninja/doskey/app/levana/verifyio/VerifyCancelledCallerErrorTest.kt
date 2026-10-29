@@ -20,7 +20,7 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
-import ninja.doskey.app.levana.data.TodayProvider
+import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayIntent
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.events.EventsIntent
@@ -176,7 +176,7 @@ class VerifyCancelledCallerErrorTest {
             if (uri.pathSegments == listOf("contacts", "9")) throw IllegalStateException("active pick failed")
             contacts.respond(uri, proj, sel, args)
         }
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/7")))
         awaitEntered(contactsProvider, 1)
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/2")))
@@ -199,7 +199,7 @@ class VerifyCancelledCallerErrorTest {
             if (args?.getOrNull(1) == "k7") { hold.await(5, TimeUnit.SECONDS); throw IllegalStateException("late") }
             contacts.respond(uri, proj, sel, args)
         }
-        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), TodayProvider { LocalDate.of(2026, 1, 1) })
+        val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(contactsProvider, 1)
         vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
