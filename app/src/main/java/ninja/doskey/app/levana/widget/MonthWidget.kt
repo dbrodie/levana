@@ -82,13 +82,17 @@ class MonthWidget : GlanceAppWidget(), KoinComponent {
             }
             val light = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme) }
             val dark = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme) }
-            val markers = remember(light, dark) {
-                HolidayCategory.entries.associateWith {
-                    ColorProvider(day = holidayCategoryColor(it, light), night = holidayCategoryColor(it, dark))
-                }
+            // Calendar colors Glance's theme lacks, taken from the same schemes
+            val gridColors = remember(light, dark) {
+                MonthGridColors(
+                    markers = HolidayCategory.entries.associateWith {
+                        ColorProvider(day = holidayCategoryColor(it, light), night = holidayCategoryColor(it, dark))
+                    },
+                    shabbat = ColorProvider(day = light.surfaceContainerLow, night = dark.surfaceContainerLow),
+                )
             }
             GlanceTheme(colors = remember(light, dark) { ColorProviders(light = light, dark = dark) }) {
-                MonthContent(snapshot, markers)
+                MonthContent(snapshot, gridColors)
             }
         }
     }
@@ -103,6 +107,9 @@ class MonthWidget : GlanceAppWidget(), KoinComponent {
     }
 }
 
+/** Holiday marker colors by category and the Shabbat cell background, as in the calendar. */
+private class MonthGridColors(val markers: Map<HolidayCategory, ColorProvider>, val shabbat: ColorProvider)
+
 class MonthWidgetReceiver : RefreshingWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = MonthWidget()
 }
@@ -113,7 +120,7 @@ private val HEBREW_LOCALE = Locale.forLanguageTag("he")
 private val DAYS_OF_WEEK = listOf(DayOfWeek.SUNDAY) + DayOfWeek.entries.dropLast(1)
 
 @Composable
-private fun MonthContent(snapshot: MonthWidgetSnapshot, markers: Map<HolidayCategory, ColorProvider>) {
+private fun MonthContent(snapshot: MonthWidgetSnapshot, colors: MonthGridColors) {
     val context = LocalContext.current
     val locale = context.widgetLocale()
     val mirror = context.widgetMirrored()
@@ -160,7 +167,8 @@ private fun MonthContent(snapshot: MonthWidgetSnapshot, markers: Map<HolidayCate
                                 day = day,
                                 isToday = day.gregorianDate == snapshot.today,
                                 full = full,
-                                marker = day.holidayCategory?.let { markers[it] },
+                                marker = day.holidayCategory?.let { colors.markers[it] },
+                                shabbatBackground = colors.shabbat,
                                 description = dayDescription(
                                     day,
                                     locale,
@@ -199,7 +207,11 @@ private fun Header(snapshot: MonthWidgetSnapshot, locale: Locale, full: Boolean,
         )
         if (full) {
             Text(
-                text = CalendarHeaderFormatter.gregorianRange(snapshot.days, locale),
+                text = CalendarHeaderFormatter.gregorianRange(snapshot.days, locale).let {
+                    // The launcher may lay this out left to right (an English device); isolate
+                    // Hebrew text as right to left so its dates and numbers keep their order
+                    if (locale.isHebrewUi()) "\u2067$it\u2069" else it
+                },
                 maxLines = 1,
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, textAlign = align),
                 modifier = GlanceModifier.fillMaxWidth(),
@@ -209,12 +221,27 @@ private fun Header(snapshot: MonthWidgetSnapshot, locale: Locale, full: Boolean,
 }
 
 @Composable
-private fun DayCell(day: HebrewDay, isToday: Boolean, full: Boolean, marker: ColorProvider?, description: String) {
+private fun DayCell(
+    day: HebrewDay,
+    isToday: Boolean,
+    full: Boolean,
+    marker: ColorProvider?,
+    shabbatBackground: ColorProvider,
+    description: String,
+) {
     val context = LocalContext.current
     val cell = GlanceModifier
         .fillMaxSize()
         .padding(1.dp)
-        .let { if (isToday) it.cornerRadius(8.dp).background(GlanceTheme.colors.primaryContainer) else it }
+        .cornerRadius(8.dp)
+        .let {
+            // As the calendar: today on the primary container, Shabbat on a tinted surface
+            when {
+                isToday -> it.background(GlanceTheme.colors.primaryContainer)
+                day.gregorianDate.dayOfWeek == DayOfWeek.SATURDAY -> it.background(shabbatBackground)
+                else -> it
+            }
+        }
         .clickable(openCalendar(context, day.gregorianDate))
         .semantics { contentDescription = description }
     Column(
@@ -226,7 +253,7 @@ private fun DayCell(day: HebrewDay, isToday: Boolean, full: Boolean, marker: Col
             text = day.hebrewDayOfMonthFormatted,
             maxLines = 1,
             style = TextStyle(
-                color = if (isToday) GlanceTheme.colors.onPrimaryContainer else GlanceTheme.colors.onSurface,
+                color = if (isToday) GlanceTheme.colors.primary else GlanceTheme.colors.onSurface,
                 fontSize = if (full) 15.sp else 13.sp,
                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center,
