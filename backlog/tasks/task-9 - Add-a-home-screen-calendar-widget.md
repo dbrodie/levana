@@ -38,7 +38,7 @@ Add home-screen widgets that show Levana's calendar information outside the app.
 - **Primary date is always Hebrew** (large line). The Gregorian date is secondary. The calendar-mode setting is ignored here.
 - **Next zman**: the next upcoming time among the zmanim the user selected for day details (`selectedZmanim`). No widget-specific selection.
 - **Shabbat/Yom Tov row**: always shows **both candle lighting and havdalah** of the current or upcoming Shabbat/Yom Tov sequence, with day names (e.g. `Fri 16:21 · Sat 17:18`). A sequence stays on display through the end of the civil day of its havdalah (Saturday inclusive for a regular Shabbat), then rolls to the next sequence. Consecutive Shabbat/Yom Tov days use the same consecutive-transition logic as reminders (candle lighting of the first day, havdalah of the last).
-- **Location**: the active location name. The app always resolves a location (the time-zone default city or Jerusalem), and the widget treats it like the app does: no special prompt.
+- **Location** (updated 2026-10-29 by TASK-5): every widget's dates, times and location name follow the **device position** from `DeviceContext` (current location, or the time zone's nearest bundled fallback city), never the selected city. There is no special prompt. A per-widget city choice is future work (TASK-41).
 
 **Tap actions (split tap areas)**
 - Date area: opens the app on the month calendar with today selected (existing `EXTRA_DATE_EPOCH_DAY` deep link → `CalendarRoute`; day details are inline there).
@@ -57,7 +57,7 @@ Add home-screen widgets that show Levana's calendar information outside the app.
   - Move the color-scheme selection in `ui/theme/Theme.kt` `LevanaTheme` into a plain function, e.g. `levanaColorScheme(dark: Boolean, holidayTheme: HolidayTheme?)`. `LevanaTheme` calls it.
   - Move the active-holiday resolution in `MainActivity.kt` (~L137-150: dev force override → `dynamicHolidayTheme` → `HolidayThemeResolver.resolve(date)`) into a shared function in `ui/theme`, e.g. `activeHolidayTheme(prefs, date)`. `MainActivity` and the widgets both call it.
   - Glance gets `ColorProviders(light = levanaColorScheme(false, h), dark = levanaColorScheme(true, h))`.
-- **Data:** a widget-agnostic `WidgetSnapshotProvider` (pure, unit-testable) built on `ZmanimRepository`, `PreferencesRepository` and `TodayProvider`. It produces an immutable snapshot (Hebrew/Gregorian date, location name or null, next zman or unavailable, Shabbat sequence candle/havdalah instants, holiday theme). Formatting is shared with existing app formatters where they exist.
+- **Data:** a widget-agnostic `WidgetSnapshotProvider` (pure, unit-testable) built on `ZmanimRepository`, `CalendarRepository` and `DeviceContext` (TASK-5: the only source of now/today/zone/position, including the fixed-date developer override). See the existing `TodayWidgetSnapshots` from TASK-9.1. It produces an immutable snapshot (Hebrew/Gregorian date, location name or null, next zman or unavailable, Shabbat sequence candle/havdalah instants, holiday theme). Formatting is shared with existing app formatters where they exist.
 - **Refresh triggers:**
   - Date change: reuse the existing `DateChangeReceiver` and `TimeChangeReceiver`, adding the widget update call.
   - Time zone, locale or location change, and preference change (selected zmanim, holiday theme, location).
