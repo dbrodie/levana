@@ -4,7 +4,7 @@ title: Zmanim list home-screen widget
 status: To Do
 assignee: []
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T18:23:00Z'
+updated_date: '2026-10-29T20:06:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -17,7 +17,7 @@ ordinal: 42000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Third subtask of TASK-9; see TASK-9 for product decisions and shared design. Uses the foundation from TASK-9.1. Scrollable list of today's selected zmanim (same selection as day details), past times dimmed, next zman highlighted, active location in header.
+Third subtask of TASK-9; see TASK-9 for product decisions and shared design. Uses the foundation from TASK-9.1. Scrollable list of today's selected zmanim (same selection as day details), past times dimmed, next zman highlighted. Times and header location follow the DEVICE location via DeviceContext (owner decision 2026-10-29, consistent with the Today widget), not the selected city. Per-widget city choice is a separate future task.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
