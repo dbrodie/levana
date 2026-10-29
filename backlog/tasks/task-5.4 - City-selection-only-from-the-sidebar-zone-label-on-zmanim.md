@@ -1,11 +1,11 @@
 ---
 id: TASK-5.4
 title: City selection only from the sidebar; zone label on zmanim
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T18:54:00Z'
+updated_date: '2026-10-29T19:25:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -22,7 +22,7 @@ TASK-5 case table row 9 and the owner's Settings decisions. Adding a city in Set
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Adding a city does not change the selected city; removing the selected city still falls back to Current location
+- [x] #1 Adding a city does not change the selected city; removing the selected city still falls back to Current location
 - [ ] #2 The Settings Location row no longer shows the current city as secondary text
 - [ ] #3 Zone label appears only when zones differ, in English and Hebrew; tests and emulator screenshots recorded
 <!-- AC:END -->
@@ -35,3 +35,16 @@ TASK-5 case table row 9 and the owner's Settings decisions. Adding a city in Set
 - Zone label: displayCityZoneLabel(displayCity, deviceZone): null when zones are equal, else "<city> time" (EN) / "שעון <city>" (HE). Shown on the Zmanim screen header and the day panel times section. ZmanimState/DayDetailState carry it; VMs compute it from DeviceContext.now().zone.
 - Tests: add-city doesn't select; remove selected falls back; label null/non-null; VM sets the label; emulator screenshots EN/HE.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (5.4):
+- PreferencesRepository.addSavedLocation no longer sets active_location_id (CityPicker add = save only); removeSavedLocation fallback unchanged. Selection stays in the drawer (MainActivity) only.
+- Settings main Location row: secondary current-city text removed (and the now unused SettingsState.locationName); other wording unchanged.
+- ui/DisplayCityClock.kt otherClockCityName(displayCity, deviceZone): city name when the zone rules differ (aliases equal), else null. ZmanimState/DayDetailState.otherClockCityName set by ZmanimViewModel/DayDetailViewModel (DayDetailViewModel now takes DeviceContext). CityClockLabel ("%1$s time" / "שעון %1$s") shown at the top of the Zmanim list and above the day panel's quick times.
+- PROJECT_SPEC.md selected-city bullet updated.
+Tests: ui/zmanim/DisplayCityZmanimTest (adding doesn't select; removing the selected city falls back; label only when clocks differ incl. alias; Zmanim on the device date (NY Thursday 23:30) with Jerusalem's zmanim and label; no label for the current location; EN + HE strings). DayDetailViewModel test constructors pass a DeviceContext (mechanical).
+Limitation: the label is computed when the day/zmanim load; a device zone change while the same day stays open updates it on the next load.
+Verification: assembleDebug + testDebugUnitTest (697, 0 failures) + lintDebug. Emulator screenshots: see TASK-5 notes.
+<!-- SECTION:NOTES:END -->

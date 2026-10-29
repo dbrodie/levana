@@ -176,6 +176,7 @@ class VerifyProviderMainThreadTest {
             CalendarRepository(), ZmanimRepository(), prefs,
             PersonalEventRepository(FakeDao()),
             ContactBirthdayRepository(app()), SystemCalendarRepository(app()),
+            ninja.doskey.app.levana.device.DeviceContext(prefs.preferences),
             object : ninja.doskey.app.levana.data.EventDataChanges {
                 override val changes = kotlinx.coroutines.flow.emptyFlow<Unit>()
                 override fun recheckPermissions() = Unit

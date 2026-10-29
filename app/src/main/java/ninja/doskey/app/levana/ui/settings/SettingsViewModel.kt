@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
-import ninja.doskey.app.levana.domain.model.displayCity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,7 +107,6 @@ class SettingsViewModel(
             preferencesRepository.preferences.collect { prefs ->
                 val device = deviceContext.now(prefs)
                 _state.value = _state.value.copy(
-                    locationName = prefs.displayCity.name,
                     currentLocationName = prefs.currentLocation.name,
                     savedLocations = prefs.savedLocations,
                     activeLocationId = prefs.activeLocationId,

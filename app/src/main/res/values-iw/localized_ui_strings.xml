@@ -184,4 +184,5 @@
     <string name="settings_israel_mode_auto_detected">זיהוי אוטומטי (%1$s)</string>
     <string name="settings_israel_mode_israel">ארץ ישראל</string>
     <string name="settings_israel_mode_diaspora">חוץ לארץ</string>
+    <string name="zmanim_city_clock">שעון %1$s</string>
 </resources>

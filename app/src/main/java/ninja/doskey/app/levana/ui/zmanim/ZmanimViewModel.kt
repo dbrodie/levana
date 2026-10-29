@@ -6,6 +6,7 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.displayCity
+import ninja.doskey.app.levana.ui.otherClockCityName
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +48,7 @@ class ZmanimViewModel(
                 date = date,
                 zmanim = zmanim,
                 locationName = location.name,
+                otherClockCityName = otherClockCityName(location, deviceContext.now(prefs).zone),
                 isLoading = false
             )
         }

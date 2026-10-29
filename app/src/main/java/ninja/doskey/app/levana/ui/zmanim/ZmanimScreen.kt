@@ -35,6 +35,7 @@ import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import ninja.doskey.app.levana.domain.model.displayName
+import ninja.doskey.app.levana.ui.daydetail.CityClockLabel
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,6 +61,7 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        state.otherClockCityName?.let { item(key = "clock") { CityClockLabel(it) } }
         ZmanCategory.entries.forEach { category ->
             val zmanim = grouped[category].orEmpty()
             if (zmanim.isNotEmpty()) item(key = category.name) { ZmanGroup(category, zmanim, formatter) }

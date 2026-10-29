@@ -345,9 +345,6 @@ fun SettingsContent(
         SettingsGroup(stringResource(R.string.settings_group_calendar)) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.settings_location_label)) },
-            supportingContent = {
-                if (state.locationName.isNotEmpty()) Text(state.locationName)
-            },
             leadingContent = {
                 Icon(Icons.Outlined.LocationOn, contentDescription = null)
             },

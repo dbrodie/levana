@@ -191,12 +191,11 @@ class PreferencesRepository(
             runCatching { json.decodeFromString<List<SavedLocation>>(it) }.getOrDefault(emptyList())
         } ?: emptyList()
 
-    /** Saves [location] and makes it the active location. */
+    /** Saves [location]. It is not selected: the city is chosen only in the sidebar. */
     suspend fun addSavedLocation(location: Location) {
         val newEntry = SavedLocation(id = UUID.randomUUID().toString(), location = location)
         context.dataStore.edit { prefs ->
             prefs[Keys.SAVED_LOCATIONS] = json.encodeToString(decodeSavedLocations(prefs) + newEntry)
-            prefs[Keys.ACTIVE_LOCATION_ID] = newEntry.id
         }
     }
 

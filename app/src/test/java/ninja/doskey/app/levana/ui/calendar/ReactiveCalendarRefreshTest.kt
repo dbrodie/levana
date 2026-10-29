@@ -120,7 +120,8 @@ class ReactiveCalendarRefreshTest {
         val vm = create {
             DayDetailViewModel(
                 CalendarRepository(), ZmanimRepository(), preferences, events,
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), changes
+                ContactBirthdayRepository(app), SystemCalendarRepository(app),
+                ninja.doskey.app.levana.device.DeviceContext(preferences.preferences), changes
             )
         }
         vm.onIntent(DayDetailIntent.LoadDay(date))

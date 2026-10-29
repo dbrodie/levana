@@ -20,7 +20,7 @@ This document describes the current product and its core requirements. Planned w
 The device decides everything; the selected city is a display lens only.
 
 - **Device:** the device clock, the device time zone and the device position (the current location, or the time zone's default city without location permission). It decides today's date everywhere (calendar highlight, theme, launcher icon, quick tile), every date calculation, when each notification fires and the times its text shows, and Israel/Diaspora detection.
-- **Selected city:** chosen in the sidebar. It changes only the zmanim on the Zmanim screen and the day panel's times, which use the device's date and are shown in the city's own clock. It never affects notifications, holiday dates or Israel/Diaspora.
+- **Selected city:** chosen only in the sidebar; adding a city in Settings does not select it. It changes only the zmanim on the Zmanim screen and the day panel's times, which use the device's date and are shown in the city's own clock, labelled (e.g. "Jerusalem time") when its time zone differs from the device's. It never affects notifications, holiday dates or Israel/Diaspora.
 - **Developer date override (testing only):** an "as if" device clock moved by whole days. The time of day and midnight stay real; everything that reads the device, notifications and their alarms included, behaves as if it were that date.
 
 ## Locations

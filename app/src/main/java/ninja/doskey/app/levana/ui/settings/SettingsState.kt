@@ -7,7 +7,6 @@ import java.time.LocalDate
 
 
 data class SettingsState(
-    val locationName: String = "",
     val currentLocationName: String = "",
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,

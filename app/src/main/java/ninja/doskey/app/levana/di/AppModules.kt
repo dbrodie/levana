@@ -82,7 +82,7 @@ val dataModule = module {
 
 val viewModelModule = module {
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), androidContext()) }
