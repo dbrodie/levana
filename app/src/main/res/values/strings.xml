@@ -62,4 +62,8 @@
     <string name="zmanim_category_afternoon">Afternoon</string>
     <string name="zmanim_category_evening">Evening</string>
     <string name="zmanim_category_night">Night</string>
+    <string name="widget_today_name">Levana · Today</string>
+    <string name="widget_today_description">Hebrew date, next zman and Shabbat times</string>
+    <string name="widget_next_zman">Next: %1$s</string>
+    <string name="widget_next_zman_none">Next zman</string>
 </resources>

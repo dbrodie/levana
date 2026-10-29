@@ -62,4 +62,8 @@
     <string name="zmanim_category_afternoon">צהריים</string>
     <string name="zmanim_category_evening">ערב</string>
     <string name="zmanim_category_night">לילה</string>
+    <string name="widget_today_name">לבנה · היום</string>
+    <string name="widget_today_description">תאריך עברי, הזמן הבא וזמני שבת</string>
+    <string name="widget_next_zman">הבא: %1$s</string>
+    <string name="widget_next_zman_none">הזמן הבא</string>
 </resources>

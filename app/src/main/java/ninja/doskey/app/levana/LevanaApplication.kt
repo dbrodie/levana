@@ -10,6 +10,8 @@ import ninja.doskey.app.levana.notifications.DailyNotificationWorker
 import ninja.doskey.app.levana.notifications.NotificationChannels
 import ninja.doskey.app.levana.notifications.NotificationRescheduling
 import ninja.doskey.app.levana.update.UpdateCheckWorker
+import ninja.doskey.app.levana.widget.WidgetRefreshing
+import ninja.doskey.app.levana.widget.WidgetUpdater
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -35,6 +37,7 @@ class LevanaApplication : Application() {
         DailyNotificationWorker.enqueueDaily(this)
         NotificationRescheduling.start()
         UpdateCheckWorker.enqueueDaily(this)
+        WidgetRefreshing.start(this)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -42,5 +45,6 @@ class LevanaApplication : Application() {
         // Changing Settings → App language (or the device language) arrives here; rename
         // the notification channels so system settings show them in the new language
         NotificationChannels.createAll(this)
+        WidgetUpdater.requestUpdate(this)
     }
 }

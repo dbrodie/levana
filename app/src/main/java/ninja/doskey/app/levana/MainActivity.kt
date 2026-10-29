@@ -111,8 +111,7 @@ import ninja.doskey.app.levana.ui.settings.DeveloperSettingsScreen
 import ninja.doskey.app.levana.ui.settings.HalachicTimesSettingsScreen
 import ninja.doskey.app.levana.ui.settings.LocationsSettingsScreen
 import ninja.doskey.app.levana.ui.settings.SettingsScreen
-import ninja.doskey.app.levana.ui.theme.HolidayTheme
-import ninja.doskey.app.levana.ui.theme.HolidayThemeResolver
+import ninja.doskey.app.levana.ui.theme.activeHolidayTheme
 import ninja.doskey.app.levana.ui.theme.LevanaTheme
 import ninja.doskey.app.levana.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
@@ -122,6 +121,11 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        /** With [NotificationPoster.EXTRA_DATE_EPOCH_DAY], opens that day's Zmanim screen. */
+        const val EXTRA_OPEN_ZMANIM = "EXTRA_OPEN_ZMANIM"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -129,24 +133,14 @@ class MainActivity : ComponentActivity() {
             NotificationPoster.EXTRA_DATE_EPOCH_DAY,
             0L
         ) ?: 0L
+        val openZmanim = intent?.getBooleanExtra(EXTRA_OPEN_ZMANIM, false) ?: false
         setContent {
             val preferencesRepository: PreferencesRepository = koinInject()
             val prefs by preferencesRepository.preferences.collectAsState(
                 initial = null
             )
-            val forceThemeName = prefs?.devForceHolidayTheme
-            val forceTheme = forceThemeName?.let {
-                try {
-                    HolidayTheme.valueOf(it)
-                } catch (_: IllegalArgumentException) {
-                    null
-                }
-            }
-            val holidayTheme = forceTheme ?: if (prefs?.dynamicHolidayTheme == true) {
-                val themeDate = prefs?.devDateOverride ?: LocalDate.now()
-                HolidayThemeResolver.resolve(themeDate)
-            } else {
-                null
+            val holidayTheme = prefs?.let {
+                activeHolidayTheme(it, it.devDateOverride ?: LocalDate.now())
             }
             val configuration = LocalConfiguration.current
             val layoutDirection = if (configuration.layoutDirection == android.util.LayoutDirection.RTL) {
@@ -156,7 +150,7 @@ class MainActivity : ComponentActivity() {
             }
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 LevanaTheme(holidayTheme = holidayTheme) {
-                    LevanaApp(deepLinkEpochDay = deepLinkEpochDay)
+                    LevanaApp(deepLinkEpochDay = deepLinkEpochDay, openZmanim = openZmanim)
                 }
             }
         }
@@ -171,7 +165,7 @@ private data class DrawerNavItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LevanaApp(deepLinkEpochDay: Long = 0L) {
+fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val canGoBack = backStackEntry?.destination?.route != null &&
@@ -227,6 +221,8 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
             }
+            // The home-screen widget's zmanim rows open that day's Zmanim screen over it
+            if (openZmanim) navController.navigate(ZmanimRoute(deepLinkEpochDay))
         }
     }
 
