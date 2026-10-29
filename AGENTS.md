@@ -40,7 +40,7 @@ set -a && . ./.env && set +a && ./gradlew :app:assembleDebug :app:testDebugUnitT
 
 ## Task Tracking
 
-Use Backlog.md (`backlog`) for all task tracking. Tasks live in `backlog/` and are committed with the work. Install the CLI with `npm install -g backlog.md`, or use `npx backlog.md`.
+Use Backlog.md (`backlog`) for all task tracking. Tasks live in `backlog/` and are committed with the work.
 
 - Run `backlog instructions overview` for usage guidance; this file governs the project workflow.
 - Find work with `backlog task list --plain` and read it with `backlog task <id> --plain`.
