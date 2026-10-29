@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import ninja.doskey.app.levana.widget.WidgetUpdater
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.icon.DateRollover
 import ninja.doskey.app.levana.icon.DynamicIconManager
 import ninja.doskey.app.levana.quicktile.requestHebrewDateTileRefresh
 import kotlinx.coroutines.CoroutineScope
@@ -37,8 +38,10 @@ class TimeChangeReceiver : BroadcastReceiver(), KoinComponent {
                 Log.e(TAG, "Failed to rebuild reminder alarms after ${intent.action}", e)
             }
             try {
-                // A new zone or clock can move the device date
-                DynamicIconManager.update(context, deviceContext.today())
+                // A new zone or clock can move the device date and its next midnight
+                val device = deviceContext.now()
+                DateRollover.schedule(context, device)
+                DynamicIconManager.update(context, device.today)
                 requestHebrewDateTileRefresh(context)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update the launcher icon after ${intent.action}", e)

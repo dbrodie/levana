@@ -14,21 +14,22 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * Updates the launcher icon, home-screen widgets and the quick tile when the system date rolls
- * over to a new day.
- * Registered in the manifest for ACTION_DATE_CHANGED so it fires at midnight
- * even when the app is not running.
+ * Updates the launcher icon, home-screen widgets and the quick tile when the device date rolls
+ * over to a new day, then schedules the next roll-over. Runs on ACTION_DATE_CHANGED while the
+ * app is running and on the [DateRollover] alarm when it is not.
  */
 class DateChangeReceiver : BroadcastReceiver(), KoinComponent {
 
     private val deviceContext: DeviceContext by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_DATE_CHANGED) return
+        if (intent.action != Intent.ACTION_DATE_CHANGED && intent.action != DateRollover.ACTION) return
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                DynamicIconManager.update(context, deviceContext.today())
+                val device = deviceContext.now()
+                DateRollover.schedule(context, device)
+                DynamicIconManager.update(context, device.today)
                 WidgetUpdater.requestUpdate(context)
                 requestHebrewDateTileRefresh(context)
             } catch (e: Exception) {

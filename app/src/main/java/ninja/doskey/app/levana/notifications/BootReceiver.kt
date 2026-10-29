@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.icon.DateRollover
 import ninja.doskey.app.levana.icon.DynamicIconManager
 import ninja.doskey.app.levana.update.UpdateCheckWorker
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +26,9 @@ class BootReceiver : BroadcastReceiver(), KoinComponent {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 // The device date, developer override included
-                DynamicIconManager.update(context, deviceContext.today())
+                val device = deviceContext.now()
+                DateRollover.schedule(context, device)
+                DynamicIconManager.update(context, device.today)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update the launcher icon", e)
             } finally {

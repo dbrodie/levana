@@ -41,6 +41,9 @@ data class DeviceNow(
     val dateTime: ZonedDateTime get() = instant.atZone(zone)
     val today: LocalDate get() = dateTime.toLocalDate()
 
+    /** The start of the device's next day, on the device clock. */
+    val nextMidnight: Instant get() = today.plusDays(1).atStartOfDay(zone).toInstant()
+
     /** A clock fixed at this moment, for APIs that take a [Clock]. */
     val clock: Clock get() = Clock.fixed(instant, zone)
 
@@ -116,8 +119,7 @@ class DeviceContext(
     companion object {
         /** Time from [now] to just after the next device midnight, never under a second. */
         internal fun untilNextDay(now: DeviceNow): Duration {
-            val midnight = now.today.plusDays(1).atStartOfDay(now.zone).toInstant()
-            val wait = java.time.Duration.between(now.instant, midnight).toMillis() + 1_000
+            val wait = java.time.Duration.between(now.instant, now.nextMidnight).toMillis() + 1_000
             return wait.coerceAtLeast(1_000).milliseconds
         }
 

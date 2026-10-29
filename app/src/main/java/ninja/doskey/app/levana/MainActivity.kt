@@ -87,6 +87,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.icon.DateRollover
 import ninja.doskey.app.levana.icon.DynamicIconManager
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.displayCity
@@ -221,6 +222,8 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             deviceContext.todayUpdates.collect { today ->
                 withContext(Dispatchers.IO) { DynamicIconManager.update(context, today) }
+                // Keeps the icon turning over at midnight once the app is in the background
+                DateRollover.schedule(context, deviceContext.now())
             }
         }
     }

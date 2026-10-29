@@ -30,22 +30,33 @@ import ninja.doskey.app.levana.ui.settings.SettingsViewModel
 import ninja.doskey.app.levana.ui.zmanim.ZmanimViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+
+private val SYSTEM_TIME_CHANGES = named("systemTimeChanges")
 
 val dataModule = module {
     single { LevanaDatabase.build(get()) }
     single { get<LevanaDatabase>().personalEventDao() }
     single { CalendarRepository() }
     single { CityRepository(get()) }
-    single { PreferencesRepository(get(), get()) }
+    // One runtime receiver for the date, clock and zone signals, shared by every collector
+    single<Flow<Unit>>(SYSTEM_TIME_CHANGES) {
+        systemTimeChanges(androidContext())
+            .shareIn(CoroutineScope(SupervisorJob() + Dispatchers.Default), SharingStarted.WhileSubscribed())
+    }
+    single { PreferencesRepository(get(), get(), get(SYSTEM_TIME_CHANGES)) }
     // The device's now/today/zone/position; the only clock the app reads
     single {
         DeviceContext(
             get<PreferencesRepository>().preferences,
-            systemTimeChanges = systemTimeChanges(androidContext())
+            systemTimeChanges = get(SYSTEM_TIME_CHANGES)
         )
     }
     single { LocationService(get()) }

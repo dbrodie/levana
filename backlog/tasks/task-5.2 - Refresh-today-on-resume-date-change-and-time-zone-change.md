@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:40:00Z'
+updated_date: '2026-10-29T19:46:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -50,4 +50,7 @@ Verification: assembleDebug + testDebugUnitTest (685, 0 failures) + lintDebug (n
 Emulator-found fix: the zone-fallback device position was computed inside PreferencesRepository.preferences' map, so long-lived collectors (drawer, view models) kept the old zone's city after a time-zone change (one-shot reads such as the alarm planner were already fresh). PreferencesRepository now combines DataStore with systemTimeChanges, so the fallback position, Israel auto-detect and alarm settings re-evaluate on DATE/TIME/TIMEZONE changes. Verified on the emulator (drawer current location Tokyo -> New York live). No unit test: the fallback needs a store without a GPS fix, and the JVM-wide DataStore singleton holds fixes saved by other tests.
 
 Widget refresh (after rebase): WidgetUpdater.requestUpdate still runs on DATE_CHANGED (DateChangeReceiver) and TIME_SET/TIMEZONE_CHANGED (TimeChangeReceiver); each recomputes the snapshot from DeviceContext. PreferencesRepository now also re-emits on those signals, which the widget session collects. The midnight/next-zman refresh alarm is scheduled on the real clock.
+
+Emulator-found gap (pre-existing): Android skips the manifest DateChangeReceiver for ACTION_DATE_CHANGED ('Background execution not allowed', dumpsys broadcasts history), so the launcher icon never turned over at midnight while the app was not running. Added icon/DateRollover: an explicit non-wakeup RTC setWindow alarm (10 min window, like the widget refresh) at the device's next midnight (DeviceNow.nextMidnight, mapped through toSystemInstant) to DateChangeReceiver, which refreshes icon/widgets/tile and reschedules. Scheduled from MainActivity's todayUpdates collector, TimeChangeReceiver, BootReceiver and the receiver itself. Test: icon/DateRolloverTest (next midnight; replaces; override keeps the real midnight).
+Also: the system time signal is now one shared runtime receiver (Koin single, shareIn WhileSubscribed) instead of one per preferences collector (~10 seen in the broadcast history).
 <!-- SECTION:NOTES:END -->
