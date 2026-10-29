@@ -1177,7 +1177,7 @@ internal fun NotificationsSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeveloperSettingsSection(
-    devDateOverride: LocalDate?,
+    overriddenDate: LocalDate?,
     devForceHolidayTheme: String?,
     onDateOverrideChange: (LocalDate?) -> Unit,
     onForceHolidayThemeChange: (String?) -> Unit
@@ -1190,7 +1190,7 @@ private fun DeveloperSettingsSection(
         )
         Spacer(modifier = Modifier.height(4.dp))
         DateOverridePicker(
-            currentDate = devDateOverride,
+            currentDate = overriddenDate,
             onDateChange = onDateOverrideChange
         )
         Spacer(modifier = Modifier.height(12.dp))

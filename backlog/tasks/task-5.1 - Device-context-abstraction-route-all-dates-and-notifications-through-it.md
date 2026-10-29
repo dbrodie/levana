@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:14:00Z'
+updated_date: '2026-10-29T19:40:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -77,4 +77,10 @@ Changed test expectations (old selected-city behaviour -> device rule):
 - Mechanical: TodayProvider fakes -> deviceContextOn(date); planReminderAlarms(today, now, zone, position, ...) test overload (PlanReminderAlarmsAt.kt) requires today == device date; CalendarViewModel tests pass a DeviceContext.
 New tests: device/DeviceContextTest (system clock, zone change, midnight, as-if shift incl. DST, off, devDayShiftFor, migration); notifications/DeviceVsDisplayCityTest (NY device vs Jerusalem city: rows 1-5, 11, 12, DST day, midnight boundary).
 Verification: assembleDebug + testDebugUnitTest (675 tests, 0 failures) + lintDebug (0 errors; no warnings in changed files).
+
+Rebased onto origin/master 8c05211 (TASK-19, TASK-9.1). Conflicts resolved in MainActivity (master's activeHolidayTheme now gets the device date), LocationService (master's off-main-thread geocoding kept; fix zone from DeviceContext.realZone), DateChangeReceiver/TimeChangeReceiver (WidgetUpdater.requestUpdate kept alongside icon/tile refresh).
+Today widget routed through the device context: TodayWidget.snapshot = snapshots.build(prefs, deviceContext.now(prefs)) (no inline override/LocalDate.now/LocalTime.now/Instant.now); TodayWidgetSnapshots.build(prefs, device: DeviceNow) uses the device date/instant/zone and returns refreshAt on the real clock (device.toSystemInstant), so the refresh alarm is right with the override on. WidgetSettings keys on devDayShift.
+OPEN QUESTION (owner, via coordinator): widget next-zman and Shabbat rows - selected city or device position? Left unchanged (selected city) behind the single seam UserPreferences.widgetTimesLocation() in widget/TodayWidgetSnapshot.kt, used by nextZman, shabbatTimes, locationName and WidgetSettings.
+Widget tests: build call sites updated; new cases for the device date in New York at 23:30, override shift with a real-clock refresh, and the seam.
+Grep after rebase (main): only device/DeviceContext.kt.
 <!-- SECTION:NOTES:END -->

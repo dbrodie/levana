@@ -6,7 +6,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.device.DeviceNow
 import ninja.doskey.app.levana.domain.model.Location
+import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -124,10 +126,49 @@ class TodayWidgetSnapshotsTest {
     fun `refresh is at the next zman, or midnight when none is left today`() {
         val today = LocalDate.of(2026, 10, 29)
         val zone = ZoneId.of("Asia/Jerusalem")
-        val noon = snapshots.build(jerusalem, today, at(today, "12:00", jerusalem), zone)
+        val noon = snapshots.build(jerusalem, device(at(today, "12:00", jerusalem), zone, jerusalem))
         assertEquals(noon.nextZman!!.at.toInstant(), noon.refreshAt)
 
-        val late = snapshots.build(jerusalem, today, at(today, "23:00", jerusalem), zone)
+        val late = snapshots.build(jerusalem, device(at(today, "23:00", jerusalem), zone, jerusalem))
         assertEquals(today.plusDays(1).atStartOfDay(zone).toInstant(), late.refreshAt)
+    }
+
+    // --- Device rule (TASK-5) ---
+
+    private fun device(now: Instant, zone: ZoneId, prefs: UserPreferences, shift: Long = 0) =
+        DeviceNow(now, zone, prefs.currentLocation, shift)
+
+    @Test
+    fun `the date is the device's, in the device zone`() {
+        // 23:30 Thursday in New York is Friday in Jerusalem; the widget shows Thursday
+        val ny = ZoneId.of("America/New_York")
+        val thursday = LocalDate.of(2026, 10, 29)
+        val now = thursday.atTime(23, 30).atZone(ny).toInstant()
+        val snapshot = snapshots.build(newYork, device(now, ny, newYork))
+        assertEquals(thursday, snapshot.today)
+        assertEquals(thursday.plusDays(1).atStartOfDay(ny).toInstant(), snapshot.refreshAt)
+    }
+
+    @Test
+    fun `with the developer override the date shifts and the refresh is on the real clock`() {
+        val zone = ZoneId.of("Asia/Jerusalem")
+        val real = LocalDate.of(2026, 10, 29)
+        // The override moves the device clock three days ahead, still 23:00 there
+        val asIf = at(real.plusDays(3), "23:00", jerusalem)
+        val snapshot = snapshots.build(jerusalem, device(asIf, zone, jerusalem, shift = 3))
+        assertEquals(real.plusDays(3), snapshot.today)
+        // As-if midnight is the real midnight three days earlier
+        assertEquals(real.plusDays(1).atStartOfDay(zone).toInstant(), snapshot.refreshAt)
+    }
+
+    @Test
+    fun `zman rows follow the one seam, which still uses the selected city`() {
+        val nySelected = jerusalem.copy(
+            savedLocations = listOf(SavedLocation("ny", newYork.currentLocation)),
+            activeLocationId = "ny",
+        )
+        assertEquals(newYork.currentLocation, nySelected.widgetTimesLocation())
+        val today = LocalDate.of(2026, 10, 29)
+        assertEquals("New York", snapshots.build(nySelected, device(at(today, "12:00", jerusalem), ZoneId.of("Asia/Jerusalem"), nySelected)).locationName)
     }
 }

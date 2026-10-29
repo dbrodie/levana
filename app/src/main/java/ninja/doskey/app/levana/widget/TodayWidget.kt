@@ -44,14 +44,12 @@ import androidx.glance.text.TextStyle
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.zmanDisplayName
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.theme.levanaColorScheme
-import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -68,6 +66,7 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
 
     private val preferencesRepository: PreferencesRepository by inject()
     private val snapshots: TodayWidgetSnapshots by inject()
+    private val deviceContext: DeviceContext by inject()
 
     override val sizeMode = SizeMode.Responsive(setOf(COMPACT, FULL))
 
@@ -92,14 +91,9 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
         }
     }
 
-    private fun snapshot(prefs: UserPreferences): TodayWidgetSnapshot {
-        val override = prefs.devDateOverride
-        val today = override ?: LocalDate.now()
-        // With a Developer Settings date, "now" is that date at the current time of day
-        val now = override?.atTime(LocalTime.now())?.atZone(ZoneId.systemDefault())?.toInstant()
-            ?: Instant.now()
-        return snapshots.build(prefs, today, now)
-    }
+    // The device's date and moment, developer override included
+    private fun snapshot(prefs: UserPreferences): TodayWidgetSnapshot =
+        snapshots.build(prefs, deviceContext.now(prefs))
 
     companion object {
         val COMPACT = DpSize(110.dp, 40.dp)
