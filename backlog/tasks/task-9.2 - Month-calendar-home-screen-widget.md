@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T20:23:00Z'
+updated_date: '2026-10-29T20:45:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -24,8 +24,8 @@ Second subtask of TASK-9; see TASK-9 for product decisions and shared design. Us
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Month widget (about 4x4, resizable) shows the current Hebrew month with Gregorian secondary numbers, holiday markers and today highlighted, using the shared color scheme
-- [ ] #2 Refreshes on date, locale, time-zone, and relevant preference changes
-- [ ] #3 Day cell tap opens the calendar with that day selected; header opens month calendar on today
+- [x] #2 Refreshes on date, locale, time-zone, and relevant preference changes
+- [x] #3 Day cell tap opens the calendar with that day selected; header opens month calendar on today
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -66,3 +66,51 @@ Second subtask of TASK-9; see TASK-9 for product decisions and shared design. Us
    - android-debug on a dedicated emulator with the widget on a real home screen: en/he, light/dark, a forced holiday theme, resize limits, header and day-cell taps, a date change (dev override) and a time-zone change.
    - Evidence goes outside the worktree.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Verification (tested commit dd17d89)
+
+**Build/test/lint**: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL; 736 tests, 0 failures/errors. No lint issues in the new code. The `CalendarScreen` ModifierParameter warning is pre-existing (optional callbacks come before `modifier`).
+
+**New unit tests** (`widget/MonthWidgetSnapshotsTest`, 13):
+- Month of today (18 Cheshvan 5787). Tishrei 5787 starts on Shabbat → 6 weeks, 6 leading and 6 trailing blanks.
+- Every column is one weekday (Sunday first), and the grid holds exactly the month's days. A Sunday-start month (Nov 2026) has no leading blanks; an empty list gives no weeks.
+- Leap 5787: Adar I has 30 days with Purim Katan; Adar II has 29 days with Purim. Common 5786: one Adar with Purim.
+- Today appears once; today follows the device zone across midnight (NY vs Jerusalem).
+- Israel vs Diaspora: 22 Nisan is Yom Tov only in the Diaspora; 23 Tishrei is Simchat Torah only in the Diaspora. Modern Israeli holidays follow the setting.
+- The developer override's fixed date picks the month, today and the holiday theme (Purim), and the refresh is at the next *real* midnight. The theme is off when `dynamicHolidayTheme` is false.
+
+**Emulator** (a dedicated read-only `Levana_Agent_Template_API_36_1`, emulator-5600, Pixel launcher; evidence is UI XML dumps):
+- **Picker**: 'Levana · Month', 4 × 4, 'Hebrew month calendar with holidays'. Added to a real home screen.
+- **4×4, English, light**: header 'חשון 5787' / 'Oct 12, 2026 – Nov 10, 2026'. Weekday row א׳…ש׳, Sunday first. 1 Cheshvan is in the Monday column (Oct 12). Each cell shows the Hebrew day plus the Gregorian day (א׳/12 … ל׳/Nov 10).
+- **Day-cell tap** (ט״ז, Oct 27): opens the calendar. The selection was checked through Add event, which pre-filled 16 Cheshvan 5787. uiautomator doesn't expose Compose's `selected`.
+- **Header tap**: opens the calendar, and Add event pre-fills 18 Cheshvan (today).
+- **Hebrew app language** (`cmd locale set-app-locales … he`): the widget redrew as 'חשון תשפ״ז', '12 באוק׳ 2026 – 10 בנוב׳ 2026', Hebrew cell descriptions, and the row mirrored (Shabbat leftmost, Sunday rightmost). Back to English, it is unmirrored again.
+- **Dark mode** (`cmd uimode night yes`): rerendered with no errors.
+- **Forced holiday theme**: Purim was set in Developer settings while the widget was live, with no errors.
+- **Date change** (developer override 22 Nisan 5786 = Apr 9 2026): the widget moved to 'ניסן 5786', 'Mar 19, 2026 – Apr 17, 2026'.
+  - With the device in Asia/Jerusalem (Israel by auto): 16 Nisan is Chol HaMoed Pesach and 22 Nisan has no holiday.
+  - The cell description reads 'Today, כ״ב ניסן…'.
+  - Clearing the override → 'Today, י״ח חשון…, October 29'.
+- **Time-zone change**:
+  - To America/New_York (override on): Diaspora markers. 16 Nisan and 22 Nisan both 'Pesach'.
+  - Later (override off) to Pacific/Kiritimati: today moved to 19 Cheshvan, Friday Oct 30.
+- **Refresh alarm**: `dumpsys alarm` shows a non-wakeup RTC widget.REFRESH at 2026-10-31 00:00 (+14), the device's next midnight, with a 10-minute window.
+  - With the Today widget also placed, there are two widget.REFRESH alarms with distinct PendingIntent records, one per receiver. The month alarm no longer replaces Today's.
+  - The Today widget still renders after the shared-code refactor.
+- **Resize**: minimum 3×2 cells (~277×210 dp, compact layout with no subtitle or Gregorian numbers). All 30 days lie within the widget bounds. The maximum reached was 4×4, because this home screen is 4 columns wide and icons occupy the rows below.
+- Crash buffer empty; 0 FATAL EXCEPTION.
+
+**Evidence**: /tmp/task9-2-month-widget/month-4x4-kiritimati-en.xml (final 4×4 dump), emulator.log, ui.sh (the dump helper). The other states are quoted above from live dumps.
+
+**Limitations / notes for review**
+- Colors were not inspected visually: the android-debug skill forbids screenshots and XML has no colors. This covers the holiday marker bars, the today primaryContainer background, light/dark, and the forced Purim theme.
+  - Parity is structural: the widget uses `levanaColorScheme` + `activeHolidayTheme` (as in 9.1), and markers use the same `holidayCategoryColor` function as the calendar screen.
+  - **AC #1 is left unchecked until a human eyeball/screenshot check.**
+- Weekday headers are Hebrew in both languages (narrow 'א׳'). This matches the calendar screen's Hebrew grid, which always uses Hebrew day names.
+- Header title uses Hebrew month letters in English too ('חשון 5787'), which is the app's `CalendarHeaderFormatter.hebrewMonthTitle`.
+- Behavior change outside the widget: `EXTRA_DATE_EPOCH_DAY` deep links now select that day on the calendar (`CalendarScreen(initialDate)`, applied once per launch). This covers notifications too; before, they opened on today. The Today widget and quick tile pass today, so they are unchanged.
+- Observation, not this task: with the emulator's GPS in Ukiah and the zone at Kiritimati, the Today widget showed 'Next: Sunrise 10:38 AM' with no weekday. That looks odd for a mismatched position/zone and may be worth a look under TASK-5 rules. The Today widget code is untouched apart from the shared helpers.
+<!-- SECTION:NOTES:END -->
