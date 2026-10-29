@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:19:00Z'
+updated_date: '2026-10-29T19:36:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -46,4 +46,6 @@ Implementation (5.2):
 - TimeChangeReceiver (manifest; TIMEZONE_CHANGED/TIME_SET) now also updates the icon and asks the tile to refresh; DateChangeReceiver refreshes the tile too (requestHebrewDateTileRefresh -> TileService.requestListeningState). The tile already reads DeviceContext in every onStartListening.
 Tests: device/DeviceTodayUpdatesTest (midnight signal, zone change, override on/off, no repeats, midnight delay incl. DST day); ui/calendar/CalendarTodayRefreshTest (opens on device date, midnight advance with fake clock, resume re-read, zone change, override on/off).
 Verification: assembleDebug + testDebugUnitTest (685, 0 failures) + lintDebug (no new issues). Emulator evidence: see TASK-5 notes.
+
+Emulator-found fix: the zone-fallback device position was computed inside PreferencesRepository.preferences' map, so long-lived collectors (drawer, view models) kept the old zone's city after a time-zone change (one-shot reads such as the alarm planner were already fresh). PreferencesRepository now combines DataStore with systemTimeChanges, so the fallback position, Israel auto-detect and alarm settings re-evaluate on DATE/TIME/TIMEZONE changes. Verified on the emulator (drawer current location Tokyo -> New York live). No unit test: the fallback needs a store without a GPS fix, and the JVM-wide DataStore singleton holds fixes saved by other tests.
 <!-- SECTION:NOTES:END -->

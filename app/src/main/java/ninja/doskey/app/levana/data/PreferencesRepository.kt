@@ -14,6 +14,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.device.resolveIsInIsrael
+import ninja.doskey.app.levana.device.systemTimeChanges
 import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
@@ -26,7 +27,9 @@ import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -39,7 +42,9 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 
 class PreferencesRepository(
     private val context: Context,
-    private val cityRepository: CityRepository
+    private val cityRepository: CityRepository,
+    /** Re-reads the preferences, so the zone's fallback city follows a time-zone change. */
+    systemTimeChanges: Flow<Unit> = systemTimeChanges(context)
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -108,7 +113,10 @@ class PreferencesRepository(
             stringPreferencesKey("last_notified_update_version")
     }
 
-    val preferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
+    val preferences: Flow<UserPreferences> = combine(
+        context.dataStore.data,
+        systemTimeChanges.onStart { emit(Unit) }
+    ) { prefs, _ -> prefs }.map { prefs ->
         val savedLocations = decodeSavedLocations(prefs)
         val currentLocation = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
