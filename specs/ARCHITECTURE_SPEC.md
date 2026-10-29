@@ -14,7 +14,7 @@ Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/
 | Async | Kotlin Coroutines + Flow |
 | Reminders | WorkManager + AlarmManager |
 | Quality | Android Lint and ktlint |
-| Tests | JUnit4, Robolectric, Compose testing APIs and Roborazzi snapshots |
+| Tests | JUnit4, Robolectric, Compose testing APIs and Roborazzi screenshot baselines |
 
 ## Application Structure
 
@@ -46,6 +46,15 @@ Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/
 
 ## Verification
 
-Unit and Robolectric tests cover calendar rules, repositories, provider IO, migrations, ViewModels and reminder planning. Compose tests cover UI behavior and semantics; Roborazzi supplies snapshots. Device checks remain necessary for platform behavior and accessibility.
+Unit and Robolectric tests cover calendar rules, repositories, provider IO, migrations, ViewModels and reminder planning. Compose tests cover UI behavior and semantics. Device checks remain necessary for platform behavior and accessibility.
+
+Roborazzi screenshot baselines cover the app shell and Settings:
+- **Scope:** the drawer and the top bar of each route, Settings with its dialogs and sub-screens, Locations, the city picker and system calendars. Each is captured in light/dark × English/Hebrew (RTL).
+- **Location:** tests in `app/src/test/.../screenshots/`; baselines committed in `app/src/test/screenshots/`.
+- **How the tests run:** each launches the real `MainActivity` under Robolectric (NATIVE graphics, one fixed mdpi phone qualifier) and navigates by UI. They use the production Koin graph with a fixed `DeviceContext` clock, an in-memory database and seeded preferences.
+- **When images change:** a deliberate visual change re-records the affected baselines in the same commit; any other diff is a regression.
+- Record: `./gradlew :app:recordRoborazziDebug --tests '*.screenshots.*'`
+- Verify: `./gradlew :app:verifyRoborazziDebug`
+- Both commands are up-to-date-cached; add `:app:testDebugUnitTest --rerun` to force a fresh run.
 
 Build/test commands and agent workflow live in `AGENTS.md`; feature plans and verification evidence live in Backlog.md.

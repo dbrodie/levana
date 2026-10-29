@@ -118,6 +118,11 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// Screenshot baselines are committed; tests write to the same directory (see ScreenshotTest)
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
