@@ -1,11 +1,11 @@
 ---
 id: TASK-5.2
 title: Refresh today on resume, date change and time-zone change
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:51:00Z'
+updated_date: '2026-10-29T20:19:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -54,3 +54,15 @@ Widget refresh (after rebase): WidgetUpdater.requestUpdate still runs on DATE_CH
 Emulator-found gap (pre-existing): Android skips the manifest DateChangeReceiver for ACTION_DATE_CHANGED ('Background execution not allowed', dumpsys broadcasts history), so the launcher icon never turned over at midnight while the app was not running. Added icon/DateRollover: an explicit non-wakeup RTC setWindow alarm (10 min window, like the widget refresh) at the device's next midnight (DeviceNow.nextMidnight, mapped through toSystemInstant) to DateChangeReceiver, which refreshes icon/widgets/tile and reschedules. Scheduled from MainActivity's todayUpdates collector, TimeChangeReceiver, BootReceiver and the receiver itself. Test: icon/DateRolloverTest (next midnight; replaces; override keeps the real midnight).
 Also: the system time signal is now one shared runtime receiver (Koin single, shareIn WhileSubscribed) instead of one per preferences collector (~10 seen in the broadcast history).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T20:19:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed (incl. owner follow-ups: zone-only Israel auto-detect + nearest-offset fallback city, widget on device position, fixed-date dev override); merged onto master as 6afbf08. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 723 tests, 0 failures/errors. Emulator evidence in /tmp/levana-task5-evidence/ per agent notes.
+
+---
+<!-- COMMENTS:END -->

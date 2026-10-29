@@ -1,11 +1,11 @@
 ---
 id: TASK-5.1
 title: Device context abstraction; route all dates and notifications through it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:40:00Z'
+updated_date: '2026-10-29T20:19:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -84,3 +84,15 @@ OPEN QUESTION (owner, via coordinator): widget next-zman and Shabbat rows - sele
 Widget tests: build call sites updated; new cases for the device date in New York at 23:30, override shift with a real-clock refresh, and the seam.
 Grep after rebase (main): only device/DeviceContext.kt.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T20:19:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed (incl. owner follow-ups: zone-only Israel auto-detect + nearest-offset fallback city, widget on device position, fixed-date dev override); merged onto master as 6afbf08. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 723 tests, 0 failures/errors. Emulator evidence in /tmp/levana-task5-evidence/ per agent notes.
+
+---
+<!-- COMMENTS:END -->

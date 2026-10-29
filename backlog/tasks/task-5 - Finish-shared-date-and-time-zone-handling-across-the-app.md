@@ -1,11 +1,11 @@
 ---
 id: TASK-5
 title: Device context owns dates and notifications; selected city is display-only
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:29Z'
-updated_date: '2026-10-29T20:17:00Z'
+updated_date: '2026-10-29T20:19:00Z'
 labels:
   - curated-import
   - source-specs
@@ -115,6 +115,18 @@ Emulator (fresh read-only session, emulator-5584, location denied; evidence /tmp
 - Widget placed on the Pixel launcher home screen (Levana · Today 4x2), device in Dublin (fallback London), New York selected in the sidebar: '18 Cheshvan, 5787 / Thursday, October 29, 2026 · London', candle lighting Fri 4:19 PM, havdalah Sat 5:26 PM (London's times) (16).
 - Override 26 Cheshvan (Fri 6 Nov) with morning candle reminders: icon Day26; the past as-if 08:00 had no pending alarm and the real-Friday alarm was cancelled. Clock set to 23:59 (Dublin), app backgrounded: after the real midnight the icon stayed Day26, the candle alarm was re-planned for real Fri 30 Oct 08:00, the next roll-over set for 31 Oct; the widget still showed 26 Cheshvan / Friday, November 6 (17) and the app's today stayed 6 Nov (18).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T20:19:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed (incl. owner follow-ups: zone-only Israel auto-detect + nearest-offset fallback city, widget on device position, fixed-date dev override); merged onto master as 6afbf08. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 723 tests, 0 failures/errors. Emulator evidence in /tmp/levana-task5-evidence/ per agent notes.
+
+---
+<!-- COMMENTS:END -->
 
 ## Beads history
 

@@ -1,11 +1,11 @@
 ---
 id: TASK-5.4
 title: City selection only from the sidebar; zone label on zmanim
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T19:51:00Z'
+updated_date: '2026-10-29T20:19:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -48,3 +48,15 @@ Tests: ui/zmanim/DisplayCityZmanimTest (adding doesn't select; removing the sele
 Limitation: the label is computed when the day/zmanim load; a device zone change while the same day stays open updates it on the next load.
 Verification: assembleDebug + testDebugUnitTest (697, 0 failures) + lintDebug. Emulator screenshots: see TASK-5 notes.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T20:19:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed (incl. owner follow-ups: zone-only Israel auto-detect + nearest-offset fallback city, widget on device position, fixed-date dev override); merged onto master as 6afbf08. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 723 tests, 0 failures/errors. Emulator evidence in /tmp/levana-task5-evidence/ per agent notes.
+
+---
+<!-- COMMENTS:END -->
