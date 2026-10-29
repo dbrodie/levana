@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T18:47:00Z'
+updated_date: '2026-10-29T19:07:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-9
@@ -27,7 +27,7 @@ First subtask of TASK-9; see TASK-9 for product decisions and shared technical d
 - [x] #3 Next zman comes from the user's selected zmanim and rolls to tomorrow's first after the last one passes
 - [x] #4 Candle lighting and havdalah of the current/upcoming Shabbat-Yom Tov sequence are both shown and stay through the civil day of havdalah, consecutive days handled like reminders
 - [x] #5 Widget refreshes on date change, time/time-zone change, locale change, preference/location change, and at the next zman instant / end of Shabbat window
-- [ ] #6 Unit tests cover snapshot provider cases; emulator verification in English/Hebrew, light/dark, a forced holiday theme, and min/max sizes
+- [x] #6 Unit tests cover snapshot provider cases; emulator verification in English/Hebrew, light/dark, a forced holiday theme, and min/max sizes
 - [x] #7 Split taps: date area opens month calendar on today; zman/candle rows open the Zmanim screen for today
 - [x] #8 Uncomputable zman, candle lighting or havdalah shows —; dates always render
 <!-- AC:END -->
@@ -108,4 +108,15 @@ First subtask of TASK-9; see TASK-9 for product decisions and shared technical d
 - Glance 1.1.1 was chosen for compatibility with the current Compose BOM 2024.12; 1.2.0 exists.
 
 AC #6 is left unchecked: the visual color check (light/dark and forced holiday theme on the widget) still needs a human screenshot or eyeball review. Everything else in #6 was done.
+
+## Visual check and layout fixes (tested commit 86e42fe)
+Screenshots were taken at the user's request and kept outside the worktree in /tmp/task9-widget-shots/:
+- 1–4: 4x2 in English/Hebrew, light/dark.
+- 5–7: forced Purim theme (light and dark) and Sukkot. The widget date takes the holiday primary color, the same as the app.
+- 8–9: compact before the fix. The English year was cut off ("57…") and the Hebrew location truncated.
+- 10–12: after the fix.
+  - 4x2: rows are packed into a centered block with an 8dp gap and 4dp row padding, instead of weighted rows with a large gap.
+  - 2x1: shows the Hebrew day and month without the year ("18 Cheshvan" / "י״ח חשון"); only the location truncates, and the Gregorian date stays whole.
+- Build/test/lint: BUILD SUCCESSFUL, 669 tests, 0 failures, and no lint issues in the widget code.
+AC #6 is now checked: colors in light/dark and with a forced holiday theme were inspected visually.
 <!-- SECTION:NOTES:END -->
