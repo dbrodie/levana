@@ -1,11 +1,11 @@
 ---
 id: TASK-9.1
 title: Widget foundation and Today home-screen widget
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T19:07:00Z'
+updated_date: '2026-10-29T19:34:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-9
@@ -120,3 +120,15 @@ Screenshots were taken at the user's request and kept outside the worktree in /t
 - Build/test/lint: BUILD SUCCESSFUL, 669 tests, 0 failures, and no lint issues in the widget code.
 AC #6 is now checked: colors in light/dark and with a forced holiday theme were inspected visually.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-29T19:34:00Z
+
+---
+
+Coordinator integration 2026-10-29: reviewed diff and verification notes; merged onto master (with TASK-19) as 182e24d. Combined :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed, 675 tests, 0 failures/errors. No separate emulator run of the combined build: TASK-19 (reverse geocoding) and the widget don't overlap. Follow-up: TASK-5 must route the widget's inline devDateOverride/LocalDate.now()/Instant.now() reads (TodayWidget.snapshot) through its device context.
+
+---
+<!-- COMMENTS:END -->
