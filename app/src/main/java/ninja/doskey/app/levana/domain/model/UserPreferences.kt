@@ -9,6 +9,9 @@ data class UserPreferences(
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
     val candleLightingOffset: Double = 18.0,
+    /** The Israel / Diaspora setting; [isInIsrael] is its result for the device. */
+    val israelMode: IsraelMode = IsraelMode.AUTO,
+    /** Whether Israel's calendar applies, resolved by [ninja.doskey.app.levana.device.resolveIsInIsrael]. */
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val calendarHebrewMode: Boolean = false,

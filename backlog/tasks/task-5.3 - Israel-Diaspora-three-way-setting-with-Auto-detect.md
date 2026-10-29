@@ -1,11 +1,11 @@
 ---
 id: TASK-5.3
 title: Israel/Diaspora three-way setting with Auto-detect
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:47:00Z'
-updated_date: '2026-10-29T18:54:00Z'
+updated_date: '2026-10-29T19:22:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-5
@@ -22,8 +22,8 @@ TASK-5 case table row 6. Replace the 'In Israel' switch with Auto-detect (defaul
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Three-way setting persists; Auto-detect follows the device, not the selected city
-- [ ] #2 Migration of existing manual and automatic users is tested
+- [x] #1 Three-way setting persists; Auto-detect follows the device, not the selected city
+- [x] #2 Migration of existing manual and automatic users is tested
 - [ ] #3 English/Hebrew UI and TalkBack semantics verified
 <!-- AC:END -->
 
@@ -36,3 +36,15 @@ TASK-5 case table row 6. Replace the 'In Israel' switch with Auto-detect (defaul
 - Settings: replace the 'In Israel' switch with a row opening a single-choice dialog (Auto-detect / Israel / Diaspora) matching the existing radio dialogs, with selectableGroup/selectable(role=RadioButton) semantics; English + Hebrew strings. SettingsIntent/ViewModel updated; PreferencesRepository.saveIsraelMode.
 - Tests: migration (manual Israel, manual Diaspora, untouched, already-migrated), resolution (NY device + Jerusalem city -> Diaspora under AUTO), persistence.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (5.3):
+- domain/model/IsraelMode {AUTO, ISRAEL, DIASPORA}; UserPreferences.israelMode + resolved isInIsrael. device/resolveIsInIsrael(mode, devicePosition): AUTO = device position in Asia/Jerusalem; the selected city is never read.
+- PreferencesRepository: key israel_mode, saveIsraelMode (replaces saveIsInIsrael). IsraelModeMigration: is_in_israel_manual=true -> ISRAEL/DIASPORA from is_in_israel; otherwise AUTO (no key); old keys removed.
+- Settings: the 'Israel / Diaspora' switch becomes a row (summary 'Auto-detect (Israel|Diaspora)' or the manual choice, plus the existing description) opening a single-choice dialog (selectableGroup + selectable(role = RadioButton)), same pattern as the App language dialog. Strings EN + HE (settings_israel_mode_*).
+- PROJECT_SPEC.md Calendar bullet updated.
+Tests: data/IsraelModeTest (resolution; NY device + Jerusalem selected = Diaspora under AUTO, device move to Jerusalem = Israel; persistence; manual Israel/Diaspora migration; untouched/automatic users -> AUTO). Tests that set saveIsInIsrael(x) now set the equivalent manual mode (mechanical).
+Verification: assembleDebug + testDebugUnitTest (690, 0 failures) + lintDebug. Emulator/TalkBack: see TASK-5 notes.
+<!-- SECTION:NOTES:END -->

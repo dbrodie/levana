@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import java.time.LocalDate
@@ -10,6 +11,8 @@ data class SettingsState(
     val currentLocationName: String = "",
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
+    val israelMode: IsraelMode = IsraelMode.AUTO,
+    /** What [israelMode] resolves to on this device. */
     val isInIsrael: Boolean = false,
     val showModernIsraeliHolidays: Boolean = true,
     val appLanguage: AppLanguage = AppLanguage.SYSTEM,

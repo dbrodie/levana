@@ -23,6 +23,7 @@ import ninja.doskey.app.levana.device.fixedClock
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.domain.model.HolidayCategory
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.notifications.DailyCategory.FASTS
 import ninja.doskey.app.levana.notifications.DailyCategory.HOLIDAYS
@@ -171,7 +172,7 @@ class DailyNotificationWorkerTest {
             preferences.first().savedLocations.forEach { removeSavedLocation(it.id) }
             updateCurrentLocation(newYork)
             setActiveLocation(null)
-            saveIsInIsrael(false)
+            saveIsraelMode(IsraelMode.DIASPORA)
             saveDevDayShift(0)
             saveNotifyHolidays(false)
             saveHolidayNotifyDaysBefore(1)
@@ -253,7 +254,7 @@ class DailyNotificationWorkerTest {
         assertSame(personal, notification(personalId))
         val fast2 = notification(fastId)
 
-        save { saveIsInIsrael(true) }
+        save { saveIsraelMode(IsraelMode.ISRAEL) }
         awaitCondition("Israel refreshes holidays and fasts") {
             notification(holidayId) !== holiday2 && notification(fastId) !== fast2
         }

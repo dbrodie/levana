@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.device
 
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import java.time.Clock
@@ -52,6 +53,18 @@ data class DeviceNow(
         if (devDayShift == 0L) deviceInstant
         else deviceInstant.atZone(zone).minusDays(devDayShift).toInstant()
 }
+
+/**
+ * Israel/Diaspora for [mode]: [IsraelMode.AUTO] is Israel when the device position is in
+ * Israel's time zone. The selected city is never consulted.
+ */
+fun resolveIsInIsrael(mode: IsraelMode, devicePosition: Location): Boolean = when (mode) {
+    IsraelMode.ISRAEL -> true
+    IsraelMode.DIASPORA -> false
+    IsraelMode.AUTO -> devicePosition.timezoneId == ISRAEL_ZONE_ID
+}
+
+private const val ISRAEL_ZONE_ID = "Asia/Jerusalem"
 
 /**
  * The one source of now, today, the device time zone and the device position. Everything

@@ -10,6 +10,7 @@ import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.device.fixedClock
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -117,7 +118,7 @@ class VerifyReschedulingEndToEndTest {
             saveCandleLightingOffset(18.0)
             updateCurrentLocation(newYork)
             setActiveLocation(null)
-            saveIsInIsrael(false)
+            saveIsraelMode(IsraelMode.DIASPORA)
             saveDevDayShift(0)
             saveNotifyCandleLighting(false)
             saveNotifyOmer(false)
@@ -142,7 +143,7 @@ class VerifyReschedulingEndToEndTest {
         stopKoin()
         // The DataStore outlives this test; restore what other suites may read
         save {
-            saveIsInIsrael(false)
+            saveIsraelMode(IsraelMode.DIASPORA)
             saveDevDayShift(0)
             saveCandleLightingOffset(18.0)
             saveNotifyCandleLighting(false)
@@ -332,7 +333,7 @@ class VerifyReschedulingEndToEndTest {
         assertTrue(NotificationAlarmScheduler.ACTION_OMER in actions())
 
         // Israel/Diaspora is alarm-relevant: it must rebuild (sentinel cancelled)
-        save { saveIsInIsrael(true) }
+        save { saveIsraelMode(IsraelMode.ISRAEL) }
         awaitCondition("rebuild on Israel change") {
             NotificationAlarmScheduler.ACTION_OMER !in actions()
         }

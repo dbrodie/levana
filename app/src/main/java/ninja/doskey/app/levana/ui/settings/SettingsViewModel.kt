@@ -39,8 +39,8 @@ class SettingsViewModel(
     fun onIntent(intent: SettingsIntent) {
         viewModelScope.launch {
             when (intent) {
-                is SettingsIntent.SetIsInIsrael ->
-                    preferencesRepository.saveIsInIsrael(intent.inIsrael)
+                is SettingsIntent.SetIsraelMode ->
+                    preferencesRepository.saveIsraelMode(intent.mode)
                 is SettingsIntent.SetShowModernIsraeli ->
                     preferencesRepository.saveShowModernIsraeliHolidays(intent.show)
                 is SettingsIntent.SetAppLanguage -> {
@@ -112,6 +112,7 @@ class SettingsViewModel(
                     currentLocationName = prefs.currentLocation.name,
                     savedLocations = prefs.savedLocations,
                     activeLocationId = prefs.activeLocationId,
+                    israelMode = prefs.israelMode,
                     isInIsrael = prefs.isInIsrael,
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
                     candleLightingOffset = prefs.candleLightingOffset,

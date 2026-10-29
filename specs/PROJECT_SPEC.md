@@ -10,7 +10,7 @@ This document describes the current product and its core requirements. Planned w
 
 - Monthly Hebrew-primary and Gregorian-primary calendars, with day details.
 - Jewish holidays, fasts, Rosh Chodesh, weekly parsha, special-Shabbat indications, Omer counts and molad information on Shabbat Mevarchim.
-- Israel/Diaspora observance inferred from the device's position, with a manual override; modern Israeli holidays can be hidden.
+- Israel/Diaspora observance: Auto-detect (the default, from the device's position), Israel or Diaspora; modern Israeli holidays can be hidden.
 - Location-based zmanim, including dawn, sunrise, Shema and prayer deadlines, midday, Mincha, Plag, sunset, nightfall and halachic midnight.
 - Users choose which zmanim appear in day details. Calculation methods are currently fixed; both GRA and MGA Shema times are available.
 - Candle lighting and havdalah follow consecutive Shabbat/Yom Tov transitions. The pre-sunset candle-lighting offset is adjustable, defaulting to 18 minutes.

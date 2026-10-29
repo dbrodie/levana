@@ -174,4 +174,8 @@
     <string name="crash_dialog_send">Send report</string>
     <string name="crash_dialog_dont_send">Don\'t send</string>
     <string name="crash_report_subject">Levana crash report (%1$s)</string>
+    <string name="settings_israel_mode_auto">Auto-detect</string>
+    <string name="settings_israel_mode_auto_detected">Auto-detect (%1$s)</string>
+    <string name="settings_israel_mode_israel">Israel</string>
+    <string name="settings_israel_mode_diaspora">Diaspora</string>
 </resources>

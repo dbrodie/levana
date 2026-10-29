@@ -87,6 +87,7 @@ import ninja.doskey.app.levana.ui.targetedLabel
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
@@ -329,6 +330,7 @@ fun SettingsContent(
     var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
     var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
+    var showIsraelModeDialog by remember { mutableStateOf(false) }
     var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
     var showCandleLightingModeDialog by remember { mutableStateOf(false) }
 
@@ -368,14 +370,21 @@ fun SettingsContent(
         }
 
         SettingsGroup(stringResource(R.string.settings_group_preferences)) {
-        SettingsSwitchRow(
-            title = stringResource(R.string.settings_israel_diaspora_label),
-            description = stringResource(R.string.settings_israel_diaspora_description),
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_israel_diaspora_label)) },
+            supportingContent = {
+                Column {
+                    Text(israelModeSummary(state.israelMode, state.isInIsrael))
+                    Text(stringResource(R.string.settings_israel_diaspora_description))
+                }
+            },
             leadingContent = {
                 Icon(Icons.Outlined.Public, contentDescription = null)
             },
-            checked = state.isInIsrael,
-            onCheckedChange = { onIntent(SettingsIntent.SetIsInIsrael(it)) }
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showIsraelModeDialog = true }
         )
         SettingsRowDivider()
         SettingsSwitchRow(
@@ -574,6 +583,17 @@ fun SettingsContent(
         )
     }
 
+    if (showIsraelModeDialog) {
+        IsraelModeDialog(
+            selected = state.israelMode,
+            onSelect = {
+                onIntent(SettingsIntent.SetIsraelMode(it))
+                showIsraelModeDialog = false
+            },
+            onDismiss = { showIsraelModeDialog = false }
+        )
+    }
+
     if (showAppLanguageDialog) {
         AppLanguageDialog(
             selected = state.appLanguage,
@@ -760,6 +780,66 @@ private fun yahrzeitMissingDayShortLabel(value: YahrzeitMissingDay): String = st
         YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both_short
     }
 )
+
+@Composable
+private fun israelModeLabel(mode: IsraelMode): String = stringResource(
+    when (mode) {
+        IsraelMode.AUTO -> R.string.settings_israel_mode_auto
+        IsraelMode.ISRAEL -> R.string.settings_israel_mode_israel
+        IsraelMode.DIASPORA -> R.string.settings_israel_mode_diaspora
+    }
+)
+
+/** The chosen option; Auto-detect also names what it detected on this device. */
+@Composable
+private fun israelModeSummary(mode: IsraelMode, isInIsrael: Boolean): String =
+    if (mode == IsraelMode.AUTO) {
+        stringResource(
+            R.string.settings_israel_mode_auto_detected,
+            israelModeLabel(if (isInIsrael) IsraelMode.ISRAEL else IsraelMode.DIASPORA)
+        )
+    } else {
+        israelModeLabel(mode)
+    }
+
+@Composable
+private fun IsraelModeDialog(
+    selected: IsraelMode,
+    onSelect: (IsraelMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_israel_diaspora_label)) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                IsraelMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = mode == selected,
+                                onClick = { onSelect(mode) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = mode == selected, onClick = null)
+                        Text(
+                            text = israelModeLabel(mode),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
 
 @Composable
 private fun AppLanguageDialog(
