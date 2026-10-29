@@ -1,9 +1,15 @@
 package ninja.doskey.app.levana.widget
 
+import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.core.text.layoutDirection
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,16 +39,19 @@ import androidx.glance.layout.width
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.zmanDisplayName
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.theme.levanaColorScheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -63,24 +72,33 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
     override val sizeMode = SizeMode.Responsive(setOf(COMPACT, FULL))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val prefs = preferencesRepository.preferences.first()
-        val override = prefs.devDateOverride
-        val today = override ?: LocalDate.now()
-        // With a Developer Settings date, "now" is that date at the current time of day
-        val now = override?.atTime(LocalTime.now())?.atZone(java.time.ZoneId.systemDefault())?.toInstant()
-            ?: Instant.now()
-        val snapshot = snapshots.build(prefs, today, now)
-        WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt)
-
-        val colors = ColorProviders(
-            light = levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme),
-            dark = levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme),
-        )
+        val initialPrefs = preferencesRepository.preferences.first()
         provideContent {
+            // Glance keeps a session alive between updates and only recomposes it, so the
+            // snapshot is computed here, again on each settings change or refresh request
+            val prefs by preferencesRepository.preferences.collectAsState(initialPrefs)
+            val refreshes by WidgetUpdater.refreshes.collectAsState()
+            val snapshot = remember(prefs, refreshes) { snapshot(prefs) }
+            LaunchedEffect(snapshot.refreshAt) { WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt) }
+            val colors = remember(snapshot.holidayTheme) {
+                ColorProviders(
+                    light = levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme),
+                    dark = levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme),
+                )
+            }
             GlanceTheme(colors = colors) {
                 TodayContent(snapshot)
             }
         }
+    }
+
+    private fun snapshot(prefs: UserPreferences): TodayWidgetSnapshot {
+        val override = prefs.devDateOverride
+        val today = override ?: LocalDate.now()
+        // With a Developer Settings date, "now" is that date at the current time of day
+        val now = override?.atTime(LocalTime.now())?.atZone(ZoneId.systemDefault())?.toInstant()
+            ?: Instant.now()
+        return snapshots.build(prefs, today, now)
     }
 
     companion object {
@@ -94,6 +112,11 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0]
     val hebrewUi = locale.language in setOf("he", "iw")
+    // The launcher lays the widget out in the device's direction; mirror it when the app
+    // language reads the other way (e.g. Hebrew app language on an English device)
+    val deviceLocale = context.getSystemService(LocaleManager::class.java)?.systemLocales?.get(0) ?: locale
+    val mirror = context.resources.configuration.layoutDirection !=
+        deviceLocale.layoutDirection
     val full = LocalSize.current.height >= TodayWidget.FULL.height &&
         LocalSize.current.width >= TodayWidget.FULL.width
 
@@ -106,7 +129,7 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DateBlock(snapshot, hebrewUi, locale, full, openCalendar(context, snapshot.today))
+        DateBlock(snapshot, hebrewUi, locale, full, mirror, openCalendar(context, snapshot.today))
         if (full) {
             val openZmanim = openZmanim(context, snapshot.today)
             val timeFormatter = timeFormatter(context)
@@ -121,6 +144,7 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
                 } ?: context.getString(R.string.widget_next_zman_none),
                 value = next?.at?.let { relativeTime(it, snapshot.today, timeFormatter, dayFormatter) } ?: NO_TIME,
                 action = openZmanim,
+                mirror = mirror,
             )
             val shabbat = snapshot.shabbat
             if (shabbat != null) {
@@ -130,6 +154,7 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
                     secondaryLabel = context.getString(R.string.havdalah),
                     secondaryValue = timeOnDay(shabbat.havdalahDate, shabbat.havdalah, timeFormatter, dayFormatter),
                     action = openZmanim,
+                    mirror = mirror,
                 )
             }
         }
@@ -142,6 +167,7 @@ private fun DateBlock(
     hebrewUi: Boolean,
     locale: Locale,
     full: Boolean,
+    mirror: Boolean,
     action: Action,
 ) {
     val hebrewDate = if (hebrewUi) snapshot.hebrewDay.hebrewFormatted else snapshot.hebrewDay.transliterated
@@ -152,28 +178,41 @@ private fun DateBlock(
     val holiday = snapshot.holiday?.let { if (hebrewUi) it.hebrewName else it.name }
     Column(modifier = GlanceModifier.fillMaxWidth().clickable(action)) {
         Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = hebrewDate,
-                maxLines = 1,
-                style = TextStyle(
-                    color = GlanceTheme.colors.primary,
-                    fontSize = if (full) 22.sp else 18.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-                modifier = GlanceModifier.defaultWeight(),
-            )
-            if (full && holiday != null) {
+            val date = @Composable {
                 Text(
-                    text = holiday,
+                    text = hebrewDate,
                     maxLines = 1,
-                    style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(
+                        color = GlanceTheme.colors.primary,
+                        fontSize = if (full) 22.sp else 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = textAlign(mirror),
+                    ),
+                    modifier = GlanceModifier.defaultWeight(),
                 )
+            }
+            val holidayLabel = @Composable {
+                if (full && holiday != null) {
+                    Text(
+                        text = holiday,
+                        maxLines = 1,
+                        style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
+                }
+            }
+            if (mirror) {
+                holidayLabel()
+                date()
+            } else {
+                date()
+                holidayLabel()
             }
         }
         Text(
             text = "$gregorian · ${snapshot.locationName}",
             maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp),
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, textAlign = textAlign(mirror)),
+            modifier = GlanceModifier.fillMaxWidth(),
         )
     }
 }
@@ -183,6 +222,7 @@ private fun ColumnScope.TimeRow(
     label: String,
     value: String,
     action: Action,
+    mirror: Boolean,
     secondaryLabel: String? = null,
     secondaryValue: String? = null,
 ) {
@@ -190,31 +230,43 @@ private fun ColumnScope.TimeRow(
         modifier = GlanceModifier.fillMaxWidth().defaultWeight().clickable(action),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LabeledTime(label, value, GlanceModifier.defaultWeight())
-        if (secondaryLabel != null && secondaryValue != null) {
-            Spacer(GlanceModifier.width(12.dp))
-            LabeledTime(secondaryLabel, secondaryValue, GlanceModifier.defaultWeight())
+        val items = listOfNotNull(
+            label to value,
+            secondaryLabel?.let { l -> secondaryValue?.let { l to it } },
+        ).let { if (mirror) it.reversed() else it }
+        items.forEachIndexed { index, (itemLabel, itemValue) ->
+            if (index > 0) Spacer(GlanceModifier.width(12.dp))
+            LabeledTime(itemLabel, itemValue, mirror, GlanceModifier.defaultWeight())
         }
     }
 }
 
 @Composable
-private fun LabeledTime(label: String, value: String, modifier: GlanceModifier) {
+private fun LabeledTime(label: String, value: String, mirror: Boolean, modifier: GlanceModifier) {
     Column(modifier = modifier) {
         Text(
             text = label,
             maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, textAlign = textAlign(mirror)),
+            modifier = GlanceModifier.fillMaxWidth(),
         )
         Text(
             text = value,
             maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = textAlign(mirror),
+            ),
+            modifier = GlanceModifier.fillMaxWidth(),
         )
     }
 }
 
 private const val NO_TIME = "—"
+
+private fun textAlign(mirror: Boolean) = if (mirror) TextAlign.End else TextAlign.Start
 
 private fun timeFormatter(context: Context): DateTimeFormatter =
     DateTimeFormatter.ofPattern(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a")
