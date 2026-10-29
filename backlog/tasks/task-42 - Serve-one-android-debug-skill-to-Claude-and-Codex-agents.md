@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T20:54:00Z'
-updated_date: '2026-10-29T20:54:00Z'
+updated_date: '2026-10-29T20:58:00Z'
 labels:
   - tooling
 dependencies: []
@@ -35,4 +35,6 @@ Track .claude/skills/android-debug as a relative symlink to ../../.agents/skills
 <!-- SECTION:NOTES:BEGIN -->
 Verified: fresh 'claude -p' session in this worktree lists only the current android-debug skill (description mentions screenshots). Symlink resolves SKILL.md, scripts/, references/. Gradle build/test not run: no app code changed.
 Before merge: the main checkout (/Users/daniel/projects/levana) still has the untracked stale .claude/skills/android-debug/SKILL.md. It must be removed (owner approval) or 'git merge' there will refuse to overwrite it, and Claude agents started from the main checkout keep seeing 'Never take screenshots'.
+
+2026-10-29: owner removed the stale copy from the main checkout; .claude/skills there is now empty, so the merge can add the symlink.
 <!-- SECTION:NOTES:END -->
