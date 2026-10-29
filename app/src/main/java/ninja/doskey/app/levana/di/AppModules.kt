@@ -20,6 +20,7 @@ import ninja.doskey.app.levana.notifications.NotificationDeliveryLog
 import ninja.doskey.app.levana.update.UpdateChecker
 import ninja.doskey.app.levana.widget.MonthWidgetSnapshots
 import ninja.doskey.app.levana.widget.TodayWidgetSnapshots
+import ninja.doskey.app.levana.widget.ZmanimWidgetSnapshots
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
@@ -91,6 +92,7 @@ val dataModule = module {
     single { UpdateChecker(androidContext()) }
     single { TodayWidgetSnapshots(get(), get()) }
     single { MonthWidgetSnapshots(get()) }
+    single { ZmanimWidgetSnapshots(get(), get()) }
 }
 
 val viewModelModule = module {

@@ -1,8 +1,6 @@
 package ninja.doskey.app.levana.widget
 
 import android.content.Context
-import android.content.Intent
-import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,7 +18,6 @@ import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -37,15 +34,12 @@ import androidx.glance.layout.width
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
-import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.domain.model.zmanDisplayName
-import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.theme.levanaColorScheme
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -276,13 +270,6 @@ private fun LabeledTime(label: String, value: String, mirror: Boolean, modifier:
     }
 }
 
-private const val NO_TIME = "—"
-
-private fun textAlign(mirror: Boolean) = if (mirror) TextAlign.End else TextAlign.Start
-
-private fun timeFormatter(context: Context): DateTimeFormatter =
-    DateTimeFormatter.ofPattern(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a")
-
 /** A time today as just the time; on another day prefixed with the weekday. */
 private fun relativeTime(
     at: ZonedDateTime,
@@ -297,11 +284,3 @@ private fun timeOnDay(
     timeFormatter: DateTimeFormatter,
     dayFormatter: DateTimeFormatter,
 ): String = "${date.format(dayFormatter)} ${at?.format(timeFormatter) ?: NO_TIME}"
-
-private fun openZmanim(context: Context, today: LocalDate): Action =
-    actionStartActivity(
-        Intent(context, MainActivity::class.java)
-            .putExtra(NotificationPoster.EXTRA_DATE_EPOCH_DAY, today.toEpochDay())
-            .putExtra(MainActivity.EXTRA_OPEN_ZMANIM, true)
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-    )
