@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-10-30T13:31:00Z'
+updated_date: '2026-10-30T14:05:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -22,7 +22,7 @@ Owner decision: English only. Add `fastlane/metadata/android/en-US/` with title,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Fastlane metadata follows fdroid conventions (lengths, paths); screenshots are real app captures; the release process requires a per-version changelog; the owner approved the listing text
+- [x] #1 Fastlane metadata follows fdroid conventions (lengths, paths); screenshots are real app captures; the release process requires a per-version changelog; the owner approved the listing text
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -106,4 +106,19 @@ Evidence: /tmp/levana-task-53.4-evidence/ holds all captures with UI dumps, the 
 At 1409ce5: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --rerun-tasks` → BUILD SUCCESSFUL in 3m 11s (60 tasks executed). No app code changed. Log: /tmp/levana-task-53.4-evidence/gradle.log.
 
 AC #1 status: metadata follows F-Droid conventions; screenshots are real captures; the release workflow requires a per-version changelog. **Pending: owner approval of the listing text and screenshots.**
+
+## Owner decisions and approval (2026-10-30, relayed by the coordinator)
+1. **Offline claim removed.** The full description's first paragraph now reads: "Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora. It has no ads and collects no data." (1432 of 4000 characters). The feature graphic is Play's image and stays unchanged for now; note that it **still says "Fully offline · No ads · No tracking"**.
+2. **No new-feature bullets.** The description stays close to Play (Play's wording plus the 3 accuracy fixes and the offline removal).
+3. **Screenshots approved for F-Droid.** The 8 new shots in images/phoneScreenshots/1–8.png are approved. Play stays as it is, with no Play refresh task.
+The listing text and screenshots are approved by the owner, so AC #1 is met.
+
+## Rebase and re-verification
+Rebased onto origin/master c3d8110 (includes TASK-53.1 LICENSE and TASK-52.2), with no conflicts. At 0cb3abc: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --rerun-tasks` → BUILD SUCCESSFUL in 2m 52s (60 tasks executed). Log: /tmp/levana-task-53.4-evidence/gradle-rebased.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added F-Droid Fastlane metadata in fastlane/metadata/android/en-US: title, short and full description from the Play listing (3 accuracy fixes, offline claim removed per owner), Play's icon and feature graphic, 8 owner-approved real phone screenshots of the current app, and changelogs 401 and 402. The release workflow now fails early, before setup and signing, when changelogs/<versionCode>.txt is missing, empty or over 500 characters; this is documented in specs/rfes/release-process.md. Verified: build, unit tests and lint pass after the rebase onto c3d8110; the changelog check was tested locally (present, missing, too long). Follow-ups: fdroid lint/rewritemeta in TASK-53.5; the first F-Droid tag needs its own changelog; the feature graphic still says 'Fully offline'.
+<!-- SECTION:FINAL_SUMMARY:END -->
