@@ -1,11 +1,11 @@
 ---
 id: TASK-8
 title: Add an Agenda view and Month/Agenda drawer navigation (design 1a/1b)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:31Z'
-updated_date: '2026-10-30T08:55:00Z'
+updated_date: '2026-10-30T09:05:00Z'
 labels:
   - curated-import
   - source-specs
@@ -149,6 +149,18 @@ Verification on 913584b (tree clean):
 - 2 clean full runs (`rm -rf app/build/test-results`, then `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks`): both BUILD SUCCESSFUL; 1025 tests, 0 failures, 0 skipped.
 - Emulator (fresh, API 36): origin/master installed, its walkthrough skipped; this build installed over it → only the agenda screen as a single "Got it" page; relaunch shows no walkthrough; Agenda works. Screenshots 19–21 in /tmp/levana-agenda/task8-emulator/ (README updated). Logs: /tmp/task8-stability/, /tmp/task8-flake/.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T09:05:00Z
+
+---
+
+Coordinator integration 2026-10-30: first integration attempt caught a non-deterministic missing month header; agent found the root cause (header items added/removed during a pending scroll) and made headers part of their day's item, plus fixed a contacts-permission race (8ef6bd0) and added the 'agenda' walkthrough screen. Merged as 177653a after TASK-43. Two consecutive clean runs: 1025 tests, 0 failures; Roborazzi 256 unchanged. Evidence: /tmp/levana-agenda/task8-emulator/ (README, 21 shots).
+
+---
+<!-- COMMENTS:END -->
 
 ## Beads history
 
