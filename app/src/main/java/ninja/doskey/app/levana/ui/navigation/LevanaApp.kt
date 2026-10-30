@@ -1,10 +1,8 @@
 package ninja.doskey.app.levana.ui.navigation
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -18,7 +16,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.ui.walkthrough.WalkthroughIntent
@@ -33,7 +30,9 @@ import org.koin.compose.koinInject
  */
 @Composable
 fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
-    val navController = rememberNavController()
+    // Before any early return, each under its own saved-state key (TASK-50)
+    val navController = rememberLevanaNavController()
+    val drawerState = rememberLevanaDrawerState()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val canGoBack = backStackEntry?.destination?.route != null &&
         navController.previousBackStackEntry != null
@@ -63,7 +62,6 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
 
     val scope = rememberCoroutineScope()
     val showDrawer = isDrawerRoute(backStackEntry?.destination)
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     // Slot for per-screen actions rendered in the global TopAppBar
     var topBarActionsContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
