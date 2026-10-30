@@ -4,14 +4,14 @@ title: Reconcile birthday and event editor year limits
 status: To Do
 assignee: []
 created_date: '2026-10-21T12:03:24Z'
-updated_date: '2026-10-29T21:29:00Z'
+updated_date: '2026-10-30T06:27:00Z'
 labels:
   - curated-import
   - verified-followup
 dependencies: []
 references:
   - levana-v57
-priority: low
+priority: medium
 type: task
 ordinal: 24000
 ---
@@ -26,6 +26,12 @@ Source: specs/rfes/fix-adar-and-year-followups.md, section 2a. Verified against 
 <!-- AC:BEGIN -->
 - [ ] #1 One explicit year-range policy governs birthday/event editor validation and state, exposed in a single place that the date picker (TASK-45) can use for its bounds. Opening valid historical or future imported dates has defined non-destructive behavior. Tests cover values at and beyond both boundaries. The RFE records the chosen policy and removes conflicting claims.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decision 2026-10-30: the supported Hebrew year range is 5600–6000 (≈1840–2240) for the event and birthday editors and for the shared date picker (TASK-45). Stored or imported dates outside the range are always preserved unchanged, never clamped or rewritten. Expose the range in a single place that TASK-45 uses for its bounds.
+<!-- SECTION:NOTES:END -->
 
 ## Beads history
 

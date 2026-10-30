@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-29T21:22:00Z'
-updated_date: '2026-10-29T21:34:00Z'
+updated_date: '2026-10-30T06:27:00Z'
 labels: []
 dependencies:
   - TASK-24
@@ -90,3 +90,13 @@ Related: TASK-24 (year-range policy; resolve first or together). TASK-25 was clo
 - [ ] #4 Unit tests cover picker state (sync, mode switch, year pick with month fitting, leap years, month lengths, bounds); existing event/birthday/go-to-date tests pass or are deliberately updated
 - [ ] #5 Emulator verification with screenshots compared to the 1b reference: every call site, English/Hebrew, light/dark, a holiday theme, a leap year (e.g. 5787), year view, and TalkBack labels
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decisions 2026-10-30:
+1. Year range: 5600–6000 Hebrew (from TASK-24's single policy). The Gregorian year list covers the matching span.
+2. Picking a year in the year list MOVES THE SELECTION to the same day and month in that year (adjusting Adar I/II/Adar and day 30 → 29 when needed), and the grid shows it. This replaces the mockup's view-only behavior and resolves the open question.
+3. Initial leading calendar per screen: Hebrew for the event and birthday editors; the calendar screen's current mode for Go-to-date; Gregorian for the developer date override.
+4. The owner wants screenshots of the finished picker: every call site, Hebrew and Gregorian modes, the year list, a leap-year Adar and a holiday chip, in English and Hebrew, light and dark.
+<!-- SECTION:NOTES:END -->
