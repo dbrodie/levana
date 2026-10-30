@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:19:00Z'
-updated_date: '2026-10-29T21:36:00Z'
+updated_date: '2026-10-30T06:12:00Z'
 labels: []
 dependencies:
   - TASK-9.1
@@ -23,9 +23,9 @@ Third subtask of TASK-9; see TASK-9 for product decisions and shared design. Use
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Zmanim list widget shows today's selected zmanim with past dimmed and next highlighted, using the shared color scheme
-- [ ] #2 Advances the highlighted zman as times pass and refreshes on date, time-zone, location and preference changes
-- [ ] #3 Row tap opens the Zmanim screen for today; uncomputable zman shows —
+- [x] #1 Zmanim list widget shows today's selected zmanim with past dimmed and next highlighted, using the shared color scheme
+- [x] #2 Advances the highlighted zman as times pass and refreshes on date, time-zone, location and preference changes
+- [x] #3 Row tap opens the Zmanim screen for today; uncomputable zman shows —
 <!-- AC:END -->
 
 ## Implementation Plan
