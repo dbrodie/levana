@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.domain.agenda
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.domain.model.HebrewDay
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
@@ -17,8 +18,8 @@ import java.time.LocalTime
 sealed interface AgendaItem {
     val time: LocalTime?
 
-    /** A holiday, fast or Rosh Chodesh. */
-    data class HolidayItem(val holiday: Holiday) : AgendaItem {
+    /** A holiday, fast or Rosh Chodesh; [roshChodeshOf] is the month a Rosh Chodesh begins. */
+    data class HolidayItem(val holiday: Holiday, val roshChodeshOf: HebrewMonth? = null) : AgendaItem {
         override val time: LocalTime? = null
     }
 

@@ -486,8 +486,12 @@ private fun DateRail(day: AgendaDay, isToday: Boolean, hebrewLeading: Boolean) {
     val locale = LocalConfiguration.current.locales[0]
     val hebrewUi = CalendarHeaderFormatter.isHebrew(locale)
     val gregorianDay = day.date.dayOfMonth.toString()
-    val hebrewSmall = "${day.hebrewDay.hebrewDayOfMonthFormatted} " +
-        if (hebrewUi) day.hebrewDay.month.hebrewName else day.hebrewDay.month.englishName
+    // "ז׳ כסלו" in Hebrew, "7 Kislev" in English
+    val hebrewSmall = if (hebrewUi) {
+        "${day.hebrewDay.hebrewDayOfMonthFormatted} ${day.hebrewDay.month.hebrewName}"
+    } else {
+        "${day.hebrewDay.day} ${day.hebrewDay.month.englishName}"
+    }
     val large = if (hebrewLeading) day.hebrewDay.hebrewDayOfMonthFormatted else gregorianDay
     val small = if (hebrewLeading) AgendaFormatter.shortGregorian(day.date, locale) else hebrewSmall
     val fullDate = day.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
@@ -585,7 +589,12 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?): CardCont
     fun describe(vararg parts: String?) = parts.filterNot { it.isNullOrBlank() }.joinToString(", ")
     return when (item) {
         is AgendaItem.HolidayItem -> {
-            val name = if (hebrewUi) item.holiday.hebrewName else item.holiday.name
+            val month = item.roshChodeshOf?.let { if (hebrewUi) it.hebrewName else it.englishName }
+            val name = when {
+                month != null -> stringResource(R.string.agenda_rosh_chodesh, month)
+                hebrewUi -> item.holiday.hebrewName
+                else -> item.holiday.name
+            }
             val fast = item.holiday.category == HolidayCategory.FAST
             val type = stringResource(if (fast) R.string.agenda_type_fast else R.string.agenda_type_holiday)
             CardContent(

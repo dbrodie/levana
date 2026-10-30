@@ -24,7 +24,9 @@ object AgendaSearch {
 
     /** The searchable texts of [item]. */
     fun texts(item: AgendaItem): List<String> = when (item) {
-        is AgendaItem.HolidayItem -> listOf(item.holiday.name, item.holiday.hebrewName)
+        is AgendaItem.HolidayItem -> item.roshChodeshOf?.let { month ->
+            listOf("${item.holiday.name} ${month.englishName}", "${item.holiday.hebrewName} ${month.hebrewName}")
+        } ?: listOf(item.holiday.name, item.holiday.hebrewName)
         is AgendaItem.Shabbat -> listOfNotNull(item.parsha, item.parshaHebrew, item.specialShabbat)
         is AgendaItem.PersonalEventItem -> listOf(item.event.title, item.event.notes)
         is AgendaItem.BirthdayItem -> listOf(item.birthday.contactName)

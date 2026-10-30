@@ -16,6 +16,7 @@
     <string name="agenda_parsha">Parashat %1$s</string>
     <string name="agenda_yahrzeit_title">Yahrzeit — %1$s</string>
     <string name="agenda_birthday_title">Birthday — %1$s</string>
+    <string name="agenda_rosh_chodesh">Rosh Chodesh %1$s</string>
     <string name="agenda_type_holiday">Holiday</string>
     <string name="agenda_type_fast">Fast</string>
     <string name="agenda_type_shabbat">Shabbat</string>

@@ -16,6 +16,7 @@
     <string name="agenda_parsha">פרשת %1$s</string>
     <string name="agenda_yahrzeit_title">יארצייט — %1$s</string>
     <string name="agenda_birthday_title">יום הולדת — %1$s</string>
+    <string name="agenda_rosh_chodesh">ראש חודש %1$s</string>
     <string name="agenda_type_holiday">חג</string>
     <string name="agenda_type_fast">צום</string>
     <string name="agenda_type_shabbat">שבת</string>

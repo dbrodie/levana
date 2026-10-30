@@ -1,6 +1,11 @@
 package ninja.doskey.app.levana.domain.agenda
 
+import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
+import ninja.doskey.app.levana.data.HolidayMapper
 import ninja.doskey.app.levana.domain.model.BirthdayOccurrence
+import ninja.doskey.app.levana.domain.model.HebrewDay
+import ninja.doskey.app.levana.domain.model.HebrewMonth
+import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.EventOccurrence
 import ninja.doskey.app.levana.domain.model.ShabbatInfo
@@ -23,7 +28,9 @@ object AgendaAssembler {
     ): AgendaDay? {
         val date = dayInfo.gregorianDate
         val items = buildList {
-            dayInfo.holidays.forEach { add(AgendaItem.HolidayItem(it)) }
+            dayInfo.holidays.forEach { holiday ->
+                add(AgendaItem.HolidayItem(holiday, roshChodeshOf(dayInfo.hebrewDay).takeIf { holiday == ROSH_CHODESH }))
+            }
             shabbatInfo.candleLightingTime?.let { add(AgendaItem.CandleLighting(it)) }
             val havdalah = shabbatInfo.havdalahTime
             val parsha = dayInfo.parsha
@@ -56,6 +63,12 @@ object AgendaAssembler {
                 .thenBy(String.CASE_INSENSITIVE_ORDER) { title(it.value) }
                 .thenBy { it.index }
         ).map { it.value }
+
+    private val ROSH_CHODESH = HolidayMapper.mapHoliday(JewishCalendar.ROSH_CHODESH)
+
+    /** The month a Rosh Chodesh on [day] begins: the next one on day 30, else its own. */
+    private fun roshChodeshOf(day: HebrewDay): HebrewMonth =
+        if (day.day == 30) HebrewYearMonth(day.year, day.month, day.month.jewishDateValue).next().month else day.month
 
     private fun rank(item: AgendaItem): Int = when (item) {
         is AgendaItem.HolidayItem -> 0
