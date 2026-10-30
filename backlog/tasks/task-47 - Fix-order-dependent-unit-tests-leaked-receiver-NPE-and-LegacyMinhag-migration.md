@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T00:47:00Z'
-updated_date: '2026-10-30T05:49:00Z'
+updated_date: '2026-10-30T06:04:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -24,7 +24,7 @@ Found during TASK-12.3 (2026-10-30). The JVM unit suite can fail depending on cl
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Neither test leaks state or depends on running first; the suite passes in any class order (e.g. with the screenshot tests forced first)
+- [x] #1 Neither test leaks state or depends on running first; the suite passes in any class order (e.g. with the screenshot tests forced first)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,4 +51,27 @@ Reproduction (base 77b3556, before fixes):
 Root causes:
 1. VerifyReschedulingEndToEndTest called NotificationAlarmReceiver().onReceive directly, so goAsync() returned null. The coroutine on Dispatchers.Default outlived the test and NPE'd in finish(); kotlinx-coroutines-test then reported the NPE in the next runTest/Compose test.
 2. LegacyMinhagPreferenceTest is not really migration-order dependent. Its store.edit() initialises DataStore before the legacy keys exist, so IsraelModeMigration never runs on them in any order. The test was written (e41d6d4) while is_in_israel was a live key; TASK-5.3 (144509c) replaced it with israel_mode. After that, the test passed only when israel_mode was unset (AUTO) and the host zone was Asia/Jerusalem. Tests such as VerifyReschedulingEndToEndTest leave israel_mode=DIASPORA behind, which fails it.
+
+Fix (commit 681fb6a):
+- VerifyReschedulingEndToEndTest.receiverOnReceiveReadsPersistedPrefs delivers through deliver(intent). It registers a NotificationAlarmReceiver, sends the broadcast, idles the main looper and waits for the ShadowBroadcastPendingResult future, the same pattern as VerifyTimeZoneCrossingTest. goAsync() is non-null, finish() runs inside the test, and the assertions are now synchronous instead of sleep/poll. The test clears the JVM-wide delivery log first.
+- LegacyMinhagPreferenceTest writes israel_mode=ISRAEL, the live key, instead of is_in_israel/_manual. It clears the store in @Before and @After. IsraelModeTest still covers IsraelModeMigration.migrate itself.
+- New shared test helper app/src/test/.../AppDataStores.kt: preferences(), deliveryLog(), clearPreferences(), clearDeliveryLog(). It reaches the private process-wide delegates by reflection in one place and fails loudly if a delegate is renamed. ScreenshotHarness and LegacyMinhag use it; their own reflection copies are removed.
+- Production code unchanged, so no emulator check. NotificationAlarmReceiver (and Boot/DateChange/TimeChange receivers) are not hardened against a null goAsync(): the framework always supplies a PendingResult when it dispatches onReceive, so null only comes from direct calls outside the framework. A null-safe finish() would hide that misuse in tests. The alternative of making the DataStore delegates internal and dropping the reflection was left out to avoid a production change. It is a reasonable follow-up if wanted.
+
+Audit of the same patterns:
+- Direct onReceive: the only other call, VerifyTimeZoneCrossingTest.unrelatedActionIsIgnoredWithoutGoingAsync, returns before goAsync (it asserts wentAsync=false). Safe.
+- Test-owned CoroutineScopes (VerifyReschedulingEndToEnd, DailyNotificationWorker, IntegrationVerifierSettingsFlow, EventDataChanges, ProviderIo, DeviceTodayUpdates, CalendarMonthSwipe, VerifyCandidateIo, VerifyCancelledCallerError, IntegrationVerifierSupersededLoad) are all cancelled in the test or teardown. None was seen to leak in any order run. Not changed.
+- Shared DataStores: about 20 notification test classes use the production delivery log or alarm registry (NotificationDeliveryLog(app), NotificationAlarmScheduler(app)), and about 16 use the shared preferences store. None failed in the 5 whole-suite orders below, so they were left as is. The residual risk is a new test reusing a date or Omer day already recorded by another test. AppDataStores.clearDeliveryLog/clearPreferences is the remedy.
+
+Verification (tested commit 681fb6a):
+- Bad orders after the fix: forward, reversed, screenshots-first (screenshot and widget snapshot classes first), shuffle1, shuffle2 via run_order.sh: each 821 tests, 0 failed (/tmp/task47/matrix1.txt, summary-*.txt).
+- TZ=America/New_York --tests LegacyMinhag + VerifyReschedulingEndToEnd: pass.
+- Full suite 3x with rm -rf app/build/test-results and --rerun-tasks: 821/0 each (/tmp/task47/full-{1,2,3}.log).
+- Final: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 821/0 (/tmp/task47/final.log). git status clean afterwards: no screenshot changed. The repo tracks 118 PNGs under app/src/test/screenshots, not 116; all are unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Unit tests no longer depend on class order. VerifyReschedulingEndToEndTest sends alarms as real broadcasts and waits for goAsync, so no NPE leaks into later Compose tests. LegacyMinhagPreferenceTest uses the live israel_mode key from an empty store; it had depended on host TZ Asia/Jerusalem and an unset israel_mode, and the migration never actually ran in that test. The new AppDataStores test helper centralises access to and clearing of the app's process-wide DataStores, and ScreenshotHarness uses it. No production change. Verified in 5 whole-suite orders, 3 clean full runs and the final check including verifyRoborazziDebug (all 821 tests pass; screenshots unchanged).
+<!-- SECTION:FINAL_SUMMARY:END -->
