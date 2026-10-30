@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T20:55:00Z'
-updated_date: '2026-10-30T07:41:00Z'
+updated_date: '2026-10-30T08:30:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -86,12 +86,12 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A registry of feature screens with stable IDs; seen IDs persist; new installs and (this first time) existing users see all eligible screens in order; after later updates users see only unseen screens; Skip marks the current run as seen
-- [ ] #2 The 8 owner-approved screens follow the walkthrough design (illustration card, title, body, Skip, bottom controls) in English/Hebrew RTL, light/dark, Material You and holiday themes, with TalkBack page announcements
-- [ ] #3 Location, notification, contacts and calendar permissions are requested on their screens with short explanations (contacts: saved on the contact, nothing leaves the device); Not now never blocks; granted state shown; denial leaves the app usable
-- [ ] #4 Never interrupts deep links or tests; replay from About; developer reset of seen state; ARCHITECTURE_SPEC documents how to add a screen
-- [ ] #5 Unit tests for the seen/unseen selection (fresh install, upgrade with a new screen, skip, replay); Roborazzi baselines for each screen; emulator screenshots of a fresh install including each permission step (grant and deny), and of an upgrade showing only a new screen
-- [ ] #6 The page indicator follows the run's screen count: a single screen shows only Got it (no dots, no Back/Next); 2–9 show dots; 10 or more show an 'n of m' counter; tests and Roborazzi images cover runs of 1, 3 and 12 screens
+- [x] #1 A registry of feature screens with stable IDs; seen IDs persist; new installs and (this first time) existing users see all eligible screens in order; after later updates users see only unseen screens; Skip marks the current run as seen
+- [x] #2 The 8 owner-approved screens follow the walkthrough design (illustration card, title, body, Skip, bottom controls) in English/Hebrew RTL, light/dark, Material You and holiday themes, with TalkBack page announcements
+- [x] #3 Location, notification, contacts and calendar permissions are requested on their screens with short explanations (contacts: saved on the contact, nothing leaves the device); Not now never blocks; granted state shown; denial leaves the app usable
+- [x] #4 Never interrupts deep links or tests; replay from About; developer reset of seen state; ARCHITECTURE_SPEC documents how to add a screen
+- [x] #5 Unit tests for the seen/unseen selection (fresh install, upgrade with a new screen, skip, replay); Roborazzi baselines for each screen; emulator screenshots of a fresh install including each permission step (grant and deny), and of an upgrade showing only a new screen
+- [x] #6 The page indicator follows the run's screen count: a single screen shows only Got it (no dots, no Back/Next); 2–9 show dots; 10 or more show an 'n of m' counter; tests and Roborazzi images cover runs of 1, 3 and 12 screens
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -111,3 +111,37 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 12. ARCHITECTURE_SPEC: walkthrough section with "how to add a screen".
 13. Verify: assembleDebug, testDebugUnitTest, lintDebug, verifyRoborazziDebug --rerun-tasks; emulator screenshots (fresh install with grants/denials, existing user, simulated update with one new screen, replay, deep link, Hebrew + dark) saved outside the worktree with a README.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Implementation (commits d9a4137, 90ecc93 on task-43-walkthrough)
+- `ui/walkthrough/`: `FeatureScreen` + `WalkthroughRegistry` (8 approved IDs in order), pure `WalkthroughSelection` (launch: unseen ∩ available, none on a deep link; replay: all available), `PageIndicator` (1 → none / 2–9 → dots / 10+ → "n of m"), MVI `WalkthroughState`/`WalkthroughIntent`/`WalkthroughViewModel` (activity-scoped), `WalkthroughScreen` (pager, Skip, Back/Next/Get started or Got it, permission panels, Add city layer), `WalkthroughIllustrations` (live mini-UIs, fixed sample data around Fri 30 Oct 2026 / 19 Cheshvan 5787, KosherJava for Hebrew numerals, months and parashot; theme colors; Appearance swatches from `LightColorScheme`/`DarkColorScheme`/`HolidayTheme.CHANUKAH`).
+- Seen state: `PreferencesRepository.walkthroughSeenIds` / `markWalkthroughSeen` / `resetWalkthroughSeen` (key `walkthrough_seen_ids`, outside UserPreferences). Seen once displayed; Skip / Get started / Got it mark the run; replay records nothing. Writes run on Dispatchers.IO: DataStore runs an edit in the caller's context, and a Main-context write deadlocked a test teardown that blocks the main thread on its own edit.
+- Shell (small, additive): `LevanaApp` starts the VM with `deepLink = deepLinkEpochDay != 0` and shows the walkthrough instead of the shell while a run is active; `LevanaStartupEffects(askForLocation = !shownOnLaunch)` so the old launch-time location dialog doesn't follow the walkthrough's own ask. No new route; LevanaNavHost untouched (TASK-8). About reaches the activity VM via `activityWalkthroughViewModel()`.
+- Test gate: `WalkthroughGate` in Koin, off under Robolectric (`Build.FINGERPRINT == "robolectric"`) or when `androidx.test.runner.AndroidJUnitRunner` is loadable (not in the debug APK: checked the dex). `ScreenshotTest.testModules()` lets a test class opt in.
+- Permissions: location (LocationService.PERMISSIONS, any; a grant fetches the fix like Settings → Locations), POST_NOTIFICATIONS, READ+WRITE_CONTACTS (on the contact, nothing leaves the device), READ_CALENDAR (read-only, nothing leaves the device). Not now = Next; a refusal shows "Not allowed… allow later in Settings" with Allow still offered; granted shows a check; rechecked on resume.
+- Add city: the app's CityPickerScreen in a full-screen layer in the activity window (a Dialog left a dim band and white status-bar icons); Back returns to the page.
+- About: "Show walkthrough again". Developer settings: "Reset walkthrough" (+ toast). Strings in English and Hebrew (`walkthrough_strings.xml`); welcome tiles reuse the day panel's `sheet_netz/shkia/candles`.
+- TalkBack: each page has a pane title "title, Page n of m"; the title is a heading with state description "Page n of m"; dots/counter and decorative illustration content are hidden; all controls are text buttons; Add city stays focusable. Reduced motion (animator scale 0) → no page or dot animation.
+- Docs: ARCHITECTURE_SPEC "Feature Walkthrough" (how it works, how to add a screen) and the Roborazzi scope; PROJECT_SPEC presentation bullet.
+
+## Verification
+- Tested commit 90ecc93: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks` → BUILD SUCCESSFUL; 974 unit tests in 123 classes, 0 failures/errors/skips; lint 0 issues; Roborazzi verify passed. Log: /tmp/levana-task43-tools/verify.log.
+- Unit: `WalkthroughSelectionTest` (10: registry IDs/order/uniqueness, fresh install, upgrade with one new screen, new screen in place for a new install, seen/unknown IDs, unavailable screen, deep link, replay, indicator thresholds, permission grant rules); `WalkthroughViewModelTest` (16: fresh install, existing user with data, upgrade → single Got-it run, nothing left, seen-on-display, Skip, interrupted run resumes, Next on last finishes, deep-link deferral, once per activity, gate off + replay, replay leaves seen state, developer reset, permission states incl. refusal/recheck, Not now, Add city); `WalkthroughLaunchTest` (6, real MainActivity: tests never see it, normal launch + Skip → calendar, deep link → calendar with nothing seen, single screen shows only Got it, page heading/state description "Page n of m" + labelled controls + location Not now, replay from About returns to About and keeps the seen state).
+- Roborazzi: 64 new baselines (8 screens × en/he × light/dark; granted state of the 4 permission screens × 4; runs of 1, 3 (first, last) and 12 × 4). All existing baselines re-recorded byte-identical except the 8 deliberate ones: settings_about_* (new "Show walkthrough again" row) and settings_developer_* (new "Reset walkthrough" row).
+- Emulator (Levana_Agent_Template_API_36_1, API 36): screenshots and README in `/tmp/levana-task43-screens/` — fresh install through all 8 with location granted, Add city (Haifa saved), contacts denied, notifications granted, calendar Not now; relaunch shows nothing; replay from About; developer reset; deep link (date extra) opens the calendar and the next normal launch shows the walkthrough; Hebrew + dark (resumed the interrupted run); existing user: origin/master build with London saved → `install -r` this branch → all 8 screens, London kept; simulated later update (throwaway build with one extra screen) → only that screen with a lone Got it.
+
+## Limitations / notes
+- A permission refusal is shown as refused only within a run; on a later run (or replay) the ask is offered again.
+- The deep link was exercised with the launcher alias carrying `EXTRA_DATE_EPOCH_DAY` (the extra notifications, widgets and the tile put on MainActivity), not by tapping a real notification/widget.
+- The emulator's GPS (California) vs zone (Israel) triggers the existing TASK-46 zone notice after the walkthrough; unrelated.
+- Granting notifications doesn't turn on any reminder category (unchanged defaults); the explanation points to Settings.
+- `agenda` screen deliberately not added (after TASK-8).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Feature walkthrough (TASK-43): a registry of 8 stable-ID feature screens with live, themed mini-UI illustrations, shown once each (seen IDs in DataStore). New installs and existing users see all screens; later updates show only new ones; Skip marks the run seen. Location, contacts, notification and calendar permissions are asked on their screens with short reasons, a never-blocking Not now and a granted state. It never opens over deep links or in tests (Koin WalkthroughGate). It can be replayed from About and reset from Developer settings. Page indicator: Got it / dots / n of m. English + Hebrew RTL, light/dark, TalkBack page announcements. ARCHITECTURE_SPEC documents adding a screen. Verified at 90ecc93: full build/unit/lint/Roborazzi run green (974 tests); 64 new baselines; only the About/Developer baselines changed among existing ones (new rows); emulator scenarios captured in /tmp/levana-task43-screens/ (README). Not merged, pushed or marked Done.
+<!-- SECTION:FINAL_SUMMARY:END -->
