@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T21:36:00Z'
-updated_date: '2026-10-30T06:01:00Z'
+updated_date: '2026-10-30T06:03:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -47,6 +47,25 @@ So the current location most likely became Ukiah's coordinates with `timezoneId 
 - [ ] #3 Existing stored current locations with a stale zone are handled; Israel/Diaspora auto-detect and the TASK-5 device/display-city rules are unchanged
 - [ ] #4 Unit tests for the zone-mismatch and zone-change cases; emulator re-check of the original TASK-48 steps and the Kiritimati case passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Phase 2: stale zone (owner approved 2026-10-30)
+1. PreferencesRepository.preferences: a stored GPS fix (key gps_location) keeps only its place. It is read with timezoneId = the device's current zone (DeviceContext.realZone()). The stamped zone is ignored, so already-stored stale fixes are corrected at read time. preferences already re-emits on system time/zone changes, so every reader (DeviceNow.position, displayCity with no city selected, widgets, reminder plans, daily notices) follows a zone change without a new fix. The zone-fallback city is unchanged.
+2. Add UserPreferences.currentLocationIsFix (true only for a stored GPS fix) for Phase 3.
+3. Robolectric unit tests (PreferencesRepository + DeviceContext + ZmanimRepository): a fix stored with a mismatched zone reads in the device zone; a zone change re-zones the same fix (incl. Kiritimati); the fallback city keeps its own zone and currentLocationIsFix=false.
+4. Update ARCHITECTURE_SPEC "Dates and Notifications" and the LocationService comment.
+
+Phase 3: GPS position doesn't fit the device zone (owner decision, Option A)
+5. Detection, offline: device/ZoneMismatch.kt, a pure function. Solar offset of the fix = longitude/15 h. Compare it with the device zone's offset at now; the difference is wrapped to [-12, 12] h (date line: Kiritimati, Tonga, Samoa, Chukotka). Mismatch only when |diff| > 4 h. Real zones deviate from solar time by at most ~3–3.5 h (western China on Asia/Shanghai ≈2.9 h, Galicia in CEST ≈2.6 h, Nome AKDT ≈3 h, Attu/Adak HDT ≈3.5 h). Only a real fix (currentLocationIsFix) is checked, never the fallback city.
+6. Not nagging: a notice key = device zone id + the fix's rounded solar hour. It is stored in DataStore as internal state (not UserPreferences), like LAST_NOTIFIED_UPDATE_VERSION. The dialog shows only when a mismatch exists and its key differs from the stored one; showing records the key. When the mismatch clears, the key is cleared, so a later new mismatch shows again.
+7. When it shows: a ZoneMismatchDialog in the app shell (LevanaStartupEffects) collects the preferences (re-emitted on a new fix and on zone changes) while the app is started. So it shows when a fix arrives or the zone changes in the app, and on the next open if a mismatch arose while closed and wasn't shown yet.
+8. UI: Material 3 AlertDialog. Title, plain-language text, confirm "Open Date & time settings" (Settings.ACTION_DATE_SETTINGS, guarded with resolveActivity/try), dismiss "Not now". English + Hebrew strings, no hard-coded direction.
+9. No TASK-5 rule changes: Israel/Diaspora stays zone-based, and times stay on the device clock. Screenshot tests seed New York in America/New_York, so no mismatch is possible.
+10. Unit tests: California fix + Jerusalem zone → mismatch; Madrid, Shanghai, Kolkata, Kashgar (Asia/Shanghai), Vigo (summer), Nome (summer), Adak, Kiritimati and Ukiah fixes in their own zones → none; fallback city → never; key logic (show once, re-show after the mismatch clears and recurs).
+11. Verify: full build + unit tests + lint + verifyRoborazziDebug --rerun-tasks (116 unchanged). Emulator: Kiritimati + zone change with the app open, before/after. TASK-48 setup (Jerusalem zone, GPS Ukiah) shows the pop-up once; the button opens Date & time; it doesn't re-show after resume; no pop-up after setting a matching zone. EN + HE screenshots.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
