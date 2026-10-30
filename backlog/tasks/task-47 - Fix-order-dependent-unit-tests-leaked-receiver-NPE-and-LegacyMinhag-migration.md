@@ -1,11 +1,11 @@
 ---
 id: TASK-47
 title: 'Fix order-dependent unit tests: leaked receiver NPE and LegacyMinhag migration'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T00:47:00Z'
-updated_date: '2026-10-30T06:04:00Z'
+updated_date: '2026-10-30T06:11:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -69,6 +69,18 @@ Verification (tested commit 681fb6a):
 - Full suite 3x with rm -rf app/build/test-results and --rerun-tasks: 821/0 each (/tmp/task47/full-{1,2,3}.log).
 - Final: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 821/0 (/tmp/task47/final.log). git status clean afterwards: no screenshot changed. The repo tracks 118 PNGs under app/src/test/screenshots, not 116; all are unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T06:11:00Z
+
+---
+
+Coordinator integration 2026-10-30: test-only changes reviewed; merged as 4e75b06. Clean run (test-results deleted, --rerun-tasks): 821 tests, 0 failures; Roborazzi 116 unchanged.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
