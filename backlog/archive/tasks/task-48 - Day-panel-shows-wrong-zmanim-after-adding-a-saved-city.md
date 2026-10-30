@@ -4,6 +4,7 @@ title: Day panel shows wrong zmanim after adding a saved city
 status: To Do
 assignee: []
 created_date: '2026-10-30T00:56:00Z'
+updated_date: '2026-10-30T05:47:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -32,3 +33,15 @@ Evidence: /tmp/levana-emu-7y64kadl/artifacts/11_master_after_add_city.png (outsi
 <!-- AC:BEGIN -->
 - [ ] #1 After adding a saved city, the day panel shows the active city's zmanim in the correct zone
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T05:47:00Z
+
+---
+
+Merged into TASK-46 by owner decision 2026-10-30 (same root cause hypothesis: GPS current location stored with a mismatched time zone). All evidence copied there.
+
+---
+<!-- COMMENTS:END -->
