@@ -20,7 +20,7 @@ class TopBarTitlesTest {
             LocationsSettingsRoute::class to R.string.design_cities,
             CalendarSelectionRoute::class to R.string.design_system_calendars,
             AddEditEventRoute::class to R.string.design_add_event,
-            ContactBirthdayRoute::class to R.string.design_birthday,
+            ContactBirthdayRoute::class to R.string.design_add_birthday,
         )
         expected.forEach { (route, title) -> assertEquals(route.simpleName, title, topBarTitleFor(route)) }
         // Every titled route is matched against the destination
@@ -31,6 +31,12 @@ class TopBarTitlesTest {
     fun `the event editor is Add for a new event and Edit for a saved one`() {
         assertEquals(R.string.design_add_event, topBarTitleFor(AddEditEventRoute::class, eventId = 0L))
         assertEquals(R.string.design_edit_event, topBarTitleFor(AddEditEventRoute::class, eventId = 42L))
+    }
+
+    @Test
+    fun `the birthday editor is Add for a new birthday and Edit for a stored one`() {
+        assertEquals(R.string.design_add_birthday, topBarTitleFor(ContactBirthdayRoute::class))
+        assertEquals(R.string.design_edit_birthday, topBarTitleFor(ContactBirthdayRoute::class, birthdayEditing = true))
     }
 
     @Test

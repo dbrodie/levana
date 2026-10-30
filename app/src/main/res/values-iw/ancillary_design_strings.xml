@@ -2,6 +2,9 @@
 <resources>
     <string name="birthday_date_title">יום הולדת עברי</string>
     <string name="birthday_date_hint">שמרו את התאריך העברי לתזכורת שנתית.</string>
+    <!-- %1$s contact name, %2$s the stored Hebrew date -->
+    <string name="birthday_existing_notice">לאיש הקשר %1$s כבר שמור יום הולדת עברי: %2$s. כעת עורכים אותו, ולא מוסיפים חדש.</string>
+    <string name="birthday_existing_replaced">התאריך שבחרתם הוחלף בתאריך השמור.</string>
     <string name="event_add_title">שמירת תאריך</string>
     <string name="event_edit_title">עריכת אירוע</string>
     <string name="event_date_hint">בחרו את התאריך העברי לאירוע זה.</string>

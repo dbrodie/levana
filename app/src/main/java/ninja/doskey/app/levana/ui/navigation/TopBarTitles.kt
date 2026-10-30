@@ -21,10 +21,11 @@ internal val TitledRoutes: List<KClass<*>> = listOf(
 
 /**
  * The top-bar title for [route]; [eventId] is the [AddEditEventRoute] argument, non-zero when
- * editing. Other routes (the calendar has its own header) show the app name.
+ * editing, and [birthdayEditing] whether the birthday editor edits a stored birthday. Other
+ * routes (the calendar has its own header) show the app name.
  */
 @StringRes
-internal fun topBarTitleFor(route: KClass<*>?, eventId: Long = 0L): Int = when (route) {
+internal fun topBarTitleFor(route: KClass<*>?, eventId: Long = 0L, birthdayEditing: Boolean = false): Int = when (route) {
     ZmanimRoute::class -> R.string.nav_zmanim
     HalachicTimesSettingsRoute::class -> R.string.design_halachic_times
     DeveloperSettingsRoute::class -> R.string.design_developer_settings
@@ -35,6 +36,6 @@ internal fun topBarTitleFor(route: KClass<*>?, eventId: Long = 0L): Int = when (
     LocationsSettingsRoute::class -> R.string.design_cities
     CalendarSelectionRoute::class -> R.string.design_system_calendars
     AddEditEventRoute::class -> if (eventId != 0L) R.string.design_edit_event else R.string.design_add_event
-    ContactBirthdayRoute::class -> R.string.design_birthday
+    ContactBirthdayRoute::class -> if (birthdayEditing) R.string.design_edit_birthday else R.string.design_add_birthday
     else -> R.string.app_name
 }

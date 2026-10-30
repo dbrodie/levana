@@ -1,9 +1,11 @@
 package ninja.doskey.app.levana.ui.birthday
 
+import android.net.Uri
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
+import ninja.doskey.app.levana.data.PickedContact
 import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
@@ -241,5 +243,157 @@ class ContactBirthdayViewModelTest {
             vm.onIntent(ContactBirthdayIntent.Save)
             assertEquals(Triple(29, JewishDate.IYAR, year), repository.saved)
         }
+    }
+
+    // ── TASK-51: picking a contact that already has a birthday ──────────────
+
+    /** Contacts by lookup key, each with an optional stored birthday; records what Save writes. */
+    private class ContactsRepository(private val stored: Map<String, ContactBirthday?>) :
+        ContactBirthdayRepository(RuntimeEnvironment.getApplication()) {
+        var saved: Pair<String, Triple<Int, Int, Int>>? = null
+        override suspend fun resolveContact(contactUri: Uri) =
+            contactUri.lastPathSegment!!.let { PickedContact(it, "Contact $it", null) }
+        override suspend fun getBirthdayForContact(contactLookupKey: String) = stored[contactLookupKey]
+        override suspend fun setBirthday(contactLookupKey: String, day: Int, month: Int, year: Int) {
+            saved = contactLookupKey to Triple(day, month, year)
+        }
+    }
+
+    private fun addMode(vararg stored: Pair<String, ContactBirthday?>): Pair<ContactBirthdayViewModel, ContactsRepository> {
+        val repository = ContactsRepository(stored.toMap())
+        return ContactBirthdayViewModel(repository, deviceContextOn(LocalDate.of(2027, 3, 1))) to repository
+    }
+
+    private fun ContactBirthdayViewModel.pick(key: String) =
+        onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/lookup/$key")))
+
+    private val ContactBirthdayViewModel.date get() = state.value.let { Triple(it.hebrewDay, it.hebrewMonth, it.hebrewYear) }
+
+    private fun stored(key: String, day: Int, month: Int, year: Int) =
+        ContactBirthday(key, "Contact $key", null, day, month, year)
+
+    @Test
+    fun pickingAContactWithABirthdayEditsItWithANotice() {
+        val (vm, repository) = addMode("kR" to stored("kR", 12, JewishDate.SIVAN, 5750))
+        val addDate = vm.date
+        assertFalse(vm.state.value.isEditing)
+
+        vm.pick("kR")
+
+        assertTrue(vm.state.value.isEditing)
+        assertEquals("kR", vm.state.value.contactLookupKey)
+        assertEquals(Triple(12, JewishDate.SIVAN, 5750), vm.date)
+        assertEquals(StoredBirthdayNotice(12, JewishDate.SIVAN, 5750, replacedChosenDate = false), vm.state.value.storedBirthdayNotice)
+        assertFalse(vm.state.value.storedBirthdayUnchecked)
+        assertTrue(addDate != vm.date)
+        vm.onIntent(ContactBirthdayIntent.Save)
+        assertEquals("kR" to Triple(12, JewishDate.SIVAN, 5750), repository.saved)
+    }
+
+    @Test
+    fun selectingAContactWithABirthdayEditsItToo() {
+        val (vm, _) = addMode("kR" to stored("kR", 12, JewishDate.SIVAN, 5750))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kR", "Contact kR", null))
+        assertTrue(vm.state.value.isEditing)
+        assertEquals(Triple(12, JewishDate.SIVAN, 5750), vm.date)
+    }
+
+    @Test
+    fun pickingAContactWithoutABirthdayStaysInAddMode() {
+        val (vm, repository) = addMode("kN" to null)
+        val addDate = vm.date
+
+        vm.pick("kN")
+
+        assertFalse(vm.state.value.isEditing)
+        assertEquals(null, vm.state.value.storedBirthdayNotice)
+        assertFalse(vm.state.value.storedBirthdayUnchecked)
+        assertEquals("kN", vm.state.value.contactLookupKey)
+        assertEquals(addDate, vm.date)
+        vm.onIntent(ContactBirthdayIntent.Save)
+        assertEquals("kN" to addDate, repository.saved)
+    }
+
+    @Test
+    fun switchingContactsSwitchesTheModeAndNeverCarriesADateAcross() {
+        val (vm, repository) = addMode(
+            "kA" to stored("kA", 12, JewishDate.SIVAN, 5750),
+            "kN" to null,
+            "kC" to stored("kC", 5, JewishDate.KISLEV, 5760)
+        )
+        val addDate = vm.date
+
+        vm.pick("kA")
+        assertTrue(vm.state.value.isEditing)
+        // An edit to A's birthday belongs to A
+        vm.pickDay(20)
+
+        vm.pick("kN")
+        assertFalse(vm.state.value.isEditing)
+        assertEquals(null, vm.state.value.storedBirthdayNotice)
+        assertEquals(addDate, vm.date)
+
+        vm.pick("kC")
+        assertTrue(vm.state.value.isEditing)
+        assertEquals(Triple(5, JewishDate.KISLEV, 5760), vm.date)
+        assertEquals(StoredBirthdayNotice(5, JewishDate.KISLEV, 5760, replacedChosenDate = false), vm.state.value.storedBirthdayNotice)
+
+        vm.pick("kA")
+        assertEquals(Triple(12, JewishDate.SIVAN, 5750), vm.date)
+        vm.onIntent(ContactBirthdayIntent.Save)
+        assertEquals("kA" to Triple(12, JewishDate.SIVAN, 5750), repository.saved)
+    }
+
+    @Test
+    fun aDateChosenBeforeThePickIsReplacedSaidAndRestoredForAContactWithout() {
+        val (vm, _) = addMode("kR" to stored("kR", 12, JewishDate.SIVAN, 5750), "kN" to null)
+        vm.pickYear(5790)
+        vm.pickMonth(JewishDate.AV)
+        vm.pickDay(9)
+        val chosen = vm.date
+
+        vm.pick("kR")
+        assertEquals(Triple(12, JewishDate.SIVAN, 5750), vm.date)
+        assertTrue(vm.state.value.storedBirthdayNotice!!.replacedChosenDate)
+
+        vm.pick("kN")
+        assertEquals(chosen, vm.date)
+        assertFalse(vm.state.value.isEditing)
+    }
+
+    @Test
+    fun aChosenDateEqualToTheStoredOneIsNotReportedAsReplaced() {
+        val (vm, _) = addMode("kR" to stored("kR", 12, JewishDate.SIVAN, 5750))
+        vm.pickYear(5750)
+        vm.pickMonth(JewishDate.SIVAN)
+        vm.pickDay(12)
+        vm.pick("kR")
+        assertFalse(vm.state.value.storedBirthdayNotice!!.replacedChosenDate)
+    }
+
+    @Test
+    fun anOutOfRangeBirthdayOfAPickedContactIsSavedUnchanged() {
+        for (date in outOfRange) {
+            val (vm, repository) = addMode("kR" to stored("kR", date.first, date.second, date.third))
+            vm.pickDay(3) // a change before the pick does not touch the stored date
+            vm.pick("kR")
+            assertTrue("$date", vm.state.value.isEditing)
+            if (HebrewDateMatcher.isKnownYear(date.third)) {
+                assertEquals("$date", date.third, vm.state.value.hebrewYear)
+            }
+            assertEquals("$date", date, vm.state.value.storedBirthdayNotice!!.let { Triple(it.day, it.month, it.year) })
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals("$date", "kR" to date, repository.saved)
+        }
+    }
+
+    @Test
+    fun anOutOfRangeBirthdayIsNotCarriedToAContactWithout() {
+        val (vm, repository) = addMode("kR" to stored("kR", 14, JewishDate.KISLEV, 5500), "kN" to null)
+        val addDate = vm.date
+        vm.pick("kR")
+        vm.pick("kN")
+        vm.onIntent(ContactBirthdayIntent.Save)
+        assertEquals("kN" to addDate, repository.saved)
     }
 }

@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.core.text.BidiFormatter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.R
@@ -149,6 +155,13 @@ fun ContactBirthdayScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Always composed, so TalkBack announces the notice when it appears
+        Box(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+            state.storedBirthdayNotice?.let { notice ->
+                StoredBirthdayNoticeCard(state.contactName, notice)
+            }
+        }
+
         HebrewDateField(
             label = stringResource(R.string.calendar_hebrew_date),
             hebrewDate = formatHebrewDate(state.hebrewDay, state.hebrewMonth, state.hebrewYear),
@@ -173,6 +186,7 @@ fun ContactBirthdayScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !state.isSaving &&
+                !state.storedBirthdayUnchecked &&
                 state.contactLookupKey.isNotBlank()
         ) {
             Text(stringResource(if (state.isEditing) R.string.event_update else R.string.event_save))
@@ -186,5 +200,38 @@ fun ContactBirthdayScreen(
             onConfirm = { viewModel.onIntent(ContactBirthdayIntent.SetHebrewDate(it)) },
             onDismiss = { viewModel.onIntent(ContactBirthdayIntent.DismissDatePicker) }
         )
+    }
+}
+
+/** The picked contact already had a Hebrew birthday, now being edited instead of added (TASK-51). */
+@Composable
+private fun StoredBirthdayNoticeCard(contactName: String, notice: StoredBirthdayNotice) {
+    val bidi = BidiFormatter.getInstance()
+    val text = buildString {
+        append(
+            stringResource(
+                R.string.birthday_existing_notice,
+                bidi.unicodeWrap(contactName),
+                // Kept on one line: a right-to-left date split across lines reads out of order
+                bidi.unicodeWrap(formatHebrewDate(notice.day, notice.month, notice.year).replace(' ', '\u00A0'))
+            )
+        )
+        if (notice.replacedChosenDate) append(' ').append(stringResource(R.string.birthday_existing_replaced))
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Row(modifier = Modifier.padding(16.dp)) {
+            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = text, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }

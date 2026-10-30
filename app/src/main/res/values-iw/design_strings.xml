@@ -12,5 +12,7 @@
     <string name="design_edit_event">עריכת אירוע</string>
     <string name="design_add_event">הוספת אירוע</string>
     <string name="design_birthday">יום הולדת</string>
+    <string name="design_add_birthday">הוספת יום הולדת</string>
+    <string name="design_edit_birthday">עריכת יום הולדת</string>
     <string name="design_open_menu">פתיחת תפריט</string>
 </resources>

@@ -198,6 +198,12 @@ abstract class ScreenshotTest(private val variant: Variant) {
         await(hasText(string(R.string.settings_developer_settings)))
     }
 
+    /** Runs [block] on the launched activity, e.g. to deliver an activity result. */
+    protected fun onActivity(block: (MainActivity) -> Unit) {
+        checkNotNull(scenario) { "launch first" }.onActivity(block)
+        advanceFrame()
+    }
+
     protected fun string(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
 
     /** Waits until a node matching [matcher] is shown (async loads finish), then until idle. */

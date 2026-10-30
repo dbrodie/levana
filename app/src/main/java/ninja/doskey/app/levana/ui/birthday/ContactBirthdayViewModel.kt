@@ -58,6 +58,20 @@ class ContactBirthdayViewModel(
     // writes it back unchanged (TASK-24)
     private var preservedDate: Triple<Int, Int, Int>? = null
 
+    // True once the user changed the date themselves
+    private var dateChanged = false
+
+    // The add-mode date, kept while a picked contact's stored birthday is
+    // shown in its place and restored when a contact without one is chosen,
+    // so one contact's date is never saved to another (TASK-51)
+    private var addModeDate: AddModeDate? = null
+
+    private class AddModeDate(
+        val date: Triple<Int, Int, Int>,
+        val yearChosen: Boolean,
+        val changed: Boolean
+    )
+
     init {
         viewModelScope.launch {
             val year = currentYear.await()
@@ -103,6 +117,7 @@ class ContactBirthdayViewModel(
         if (year != s.hebrewYear) editedWhileLoading += DateField.YEAR
         if (day == s.hebrewDay && month == s.hebrewMonth && year == s.hebrewYear) return
         preservedDate = null
+        dateChanged = true
         setDate(day, month, if (year == s.hebrewYear) year else SupportedHebrewYears.coerce(year))
     }
 
@@ -137,12 +152,18 @@ class ContactBirthdayViewModel(
         )
     }
 
+    /**
+     * A contact the user chose. Its stored birthday, if any, is looked up
+     * before Save is allowed, so it is edited rather than silently replaced.
+     */
     private fun selectContact(lookupKey: String, name: String, photoUri: String?) {
         _state.value = _state.value.copy(
             contactLookupKey = lookupKey,
             contactName = name,
-            contactPhotoUri = photoUri
+            contactPhotoUri = photoUri,
+            storedBirthdayUnchecked = true
         )
+        load(lookupKey, fromPick = true)
     }
 
     private fun resolvePickedContact(contactUri: Uri) {
@@ -169,15 +190,39 @@ class ContactBirthdayViewModel(
     private fun loadBirthday(contactLookupKey: String) {
         if (contactLookupKey == requestedKey) return
         requestedKey = contactLookupKey
-        supersedeLoad()
         pickJob?.cancel()
+        load(contactLookupKey, fromPick = false)
+    }
+
+    /**
+     * Loads the birthday stored for [contactLookupKey] into the editor. Opened
+     * from the list, date fields the user changed while it loaded win. After
+     * a contact is picked ([fromPick]) the stored date always wins, with a
+     * notice saying so; a contact without one returns the editor to add mode.
+     */
+    private fun load(contactLookupKey: String, fromPick: Boolean) {
+        supersedeLoad()
         editedWhileLoading.clear()
         preservedDate = null
         val token = loadToken
         loadJob = viewModelScope.launch {
-            val birthday =
+            val birthday = if (fromPick) {
+                try {
+                    repository.getBirthdayForContact(contactLookupKey)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Save stays off: the stored birthday is unknown
+                    if (token == loadToken) _state.value = _state.value.copy(errorMessage = e.message)
+                    return@launch
+                }
+            } else {
                 repository.getBirthdayForContact(contactLookupKey)
-            if (birthday != null) {
+            }
+            if (birthday == null) {
+                if (token != loadToken) return@launch
+                if (fromPick) returnToAddMode() else _state.value = _state.value.copy(storedBirthdayUnchecked = false)
+            } else {
                 // A birthday stored without a usable year opens on the
                 // current Hebrew year
                 val (day, month, year) = HebrewDateMatcher.editorDate(
@@ -189,6 +234,25 @@ class ContactBirthdayViewModel(
                 )
                 if (token != loadToken) return@launch
                 val current = _state.value
+                val stored = Triple(birthday.hebrewDay, birthday.hebrewMonth, birthday.hebrewYear)
+                val notice = if (fromPick) {
+                    // The first switch away from add mode keeps its date
+                    val addMode = addModeDate ?: AddModeDate(
+                        Triple(current.hebrewDay, current.hebrewMonth, current.hebrewYear),
+                        yearChosen,
+                        dateChanged
+                    ).takeIf { !current.isEditing }
+                    addModeDate = addMode
+                    StoredBirthdayNotice(
+                        day = stored.first,
+                        month = stored.second,
+                        year = stored.third,
+                        replacedChosenDate = addMode != null && addMode.changed &&
+                            addMode.date != Triple(day, month, year)
+                    )
+                } else {
+                    null
+                }
                 _state.value = current.copy(
                     isEditing = true,
                     contactLookupKey = birthday.contactLookupKey,
@@ -196,9 +260,11 @@ class ContactBirthdayViewModel(
                     contactPhotoUri = birthday.contactPhotoUri,
                     hebrewDay = day,
                     hebrewMonth = month,
-                    hebrewYear = year
+                    hebrewYear = year,
+                    storedBirthdayUnchecked = false,
+                    storedBirthdayNotice = notice
                 )
-                if (editedWhileLoading.isNotEmpty()) {
+                if (!fromPick && editedWhileLoading.isNotEmpty()) {
                     // Keep what the user changed meanwhile, normalised
                     // against the resulting month and year
                     setDate(
@@ -207,17 +273,37 @@ class ContactBirthdayViewModel(
                         year = if (DateField.YEAR in editedWhileLoading) current.hebrewYear else year
                     )
                 } else {
-                    preservedDate = Triple(birthday.hebrewDay, birthday.hebrewMonth, birthday.hebrewYear)
-                        .takeIf { birthday.hebrewYear !in SupportedHebrewYears }
+                    preservedDate = stored.takeIf { birthday.hebrewYear !in SupportedHebrewYears }
                 }
                 yearChosen = true
             }
         }
     }
 
+    /** A picked contact has no stored birthday: a new one is added, on the add-mode date. */
+    private fun returnToAddMode() {
+        val addMode = addModeDate
+        addModeDate = null
+        _state.value = _state.value.copy(
+            isEditing = false,
+            storedBirthdayUnchecked = false,
+            storedBirthdayNotice = null
+        )
+        if (addMode != null) {
+            _state.value = _state.value.copy(
+                hebrewDay = addMode.date.first,
+                hebrewMonth = addMode.date.second,
+                hebrewYear = addMode.date.third
+            )
+            yearChosen = addMode.yearChosen
+            dateChanged = addMode.changed
+        }
+    }
+
     private fun save() {
         val s = _state.value
-        if (s.contactLookupKey.isBlank()) return
+        // Never before the chosen contact's stored birthday is known (TASK-51)
+        if (s.contactLookupKey.isBlank() || s.storedBirthdayUnchecked) return
 
         // Save what the editor shows; a load still pending must not replace it
         supersedeLoad()

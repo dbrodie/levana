@@ -11,15 +11,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.toRoute
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
+import org.koin.androidx.compose.koinViewModel
 
 /**
- * The app's top bar for every route but the calendar: the route's title, the menu button on
+ * The app's top bar for every route but the calendar: the route's title (the birthday editor's
+ * follows its view model, shared through the back-stack entry), the menu button on
  * drawer routes or back elsewhere, and My Events' registered [actions].
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +50,15 @@ internal fun LevanaTopBar(
             } else {
                 0L
             }
-            Text(stringResource(topBarTitleFor(route, eventId)), style = MaterialTheme.typography.titleLarge,
+            // Opened from the list, or switched to editing after picking a contact that has one
+            val birthdayEditing = if (route == ContactBirthdayRoute::class && backStackEntry != null) {
+                val birthdayState by koinViewModel<ContactBirthdayViewModel>(viewModelStoreOwner = backStackEntry)
+                    .state.collectAsStateWithLifecycle()
+                birthdayState.isEditing || backStackEntry.toRoute<ContactBirthdayRoute>().contactLookupKey.isNotBlank()
+            } else {
+                false
+            }
+            Text(stringResource(topBarTitleFor(route, eventId, birthdayEditing)), style = MaterialTheme.typography.titleLarge,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
         },
         navigationIcon = {
