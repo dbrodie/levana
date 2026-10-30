@@ -3,11 +3,11 @@ id: TASK-52.1
 title: >-
   Foldable test setup: Fold 8 / Fold 8 Ultra device profiles and screenshot
   sizes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-30T11:50:00Z'
+updated_date: '2026-10-30T11:53:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-52
@@ -113,6 +113,18 @@ Evidence: `/tmp/levana-task52.1-evidence/` (README.md, emulator/fold8, emulator/
 ## Verification (tested commit 2e9d008)
 `rm -rf app/build/test-results && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks`: BUILD SUCCESSFUL. 1033 tests, 0 failures, 0 errors, 0 skipped (8 in FoldableScreenshotTest). Roborazzi verify passed, and git status was clean afterwards. Lint: 0 errors, 83 warnings; this change touches only tests, the skill and docs. Log: /tmp/levana-task52.1-evidence/gradle-verify.log. Emulator runs used the debug build of this branch; its app code is identical to master 91ec9d5.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T11:53:00Z
+
+---
+
+Coordinator integration 2026-10-30: merged as c848623. Clean run: 1051 tests, 0 failures; Roborazzi 268 unchanged (8 foldable sample baselines). Density 420 dpi is an assumption (Samsung doesn't publish it); verify on a real device. Fold crash = TASK-50 (repro steps added there); TASK-52.3 depends on it. Evidence: /tmp/levana-task52.1-evidence/.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
