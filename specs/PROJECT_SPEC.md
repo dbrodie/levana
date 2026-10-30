@@ -52,7 +52,7 @@ Delivery follows Android scheduling restrictions and is not guaranteed at an exa
 
 ## Presentation and Accessibility
 
-- Material 3, system-following light/dark appearance, system fonts and optional holiday accent colors.
+- Material 3 with system fonts. Theme: Light, Dark or System (default System). Optional Material You wallpaper colors (off by default) and optional holiday accent colors; during a holiday, holiday colors take priority over wallpaper colors.
 - Hebrew or system language, with English fallback and RTL layout for Hebrew.
 - Accessibility requirements: meaningful TalkBack labels, logical focus, scalable text, adequate contrast and touch targets of at least 48 dp.
 - Hebrew-date launcher icon and Quick Settings tile.

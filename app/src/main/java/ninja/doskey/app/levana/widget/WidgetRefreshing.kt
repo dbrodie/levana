@@ -37,6 +37,7 @@ internal data class WidgetSettings(
     val candleLightingOffset: Double,
     val selectedZmanim: Set<String>,
     val dynamicHolidayTheme: Boolean,
+    val materialYou: Boolean,
     val devForceHolidayTheme: String?,
     val devDateOverride: java.time.LocalDate?,
 )
@@ -48,6 +49,7 @@ internal fun UserPreferences.widgetSettings() = WidgetSettings(
     candleLightingOffset = candleLightingOffset,
     selectedZmanim = selectedZmanim,
     dynamicHolidayTheme = dynamicHolidayTheme,
+    materialYou = materialYou,
     devForceHolidayTheme = devForceHolidayTheme,
     devDateOverride = devDateOverride,
 )

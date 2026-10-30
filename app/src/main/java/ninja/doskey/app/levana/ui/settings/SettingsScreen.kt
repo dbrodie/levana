@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LocationOn
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -33,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -77,6 +80,7 @@ fun SettingsContent(
     var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
     var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
     var showAppLanguageDialog by remember { mutableStateOf(false) }
+    var showThemeModeDialog by remember { mutableStateOf(false) }
     var showIsraelModeDialog by remember { mutableStateOf(false) }
     var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
     var showCandleLightingModeDialog by remember { mutableStateOf(false) }
@@ -219,6 +223,30 @@ fun SettingsContent(
             modifier = Modifier.clickable { showAppLanguageDialog = true }
         )
         SettingsRowDivider()
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_theme_label)) },
+            supportingContent = { Text(themeModeLabel(state.themeMode)) },
+            leadingContent = {
+                Icon(Icons.Outlined.DarkMode, contentDescription = null)
+            },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Outlined.ArrowForwardIos, contentDescription = null)
+            },
+            modifier = Modifier.clickable { showThemeModeDialog = true }
+        )
+        SettingsRowDivider()
+        if (state.materialYouSupported) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_material_you_label),
+                description = stringResource(R.string.settings_material_you_description),
+                leadingContent = {
+                    Icon(Icons.Outlined.Wallpaper, contentDescription = null)
+                },
+                checked = state.materialYou,
+                onCheckedChange = { onIntent(SettingsIntent.SetMaterialYou(it)) }
+            )
+            SettingsRowDivider()
+        }
         SettingsSwitchRow(
             title = stringResource(R.string.settings_holiday_theming_label),
             description = stringResource(R.string.settings_holiday_theming_description),
@@ -346,6 +374,21 @@ fun SettingsContent(
                 showAppLanguageDialog = false
             },
             onDismiss = { showAppLanguageDialog = false }
+        )
+    }
+
+    if (showThemeModeDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_theme_label),
+            description = stringResource(R.string.settings_theme_description),
+            options = ThemeMode.entries,
+            selected = state.themeMode,
+            label = { themeModeLabel(it) },
+            onSelect = {
+                onIntent(SettingsIntent.SetThemeMode(it))
+                showThemeModeDialog = false
+            },
+            onDismiss = { showThemeModeDialog = false }
         )
     }
 

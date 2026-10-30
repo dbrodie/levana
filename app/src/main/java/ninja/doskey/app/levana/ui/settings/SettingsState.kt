@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.ui.settings
 
 import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.SavedLocation
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import java.time.LocalDate
 
@@ -17,6 +18,10 @@ data class SettingsState(
     val appLanguage: AppLanguage = AppLanguage.SYSTEM,
     val candleLightingOffset: Double = 18.0,
     val dynamicHolidayTheme: Boolean = true,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val materialYou: Boolean = false,
+    /** Whether the device offers Material You; its switch is hidden otherwise. */
+    val materialYouSupported: Boolean = false,
     val showDeveloperSettings: Boolean = false,
     /** The device date when preferences were last read, for the override picker. */
     val deviceToday: LocalDate? = null,

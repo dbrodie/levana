@@ -73,10 +73,11 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
             LaunchedEffect(snapshot.refreshAt) {
                 WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt, TodayWidgetReceiver::class.java)
             }
-            val colors = remember(snapshot.holidayTheme) {
+            // A refresh also picks up new wallpaper colors when Material You is on
+            val colors = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
                 ColorProviders(
-                    light = levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme),
-                    dark = levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme),
+                    light = levanaColorScheme(context, darkTheme = false, snapshot.holidayTheme, prefs.materialYou),
+                    dark = levanaColorScheme(context, darkTheme = true, snapshot.holidayTheme, prefs.materialYou),
                 )
             }
             GlanceTheme(colors = colors) {

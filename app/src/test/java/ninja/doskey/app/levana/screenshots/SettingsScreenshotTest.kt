@@ -56,6 +56,15 @@ class SettingsScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         dialog(R.string.settings_yahrzeit_missing_day_label, "yahrzeit_missing_day")
         dialog(R.string.settings_app_language_label, "app_language")
         dialog(R.string.settings_notify_mode, "candle_mode")
+        dialog(R.string.settings_theme_label, "theme_mode")
+    }
+
+    @Test
+    fun appearance() {
+        openSettings()
+        // Its last row at the bottom of the screen shows the whole Appearance group
+        clickable(string(R.string.settings_holiday_theming_label)).performScrollTo()
+        capture("settings_appearance")
     }
 
     @Test

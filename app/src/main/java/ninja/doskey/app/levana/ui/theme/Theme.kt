@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.theme
 
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -78,20 +79,36 @@ fun levanaColorScheme(
     else -> LightColorScheme
 }
 
+/** Whether the device offers Material You wallpaper colors (Android 12+; always, at minSdk 34). */
+val supportsMaterialYou: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+/** The wallpaper's Material You colors. */
+fun wallpaperColorScheme(context: Context, darkTheme: Boolean): ColorScheme =
+    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+
+/**
+ * [levanaColorScheme] with the wallpaper's colors standing in for Levana's when [materialYou]
+ * is on and supported. A holiday theme still wins over them.
+ */
+fun levanaColorScheme(
+    context: Context,
+    darkTheme: Boolean,
+    holidayTheme: HolidayTheme?,
+    materialYou: Boolean,
+): ColorScheme = levanaColorScheme(
+    darkTheme = darkTheme,
+    holidayTheme = holidayTheme,
+    dynamicScheme = if (materialYou && supportsMaterialYou) wallpaperColorScheme(context, darkTheme) else null,
+)
+
 @Composable
 fun LevanaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    materialYou: Boolean = false,
     holidayTheme: HolidayTheme? = null,
     content: @Composable () -> Unit,
 ) {
-    val dynamicScheme = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else {
-        null
-    }
-    val colorScheme = levanaColorScheme(darkTheme, holidayTheme, dynamicScheme)
+    val colorScheme = levanaColorScheme(LocalContext.current, darkTheme, holidayTheme, materialYou)
     MaterialTheme(
         colorScheme = colorScheme,
         typography = LevanaTypography,

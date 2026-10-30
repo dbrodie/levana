@@ -80,8 +80,13 @@ class MonthWidget : GlanceAppWidget(), KoinComponent {
             LaunchedEffect(snapshot.refreshAt) {
                 WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt, MonthWidgetReceiver::class.java)
             }
-            val light = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme) }
-            val dark = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme) }
+            // A refresh also picks up new wallpaper colors when Material You is on
+            val light = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
+                levanaColorScheme(context, darkTheme = false, snapshot.holidayTheme, prefs.materialYou)
+            }
+            val dark = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
+                levanaColorScheme(context, darkTheme = true, snapshot.holidayTheme, prefs.materialYou)
+            }
             // Calendar colors Glance's theme lacks, taken from the same schemes
             val gridColors = remember(light, dark) {
                 MonthGridColors(

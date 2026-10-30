@@ -22,6 +22,7 @@ import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import java.time.LocalDate
 import java.util.UUID
@@ -65,6 +66,8 @@ class PreferencesRepository(
         val CALENDAR_HEBREW_MODE = booleanPreferencesKey("hebrew_primary")
         val DYNAMIC_HOLIDAY_THEME =
             booleanPreferencesKey("dynamic_holiday_theme")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val MATERIAL_YOU = booleanPreferencesKey("material_you")
         val SHOW_DEVELOPER_SETTINGS =
             booleanPreferencesKey("show_developer_settings")
         // Test only; see UserPreferences.devDateOverride
@@ -148,6 +151,8 @@ class PreferencesRepository(
             showModernIsraeliHolidays = prefs[Keys.SHOW_MODERN_ISRAELI] ?: true,
             calendarHebrewMode = prefs[Keys.CALENDAR_HEBREW_MODE] ?: false,
             dynamicHolidayTheme = prefs[Keys.DYNAMIC_HOLIDAY_THEME] ?: true,
+            themeMode = parseThemeMode(prefs[Keys.THEME_MODE]),
+            materialYou = prefs[Keys.MATERIAL_YOU] ?: false,
             selectedCalendarIds = prefs[Keys.SELECTED_CALENDAR_IDS]
                 ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet(),
             showDeveloperSettings = prefs[Keys.SHOW_DEVELOPER_SETTINGS] ?: true,
@@ -270,6 +275,18 @@ class PreferencesRepository(
     suspend fun saveDynamicHolidayTheme(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[Keys.DYNAMIC_HOLIDAY_THEME] = enabled
+        }
+    }
+
+    suspend fun saveThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.THEME_MODE] = mode.name
+        }
+    }
+
+    suspend fun saveMaterialYou(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.MATERIAL_YOU] = enabled
         }
     }
 
@@ -460,6 +477,10 @@ internal object IsraelModeMigration : DataMigration<Preferences> {
 
     override suspend fun cleanUp() = Unit
 }
+
+/** The stored theme mode; a missing or unrecognised value follows the system. */
+internal fun parseThemeMode(value: String?): ThemeMode =
+    ThemeMode.entries.firstOrNull { it.name == value } ?: ThemeMode.SYSTEM
 
 /** Stored yahrzeit settings; missing or unrecognised values fall back to the defaults. */
 internal fun parseYahrzeitRules(

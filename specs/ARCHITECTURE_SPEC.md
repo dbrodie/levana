@@ -23,6 +23,7 @@ Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/
 - Repositories own persistence, Android provider access and KosherJava integration.
 - Koin modules provide repositories, shared services and screen ViewModels.
 - Room flows and Contacts/Calendar content observers drive lifecycle-aware, debounced refresh of affected screens.
+- Colors: `ui/theme/levanaColorScheme` is the one scheme selection, shared by the app and the home-screen widgets. Its precedence is the holiday theme (holiday theming on and a holiday active, or the developer forced theme), then Material You wallpaper colors when enabled, then Levana's own colors. Light/dark applies to whichever wins. The app resolves light/dark from the Theme setting, and the status/navigation bar icons follow that, not the system mode. Widgets keep the launcher's (system) light/dark and refresh their wallpaper colors on their next update.
 
 ## Data Ownership and Safety
 

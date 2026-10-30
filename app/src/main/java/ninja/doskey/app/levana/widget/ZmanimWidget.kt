@@ -69,8 +69,13 @@ class ZmanimWidget : GlanceAppWidget(), KoinComponent {
             LaunchedEffect(snapshot.refreshAt) {
                 WidgetUpdater.scheduleRefresh(context, snapshot.refreshAt, ZmanimWidgetReceiver::class.java)
             }
-            val light = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = false, holidayTheme = snapshot.holidayTheme) }
-            val dark = remember(snapshot.holidayTheme) { levanaColorScheme(darkTheme = true, holidayTheme = snapshot.holidayTheme) }
+            // A refresh also picks up new wallpaper colors when Material You is on
+            val light = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
+                levanaColorScheme(context, darkTheme = false, snapshot.holidayTheme, prefs.materialYou)
+            }
+            val dark = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
+                levanaColorScheme(context, darkTheme = true, snapshot.holidayTheme, prefs.materialYou)
+            }
             // Passed times fade out of the scheme's text color; onSurfaceVariant is too close to it
             val pastColor = remember(light, dark) {
                 ColorProvider(day = light.onSurface.copy(alpha = PAST_ALPHA), night = dark.onSurface.copy(alpha = PAST_ALPHA))

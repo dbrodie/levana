@@ -28,6 +28,13 @@
     <string name="settings_app_language_label">App language</string>
     <string name="settings_language_system">System default</string>
     <string name="settings_language_hebrew">Hebrew (עברית)</string>
+    <string name="settings_theme_label">Theme</string>
+    <string name="settings_theme_description">Use light or dark colors, or follow the system setting.</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_material_you_label">Wallpaper colors</string>
+    <string name="settings_material_you_description">Use Material You colors from your wallpaper. Holiday theming takes priority during holidays.</string>
     <string name="settings_holiday_theming_label">Holiday theming</string>
     <string name="settings_holiday_theming_description">Change app colors during holiday periods</string>
     <string name="event_title_label">Title</string>

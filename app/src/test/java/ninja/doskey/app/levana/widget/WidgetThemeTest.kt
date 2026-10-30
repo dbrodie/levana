@@ -48,5 +48,8 @@ class WidgetThemeTest {
         )
         assertEquals(base.widgetSettings(), nySelected.widgetSettings())
         assert(base.widgetSettings() != base.copy(currentLocation = newYork).widgetSettings())
+        // Widgets take wallpaper colors but keep the launcher's light/dark (TASK-13)
+        assert(base.widgetSettings() != base.copy(materialYou = true).widgetSettings())
+        assertEquals(base.widgetSettings(), base.copy(themeMode = ninja.doskey.app.levana.domain.model.ThemeMode.DARK).widgetSettings())
     }
 }
