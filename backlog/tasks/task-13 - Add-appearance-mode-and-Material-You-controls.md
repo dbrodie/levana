@@ -1,11 +1,11 @@
 ---
 id: TASK-13
 title: Add appearance mode and Material You controls
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:34Z'
-updated_date: '2026-10-30T06:34:00Z'
+updated_date: '2026-10-30T06:36:00Z'
 labels:
   - curated-import
   - source-specs
@@ -85,6 +85,18 @@ Implementation:
   - TalkBack semantics: the Wallpaper row is a single checkable node (settings_appearance_window.xml); the Theme dialog uses OptionDialog's selectableGroup with Role.RadioButton.
 - Observed, out of scope: with the emulator's GPS fix (Mountain View) and an IST/GMT zone, zmanim show in the device zone (for example sunrise 2:38 PM). This is the TASK-46 mismatch case; its dialog appears as designed.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T06:36:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed screenshots (Material You on, Chanukah+MY dark); merged as 70e9e85. Clean run: 854 tests, 0 failures; Roborazzi 132 unchanged (16 Settings baselines intentionally re-recorded for the new rows, 16 added).
+
+---
+<!-- COMMENTS:END -->
 
 ## Beads history
 
