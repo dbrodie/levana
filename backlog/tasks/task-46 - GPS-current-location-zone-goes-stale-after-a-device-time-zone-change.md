@@ -4,7 +4,7 @@ title: GPS current location keeps a stale or mismatched time zone (wrong zmanim)
 status: To Do
 assignee: []
 created_date: '2026-10-29T21:36:00Z'
-updated_date: '2026-10-30T05:47:00Z'
+updated_date: '2026-10-30T06:01:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -46,3 +46,9 @@ So the current location most likely became Ukiah's coordinates with `timezoneId 
 - [ ] #3 Existing stored current locations with a stale zone are handled; Israel/Diaspora auto-detect and the TASK-5 device/display-city rules are unchanged
 - [ ] #4 Unit tests for the zone-mismatch and zone-change cases; emulator re-check of the original TASK-48 steps and the Kiritimati case passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decision 2026-10-30 on GPS position vs device time zone mismatch (TASK-48 case): Option A. Keep the current rule (device zone decides; times for the device position are shown on the device clock). In addition, detect when the GPS position clearly does not fit the device's time zone and show a brief pop-up explaining that the phone's time zone doesn't match its location, so times may look wrong, and asking the user to fix the device's date & time settings (with a button that opens the system Date & time settings). Implemented as Phase 3 of this task.
+<!-- SECTION:NOTES:END -->
