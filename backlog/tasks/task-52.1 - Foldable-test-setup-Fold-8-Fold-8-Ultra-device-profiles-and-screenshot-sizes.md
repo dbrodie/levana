@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-30T10:40:00Z'
+updated_date: '2026-10-30T10:52:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-52
@@ -41,3 +41,37 @@ Establish how foldables are tested, before any audit.
 4. Roborazzi: let ScreenshotTest take an optional device qualifier (default DEVICE, unchanged); add FoldableScreenshotTest parameterized over foldable sizes (cover, inner portrait, inner landscape, split-screen half) for Fold 8 / Fold 8 Ultra where they differ; record one Month calendar EN light baseline per size. Existing baselines untouched.
 5. Verify: assembleDebug, testDebugUnitTest, lintDebug, verifyRoborazziDebug --rerun-tasks from clean test-results; note layout problems seen in samples for 52.2; commit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Display specs (official Samsung figures)
+
+Sources (read 2026-10-30):
+- UK support, Fold8 Ultra vs Fold8 (resolution, ppi, ratios; updated 29 Oct 2026): https://www.samsung.com/uk/support/mobile-devices/what-is-the-difference-between-the-galaxy-z-fold8-ultra-and-z-fold8/
+- US compare page (sizes, measurement footnotes): https://www.samsung.com/us/smartphones/galaxy-z-fold8/compare/
+- Canada support specs (sizes, Fold8 4:3): https://www.samsung.com/ca/support/mobile-devices/galaxy-z-fold8-ultra-galaxy-z-fold8-and-galaxy-z-flip8-specifications-and-features/
+- Global newsroom (not readable by fetch here, timed out; search excerpts agree with the UK figures): https://news.samsung.com/global/samsung-galaxy-z-fold8-ultra-fold8-and-flip8foldables-perfected-for-every-way-of-living
+
+| Device / display | Size | Resolution as published | ppi | Ratio |
+|---|---|---|---|---|
+| Fold8 cover | 5.5" (5.4" with rounded corners) | 1972 x 1248 (UK: "HD+"; newsroom excerpt: "WUXGA+ 1,248 x 1,972") | 428 | 16:10 |
+| Fold8 inner | 7.6" | 2448 x 1848 QXGA+ | 403 | 4:3, "wider than it is tall" when unfolded |
+| Fold8 Ultra cover | 6.5" | 2520 x 1080 FHD+ | 422 | not stated (21:9 by arithmetic) |
+| Fold8 Ultra inner | 8.0" | 2504 x 2256 QXGA+ | 422 | not stated |
+
+Labelled inferences (not published by Samsung):
+- Orientation: Fold8 cover is portrait 1248 wide x 1972 tall (a phone held upright; newsroom writes 1,248 x 1,972). Fold8 inner is natively landscape 2448 x 1848 ("wider than it is tall"). Fold8 Ultra cover portrait 1080 x 2520. Fold8 Ultra inner is taken as portrait 2256 x 2504, like the Fold7 inner it matches in size (Samsung: "same as Galaxy Z Fold7"); this orientation is an assumption.
+- Android density: Samsung publishes no dpi/dp figures. We ASSUME 420 dpi (dp = px / 2.625), the default density of Samsung's FHD+ phones; check with `adb shell wm density` on a real device and adjust the qualifiers if it differs. Window insets (status/navigation bars, cutout) are ignored: these are full-display sizes.
+
+dp at the assumed 420 dpi (width x height, rounded):
+| Display | Portrait | Landscape |
+|---|---|---|
+| Fold8 cover | 475 x 751 | 751 x 475 |
+| Fold8 inner | 704 x 933 | 933 x 704 (natural) |
+| Fold8 Ultra cover | 411 x 960 | 960 x 411 |
+| Fold8 Ultra inner | 859 x 954 (assumed natural) | 954 x 859 |
+| Split-screen half, Fold8 inner landscape | 466 x 704 | |
+| Split-screen half, Fold8 Ultra inner landscape | 477 x 859 | |
+Window size classes: both covers compact width; Fold8 inner portrait medium (600-839), landscape expanded (>=840); Ultra inner expanded in both orientations; split halves compact.
+<!-- SECTION:NOTES:END -->

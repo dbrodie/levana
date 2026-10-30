@@ -65,9 +65,12 @@ import org.robolectric.Shadows.shadowOf
  * Record: `./gradlew :app:recordRoborazziDebug --tests '*.screenshots.*'`;
  * verify: `./gradlew :app:verifyRoborazziDebug`. See specs/ARCHITECTURE_SPEC.md.
  */
-abstract class ScreenshotTest(private val variant: Variant) {
+abstract class ScreenshotTest(private val variant: Variant, private val device: String? = null) {
 
-    /** Light/dark × English/Hebrew, applied on top of [DEVICE] before the activity starts. */
+    /**
+     * Light/dark × English/Hebrew, applied on top of the device before the activity starts:
+     * the class's `@Config` qualifiers ([DEVICE]), or [device] when given (see [FoldableSize]).
+     */
     enum class Variant(val qualifiers: String) {
         EN_LIGHT("+en-notnight"),
         EN_DARK("+en-night"),
@@ -102,6 +105,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
     fun setUpScreenshot() {
         savedZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone(ZONE))
+        device?.let { RuntimeEnvironment.setQualifiers(it) }
         RuntimeEnvironment.setQualifiers(variant.qualifiers)
         app = RuntimeEnvironment.getApplication()
 

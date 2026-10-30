@@ -25,6 +25,7 @@ Use full paths for ADB and the JDK. Run Gradle from the current worktree root wi
 - **Wrong behavior or user flow:** build/install, clear old logs, launch, reproduce with ADB input, then inspect filtered logs and UI state.
 - **Current screen:** capture both a screenshot and UI hierarchy when visual state matters. The screenshot reveals rendering; UI XML reveals text, semantics, IDs, and bounds.
 - **Wrong in-memory state, control flow, or a hang:** use live JVM breakpoints only after logs and source inspection cannot validate the hypothesis. Read [references/jvm-breakpoints.md](references/jvm-breakpoints.md) before attaching.
+- **Foldables (Galaxy Z Fold8 / Fold8 Ultra cover and inner displays, fold/unfold, postures):** read [references/foldables.md](references/foldables.md) for the AVDs and commands.
 - **Native C/C++ code:** this skill does not provide native debugging; use Android Studio/LLDB.
 
 ## Target selection
