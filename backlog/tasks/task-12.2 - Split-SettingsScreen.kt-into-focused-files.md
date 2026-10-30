@@ -1,11 +1,11 @@
 ---
 id: TASK-12.2
 title: Split SettingsScreen.kt into focused files
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:50:00Z'
-updated_date: '2026-10-30T00:49:00Z'
+updated_date: '2026-10-30T00:52:00Z'
 labels: []
 dependencies:
   - TASK-12.1
@@ -23,7 +23,7 @@ Target, all in ui/settings: SettingsScreen.kt (main screen + SettingsContent), S
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No file in ui/settings exceeds ~350 lines; move-only diff apart from the formatter extraction and dead-code commit
+- [x] #1 No file in ui/settings exceeds ~350 lines; move-only diff apart from the formatter extraction and dead-code commit
 - [x] #2 Formatter unit tests pin current output; all existing settings tests pass unchanged
 - [x] #3 verifyRoborazziDebug passes with zero diffs; emulator walkthrough of every Settings row and dialog, notification permission (incl. rotation), Locations add/delete and Developer screen recorded
 <!-- AC:END -->
@@ -83,6 +83,18 @@ Evidence: /tmp/levana-emu-b_tn6msd/artifacts/ (33 PNGs). APK copy: /tmp/task122/
 - No FATAL/ANR in logcat other than the intentional test crash.
 - Limitation: denying location twice makes Android stop prompting (existing platform behaviour); flags were reset with pm clear-permission-flags to exercise the grant path. Notification 'Don't allow' path not walked (covered by NotificationSwitchTest).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T00:52:00Z
+
+---
+
+Coordinator integration 2026-10-30: accepted SettingsScreen.kt at 370 lines against the ~350 guide (SettingsContent alone is ~305 lines; going lower would be restructuring, not moving). Merged as 305f3e2. Combined assembleDebug + testDebugUnitTest + lintDebug + verifyRoborazziDebug (--rerun-tasks): 809 tests, 0 failures; Roborazzi 116 unchanged, 0 changed.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
