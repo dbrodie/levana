@@ -88,7 +88,7 @@ class SettingsScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
     fun locationsAndCityPicker() {
         openSettings()
         clickable(string(R.string.settings_location_label)).performClick()
-        awaitText(string(R.string.location_add))
+        awaitText(NEW_YORK.name)
         capture("settings_locations")
         clickable(string(R.string.location_add)).performClick()
         compose.waitForIdle()

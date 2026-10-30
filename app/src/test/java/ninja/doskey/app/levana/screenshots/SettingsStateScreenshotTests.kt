@@ -15,7 +15,7 @@ abstract class SettingsStateScreenshotTest(variant: Variant) : ScreenshotTest(va
     protected fun openLocations() {
         openSettings()
         clickable(string(R.string.settings_location_label)).performClick()
-        awaitText(string(R.string.location_add))
+        awaitText(NEW_YORK.name)
     }
 
     companion object {

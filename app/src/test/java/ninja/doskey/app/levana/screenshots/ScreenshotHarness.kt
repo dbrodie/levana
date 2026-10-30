@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.StringRes
+import androidx.compose.ui.layout.findRootCoordinates
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
@@ -148,25 +151,32 @@ abstract class ScreenshotTest(private val variant: Variant) {
     }
 
     /**
-     * Starts [MainActivity] and waits for [ready]. Under Robolectric a launch occasionally
-     * never lays out its window (the Compose root stays 0×0); that launch is closed and
-     * retried. It shows nothing at all, so it cannot pass for a different image.
+     * Starts [MainActivity] and waits for [ready]. Under Robolectric with the Compose test
+     * dispatcher, a launch occasionally never receives its first preferences value: LevanaApp
+     * stays empty (0×0) and later emissions do not revive it. That launch is closed and
+     * retried; it shows nothing at all, so it cannot pass for a different image.
      */
     protected fun launch(ready: SemanticsMatcher, intent: Intent = Intent(app, MainActivity::class.java)) {
         repeat(LAUNCH_ATTEMPTS) { attempt ->
             scenario = ActivityScenario.launch(intent)
-            advanceLooper()
+            advanceFrame()
             if (awaitOrFalse(ready, LAUNCH_TIMEOUT_MILLIS)) return
-            println("ScreenshotTest: launch ${attempt + 1} of ${variant.tag} never laid out; relaunching")
+            println("ScreenshotTest: launch ${attempt + 1} of ${variant.tag} never showed its content; relaunching")
             scenario?.close()
             scenario = null
         }
         error("MainActivity did not show ${ready.description} in $LAUNCH_ATTEMPTS launches")
     }
 
-    /** Starts the app on its start route, the calendar. */
+    /** Starts the app on its start route, the calendar, once the day panel has loaded. */
     protected fun launchCalendar() {
         launch(hasContentDescription(string(R.string.design_open_menu)))
+        // The month grid shows no clock times; the day panel's zmanim do
+        await(
+            SemanticsMatcher("shows a clock time") { node ->
+                node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { CLOCK_TIME.containsMatchIn(it.text) }
+            }
+        )
     }
 
     protected fun openDrawer() {
@@ -178,7 +188,9 @@ abstract class ScreenshotTest(private val variant: Variant) {
         launchCalendar()
         openDrawer()
         clickable(string(R.string.nav_settings)).performClick()
-        awaitText(string(R.string.settings_location_label))
+        // The view model starts from SettingsState(), which hides the developer group; the
+        // stored preferences show it, so its row (below the fold) marks the loaded state
+        await(hasText(string(R.string.settings_developer_settings)))
     }
 
     protected fun string(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
@@ -190,10 +202,10 @@ abstract class ScreenshotTest(private val variant: Variant) {
 
     private fun awaitOrFalse(matcher: SemanticsMatcher, timeoutMillis: Long): Boolean {
         val start = System.currentTimeMillis()
-        while (compose.onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
+        while (compose.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()) {
             if (System.currentTimeMillis() - start > timeoutMillis) return false
             Thread.sleep(10)
-            advanceLooper()
+            advanceFrame()
         }
         compose.waitForIdle()
         return true
@@ -201,22 +213,34 @@ abstract class ScreenshotTest(private val variant: Variant) {
 
     /**
      * Runs the main looper a frame ahead. Under the paused looper, window layout and other
-     * Choreographer work wait for its fake clock, which Compose idling does not advance;
-     * without this a freshly launched activity can stay unmeasured (0×0).
+     * Choreographer work wait for its fake clock, which Compose idling does not advance.
      */
-    private fun advanceLooper() {
+    private fun advanceFrame() {
         shadowOf(Looper.getMainLooper()).idleFor(FRAME)
         compose.waitForIdle()
     }
 
-    protected fun awaitText(text: String) = await(hasText(text))
+    /**
+     * Waits for [text] within the screen's width; the closed drawer keeps its own text
+     * composed beside it.
+     */
+    protected fun awaitText(text: String) = await(hasText(text) and onScreen())
+
+    private fun onScreen() = SemanticsMatcher("is within the screen's width") { node ->
+        val bounds = node.boundsInRoot
+        val root = node.layoutInfo.coordinates.findRootCoordinates().size
+        bounds.width > 0 && bounds.left >= 0 && bounds.right <= root.width
+    }
 
     protected fun node(text: String): SemanticsNodeInteraction =
         compose.onAllNodes(hasText(text))[0]
 
     /** The clickable element showing [text]; a group header may carry the same words. */
-    protected fun clickable(text: String): SemanticsNodeInteraction =
-        compose.onAllNodes(hasText(text) and hasClickAction())[0]
+    protected fun clickable(text: String): SemanticsNodeInteraction {
+        val matcher = hasText(text) and hasClickAction()
+        await(matcher)
+        return compose.onAllNodes(matcher)[0]
+    }
 
     /**
      * Lets values still in flight from DataStore's IO thread reach the UI. Compose idling
@@ -225,7 +249,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
     private fun settle() {
         repeat(SETTLE_ROUNDS) {
             Thread.sleep(SETTLE_MILLIS)
-            advanceLooper()
+            advanceFrame()
         }
     }
 
@@ -247,8 +271,9 @@ abstract class ScreenshotTest(private val variant: Variant) {
         const val VERSION_NAME = "1.2.3-test"
         private const val SETTLE_ROUNDS = 3
         private const val SETTLE_MILLIS = 50L
+        private val CLOCK_TIME = Regex("""\d{1,2}:\d{2}""")
         private val FRAME: Duration = Duration.ofMillis(16)
-        private const val LAUNCH_ATTEMPTS = 3
+        private const val LAUNCH_ATTEMPTS = 5
         private const val LAUNCH_TIMEOUT_MILLIS = 3_000L
         private const val AWAIT_TIMEOUT_MILLIS = 10_000L
 
