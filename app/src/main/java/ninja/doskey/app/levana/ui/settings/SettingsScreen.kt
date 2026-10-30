@@ -78,7 +78,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.displayName
-import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.R
@@ -93,7 +92,6 @@ import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.update.UpdateChecker
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import java.time.LocalDate
 import java.util.GregorianCalendar
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
@@ -679,19 +677,6 @@ private fun SettingsRowDivider() {
     )
 }
 
-@Composable
-private fun SettingsSectionHeader(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 12.dp, top = 20.dp, bottom = 6.dp)
-    )
-}
-
 /** Single-choice dialog with an explanation above the options. */
 @Composable
 private fun <T> OptionDialog(
@@ -1173,139 +1158,6 @@ internal fun NotificationsSection(
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DeveloperSettingsSection(
-    overriddenDate: LocalDate?,
-    devForceHolidayTheme: String?,
-    onDateOverrideChange: (LocalDate?) -> Unit,
-    onForceHolidayThemeChange: (String?) -> Unit
-) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(
-            text = "Date Override",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        DateOverridePicker(
-            currentDate = overriddenDate,
-            onDateChange = onDateOverrideChange
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Force Holiday Theme",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        HolidayThemePicker(
-            selected = devForceHolidayTheme,
-            onSelect = onForceHolidayThemeChange
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-private fun DateOverridePicker(currentDate: LocalDate?, onDateChange: (LocalDate?) -> Unit) {
-    // Convert stored Gregorian LocalDate back to Hebrew for display and initial field values
-    val currentHebrew = currentDate?.let { date ->
-        JewishDate(GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth))
-    }
-
-    var yearText by remember(currentDate) {
-        mutableStateOf(currentHebrew?.jewishYear?.toString() ?: "")
-    }
-    var monthText by remember(currentDate) {
-        mutableStateOf(currentHebrew?.jewishMonth?.toString() ?: "")
-    }
-    var dayText by remember(currentDate) {
-        mutableStateOf(currentHebrew?.jewishDayOfMonth?.toString() ?: "")
-    }
-
-    if (currentHebrew != null) {
-        Text(
-            text = "Currently: ${currentHebrew.jewishDayOfMonth}/${currentHebrew.jewishMonth}/${currentHebrew.jewishYear} (Hebrew)",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = yearText,
-            onValueChange = { yearText = it },
-            label = { Text("Hebrew Year") },
-            modifier = Modifier.weight(1f),
-            singleLine = true
-        )
-        OutlinedTextField(
-            value = monthText,
-            onValueChange = { monthText = it },
-            label = { Text("Month") },
-            modifier = Modifier.weight(1f),
-            singleLine = true
-        )
-        OutlinedTextField(
-            value = dayText,
-            onValueChange = { dayText = it },
-            label = { Text("Day") },
-            modifier = Modifier.weight(1f),
-            singleLine = true
-        )
-    }
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End
-    ) {
-        TextButton(onClick = {
-            yearText = ""
-            monthText = ""
-            dayText = ""
-            onDateChange(null)
-        }) {
-            Text("Clear")
-        }
-        TextButton(onClick = {
-            // Invalid input is ignored
-            parseHebrewDateOverride(yearText, monthText, dayText)?.let(onDateChange)
-        }) {
-            Text("Apply")
-        }
-    }
-}
-
-/**
- * The Gregorian date for a Hebrew date typed into the Date Override fields,
- * or null when it is not a real date. The year must be one the date pickers
- * accept: an override far outside that range makes the app's "today" a date
- * the calendar cannot render, and the override persists across restarts.
- */
-internal fun parseHebrewDateOverride(yearText: String, monthText: String, dayText: String): LocalDate? =
-    try {
-        val y = yearText.trim().toInt()
-        val m = monthText.trim().toInt()
-        val d = dayText.trim().toInt()
-        require(y in HebrewDateMatcher.EDITABLE_YEARS)
-        val gc = JewishDate(y, m, d).gregorianCalendar
-        LocalDate.of(
-            gc.get(GregorianCalendar.YEAR),
-            gc.get(GregorianCalendar.MONTH) + 1,
-            gc.get(GregorianCalendar.DAY_OF_MONTH)
-        )
-    } catch (_: Exception) {
-        null
-    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
