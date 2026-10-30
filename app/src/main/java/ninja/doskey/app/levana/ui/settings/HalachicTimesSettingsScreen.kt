@@ -22,6 +22,7 @@ import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.R
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun HalachicTimesSettingsScreen(
@@ -29,7 +30,7 @@ fun HalachicTimesSettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).contentWidth()) {
         HalachicTimesSection(
             selectedZmanim = state.selectedZmanim,
             onToggle = { name, enabled ->

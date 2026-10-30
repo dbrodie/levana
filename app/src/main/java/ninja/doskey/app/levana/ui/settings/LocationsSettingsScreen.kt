@@ -38,6 +38,7 @@ import ninja.doskey.app.levana.domain.model.SavedLocation
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun LocationsSettingsScreen(
@@ -88,6 +89,7 @@ internal fun LocationsSettingsContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .contentWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {

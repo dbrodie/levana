@@ -48,6 +48,7 @@ import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
 import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import ninja.doskey.app.levana.ui.events.formatHebrewDate
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun ContactBirthdayScreen(
@@ -92,6 +93,7 @@ fun ContactBirthdayScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .contentWidth()
             .padding(16.dp)
     ) {
         Text(stringResource(R.string.birthday_date_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

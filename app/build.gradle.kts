@@ -109,6 +109,10 @@ android {
             isIncludeAndroidResources = true
             all {
                 it.systemProperty("robolectric.graphicsMode", "NATIVE")
+                // Opt-in foldable layout audit; see ScreenshotTest.Audit
+                listOf("levana.audit.size", "levana.audit.fontScale", "levana.audit.dir").forEach { key ->
+                    providers.gradleProperty(key).orNull?.let { value -> it.systemProperty(key, value) }
+                }
             }
         }
     }

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.layout.Layout
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HolidayCategory
@@ -78,6 +79,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.random.Random
+import ninja.doskey.app.levana.ui.CappedFontScale
 
 /** An extra footer button, such as the developer override's "Clear". */
 data class DatePickerAction(val label: String, val onClick: () -> Unit)
@@ -142,33 +144,37 @@ private fun DatePickerContent(
     val scheme = MaterialTheme.colorScheme
 
     Column(Modifier.verticalScroll(rememberScrollState())) {
-        Row(
+        TitleBesideOrAbove(
             modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 20.dp, top = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                stringResource(R.string.date_picker_title),
-                style = MaterialTheme.typography.labelLarge,
-                color = scheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            CalendarModeSelector(
-                hebrewSelected = hebrewLed,
-                onSelectMode = { hebrew ->
-                    onIntent(DatePickerIntent.SetLeading(if (hebrew) LeadingCalendar.HEBREW else LeadingCalendar.GREGORIAN))
-                }
-            )
-        }
+            title = {
+                Text(
+                    stringResource(R.string.date_picker_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.onSurfaceVariant
+                )
+            },
+            trailing = {
+                CalendarModeSelector(
+                    hebrewSelected = hebrewLed,
+                    onSelectMode = { hebrew ->
+                        onIntent(DatePickerIntent.SetLeading(if (hebrew) LeadingCalendar.HEBREW else LeadingCalendar.GREGORIAN))
+                    }
+                )
+            }
+        )
 
         MonthHeader(state, locale, onIntent)
         HorizontalDivider(color = scheme.outlineVariant)
         Spacer(Modifier.height(8.dp))
 
         Box(Modifier.fillMaxWidth().height(BODY_HEIGHT)) {
-            if (state.yearListOpen) {
-                YearGrid(state) { onIntent(DatePickerIntent.PickYear(it)) }
-            } else {
-                DayGrid(state, locale) { onIntent(DatePickerIntent.SelectDay(it)) }
+            // Fixed-size cells, whose numbers overlap beyond a modest font scale
+            CappedFontScale {
+                if (state.yearListOpen) {
+                    YearGrid(state) { onIntent(DatePickerIntent.PickYear(it)) }
+                } else {
+                    DayGrid(state, locale) { onIntent(DatePickerIntent.SelectDay(it)) }
+                }
             }
         }
 
@@ -197,6 +203,36 @@ private fun DatePickerContent(
             extraAction?.let { action -> TextButton(onClick = action.onClick) { Text(action.label) } }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
             TextButton(onClick = onConfirm) { Text(stringResource(R.string.common_ok)) }
+        }
+    }
+}
+
+/**
+ * [title] filling the row beside [trailing], both centred vertically, as a Row with a weighted
+ * title. When the title does not fit there on one line (large text on a narrow window), it
+ * goes above [trailing] instead of wrapping a letter or two per line.
+ */
+@Composable
+private fun TitleBesideOrAbove(title: @Composable () -> Unit, trailing: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    Layout(contents = listOf(title, trailing), modifier = modifier) { (titleMeasurables, trailingMeasurables), constraints ->
+        val titleMeasurable = titleMeasurables.single()
+        val width = constraints.maxWidth
+        val end = trailingMeasurables.single().measure(constraints.copy(minWidth = 0, minHeight = 0))
+        if (titleMeasurable.maxIntrinsicWidth(constraints.maxHeight) + end.width <= width) {
+            val start = titleMeasurable.measure(constraints.copy(minWidth = width - end.width, maxWidth = width - end.width, minHeight = 0))
+            val height = maxOf(start.height, end.height).coerceIn(constraints.minHeight, constraints.maxHeight)
+            layout(width, height) {
+                start.placeRelative(0, Alignment.CenterVertically.align(start.height, height))
+                end.placeRelative(start.width, Alignment.CenterVertically.align(end.height, height))
+            }
+        } else {
+            val start = titleMeasurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+            val gap = STACK_GAP.roundToPx()
+            val height = (start.height + gap + end.height).coerceIn(constraints.minHeight, constraints.maxHeight)
+            layout(width, height) {
+                start.placeRelative(0, 0)
+                end.placeRelative(0, start.height + gap)
+            }
         }
     }
 }
@@ -457,6 +493,7 @@ private val WEEK = listOf(
 private val WEEKDAY_ROW_HEIGHT = 32.dp
 private val CELL_HEIGHT = 48.dp
 private val CELL_SIZE = 44.dp
+private val STACK_GAP = 8.dp
 
 // Six weeks of cells under the weekday row, so the dialog keeps its size between months
 private val BODY_HEIGHT = WEEKDAY_ROW_HEIGHT + CELL_HEIGHT * 6

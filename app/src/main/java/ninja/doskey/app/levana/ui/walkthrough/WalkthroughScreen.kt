@@ -56,6 +56,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.location.CityPickerScreen
+import ninja.doskey.app.levana.ui.contentWidth
+import ninja.doskey.app.levana.ui.CappedFontScale
 
 /**
  * The walkthrough with its side effects: the permission dialogs, the permission recheck on
@@ -114,7 +116,7 @@ fun WalkthroughContent(
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Box(
-                Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
+                Modifier.contentWidth().fillMaxWidth().height(56.dp).padding(horizontal = 12.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 // A single screen has nothing to skip
@@ -186,9 +188,11 @@ private fun WalkthroughPage(
             .fillMaxSize()
             .semantics { paneTitle = "$title, $pageLabel" }
             .verticalScroll(rememberScrollState())
+            .contentWidth()
             .padding(horizontal = 24.dp),
     ) {
-        IllustrationCard { screen.illustration(actions) }
+        // Mock-ups of fixed-size app surfaces: their text overlaps beyond a modest scale
+        IllustrationCard { CappedFontScale { screen.illustration(actions) } }
         Spacer(Modifier.height(32.dp))
         Text(
             text = title,
@@ -229,7 +233,7 @@ private fun WalkthroughBottomBar(
     onIntent: (WalkthroughIntent) -> Unit,
 ) {
     Column(
-        Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
+        Modifier.contentWidth().fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (indicator) {

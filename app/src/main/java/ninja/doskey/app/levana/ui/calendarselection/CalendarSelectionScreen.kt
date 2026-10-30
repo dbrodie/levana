@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.domain.model.DeviceCalendar
 import ninja.doskey.app.levana.ui.settings.SettingsCheckboxRow
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.ContentWidthBox
 
 @Composable
 fun CalendarSelectionScreen(
@@ -141,26 +143,29 @@ private fun CalendarList(
     onToggle: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        item {
-            Text(
-                text = stringResource(R.string.calendar_selection_prompt),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
-        items(calendars, key = { it.id }) { calendar ->
-            CalendarRow(
-                calendar = calendar,
-                isSelected = calendar.id in selectedIds,
-                onToggle = { onToggle(calendar.id) }
-            )
+    ContentWidthBox(modifier.fillMaxSize()) { gutter ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentPadding = PaddingValues(horizontal = gutter),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item {
+                Text(
+                    text = stringResource(R.string.calendar_selection_prompt),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            items(calendars, key = { it.id }) { calendar ->
+                CalendarRow(
+                    calendar = calendar,
+                    isSelected = calendar.id in selectedIds,
+                    onToggle = { onToggle(calendar.id) }
+                )
+            }
         }
     }
 }

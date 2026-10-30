@@ -40,6 +40,7 @@ import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun SettingsScreen(
@@ -90,6 +91,7 @@ fun SettingsContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .contentWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {

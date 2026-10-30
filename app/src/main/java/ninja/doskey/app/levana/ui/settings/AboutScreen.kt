@@ -19,6 +19,7 @@ import ninja.doskey.app.levana.ui.walkthrough.WalkthroughIntent
 import ninja.doskey.app.levana.ui.walkthrough.activityWalkthroughViewModel
 import ninja.doskey.app.levana.update.UpdateChecker
 import org.koin.compose.koinInject
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun AboutScreen(
@@ -28,7 +29,7 @@ fun AboutScreen(
     val versionName = updateChecker.currentVersionName()
     val installSource = updateChecker.installerPackageName()
         ?: stringResource(R.string.about_install_source_none)
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).contentWidth()) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.about_version)) },
             supportingContent = { Text(versionName) }

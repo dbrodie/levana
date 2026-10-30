@@ -33,6 +33,7 @@ import ninja.doskey.app.levana.ui.datepicker.HebrewDateField
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
 import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun AddEditEventScreen(
@@ -74,6 +75,7 @@ fun AddEditEventScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .contentWidth()
             .padding(16.dp)
     ) {
         Text(stringResource(R.string.event_date_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
