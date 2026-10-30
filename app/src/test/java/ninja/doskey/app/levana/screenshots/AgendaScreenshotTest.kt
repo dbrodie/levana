@@ -101,6 +101,9 @@ class AgendaScreenshotTest(private val variant: Variant) : ScreenshotTest(varian
         awaitText("November 2026".takeUnless { hebrew } ?: "נובמבר 2026", partial = true)
         capture("app_agenda_gregorian")
         clickable(string(R.string.calendar_mode_hebrew)).performClick()
+        // The mode is a saved preference: wait for it to come back before scrolling, so the
+        // scroll never races the regrouping
+        awaitText(if (hebrew) "כסלו תשפ״ז" else "כסלו 5787", partial = false)
 
         // A new month in the leading calendar starts under its own header: 30 Kislev (Rosh
         // Chodesh Teves) at the top, by its list key so the position is exact

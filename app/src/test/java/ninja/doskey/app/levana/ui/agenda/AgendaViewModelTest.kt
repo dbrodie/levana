@@ -60,6 +60,7 @@ class AgendaViewModelTest {
     private lateinit var db: LevanaDatabase
     private lateinit var preferences: PreferencesRepository
     private val store = ViewModelStore()
+    private lateinit var repository: AgendaRepository
 
     private lateinit var savedZone: TimeZone
 
@@ -95,7 +96,7 @@ class AgendaViewModelTest {
     private fun viewModel(): AgendaViewModel {
         val app = RuntimeEnvironment.getApplication()
         val device = DeviceContext(preferences.preferences, emptyFlow()) { fixedClock(today, LocalTime.NOON, zone) }
-        val repository = AgendaRepository(
+        repository = AgendaRepository(
             CalendarRepository(), ZmanimRepository(), PersonalEventRepository(db.personalEventDao()),
             ContactBirthdayRepository(app), SystemCalendarRepository(app)
         )
@@ -140,6 +141,11 @@ class AgendaViewModelTest {
         awaitUntil { vm.state.value.start == first.start!!.minusDays(chunk) && !vm.state.value.loadingEarlier }
         val days = vm.state.value.days
         assertTrue(days.zipWithNext().all { (a, b) -> a.date < b.date })
+        // The extended window lists and groups exactly what one load of the same range does
+        val state = vm.state.value
+        val single = runBlocking { repository.load(state.start!!, state.end!!, preferences.preferences.first()) }.days
+        assertEquals(single, days)
+        for (hebrew in listOf(true, false)) assertEquals(agendaRows(single, hebrew), agendaRows(days, hebrew))
         assertTrue(days.first().date < first.days.first().date)
         assertTrue(days.last().date > first.days.last().date)
     }

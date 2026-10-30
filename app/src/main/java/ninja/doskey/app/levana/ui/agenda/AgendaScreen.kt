@@ -124,32 +124,6 @@ class AgendaNavigation(
     val onChooseCalendars: () -> Unit = {},
 )
 
-/** A row of the agenda list: a leading-calendar month header or a day with its entries. */
-private sealed interface AgendaRow {
-    val key: String
-
-    data class MonthHeader(val month: AgendaMonth) : AgendaRow {
-        override val key = "month-${month.first.toEpochDay()}"
-    }
-
-    data class Day(val day: AgendaDay) : AgendaRow {
-        override val key = "day-${day.date.toEpochDay()}"
-    }
-}
-
-/** [days] under a header wherever the leading calendar's month changes. */
-private fun agendaRows(days: List<AgendaDay>, hebrewLeading: Boolean): List<AgendaRow> = buildList {
-    var month: AgendaMonth? = null
-    for (day in days) {
-        val dayMonth = AgendaMonth.of(day.date, hebrewLeading)
-        if (dayMonth != month) {
-            month = dayMonth
-            add(AgendaRow.MonthHeader(dayMonth))
-        }
-        add(AgendaRow.Day(day))
-    }
-}
-
 @Composable
 fun AgendaScreen(
     navigation: AgendaNavigation,
@@ -189,14 +163,11 @@ internal fun AgendaContent(
     }
     val listState = rememberLazyListState()
     val rows = remember(state.days, state.hebrewLeading) { agendaRows(state.days, state.hebrewLeading) }
-    // The header follows the day at the top of the list
-    val topDate by remember(rows) {
+    // The header follows the day at the top of the list (list indices count a leading loading row)
+    val leadingRows = if (state.loadingEarlier) 1 else 0
+    val topDate by remember(rows, leadingRows) {
         derivedStateOf {
-            when (val row = rows.getOrNull(listState.firstVisibleItemIndex)) {
-                is AgendaRow.Day -> row.day.date
-                is AgendaRow.MonthHeader -> maxOf(row.month.first, state.start ?: row.month.first)
-                null -> today
-            }
+            rows.getOrNull((listState.firstVisibleItemIndex - leadingRows).coerceAtLeast(0))?.day?.date ?: today
         }
     }
     var permissionDismissed by rememberSaveable { mutableStateOf(false) }
@@ -256,9 +227,8 @@ private fun AgendaList(
     val request = state.scrollRequest
     LaunchedEffect(request, rows) {
         if (request == null || state.isLoading) return@LaunchedEffect
-        val index = rows.indexOfFirst { it is AgendaRow.Day && !it.day.date.isBefore(request.date) }
-            .takeIf { it >= 0 } ?: rows.lastIndex
-        listState.scrollToItem(index)
+        val index = rows.indexOfFirst { !it.day.date.isBefore(request.date) }.takeIf { it >= 0 } ?: rows.lastIndex
+        listState.scrollToItem(index + if (state.loadingEarlier) 1 else 0)
         onIntent(AgendaIntent.ScrollHandled(request.id))
     }
 
@@ -284,18 +254,8 @@ private fun AgendaList(
         contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
     ) {
         if (state.loadingEarlier) item(key = "loading-earlier") { LoadingRow() }
-        items(rows, key = { it.key }, contentType = { it::class }) { row ->
-            when (row) {
-                is AgendaRow.MonthHeader -> MonthHeaderRow(row.month)
-                is AgendaRow.Day -> DayRow(
-                    day = row.day,
-                    isToday = row.day.date == today,
-                    hebrewLeading = state.hebrewLeading,
-                    otherClockCityName = state.otherClockCityName,
-                    onClickItem = { item -> openItem(item, row.day.date, navigation, context) },
-                    clickLabel = null,
-                )
-            }
+        items(rows, key = { it.key }) { row ->
+            AgendaRowItem(row, today, state, clickLabel = null) { item -> openItem(item, row.day.date, navigation, context) }
         }
         if (state.loadingLater) item(key = "loading-later") { LoadingRow() }
     }
@@ -330,19 +290,9 @@ private fun SearchResults(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             ) {
-                items(rows, key = { it.key }, contentType = { it::class }) { row ->
-                    when (row) {
-                        is AgendaRow.MonthHeader -> MonthHeaderRow(row.month)
-                        is AgendaRow.Day -> DayRow(
-                            day = row.day,
-                            isToday = row.day.date == today,
-                            hebrewLeading = state.hebrewLeading,
-                            otherClockCityName = state.otherClockCityName,
-                            // A result shows its day in the agenda
-                            onClickItem = { onIntent(AgendaIntent.SelectSearchResult(row.day.date)) },
-                            clickLabel = showLabel,
-                        )
-                    }
+                items(rows, key = { it.key }) { row ->
+                    // A result shows its day in the agenda
+                    AgendaRowItem(row, today, state, clickLabel = showLabel) { onIntent(AgendaIntent.SelectSearchResult(row.day.date)) }
                 }
             }
         }
@@ -440,6 +390,32 @@ private fun CalendarPermissionBanner(onChoose: () -> Unit, onDismiss: () -> Unit
                 Button(onClick = onChoose) { Text(stringResource(R.string.agenda_calendar_choose)) }
             }
         }
+    }
+}
+
+/**
+ * One list item: a day, under its month's header when it starts one. The header belongs to
+ * the day's item, so regrouping by the other calendar changes items' content, never which
+ * items the list holds.
+ */
+@Composable
+private fun AgendaRowItem(
+    row: AgendaRow,
+    today: LocalDate,
+    state: AgendaState,
+    clickLabel: String?,
+    onClickItem: (AgendaItem) -> Unit,
+) {
+    Column {
+        row.header?.let { MonthHeaderRow(it) }
+        DayRow(
+            day = row.day,
+            isToday = row.day.date == today,
+            hebrewLeading = state.hebrewLeading,
+            otherClockCityName = state.otherClockCityName,
+            onClickItem = onClickItem,
+            clickLabel = clickLabel,
+        )
     }
 }
 
