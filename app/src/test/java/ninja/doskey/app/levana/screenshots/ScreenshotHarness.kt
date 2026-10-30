@@ -51,6 +51,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.robolectric.RuntimeEnvironment
@@ -88,6 +89,12 @@ abstract class ScreenshotTest(private val variant: Variant) {
 
     protected val preferences get() = koin.get<PreferencesRepository>()
 
+    /**
+     * Koin bindings for one test class, over the production graph and the harness's own. The
+     * walkthrough stays off unless a test binds `WalkthroughGate(showOnLaunch = true)` here.
+     */
+    protected open fun testModules(): List<Module> = emptyList()
+
     /** Whether the device has granted location; set before [launch]. */
     protected open val locationPermission = true
 
@@ -120,7 +127,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
         koin = startKoin {
             allowOverride(true)
             androidContext(app)
-            modules(allModules + overrides)
+            modules(allModules + overrides + testModules())
         }.koin
 
         AppDataStores.clearPreferences(app)

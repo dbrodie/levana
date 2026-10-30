@@ -56,6 +56,7 @@ Delivery follows Android scheduling restrictions and is not guaranteed at an exa
 - Hebrew or system language, with English fallback and RTL layout for Hebrew.
 - Accessibility requirements: meaningful TalkBack labels, logical focus, scalable text, adequate contrast and touch targets of at least 48 dp.
 - Hebrew-date launcher icon and Quick Settings tile.
+- Feature walkthrough: one screen per major feature, each shown once. A new install sees them all; an update shows only the screens it adds. Location, notification, contacts and calendar permissions are offered on their screens and can always be declined. It never opens over a notification, widget or tile tap, and can be replayed from About.
 
 ## Data and Privacy
 

@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -25,27 +27,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.ui.datepicker.DatePickerAction
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
 import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import java.util.GregorianCalendar
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun DeveloperSettingsScreen(
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = koinViewModel()
+    viewModel: SettingsViewModel = koinViewModel(),
+    preferencesRepository: PreferencesRepository = koinInject()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showDateDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
@@ -81,6 +91,20 @@ fun DeveloperSettingsScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        ListItem(
+            headlineContent = { Text("Reset walkthrough") },
+            supportingContent = { Text("Show every walkthrough screen again on the next launch") },
+            leadingContent = {
+                Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+            },
+            modifier = Modifier.clickable {
+                scope.launch {
+                    preferencesRepository.resetWalkthroughSeen()
+                    Toast.makeText(context, "Walkthrough reset", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
 
         ListItem(
             headlineContent = { Text("Test crash") },

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature walkthrough (TASK-43) -->
+    <string name="walkthrough_skip">Skip</string>
+    <string name="walkthrough_back">Back</string>
+    <string name="walkthrough_next">Next</string>
+    <string name="walkthrough_get_started">Get started</string>
+    <string name="walkthrough_got_it">Got it</string>
+    <string name="walkthrough_not_now">Not now</string>
+    <string name="walkthrough_page_of">Page %1$d of %2$d</string>
+    <string name="walkthrough_counter">%1$d of %2$d</string>
+    <string name="walkthrough_add_city">Add city</string>
+    <string name="walkthrough_show_again">Show walkthrough again</string>
+    <string name="walkthrough_show_again_summary">A tour of Levana\'s main features</string>
+
+    <string name="walkthrough_welcome_title">Your Hebrew calendar</string>
+    <string name="walkthrough_welcome_body">Hebrew dates, holidays and zmanim, side by side with the Gregorian calendar.</string>
+    <string name="walkthrough_location_title">Zmanim for where you are</string>
+    <string name="walkthrough_location_body">Use your location, or add the cities you care about. Switch between them from the menu.</string>
+    <string name="walkthrough_days_title">Every day, Shabbat and holiday</string>
+    <string name="walkthrough_days_body">Tap a day for its zmanim, parasha, Omer and events, and choose which zmanim to show. Candle lighting, havdalah, Yom Tov and fasts follow Israel or the Diaspora automatically.</string>
+    <string name="walkthrough_events_title">Remember every date</string>
+    <string name="walkthrough_events_body">Birthdays, yahrzeits and anniversaries return each year on their Hebrew date, with the right leap-year and yahrzeit rules. Hebrew birthdays can be saved on your contacts.</string>
+    <string name="walkthrough_reminders_title">Never miss candle lighting</string>
+    <string name="walkthrough_reminders_body">Reminders for candle lighting, holidays, fasts, your events and the Omer.</string>
+    <string name="walkthrough_calendars_title">Your calendars together</string>
+    <string name="walkthrough_calendars_body">See the phone calendars you choose alongside the Jewish dates.</string>
+    <string name="walkthrough_widgets_title">Levana on your home screen</string>
+    <string name="walkthrough_widgets_body">Today, Month and Zmanim widgets, a Quick Settings tile, and an app icon that shows today\'s Hebrew date.</string>
+    <string name="walkthrough_appearance_title">Make it yours</string>
+    <string name="walkthrough_appearance_body">Light or dark, Material You colors and holiday colors, in Hebrew or English.</string>
+
+    <!-- Permission asks -->
+    <string name="walkthrough_permission_location">Levana uses your location only to calculate zmanim on this phone. Without it, it uses a city in your time zone.</string>
+    <string name="walkthrough_allow_location">Use my location</string>
+    <string name="walkthrough_granted_location">Location allowed</string>
+    <string name="walkthrough_permission_contacts">Hebrew birthdays are saved on the contact itself, in a field of their own. Nothing leaves your device.</string>
+    <string name="walkthrough_allow_contacts">Allow contacts</string>
+    <string name="walkthrough_granted_contacts">Contacts allowed</string>
+    <string name="walkthrough_permission_notifications">Allow notifications so Levana can remind you. You choose which reminders in Settings.</string>
+    <string name="walkthrough_allow_notifications">Allow notifications</string>
+    <string name="walkthrough_granted_notifications">Notifications allowed</string>
+    <string name="walkthrough_permission_calendar">Levana only reads your calendars and never changes them. Nothing leaves your device. Choose which calendars to show in Settings.</string>
+    <string name="walkthrough_allow_calendar">Allow calendars</string>
+    <string name="walkthrough_granted_calendar">Calendars allowed</string>
+    <string name="walkthrough_permission_denied">Not allowed. Everything else works, and you can allow it later from Settings.</string>
+
+    <!-- Sample data in the illustrations -->
+    <string name="walkthrough_sample_sunrise">Sunrise</string>
+    <string name="walkthrough_sample_sunset">Sunset</string>
+    <string name="walkthrough_sample_dawn">Dawn</string>
+    <string name="walkthrough_sample_nightfall">Nightfall</string>
+    <string name="walkthrough_sample_candles">Candles</string>
+    <string name="walkthrough_sample_yahrzeit">Yahrzeit</string>
+    <string name="walkthrough_sample_parasha">Parasha</string>
+    <string name="walkthrough_sample_shabbat">Shabbat %1$s</string>
+    <string name="walkthrough_sample_auto_detect">Israel · detected automatically</string>
+    <string name="walkthrough_sample_current_location">Current location</string>
+    <string name="walkthrough_sample_jerusalem">Jerusalem, Israel</string>
+    <string name="walkthrough_sample_tel_aviv">Tel Aviv-Yafo</string>
+    <string name="walkthrough_sample_tel_aviv_detail">Israel · GMT+2</string>
+    <string name="walkthrough_sample_new_york">New York</string>
+    <string name="walkthrough_sample_new_york_detail">United States · GMT−4</string>
+    <string name="walkthrough_sample_london">London</string>
+    <string name="walkthrough_sample_london_detail">United Kingdom · GMT+0</string>
+    <string name="walkthrough_sample_anniversary">Avi &amp; Noa — anniversary</string>
+    <string name="walkthrough_sample_yahrzeit_event">Grandpa Moshe — yahrzeit</string>
+    <string name="walkthrough_sample_birthday">Sara — birthday</string>
+    <string name="walkthrough_sample_every_year">every year</string>
+    <string name="walkthrough_sample_on_contact">on her contact</string>
+    <string name="walkthrough_sample_notify_candles_title">Candle lighting at %1$s</string>
+    <string name="walkthrough_sample_notify_holiday_title">Rosh Chodesh Kislev</string>
+    <string name="walkthrough_sample_notify_holiday_text">Tuesday, 10 November</string>
+    <string name="walkthrough_sample_notify_event_text">Today, %1$s</string>
+    <string name="walkthrough_sample_notify_omer_title">Sefirat HaOmer</string>
+    <string name="walkthrough_sample_notify_omer_text">Tonight is the 12th day of the Omer</string>
+    <string name="walkthrough_sample_calendar_family">Family</string>
+    <string name="walkthrough_sample_calendar_work">Work</string>
+    <string name="walkthrough_sample_calendar_birthdays">Birthdays</string>
+    <string name="walkthrough_sample_event_meeting">Team meeting</string>
+    <string name="walkthrough_sample_event_dinner">Family dinner</string>
+    <string name="walkthrough_sample_read_only">Read-only</string>
+    <string name="walkthrough_sample_light">Light</string>
+    <string name="walkthrough_sample_dark">Dark</string>
+    <string name="walkthrough_sample_material_you">Material You</string>
+    <string name="walkthrough_sample_holiday">Chanukah</string>
+</resources>

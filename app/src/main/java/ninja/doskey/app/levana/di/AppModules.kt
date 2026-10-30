@@ -30,6 +30,10 @@ import ninja.doskey.app.levana.ui.events.AddEditEventViewModel
 import ninja.doskey.app.levana.ui.events.EventsViewModel
 import ninja.doskey.app.levana.ui.location.CityPickerViewModel
 import ninja.doskey.app.levana.ui.settings.SettingsViewModel
+import ninja.doskey.app.levana.ui.walkthrough.AndroidWalkthroughDevice
+import ninja.doskey.app.levana.ui.walkthrough.WalkthroughDevice
+import ninja.doskey.app.levana.ui.walkthrough.WalkthroughGate
+import ninja.doskey.app.levana.ui.walkthrough.WalkthroughViewModel
 import ninja.doskey.app.levana.ui.zmanim.ZmanimViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -94,6 +98,9 @@ val dataModule = module {
     single { TodayWidgetSnapshots(get(), get()) }
     single { MonthWidgetSnapshots(get()) }
     single { ZmanimWidgetSnapshots(get(), get()) }
+    // Off in tests unless a test binds it on
+    single { WalkthroughGate.forThisProcess() }
+    single<WalkthroughDevice> { AndroidWalkthroughDevice(androidContext()) }
 }
 
 val viewModelModule = module {
@@ -107,6 +114,7 @@ val viewModelModule = module {
     viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }
     viewModel { DatePickerViewModel(get(), get(), get()) }
+    viewModel { WalkthroughViewModel(get(), get(), get(), get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

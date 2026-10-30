@@ -6,6 +6,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,12 +14,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.ui.walkthrough.WalkthroughIntent
+import ninja.doskey.app.levana.ui.walkthrough.WalkthroughScreen
+import ninja.doskey.app.levana.ui.walkthrough.activityWalkthroughViewModel
 import org.koin.compose.koinInject
 
 /**
@@ -40,7 +45,20 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
 
     val currentPrefs = prefs ?: return
 
-    LevanaStartupEffects(navController, deepLinkEpochDay, openZmanim)
+    // The feature walkthrough (TASK-43) comes before the shell, never over a deep link
+    val walkthrough = activityWalkthroughViewModel()
+    val walkthroughState by walkthrough.state.collectAsStateWithLifecycle()
+    LaunchedEffect(walkthrough) {
+        walkthrough.onIntent(WalkthroughIntent.Start(deepLink = deepLinkEpochDay != 0L))
+    }
+    if (!walkthroughState.decided) return
+    if (walkthroughState.showing) {
+        WalkthroughScreen(walkthroughState, walkthrough::onIntent)
+        return
+    }
+
+    // The walkthrough just offered location; don't ask again at once
+    LevanaStartupEffects(navController, deepLinkEpochDay, openZmanim, askForLocation = !walkthroughState.shownOnLaunch)
     ZoneMismatchNotice()
 
     val scope = rememberCoroutineScope()
