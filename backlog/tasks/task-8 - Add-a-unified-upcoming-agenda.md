@@ -4,11 +4,12 @@ title: Add an Agenda view and Month/Agenda drawer navigation (design 1a/1b)
 status: To Do
 assignee: []
 created_date: '2026-10-21T11:19:31Z'
-updated_date: '2026-10-30T06:39:00Z'
+updated_date: '2026-10-30T06:45:00Z'
 labels:
   - curated-import
   - source-specs
-dependencies: []
+dependencies:
+  - TASK-45
 references:
   - levana-bpd
 priority: medium
@@ -46,7 +47,7 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 
 **1b Navigation drawer (part of this design)**
 - **Header:** "Levana".
-- **ACTIVE CITY card:** shows the selected city and expands into the city list (existing behaviour). New: each city row shows that city's **current local time** on the right (e.g. Jerusalem 14:12, New York 08:12, London 13:12), with a check mark on the selected one.
+- **ACTIVE CITY card:** unchanged from today's drawer. The mockup's per-city local times are **out of scope** (owner, 2026-10-30): don't change the city list.
 - **Navigation:**
   - a **Calendar** section with **Month** (the existing calendar screen) and **Agenda** (this screen; selected state shown);
   - **My events**, **Cities** (the existing Manage cities) and **Settings**.
@@ -62,24 +63,24 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 - Tapping a card opens its target: an event or birthday opens its editor or details; a holiday or Shabbat item opens the day in the calendar or Zmanim; a device event opens the system calendar event.
 - Empty state for long empty ranges, and loading states.
 - English and Hebrew with RTL (the date rail mirrors). Material 3, the app theme, holiday themes, dark mode and Material You (TASK-13). TalkBack: each day is announced with both dates, and each card with its type, title and time. Text scaling.
-- The app remembers whether the user last used Month or Agenda (decide in the plan whether it becomes the start screen).
+- Month stays the start screen; Agenda is reached from the drawer (default; the owner didn't ask for a remembered start view).
 - MVI; occurrence aggregation testable outside Compose; no duplication of the day panel's or the notifications' occurrence code. Extract shared logic instead.
 
-**Open product questions** (owner to confirm before implementation):
-1. **Location for agenda times** (candle lighting, havdalah): the **selected city**, like the day panel and Zmanim screen, or the **device position**? Per TASK-5 the selected city currently drives only the Zmanim screen and day-panel times. The agenda is a calendar view, so the selected city is the likely answer, with the TASK-5 zone label when zones differ.
-2. **Search:** what does it search (event titles, holidays, parashot), and over what range?
-3. **Title dropdown:** a month/date jump, using the shared dual-calendar picker from TASK-45?
-4. **Drawer city times:** confirm that showing each city's current local time is wanted. It needs to refresh each minute while the drawer is open.
-5. **Start screen:** should the last-used view (Month or Agenda) become the app's start screen?
+**Owner decisions (2026-10-30)**
+1. **Agenda times** (candle lighting, havdalah, any zman shown) use the **selected city**, like the day panel and Zmanim screen, with the TASK-5 zone label when its zone differs from the device's. Dates and "today" still come from DeviceContext.
+2. **Search** covers everything the agenda lists: event, birthday and yahrzeit titles, holidays, parashot and device-calendar events, over a bounded range (about the past and next 12 months; record the exact range in the plan). Tapping a result scrolls the agenda to that day.
+3. **Tapping the month title** opens the shared dual-calendar date picker (TASK-45); the agenda scrolls to the chosen date.
+4. **Drawer:** add only the navigation (a Calendar section with Month and Agenda). Do not add per-city times or otherwise change the city list; that is unrelated to this task.
+5. **Start screen:** unchanged (Month).
+
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Agenda screen per design 1a: date rail (weekday, Hebrew day, Gregorian date, today highlight), typed cards (candle lighting, Shabbat/parasha + havdalah, personal and device events with location and time, yahrzeits, birthdays, holidays and Rosh Chodesh), month headers and the Hebrew/Gregorian toggle; top bar with month jump, search and today
-- [ ] #2 All sources are included with correct chronological order and Hebrew recurrence; device-calendar selection and permission are respected; no occurrence logic is duplicated
-- [ ] #3 Drawer per design 1b: a Calendar section with Month and Agenda, My events, Cities, Settings; city rows show each city's current local time; selection behaviour is unchanged (display-only city)
-- [ ] #4 Open product questions are answered by the owner and recorded before implementation
-- [ ] #5 Unit tests for aggregation and ordering; emulator screenshots compared against the design in English/Hebrew, light/dark, a holiday theme; TalkBack labels; Roborazzi baselines added for the new screen and drawer
+- [ ] #1 Agenda screen per design 1a: date rail (weekday, Hebrew day, Gregorian date, today highlight), typed cards (candle lighting, Shabbat/parasha + havdalah, personal and device events with location and time, yahrzeits, birthdays, holidays and Rosh Chodesh), month headers and the Hebrew/Gregorian toggle; top bar with a month jump through the TASK-45 picker, search across all listed items, and today
+- [ ] #2 All sources are included with correct chronological order and Hebrew recurrence; times use the selected city; device-calendar selection and permission are respected; no occurrence logic is duplicated
+- [ ] #3 Drawer gains a Calendar section with Month and Agenda; the city list and selection are unchanged (no per-city times); Month stays the start screen
+- [ ] #4 Unit tests for aggregation, ordering and search; emulator screenshots compared against the design in English/Hebrew, light/dark, a holiday theme; TalkBack labels; Roborazzi baselines added for the new screen and drawer
 <!-- AC:END -->
 
 ## Beads history
