@@ -143,9 +143,10 @@ internal fun WelcomeIllustration() {
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TimeTile(stringResource(R.string.walkthrough_sample_sunrise), SAMPLE_SUNRISE, highlighted = false)
-            TimeTile(stringResource(R.string.walkthrough_sample_sunset), SAMPLE_SUNSET, highlighted = false)
-            TimeTile(stringResource(R.string.walkthrough_sample_candles), SAMPLE_CANDLES, highlighted = true)
+            // The day panel's own labels
+            TimeTile(stringResource(R.string.sheet_netz), SAMPLE_SUNRISE, highlighted = false)
+            TimeTile(stringResource(R.string.sheet_shkia), SAMPLE_SUNSET, highlighted = false)
+            TimeTile(stringResource(R.string.sheet_candles), SAMPLE_CANDLES, highlighted = true)
         }
     }
 }

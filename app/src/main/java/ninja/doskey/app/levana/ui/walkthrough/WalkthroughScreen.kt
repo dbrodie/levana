@@ -35,7 +35,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,16 +44,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -83,6 +78,11 @@ fun WalkthroughScreen(state: WalkthroughState, onIntent: (WalkthroughIntent) -> 
         onIntent(if (state.page > 0) WalkthroughIntent.Back else WalkthroughIntent.Finish)
     }
 
+    if (state.addingCity) {
+        // Over the walkthrough, in the activity's own window; the pager returns to its page
+        CityPickerLayer(onClose = { onIntent(WalkthroughIntent.CloseCityPicker) })
+        return
+    }
     WalkthroughContent(
         state = state,
         onIntent = onIntent,
@@ -92,10 +92,6 @@ fun WalkthroughScreen(state: WalkthroughState, onIntent: (WalkthroughIntent) -> 
         },
         reducedMotion = rememberReducedMotion(),
     )
-
-    if (state.addingCity) {
-        CityPickerDialog(onClose = { onIntent(WalkthroughIntent.CloseCityPicker) })
-    }
 }
 
 /**
@@ -270,29 +266,22 @@ private fun WalkthroughBottomBar(
     }
 }
 
-/** The city picker over the zmanim screen; a chosen city is saved and the picker closes. */
+/** The city picker for the zmanim screen's Add city; a chosen city is saved and it closes. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CityPickerDialog(onClose: () -> Unit) {
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-    ) {
-        // Full screen: no dim band behind the status bar
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.walkthrough_add_city)) },
-                    navigationIcon = {
-                        IconButton(onClick = onClose) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                        }
-                    },
-                )
-                CityPickerScreen(onLocationSaved = onClose)
-            }
+private fun CityPickerLayer(onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            TopAppBar(
+                title = { Text(stringResource(R.string.walkthrough_add_city)) },
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+            )
+            CityPickerScreen(onLocationSaved = onClose)
         }
     }
 }
