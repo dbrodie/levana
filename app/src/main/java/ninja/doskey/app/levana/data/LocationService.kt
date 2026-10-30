@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.location.LocationRequest
 import android.os.CancellationSignal
 import android.os.SystemClock
 import ninja.doskey.app.levana.domain.model.Location
@@ -65,7 +66,15 @@ class PlatformLocationSource(context: Context) : LocationSource {
     override suspend fun current(provider: String): Fix? = suspendCancellableCoroutine { cont ->
         val signal = CancellationSignal()
         cont.invokeOnCancellation { signal.cancel() }
-        manager.getCurrentLocation(provider, signal, Runnable::run) { loc -> cont.resume(loc?.toFix()) }
+        manager.getCurrentLocation(provider, HIGH_ACCURACY, signal, Runnable::run) { loc -> cont.resume(loc?.toFix()) }
+    }
+
+    private companion object {
+        // The default is balanced, for which the fused provider may not turn on GPS
+        val HIGH_ACCURACY: LocationRequest = LocationRequest.Builder(0)
+            .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
+            .setDurationMillis(LocationFixer.TIMEOUT_MILLIS)
+            .build()
     }
 
     private fun android.location.Location.toFix() =
