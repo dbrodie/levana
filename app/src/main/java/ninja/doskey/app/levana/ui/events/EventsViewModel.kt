@@ -71,6 +71,8 @@ class EventsViewModel(
             val hasPermission =
                 contactBirthdayRepository.hasContactsPermission()
             if (hasPermission) {
+                // Known at once: Add opens the editor without waiting for the contacts query
+                _state.value = _state.value.copy(hasContactsPermission = true)
                 val birthdays = contactBirthdayRepository.getAll()
                 _state.value = _state.value.copy(
                     birthdays = birthdays,
