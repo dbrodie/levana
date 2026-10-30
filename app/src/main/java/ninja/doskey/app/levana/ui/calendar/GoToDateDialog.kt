@@ -33,8 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
-import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.HebrewMonth
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import ninja.doskey.app.levana.R
 import java.time.LocalDate
@@ -243,7 +243,7 @@ private fun HebrewPickerRow(
             Text(stringResource(R.string.calendar_year), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = hebrewYear,
-                range = HebrewDateMatcher.EDITABLE_YEARS,
+                range = SupportedHebrewYears.range,
                 onValueChange = onYearChange,
                 onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()
@@ -298,7 +298,7 @@ private fun GregorianPickerRow(
             Text(stringResource(R.string.calendar_year), style = MaterialTheme.typography.labelMedium)
             DayYearField(
                 value = gregYear,
-                range = 1940..2140,
+                range = SupportedHebrewYears.gregorianYears,
                 onValueChange = onYearChange,
                 onIsErrorChange = { yearError = it; onErrorChange(dayError || yearError) },
                 modifier = Modifier.fillMaxWidth()

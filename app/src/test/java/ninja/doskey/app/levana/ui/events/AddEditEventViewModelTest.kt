@@ -4,11 +4,13 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import ninja.doskey.app.levana.data.EventSerializer
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.data.db.PersonalEventDao
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -123,15 +125,156 @@ class AddEditEventViewModelTest {
         }
     }
 
+    // ── TASK-24: supported years and out-of-range stored dates ─────────────
+
     @Test
-    fun yearCanNeverLeaveTheRangeTheCalendarHandles() {
+    fun enteredYearStaysInTheSupportedYears() {
         val vm = viewModel()
-        vm.onIntent(AddEditEventIntent.SetHebrewYear(-5))
-        assertEquals(HebrewDateMatcher.MIN_KNOWN_YEAR, vm.state.value.hebrewYear)
-        vm.onIntent(AddEditEventIntent.SetHebrewYear(123456))
-        assertEquals(HebrewDateMatcher.MAX_KNOWN_YEAR, vm.state.value.hebrewYear)
+        for ((entered, held) in listOf(
+            5600 to 5600, 6000 to 6000, 5599 to 5600, 6001 to 6000,
+            -5 to 5600, 0 to 5600, 123456 to 6000
+        )) {
+            vm.onIntent(AddEditEventIntent.SetHebrewYear(entered))
+            assertEquals("entered $entered", held, vm.state.value.hebrewYear)
+        }
+        // A prefill with an unusable year lands in the range too
         vm.onIntent(AddEditEventIntent.PreFillDate(1, JewishDate.TISHREI, 1))
-        assertEquals(HebrewDateMatcher.MIN_KNOWN_YEAR, vm.state.value.hebrewYear)
+        assertEquals(SupportedHebrewYears.FIRST, vm.state.value.hebrewYear)
+    }
+
+    @Test
+    fun prefilledKnownYearOutsideTheRangeIsKept() {
+        val vm = viewModel()
+        vm.onIntent(AddEditEventIntent.PreFillDate(3, JewishDate.KISLEV, 5500))
+        assertEquals(5500, vm.state.value.hebrewYear)
+    }
+
+    @Test
+    fun defaultYearOutsideTheRangeIsMovedIntoIt() {
+        // 2300 is Hebrew year 6060
+        assertEquals(SupportedHebrewYears.LAST, viewModel(today = LocalDate.of(2300, 3, 1)).state.value.hebrewYear)
+    }
+
+    private val ordinaryYearBelowRange = (5501..5599).first { !HebrewDateMatcher.isEventLeapYear(it) }
+
+    /** Stored dates (day, month, year) whose year is outside 5600..6000. */
+    private val outOfRange = listOf(
+        Triple(14, JewishDate.KISLEV, 5500),
+        Triple(14, JewishDate.KISLEV, 6100),
+        Triple(14, JewishDate.KISLEV, 5599),
+        Triple(14, JewishDate.KISLEV, 6001),
+        Triple(14, JewishDate.KISLEV, HebrewDateMatcher.MIN_KNOWN_YEAR),
+        Triple(14, JewishDate.KISLEV, HebrewDateMatcher.MAX_KNOWN_YEAR),
+        Triple(30, JewishDate.IYAR, 5500),
+        Triple(14, JewishDate.ADAR_II, ordinaryYearBelowRange),
+        Triple(14, JewishDate.ADAR, 0),
+        Triple(30, JewishDate.CHESHVAN, 0),
+        Triple(14, JewishDate.ADAR_II, 1),
+        Triple(14, JewishDate.KISLEV, -1),
+        Triple(14, JewishDate.KISLEV, 99999)
+    )
+
+    private fun storedAt(date: Triple<Int, Int, Int>, yahrzeit: Boolean = false) = PersonalEvent(
+        id = 1,
+        title = "Stored",
+        hebrewDay = date.first,
+        hebrewMonth = date.second,
+        hebrewYear = date.third,
+        useYahrzeitRules = yahrzeit
+    )
+
+    private fun PersonalEvent.date() = Triple(hebrewDay, hebrewMonth, hebrewYear)
+
+    @Test
+    fun outOfRangeStoredDateOpensAndSavesUnchanged() {
+        for (date in outOfRange) for (yahrzeit in listOf(false, true)) {
+            val dao = FakeDao(listOf(storedAt(date, yahrzeit)))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            if (HebrewDateMatcher.isKnownYear(date.third)) {
+                // A known year is shown as stored
+                assertEquals("$date", date.third, vm.state.value.hebrewYear)
+            }
+            assertEquals("$date", date, dao.events.single().date())
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals("$date", date, dao.events.single().date())
+        }
+    }
+
+    @Test
+    fun editingOtherFieldsKeepsAnOutOfRangeDate() {
+        for (date in outOfRange) {
+            val dao = FakeDao(listOf(storedAt(date)))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            vm.onIntent(AddEditEventIntent.SetTitle("Renamed"))
+            vm.onIntent(AddEditEventIntent.SetNotes("Notes"))
+            vm.onIntent(AddEditEventIntent.SetUseYahrzeitRules(true))
+            vm.onIntent(AddEditEventIntent.Save)
+            val saved = dao.events.single()
+            assertEquals("Renamed", saved.title)
+            assertEquals("$date", date, saved.date())
+        }
+    }
+
+    @Test
+    fun changingTheDayKeepsAStoredYearOutsideTheRange() {
+        for (year in listOf(5500, 6100)) {
+            val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            vm.onIntent(AddEditEventIntent.SetHebrewDay(15))
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals(Triple(15, JewishDate.KISLEV, year), dao.events.single().date())
+        }
+    }
+
+    @Test
+    fun steppingTheYearOfAnOutOfRangeDateEntersTheRange() {
+        // The stepper offers +1 from 5500 and -1 from 6100
+        for ((year, stepped, expected) in listOf(Triple(5500, 5501, 5600), Triple(6100, 6099, 6000))) {
+            val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            vm.onIntent(AddEditEventIntent.SetHebrewYear(stepped))
+            assertEquals(expected, vm.state.value.hebrewYear)
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals(Triple(14, JewishDate.KISLEV, expected), dao.events.single().date())
+        }
+    }
+
+    @Test
+    fun storedDatesAtTheBoundsAreNormalisedLikeAnyInRangeDate() {
+        // 30 Iyar never exists: an in-range year saves 29 (spec 1e)
+        for (year in listOf(SupportedHebrewYears.FIRST, SupportedHebrewYears.LAST)) {
+            val dao = FakeDao(listOf(storedAt(Triple(30, JewishDate.IYAR, year))))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            assertEquals(year, vm.state.value.hebrewYear)
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals(Triple(29, JewishDate.IYAR, year), dao.events.single().date())
+        }
+    }
+
+    @Test
+    fun importedOutOfRangeEventsOpenAndSaveUnchanged() {
+        // Import accepts year 0 and every year the calendar handles (spec 2a)
+        val importable = outOfRange.filter { it.third == 0 || HebrewDateMatcher.isKnownYear(it.third) }
+        val events = importable.map { storedAt(it).copy(id = 0) }
+        val files = listOf(
+            EventSerializer.fromJson(EventSerializer.toJson(events)),
+            EventSerializer.fromCsv(EventSerializer.toCsv(events))
+        )
+        for (imported in files) {
+            assertEquals(importable, imported.map { it.date() })
+            for (event in imported) {
+                val dao = FakeDao(listOf(event.copy(id = 1)))
+                val vm = viewModel(dao, leapToday)
+                vm.onIntent(AddEditEventIntent.LoadEvent(1))
+                vm.onIntent(AddEditEventIntent.Save)
+                assertEquals(event.date(), dao.events.single().date())
+            }
+        }
     }
 
     @Test

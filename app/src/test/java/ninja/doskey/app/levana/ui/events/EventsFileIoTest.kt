@@ -177,6 +177,24 @@ class EventsFileIoTest {
     }
 
     @Test
+    fun importKeepsDatesOutsideTheEditorsYearsUnchanged() {
+        val outOfRange = listOf(
+            PersonalEvent(title = "Old yahrzeit", hebrewDay = 30, hebrewMonth = 8, hebrewYear = 5500, useYahrzeitRules = true),
+            PersonalEvent(title = "Future", hebrewDay = 14, hebrewMonth = 13, hebrewYear = 6100),
+            PersonalEvent(title = "Year unknown", hebrewDay = 14, hebrewMonth = 12, hebrewYear = 0)
+        )
+        resolver.registerInputStream(uri, recordingInput(EventSerializer.toJson(outOfRange).toByteArray()))
+        val dao = FakeDao(emptyList())
+        val vm = viewModel(dao)
+
+        vm.onIntent(EventsIntent.ImportFromUri(uri))
+        awaitOnMain { vm.state.value.importResult != null }
+
+        assertEquals(ImportResult(imported = 3, skipped = 0), vm.state.value.importResult)
+        assertEquals(outOfRange, dao.inserted)
+    }
+
+    @Test
     fun oversizedImportIsRejectedWithTheLimit() {
         resolver.registerInputStream(uri, recordingInput(ByteArray(EventFileRepository.MAX_IMPORT_BYTES + 1)))
         val dao = FakeDao(emptyList())

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import ninja.doskey.app.levana.data.db.PersonalEvent
@@ -31,10 +32,15 @@ class AddEditEventViewModel(
     // the default year no longer applies
     private var yearChosen = false
 
+    // The stored date exactly as stored, kept while its year is outside
+    // SupportedHebrewYears and the user has not changed the date, so Save
+    // writes it back unchanged (TASK-24)
+    private var preservedDate: Triple<Int, Int, Int>? = null
+
     init {
         viewModelScope.launch {
             val year = currentYear.await()
-            if (!yearChosen) setDate(year = year, chosen = false)
+            if (!yearChosen) setDate(year = SupportedHebrewYears.coerce(year), chosen = false)
         }
     }
 
@@ -43,29 +49,46 @@ class AddEditEventViewModel(
             is AddEditEventIntent.LoadEvent -> loadEvent(intent.eventId)
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
-            is AddEditEventIntent.SetHebrewDay ->
+            is AddEditEventIntent.SetHebrewDay -> {
+                preservedDate = null
                 setDate(day = intent.day)
-            is AddEditEventIntent.SetHebrewMonth ->
+            }
+            is AddEditEventIntent.SetHebrewMonth -> {
+                preservedDate = null
                 setDate(month = intent.month)
-            is AddEditEventIntent.SetHebrewYear ->
-                setDate(year = intent.year)
+            }
+            is AddEditEventIntent.SetHebrewYear -> {
+                preservedDate = null
+                setDate(year = SupportedHebrewYears.coerce(intent.year))
+            }
             is AddEditEventIntent.SetNotes ->
                 _state.value = _state.value.copy(notes = intent.notes)
             is AddEditEventIntent.SetUseYahrzeitRules ->
                 _state.value = _state.value.copy(
                     useYahrzeitRules = intent.enabled
                 )
-            is AddEditEventIntent.PreFillDate ->
-                setDate(day = intent.day, month = intent.month, year = intent.year)
+            is AddEditEventIntent.PreFillDate -> {
+                preservedDate = null
+                // A calendar date is kept as picked; an unusable year is not
+                val year = if (HebrewDateMatcher.isKnownYear(intent.year)) {
+                    intent.year
+                } else {
+                    SupportedHebrewYears.coerce(intent.year)
+                }
+                setDate(day = intent.day, month = intent.month, year = year)
+            }
             is AddEditEventIntent.Save -> save()
         }
     }
 
     /**
-     * Sets the editor's date. The year is kept inside the range the calendar
-     * library handles, and the month is one that year has (Adar II becomes
-     * Adar when the year is stepped to a regular year), so a date that cannot
-     * exist is never held in state or saved. The day is clamped to the
+     * Sets the editor's date. A year the user enters is limited to
+     * SupportedHebrewYears by the caller; a day or month change keeps the
+     * year shown, even a stored one outside that range. The year is always
+     * kept inside the range the calendar library handles, and the month is
+     * one that year has (Adar II becomes Adar when the year is stepped to a
+     * regular year), so a date that cannot exist is never held in state or
+     * saved. The day is clamped to the
      * month's length in that year (spec 1e).
      */
     private fun setDate(
@@ -102,6 +125,8 @@ class AddEditEventViewModel(
                 currentYear = currentYear.await()
             )
             yearChosen = true
+            preservedDate = Triple(event.hebrewDay, event.hebrewMonth, event.hebrewYear)
+                .takeIf { event.hebrewYear !in SupportedHebrewYears }
             _state.value = AddEditEventState(
                 isEditing = true,
                 eventId = event.id,
@@ -121,13 +146,16 @@ class AddEditEventViewModel(
 
         _state.value = s.copy(isSaving = true)
 
+        // An untouched out-of-range stored date is written back as stored
+        val (day, month, year) = preservedDate ?: Triple(s.hebrewDay, s.hebrewMonth, s.hebrewYear)
+
         viewModelScope.launch {
             val event = PersonalEvent(
                 id = if (s.isEditing) s.eventId else 0,
                 title = s.title,
-                hebrewDay = s.hebrewDay,
-                hebrewMonth = s.hebrewMonth,
-                hebrewYear = s.hebrewYear,
+                hebrewDay = day,
+                hebrewMonth = month,
+                hebrewYear = year,
                 notes = s.notes,
                 useYahrzeitRules = s.useYahrzeitRules
             )

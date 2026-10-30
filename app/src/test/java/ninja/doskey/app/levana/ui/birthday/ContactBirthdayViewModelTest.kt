@@ -6,6 +6,7 @@ import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.device.deviceContextOn
 import ninja.doskey.app.levana.domain.model.ContactBirthday
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,15 +47,19 @@ class ContactBirthdayViewModelTest {
     }
 
     @Test
-    fun yearCanNeverLeaveTheRangeTheCalendarHandles() {
+    fun enteredYearStaysInTheSupportedYears() {
         val vm = viewModel()
+        for ((entered, held) in listOf(5600 to 5600, 6000 to 6000, 5599 to 5600, 6001 to 6000)) {
+            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(entered))
+            assertEquals("entered $entered", held, vm.state.value.hebrewYear)
+        }
         for (bad in listOf(0, 1, -1, 3761, Int.MIN_VALUE)) {
             vm.onIntent(ContactBirthdayIntent.SetHebrewYear(bad))
-            assertEquals(HebrewDateMatcher.MIN_KNOWN_YEAR, vm.state.value.hebrewYear)
+            assertEquals(SupportedHebrewYears.FIRST, vm.state.value.hebrewYear)
         }
         for (bad in listOf(10000, Int.MAX_VALUE)) {
             vm.onIntent(ContactBirthdayIntent.SetHebrewYear(bad))
-            assertEquals(HebrewDateMatcher.MAX_KNOWN_YEAR, vm.state.value.hebrewYear)
+            assertEquals(SupportedHebrewYears.LAST, vm.state.value.hebrewYear)
         }
     }
 
@@ -145,5 +150,70 @@ class ContactBirthdayViewModelTest {
         val (vm, _) = open(birthday(30, JewishDate.KISLEV, 0))
         assertEquals(30, vm.state.value.hebrewDay)
         assertEquals(30, EditorDayClampCases.days(vm.state.value.hebrewYear, JewishDate.KISLEV))
+    }
+
+    // ── TASK-24: out-of-range stored dates ──────────────────────────────────
+
+    private val ordinaryYearBelowRange = (5501..5599).first { !HebrewDateMatcher.isEventLeapYear(it) }
+
+    /** Stored dates (day, month, year) whose year is outside 5600..6000. */
+    private val outOfRange = listOf(
+        Triple(14, JewishDate.KISLEV, 5500),
+        Triple(14, JewishDate.KISLEV, 6100),
+        Triple(14, JewishDate.KISLEV, 5599),
+        Triple(14, JewishDate.KISLEV, 6001),
+        Triple(30, JewishDate.IYAR, 5500),
+        Triple(14, JewishDate.ADAR_II, ordinaryYearBelowRange),
+        Triple(14, JewishDate.ADAR, 0),
+        Triple(30, JewishDate.KISLEV, 0),
+        Triple(10, JewishDate.KISLEV, 1),
+        Triple(10, JewishDate.KISLEV, -1),
+        Triple(10, JewishDate.KISLEV, 99999)
+    )
+
+    private fun birthday(date: Triple<Int, Int, Int>) = birthday(date.first, date.second, date.third)
+
+    @Test
+    fun outOfRangeStoredBirthdayOpensAndSavesUnchanged() {
+        for (date in outOfRange) {
+            val (vm, repository) = open(birthday(date))
+            if (HebrewDateMatcher.isKnownYear(date.third)) {
+                assertEquals("$date", date.third, vm.state.value.hebrewYear)
+            }
+            assertEquals(null, repository.saved)
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals("$date", date, repository.saved)
+        }
+    }
+
+    @Test
+    fun changingTheDayKeepsAStoredYearOutsideTheRange() {
+        for (year in listOf(5500, 6100)) {
+            val (vm, repository) = open(birthday(14, JewishDate.KISLEV, year))
+            vm.onIntent(ContactBirthdayIntent.SetHebrewDay(15))
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals(Triple(15, JewishDate.KISLEV, year), repository.saved)
+        }
+    }
+
+    @Test
+    fun steppingTheYearOfAnOutOfRangeBirthdayEntersTheRange() {
+        for ((year, stepped, expected) in listOf(Triple(5500, 5501, 5600), Triple(6100, 6099, 6000))) {
+            val (vm, repository) = open(birthday(14, JewishDate.KISLEV, year))
+            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(stepped))
+            assertEquals(expected, vm.state.value.hebrewYear)
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals(Triple(14, JewishDate.KISLEV, expected), repository.saved)
+        }
+    }
+
+    @Test
+    fun storedBirthdaysAtTheBoundsAreNormalisedLikeAnyInRangeDate() {
+        for (year in listOf(SupportedHebrewYears.FIRST, SupportedHebrewYears.LAST)) {
+            val (vm, repository) = open(birthday(30, JewishDate.IYAR, year))
+            assertEquals(year, vm.state.value.hebrewYear)
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals(Triple(29, JewishDate.IYAR, year), repository.saved)
+        }
     }
 }

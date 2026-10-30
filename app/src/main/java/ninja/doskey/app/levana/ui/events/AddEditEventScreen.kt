@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.domain.model.HebrewMonth
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.R
 import org.koin.androidx.compose.koinViewModel
 
@@ -273,7 +274,7 @@ internal fun HebrewDatePicker(
             )
             NumberPicker(
                 value = year,
-                range = HebrewDateMatcher.EDITABLE_YEARS,
+                range = SupportedHebrewYears.range,
                 onValueChange = onYearChange,
                 controlName = stringResource(R.string.event_date_picker_year),
                 modifier = Modifier.fillMaxWidth()

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.ContactBirthdayRepository
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -52,10 +53,15 @@ class ContactBirthdayViewModel(
 
     private enum class DateField { DAY, MONTH, YEAR }
 
+    // The stored date exactly as stored, kept while its year is outside
+    // SupportedHebrewYears and the user has not changed the date, so Save
+    // writes it back unchanged (TASK-24)
+    private var preservedDate: Triple<Int, Int, Int>? = null
+
     init {
         viewModelScope.launch {
             val year = currentYear.await()
-            if (!yearChosen) setDate(year = year, chosen = false)
+            if (!yearChosen) setDate(year = SupportedHebrewYears.coerce(year), chosen = false)
         }
     }
 
@@ -74,25 +80,31 @@ class ContactBirthdayViewModel(
             }
             is ContactBirthdayIntent.SetHebrewDay -> {
                 editedWhileLoading += DateField.DAY
+                preservedDate = null
                 setDate(day = intent.day)
             }
             is ContactBirthdayIntent.SetHebrewMonth -> {
                 editedWhileLoading += DateField.MONTH
+                preservedDate = null
                 setDate(month = intent.month)
             }
             is ContactBirthdayIntent.SetHebrewYear -> {
                 editedWhileLoading += DateField.YEAR
-                setDate(year = intent.year)
+                preservedDate = null
+                setDate(year = SupportedHebrewYears.coerce(intent.year))
             }
             is ContactBirthdayIntent.Save -> save()
         }
     }
 
     /**
-     * Sets the editor's date. The year is kept inside the range the calendar
-     * library handles, and the month is one that year has (Adar II becomes
-     * Adar when the year is stepped to a regular year), so a date that cannot
-     * exist is never held in state or saved. The day is clamped to the
+     * Sets the editor's date. A year the user enters is limited to
+     * SupportedHebrewYears by the caller; a day or month change keeps the
+     * year shown, even a stored one outside that range. The year is always
+     * kept inside the range the calendar library handles, and the month is
+     * one that year has (Adar II becomes Adar when the year is stepped to a
+     * regular year), so a date that cannot exist is never held in state or
+     * saved. The day is clamped to the
      * month's length in that year (spec 1e).
      */
     private fun setDate(
@@ -151,6 +163,7 @@ class ContactBirthdayViewModel(
         supersedeLoad()
         pickJob?.cancel()
         editedWhileLoading.clear()
+        preservedDate = null
         val token = loadToken
         loadJob = viewModelScope.launch {
             val birthday =
@@ -184,6 +197,9 @@ class ContactBirthdayViewModel(
                         month = if (DateField.MONTH in editedWhileLoading) current.hebrewMonth else month,
                         year = if (DateField.YEAR in editedWhileLoading) current.hebrewYear else year
                     )
+                } else {
+                    preservedDate = Triple(birthday.hebrewDay, birthday.hebrewMonth, birthday.hebrewYear)
+                        .takeIf { birthday.hebrewYear !in SupportedHebrewYears }
                 }
                 yearChosen = true
             }
@@ -197,14 +213,16 @@ class ContactBirthdayViewModel(
         // Save what the editor shows; a load still pending must not replace it
         supersedeLoad()
         _state.value = s.copy(isSaving = true)
+        // An untouched out-of-range stored date is written back as stored
+        val (day, month, year) = preservedDate ?: Triple(s.hebrewDay, s.hebrewMonth, s.hebrewYear)
 
         viewModelScope.launch {
             try {
                 repository.setBirthday(
                     s.contactLookupKey,
-                    s.hebrewDay,
-                    s.hebrewMonth,
-                    s.hebrewYear
+                    day,
+                    month,
+                    year
                 )
                 _state.value = _state.value.copy(
                     isSaving = false,

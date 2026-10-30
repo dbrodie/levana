@@ -294,7 +294,9 @@ saved value, stays 30.
   shown and kept when the stored month has day 30 in the stored year. When it
   genuinely does not (bad imported data, e.g. 30 Iyar or 30 Cheshvan of a
   year with a 29-day Cheshvan), the editor shows 29, and Save stores 29.
-  Leaving without saving changes nothing.
+  Leaving without saving changes nothing. This applies to stored years inside
+  the supported years (5600–6000); a stored date outside them is saved
+  exactly as stored until the user changes the date (section 2a).
 - An item with an unknown year opens on a year chosen by the existing rules
   (section 4 and 1b). For a stored 30 Cheshvan / 30 Kislev the shown year is
   the latest year up to the current one in which that day exists, so the
@@ -313,6 +315,49 @@ does not.
 
 ## 2. Bad years
 
+### Supported years (owner decision 2026-10-30, TASK-24)
+
+Two year ranges, with different jobs:
+
+- **Supported years: 5600–6000** (about 1840–2240). The years a user can
+  enter. One definition, `SupportedHebrewYears` in
+  `domain/model/SupportedHebrewYears.kt` (`FIRST`, `LAST`, `range`,
+  `coerce`, and `gregorianYears` = 1840–2239, the Gregorian years lying
+  wholly inside it). The birthday and event editors' validation and state,
+  their year stepper, Go-to-date (and so the date override) and the shared
+  date picker (TASK-45) all read it. It replaces the former 5700–5900
+  picker range and the editors' 3762–9999 clamp.
+- **Known years: 3762–9999** (`HebrewDateMatcher.MIN_KNOWN_YEAR` /
+  `MAX_KNOWN_YEAR`). What stored and imported data may hold: the years the
+  calendar library can handle. Not an editor limit.
+
+Stored or imported dates outside the supported years (older yahrzeits,
+imported files, contacts written by other apps, year 0 and other unknown
+years) are valid data. They are never clamped, rewritten or lost:
+
+- **Import** accepts year 0 and every known year unchanged (5500, 6100,
+  3762, 9999 …); only unknown non-zero years are rejected (below).
+- **Opening** shows a stored known year as stored (e.g. 5500). An unknown
+  year is shown as in section 4 / 1b / 1e. Nothing is written by opening.
+- **Saving without changing the date** writes the stored day, month and year
+  exactly as stored, even where the editor shows them normalised (Adar II of
+  an ordinary year shown as Adar, day 30 shown as 29, an unknown year shown
+  as the current year). Changing the title, notes, contact or the yahrzeit
+  switch does not count as changing the date.
+- **Changing the date** makes the shown date the one saved:
+  - Changing the day or month keeps the shown year, even an out-of-range
+    known year (changing the day of a 5500 yahrzeit keeps 5500). An unknown
+    year is shown as a real year, so after a day or month change that year is
+    saved; the editors still have no "year unknown" option.
+  - Changing the year always lands in 5600–6000. The stepper shows 5500 with
+    "−" disabled; "+" goes to 5600. From 6100, "+" is disabled and "−" goes
+    to 6000.
+- Inside the supported years, the existing normalisation applies (Adar II →
+  Adar for an ordinary year, day clamp of 1e).
+- The default year of a new item (the current Hebrew year) and a prefill
+  with an unusable year are moved into the supported years; a prefill with a
+  known year from the calendar is kept as picked.
+
 ### 2a. Creating or storing a bad year
 
 A "bad" year is one the calendar library cannot handle: below
@@ -324,16 +369,18 @@ Audit every path that accepts a year (birthday editor, Add/Edit event, event
 import from JSON/CSV, Go-to-date, Developer Settings → Date Override) and
 guard the ones that can produce a bad year:
 
-- Editors: the year held in editor state is always clamped to the stepper
-  range, and Adar II is turned into Adar when the year is stepped to a
-  regular year (otherwise month 13 would be saved with a year that has no
-  month 13).
+- Editors: a year the user enters is limited to the supported years
+  (5600–6000, see above); the year held in state is otherwise a stored
+  known year or one of those. Adar II is turned into Adar when the year is
+  stepped to a regular year (otherwise month 13 would be saved with a year
+  that has no month 13). An untouched out-of-range stored date is saved as
+  stored.
 - Import: a file containing an event whose year is neither 0 nor a known
   year, whose month is not 1–13, or whose day is not 1–30 is rejected as a
   whole with the existing "Could not parse file: …" error, naming the event.
   Nothing is imported from such a file.
-- Date Override: a Hebrew year outside the range the date pickers accept is
-  ignored like other invalid input.
+- Date Override: a Hebrew year outside the supported years (the range the
+  date pickers accept) is ignored like other invalid input.
 
 ### 2b. Display
 
@@ -341,7 +388,9 @@ My events → Birthdays shows raw numbers ("10/9/1") for a stored year of 1 or
 -1, while year 0 shows as a year-less Hebrew date (י׳ כסלו). Any year that
 fails `HebrewDateMatcher.isKnownYear` is treated as unknown everywhere a
 stored date is displayed (birthday rows, event rows, editor previews), and
-opening such an item in an editor shows the current Hebrew year.
+opening such an item in an editor shows the current Hebrew year. Saving it
+without changing the date keeps the stored year (section 2, supported
+years).
 
 The year-less format no longer formats through a hardcoded reference year
 (5784, a leap year, which made a year-less Adar read "אדר א׳" and broke on
@@ -361,10 +410,13 @@ transliterated formatter, which still produces the full English date strings
 
 `DEFAULT_BIRTHDAY_YEAR = 5784` and `hebrewYear = 5786` are hardcoded. Both
 editors default a new item to the current Hebrew year, computed when the
-editor opens and respecting the Developer Settings date override. Opening a
-stored item with an unknown year also shows the current Hebrew year, and its
-month is shown where the item falls this year (so an unknown-year Adar opened
-in a leap year shows Adar II and saving it does not move it to Adar I).
+editor opens and respecting the Developer Settings date override (moved into
+5600–6000 if the override is outside it). Opening a stored item with an
+unknown year also shows the current Hebrew year, and its month is shown where
+the item falls this year (an unknown-year Adar opened in a leap year shows
+Adar II). Saving it without changing the date writes the stored unknown year
+back unchanged, so it neither moves to Adar I nor gains a year; changing the
+day or month saves the shown year.
 
 Not changed: the year is still entered with the steppers, and there is no
 "year unknown" option.
@@ -387,7 +439,13 @@ Unit tests (`./gradlew :app:testDebugUnitTest`):
 - Yahrzeit matrix and repository occurrence tests (section 1b).
 - View model tests: new birthday/event defaults to the current Hebrew year
   (with and without date override); unknown stored year opens as the current
-  year; year clamping; Adar II → Adar when the year becomes regular.
+  year; entered years at and beyond 5600 and 6000; out-of-range stored dates
+  (5500, 6100, 5599, 6001, 3762, 9999, unknown years, Adar II of an ordinary
+  year, 30 Iyar) open and save unchanged, also after editing other fields;
+  a day change keeps an out-of-range year; stepping its year enters the
+  range; imported out-of-range events open and save unchanged; Adar II →
+  Adar when the year becomes regular.
+- `SupportedHebrewYearsTest`: bounds, coerce, Gregorian span.
 - Date override parsing rejects out-of-range years.
 
 Build: `./gradlew :app:assembleDebug`.

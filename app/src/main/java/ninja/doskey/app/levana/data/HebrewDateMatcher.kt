@@ -24,11 +24,11 @@ object HebrewDateMatcher {
      * Largest year KosherJava can write as a Hebrew numeral
      * (HebrewDateFormatter.formatHebrewNumber rejects anything above it).
      * Stored years above this are treated as an unknown year too.
+     *
+     * MIN_KNOWN_YEAR..MAX_KNOWN_YEAR is what stored and imported data may
+     * hold. The years a user can enter are narrower: SupportedHebrewYears.
      */
     const val MAX_KNOWN_YEAR = 9999
-
-    /** Years the date pickers (editors, Go to date, date override) accept. */
-    val EDITABLE_YEARS = 5700..5900
 
     fun isKnownYear(hebrewYear: Int): Boolean =
         hebrewYear in MIN_KNOWN_YEAR..MAX_KNOWN_YEAR

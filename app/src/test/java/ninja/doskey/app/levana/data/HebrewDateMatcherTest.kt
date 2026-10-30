@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.data
 
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.Assert.assertEquals
@@ -33,8 +34,8 @@ class HebrewDateMatcherTest {
 
     @Test
     fun pickerYearsAreAllKnown() {
-        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.EDITABLE_YEARS.first))
-        assertTrue(HebrewDateMatcher.isKnownYear(HebrewDateMatcher.EDITABLE_YEARS.last))
+        assertTrue(HebrewDateMatcher.isKnownYear(SupportedHebrewYears.FIRST))
+        assertTrue(HebrewDateMatcher.isKnownYear(SupportedHebrewYears.LAST))
     }
 
     @Test
