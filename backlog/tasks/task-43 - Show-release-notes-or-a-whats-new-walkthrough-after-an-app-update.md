@@ -1,11 +1,11 @@
 ---
 id: TASK-43
 title: 'Feature walkthrough: per-feature screens shown once, growing with each release'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T20:55:00Z'
-updated_date: '2026-10-30T08:30:00Z'
+updated_date: '2026-10-30T08:33:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -141,6 +141,18 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 
 - AC #2 caveat: the walkthrough and its illustrations take every color from MaterialTheme (except the fixed theme swatches and two sample calendar colors on the Appearance/Calendars cards), so Material You and holiday themes apply through LevanaTheme; no baselines or emulator shots were captured specifically in a holiday or Material You theme.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T08:33:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed screenshots (welcome, contacts ask, single-screen Got it, he-dark events) in /tmp/levana-task43-screens/; merged as f0a2e37. Clean run: 974 tests, 0 failures; Roborazzi 220 unchanged (8 About/Developer baselines intentionally re-recorded, 64 added). Follow-up: add an 'agenda' screen once TASK-8 merges.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
