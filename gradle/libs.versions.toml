@@ -10,7 +10,6 @@ lifecycle = "2.8.7"
 navigation = "2.8.5"
 ktlint-gradle = "12.1.2"
 datastore = "1.1.1"
-play-services-location = "21.3.0"
 compose-material-icons = "1.7.6"
 room = "2.6.1"
 ksp = "2.1.0-1.0.29"
@@ -47,7 +46,6 @@ navigation-compose = { group = "androidx.navigation", name = "navigation-compose
 kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.7.3" }
 
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
 
 acra-mail = { group = "ch.acra", name = "acra-mail", version.ref = "acra" }

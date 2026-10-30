@@ -30,3 +30,7 @@
 -keepclassmembers class * extends androidx.work.CoroutineWorker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
+
+# ACRA leaks its auto-service annotation processor onto the runtime classpath; R8 strips it.
+# Its javax.annotation.processing references were hidden by Play services' consumer rules.
+-dontwarn javax.annotation.processing.**
