@@ -160,7 +160,9 @@ class EventSerializerTest {
 
     @Test
     fun importAcceptsUnknownYearAndBoundaryYears() {
-        for (year in listOf(0, 3762, 5650, 5785, 9999)) {
+        // Years outside the editors' SupportedHebrewYears (5600..6000) are
+        // valid data and imported unchanged
+        for (year in listOf(0, 3762, 5500, 5599, 5600, 5650, 5785, 6000, 6001, 6100, 9999)) {
             assertEquals(year, EventSerializer.fromJson(json(year = year)).single().hebrewYear)
             assertEquals(year, EventSerializer.fromCsv(csv(year = year)).single().hebrewYear)
         }
