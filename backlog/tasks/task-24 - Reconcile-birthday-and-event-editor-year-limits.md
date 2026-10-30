@@ -1,11 +1,11 @@
 ---
 id: TASK-24
 title: Reconcile birthday and event editor year limits
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-21T12:03:24Z'
-updated_date: '2026-10-30T06:38:00Z'
+updated_date: '2026-10-30T06:41:00Z'
 labels:
   - curated-import
   - verified-followup
@@ -25,7 +25,7 @@ Source: specs/rfes/fix-adar-and-year-followups.md, section 2a. Verified against 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One explicit year-range policy governs birthday/event editor validation and state, exposed in a single place that the date picker (TASK-45) can use for its bounds. Opening valid historical or future imported dates has defined non-destructive behavior. Tests cover values at and beyond both boundaries. The RFE records the chosen policy and removes conflicting claims.
+- [x] #1 One explicit year-range policy governs birthday/event editor validation and state, exposed in a single place that the date picker (TASK-45) can use for its bounds. Opening valid historical or future imported dates has defined non-destructive behavior. Tests cover values at and beyond both boundaries. The RFE records the chosen policy and removes conflicting claims.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,6 +64,18 @@ Verification at 6e029f5:
 - Evidence: /tmp/levana-task24-evidence/ (screenshots + UI XML 05-old-open, 06-after-save, 07-future-open, 08-future-stepped, 10-old-stepped; task24-verify.log).
 - Limitations: emulator check covered the birthday editor only; the event editor shares the same stepper and is covered by unit tests. Hebrew-locale/RTL not re-checked (no string or layout changes).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T06:41:00Z
+
+---
+
+Coordinator integration 2026-10-30: merged as a519337 (after TASK-13). Clean run: 870 tests, 0 failures; Roborazzi 132 unchanged. Policy lives in domain/model/SupportedHebrewYears.kt. Accepted behavior change: a year-0 item saved without touching the date keeps year 0.
+
+---
+<!-- COMMENTS:END -->
 
 ## Beads history
 
