@@ -13,23 +13,11 @@ unmodified, as the published `com.kosherjava:zmanim` artifact. Its source is ava
 from the KosherJava repository, and Levana's own source (to rebuild the app against a
 modified copy of the library) is in this repository.
 
-## Proprietary dependencies (pending removal)
-
-The following Google Play Services libraries are not free software. They are being
-removed in TASK-53.2 (replaced by the platform `LocationManager`); rerun this script
-afterwards to drop them from this file.
-
-- `com.google.android.gms:play-services-base:18.5.0`
-- `com.google.android.gms:play-services-basement:18.4.0`
-- `com.google.android.gms:play-services-location:21.3.0`
-- `com.google.android.gms:play-services-tasks:18.2.0`
-
 ## Licence summary
 
 | Licence | Libraries |
 |---|---|
 | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) | 165 |
-| Android SDK License (proprietary) | 4 |
 | [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) | 1 |
 | [LGPL-2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) | 1 |
 | [MIT](https://opensource.org/license/mit) | 1 |
@@ -168,10 +156,6 @@ afterwards to drop them from this file.
 | [Stately](https://github.com/touchlab/Stately) | `co.touchlab:stately-concurrent-collections-jvm` | 2.1.0 | Apache-2.0 |
 | [Stately](https://github.com/touchlab/Stately) | `co.touchlab:stately-strict` | 2.1.0 | Apache-2.0 |
 | [Stately](https://github.com/touchlab/Stately) | `co.touchlab:stately-strict-jvm` | 2.1.0 | Apache-2.0 |
-| play-services-base | `com.google.android.gms:play-services-base` | 18.5.0 | Android SDK License (proprietary) |
-| play-services-basement | `com.google.android.gms:play-services-basement` | 18.4.0 | Android SDK License (proprietary) |
-| play-services-location | `com.google.android.gms:play-services-location` | 21.3.0 | Android SDK License (proprietary) |
-| play-services-tasks | `com.google.android.gms:play-services-tasks` | 18.2.0 | Android SDK License (proprietary) |
 | [Auto Common Libraries](https://github.com/google/auto/tree/master/common) | `com.google.auto:auto-common` | 1.2.1 | Apache-2.0 |
 | [AutoService Processor](https://github.com/google/auto/tree/main/service) | `com.google.auto.service:auto-service` | 1.1.1 | Apache-2.0 |
 | [AutoService](https://github.com/google/auto/tree/main/service) | `com.google.auto.service:auto-service-annotations` | 1.1.1 | Apache-2.0 |
