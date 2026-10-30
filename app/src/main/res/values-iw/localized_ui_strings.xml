@@ -185,4 +185,10 @@
     <string name="settings_israel_mode_israel">ארץ ישראל</string>
     <string name="settings_israel_mode_diaspora">חוץ לארץ</string>
     <string name="zmanim_city_clock">שעון %1$s</string>
+
+    <!-- Time zone doesn't match the location fix -->
+    <string name="zone_mismatch_title">אזור הזמן לא תואם למיקום</string>
+    <string name="zone_mismatch_text">אזור הזמן בטלפון לא תואם למיקום הנוכחי, ולכן הזמנים עלולים להיראות שגויים. כדי לתקן זאת, יש לבדוק את הגדרות התאריך והשעה בטלפון.</string>
+    <string name="zone_mismatch_open_settings">הגדרות תאריך ושעה</string>
+    <string name="zone_mismatch_dismiss">לא עכשיו</string>
 </resources>

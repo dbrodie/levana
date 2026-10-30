@@ -9,6 +9,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.TimeZone
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import ninja.doskey.app.levana.R
@@ -46,9 +47,12 @@ class DisplayCityZmanimTest {
     private val thursday = LocalDate.of(2026, 11, 12)
     private lateinit var preferences: PreferencesRepository
     private val store = ViewModelStore()
+    private val savedZone = TimeZone.getDefault()
 
     @Before
     fun setUp() {
+        // A New York device: its zone is the stored fix's too (TASK-46)
+        TimeZone.setDefault(TimeZone.getTimeZone(nyZone))
         preferences = PreferencesRepository(app, CityRepository(app))
         runBlocking {
             preferences.preferences.first().savedLocations.forEach { preferences.removeSavedLocation(it.id) }
@@ -62,6 +66,7 @@ class DisplayCityZmanimTest {
         store.clear()
         preferences.preferences.first().savedLocations.forEach { preferences.removeSavedLocation(it.id) }
         preferences.updateCurrentLocation(Location.JERUSALEM)
+        TimeZone.setDefault(savedZone)
     }
 
     private fun awaitUntil(condition: () -> Boolean) {
