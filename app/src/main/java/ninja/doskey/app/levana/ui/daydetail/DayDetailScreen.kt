@@ -1,8 +1,5 @@
 package ninja.doskey.app.levana.ui.daydetail
 
-import android.content.ContentUris
-import android.content.Intent
-import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,6 +60,7 @@ import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.data.ZmanimRepository
+import ninja.doskey.app.levana.ui.openDeviceCalendarEvent
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -574,15 +572,7 @@ private fun SystemEventsSection(events: List<SystemCalendarEvent>) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val uri = ContentUris.withAppendedId(
-                                CalendarContract.Events.CONTENT_URI,
-                                event.eventId
-                            )
-                            val intent = Intent(Intent.ACTION_VIEW)
-                                .setData(uri)
-                            context.startActivity(intent)
-                        }
+                        .clickable { openDeviceCalendarEvent(context, event.eventId) }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

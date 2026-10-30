@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.ui.calendar
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.domain.model.HebrewDay
+import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -42,25 +43,36 @@ object CalendarHeaderFormatter {
         if (days.isEmpty()) return ""
         val firstDay = days.first()
         val lastDay = days.last()
+        return hebrewMonthRange(firstDay.year, firstDay.month, lastDay.year, lastDay.month, locale)
+    }
+
+    /** The Hebrew month span from [firstMonth] of [firstYear] to [lastMonth] of [lastYear]; see above. */
+    fun hebrewMonthRange(
+        firstYear: Int,
+        firstMonth: HebrewMonth,
+        lastYear: Int,
+        lastMonth: HebrewMonth,
+        locale: Locale
+    ): String {
         val hebrew = isHebrew(locale)
 
-        fun monthName(day: HebrewDay): String = if (hebrew) {
-            hebrewMonthName(day.year, day.month.jewishDateValue)
+        fun monthName(year: Int, month: HebrewMonth): String = if (hebrew) {
+            hebrewMonthName(year, month.jewishDateValue)
         } else {
-            day.month.englishName
+            month.englishName
         }
 
-        val firstMonthName = monthName(firstDay)
-        val firstYear = yearLabel(firstDay.year, locale)
+        val firstMonthName = monthName(firstYear, firstMonth)
+        val firstYearLabel = yearLabel(firstYear, locale)
 
-        return if (firstDay.month == lastDay.month) {
-            "$firstMonthName $firstYear"
+        return if (firstYear == lastYear && firstMonth == lastMonth) {
+            "$firstMonthName $firstYearLabel"
         } else {
-            val lastMonthName = monthName(lastDay)
-            if (firstDay.year == lastDay.year) {
-                "$firstMonthName–$lastMonthName $firstYear"
+            val lastMonthName = monthName(lastYear, lastMonth)
+            if (firstYear == lastYear) {
+                "$firstMonthName–$lastMonthName $firstYearLabel"
             } else {
-                "$firstMonthName $firstYear – $lastMonthName ${yearLabel(lastDay.year, locale)}"
+                "$firstMonthName $firstYearLabel – $lastMonthName ${yearLabel(lastYear, locale)}"
             }
         }
     }

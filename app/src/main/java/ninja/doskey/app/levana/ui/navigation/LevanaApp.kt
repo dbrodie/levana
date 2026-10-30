@@ -90,12 +90,14 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
             )
         }
     ) {
-        val isCalendarRoute =
-            backStackEntry?.destination?.hasRoute(CalendarRoute::class) == true
+        // Month and Agenda draw their own header
+        val ownsHeader = backStackEntry?.destination?.let {
+            it.hasRoute(CalendarRoute::class) || it.hasRoute(AgendaRoute::class)
+        } == true
 
         Scaffold(
             topBar = {
-                if (!isCalendarRoute) {
+                if (!ownsHeader) {
                     LevanaTopBar(
                         backStackEntry = backStackEntry,
                         showDrawer = showDrawer,

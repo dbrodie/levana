@@ -101,9 +101,9 @@ class WalkthroughViewModelTest {
 
     @Test
     fun anUpgradeWithOneNewScreenShowsOnlyItAsASingleGotItScreen() {
-        runBlocking { preferences.markWalkthroughSeen(allIds) }
-        val agenda = FeatureScreen("agenda", 0, 0) { }
-        val state = viewModel(registry = WalkthroughRegistry.screens + agenda).started()
+        // The real case (TASK-8): everything TASK-43 shipped was seen; the agenda screen is new
+        runBlocking { preferences.markWalkthroughSeen(allIds - "agenda") }
+        val state = viewModel().started()
         assertEquals(listOf("agenda"), state.screens.map { it.id })
         assertEquals(PageIndicator.NONE, state.indicator)
         assertTrue(state.isLastPage)

@@ -78,7 +78,7 @@ private val ISRAEL_ZONE: ZoneId = ZoneId.of("Asia/Jerusalem")
 
 /**
  * The one source of now, today, the device time zone and the device position. Everything
- * except the Zmanim screen and the day panel's times reads the device through this.
+ * except the Zmanim screen, the day panel's and the agenda's times reads the device through this.
  *
  * The developer override (test only) is an "as if" date: while it is set the device is on
  * that fixed date at the real time of day, every day, until it is cleared; the date never

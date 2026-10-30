@@ -63,10 +63,18 @@ class WalkthroughScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         capture("walkthrough_run_1")
     }
 
+    /** TASK-8: someone who saw TASK-43's walkthrough gets only the agenda screen, with Got it. */
+    @Test
+    fun agendaAfterUpdate() {
+        runBlocking { preferences.markWalkthroughSeen(ids - "agenda") }
+        launch(hasText(string(R.string.walkthrough_agenda_title)))
+        capture("walkthrough_agenda_update")
+    }
+
     @Test
     fun runOfThree() {
-        runBlocking { preferences.markWalkthroughSeen(ids.take(5)) }
-        walkThrough(screens.drop(5)) { screen ->
+        runBlocking { preferences.markWalkthroughSeen(ids.dropLast(3)) }
+        walkThrough(screens.takeLast(3)) { screen ->
             when (screen.id) {
                 "device-calendars" -> capture("walkthrough_run_3_first")
                 "appearance" -> capture("walkthrough_run_3_last")
@@ -77,7 +85,7 @@ class WalkthroughScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
     /** Ten or more screens count "n of m" instead of dots. */
     @Test
     fun runOfTwelve() {
-        val twelve = screens + screens.take(4).mapIndexed { i, screen ->
+        val twelve = screens + screens.take(12 - screens.size).mapIndexed { i, screen ->
             FeatureScreen("extra-$i", screen.title, screen.body, screen.permission, illustration = screen.illustration)
         }
         koin.loadModules(

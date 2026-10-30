@@ -49,6 +49,22 @@ class PersonalEventRepository(
         }
     }
 
+    /** Events observed from [start] to [end] (inclusive), by day, each with its occurrence label (agenda). */
+    suspend fun getEventsBetween(start: LocalDate, end: LocalDate): Map<LocalDate, List<EventOccurrence>> {
+        val rules = yahrzeitRules.rules()
+        return dao.getAllOnce().flatMap { event ->
+            HebrewDateMatcher.occurrencesBetween(
+                event.hebrewDay,
+                event.hebrewMonth,
+                event.hebrewYear,
+                event.useYahrzeitRules,
+                start,
+                end,
+                rules
+            ).map { (date, occurrence) -> date to EventOccurrence(event, occurrence.label) }
+        }.groupBy({ it.first }, { it.second })
+    }
+
     suspend fun getEventDaysForHebrewMonth(hebrewYear: Int, hebrewMonth: Int): Set<Int> {
         val rules = yahrzeitRules.rules()
         return dao.getAllOnce().flatMap { event ->

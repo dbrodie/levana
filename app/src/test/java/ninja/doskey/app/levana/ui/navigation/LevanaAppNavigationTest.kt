@@ -38,10 +38,16 @@ class LevanaAppNavigationTest : ScreenshotTest(Variant.EN_LIGHT) {
         clickable(string(R.string.design_my_events)).performClick()
         awaitRoute(R.string.design_my_events)
 
+        // The Calendar section: Agenda, then back to Month
         openDrawer()
-        clickable(string(R.string.nav_calendar)).performClick()
+        clickable(string(R.string.nav_agenda)).performClick()
         awaitDrawerClosed()
-        awaitGone(hasText(string(R.string.design_my_events)) and onScreen())
+        await(hasContentDescription(string(R.string.agenda_search)))
+
+        openDrawer()
+        clickable(string(R.string.nav_month)).performClick()
+        awaitDrawerClosed()
+        awaitGone(hasContentDescription(string(R.string.agenda_search)))
         await(hasContentDescription(string(R.string.design_add_event)))
 
         openDrawer()

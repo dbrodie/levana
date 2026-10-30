@@ -19,6 +19,8 @@
     <string name="walkthrough_location_body">לפי המיקום שלך, או לפי הערים שחשובות לך. המעבר ביניהן נעשה מהתפריט.</string>
     <string name="walkthrough_days_title">כל יום, שבת וחג</string>
     <string name="walkthrough_days_body">בהקשה על יום מופיעים הזמנים, הפרשה, ספירת העומר והאירועים, ואפשר לבחור אילו זמנים להציג. הדלקת נרות, הבדלה, ימים טובים וצומות מותאמים אוטומטית לארץ או לחו״ל.</string>
+    <string name="walkthrough_agenda_title">כל מה שלפניך, ברשימה אחת</string>
+    <string name="walkthrough_agenda_body">סדר היום מציג חגים, זמני שבת, ימי הולדת, יארצייט והאירועים שלך, יום אחר יום. פותחים אותו מהתפריט, מחפשים שנה אחורה וקדימה, או קופצים לכל תאריך.</string>
     <string name="walkthrough_events_title">לזכור כל תאריך</string>
     <string name="walkthrough_events_body">ימי הולדת, יארצייט וימי נישואין חוזרים מדי שנה בתאריך העברי, לפי כללי השנה המעוברת והיארצייט. אפשר לשמור ימי הולדת עבריים באנשי הקשר.</string>
     <string name="walkthrough_reminders_title">לא לפספס הדלקת נרות</string>
@@ -84,4 +86,6 @@
     <string name="walkthrough_sample_dark">כהה</string>
     <string name="walkthrough_sample_material_you">Material You</string>
     <string name="walkthrough_sample_holiday">חנוכה</string>
+    <string name="walkthrough_sample_agenda_event">ארוחה אצל לוי</string>
+    <string name="walkthrough_sample_agenda_place">רחביה</string>
 </resources>

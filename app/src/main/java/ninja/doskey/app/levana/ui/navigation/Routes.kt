@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 data object CalendarRoute
 
 @Serializable
+data object AgendaRoute
+
+@Serializable
 data object CityPickerRoute
 
 @Serializable

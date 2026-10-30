@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.di
 
+import ninja.doskey.app.levana.data.AgendaRepository
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.AndroidEventDataChanges
 import ninja.doskey.app.levana.data.CityRepository
@@ -21,6 +22,7 @@ import ninja.doskey.app.levana.update.UpdateChecker
 import ninja.doskey.app.levana.widget.MonthWidgetSnapshots
 import ninja.doskey.app.levana.widget.TodayWidgetSnapshots
 import ninja.doskey.app.levana.widget.ZmanimWidgetSnapshots
+import ninja.doskey.app.levana.ui.agenda.AgendaViewModel
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
@@ -86,6 +88,7 @@ val dataModule = module {
             CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         )
     }
+    single { AgendaRepository(get(), get(), get(), get(), get()) }
     single { EventFileRepository(androidContext()) }
     single { NotificationAlarmScheduler(androidContext()) }
     single { NotificationDeliveryLog(androidContext()) }
@@ -115,6 +118,7 @@ val viewModelModule = module {
     viewModel { CalendarSelectionViewModel(get(), get()) }
     viewModel { DatePickerViewModel(get(), get(), get()) }
     viewModel { WalkthroughViewModel(get(), get(), get(), get()) }
+    viewModel { AgendaViewModel(get(), get(), get(), get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

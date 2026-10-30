@@ -49,7 +49,7 @@ data class UserPreferences(
 /**
  * The selected (display) city: the saved city chosen in the sidebar, or the current location
  * when none is. It is a display lens only — read it for the Zmanim screen, the day panel's
- * times and the city pickers, never for dates, notifications or Israel/Diaspora, which follow
+ * and the agenda's times and the city pickers, never for dates, notifications or Israel/Diaspora, which follow
  * the device ([ninja.doskey.app.levana.device.DeviceContext]).
  */
 val UserPreferences.displayCity: Location

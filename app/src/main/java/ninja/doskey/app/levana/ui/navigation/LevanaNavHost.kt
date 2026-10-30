@@ -4,11 +4,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import ninja.doskey.app.levana.ui.agenda.AgendaNavigation
+import ninja.doskey.app.levana.ui.agenda.AgendaScreen
 import ninja.doskey.app.levana.ui.birthday.ContactBirthdayScreen
 import ninja.doskey.app.levana.ui.calendar.CalendarScreen
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionScreen
@@ -22,6 +26,9 @@ import ninja.doskey.app.levana.ui.settings.LocationsSettingsScreen
 import ninja.doskey.app.levana.ui.settings.SettingsScreen
 import ninja.doskey.app.levana.ui.zmanim.ZmanimScreen
 import java.time.LocalDate
+
+/** The Month screen's saved-state key for a day to show, as an epoch day (0 = none). */
+private const val CALENDAR_SHOW_DAY = "showDay"
 
 /**
  * Every app route. [deepLinkEpochDay] opens the calendar on that day; My Events registers its
@@ -49,9 +56,13 @@ internal fun LevanaNavHost(
             CityPickerScreen(onLocationSaved = { navController.popBackStack() })
         }
 
-        composable<CalendarRoute> {
+        composable<CalendarRoute> { backStack ->
+            // A day another screen asked to show (the agenda's holidays)
+            val showDay by backStack.savedStateHandle.getStateFlow(CALENDAR_SHOW_DAY, 0L).collectAsState()
             CalendarScreen(
                 initialDate = deepLinkEpochDay.takeIf { it != 0L }?.let(LocalDate::ofEpochDay),
+                showDate = showDay.takeIf { it != 0L }?.let(LocalDate::ofEpochDay),
+                onDateShown = { backStack.savedStateHandle[CALENDAR_SHOW_DAY] = 0L },
                 onOpenDrawer = onOpenDrawer,
                 onShowZmanim = { date ->
                     navController.navigate(ZmanimRoute(date.toEpochDay()))
@@ -65,6 +76,23 @@ internal fun LevanaNavHost(
                         )
                     )
                 }
+            )
+        }
+
+        composable<AgendaRoute> {
+            AgendaScreen(
+                AgendaNavigation(
+                    onOpenDrawer = onOpenDrawer,
+                    onEditEvent = { eventId -> navController.navigate(AddEditEventRoute(eventId = eventId)) },
+                    onEditBirthday = { lookupKey -> navController.navigate(ContactBirthdayRoute(contactLookupKey = lookupKey)) },
+                    onShowZmanim = { date -> navController.navigate(ZmanimRoute(date.toEpochDay())) },
+                    onShowDay = { date ->
+                        // Month is the start destination, so it is always below the agenda
+                        navController.getBackStackEntry<CalendarRoute>().savedStateHandle[CALENDAR_SHOW_DAY] = date.toEpochDay()
+                        navController.popBackStack<CalendarRoute>(inclusive = false)
+                    },
+                    onChooseCalendars = { navController.navigate(CalendarSelectionRoute) },
+                )
             )
         }
 

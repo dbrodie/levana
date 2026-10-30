@@ -19,6 +19,8 @@
     <string name="walkthrough_location_body">Use your location, or add the cities you care about. Switch between them from the menu.</string>
     <string name="walkthrough_days_title">Every day, Shabbat and holiday</string>
     <string name="walkthrough_days_body">Tap a day for its zmanim, parasha, Omer and events, and choose which zmanim to show. Candle lighting, havdalah, Yom Tov and fasts follow Israel or the Diaspora automatically.</string>
+    <string name="walkthrough_agenda_title">Everything ahead, in one list</string>
+    <string name="walkthrough_agenda_body">The Agenda lists holidays, Shabbat times, birthdays, yahrzeits and your events day by day. Open it from the menu, search a year back and ahead, or jump to any date.</string>
     <string name="walkthrough_events_title">Remember every date</string>
     <string name="walkthrough_events_body">Birthdays, yahrzeits and anniversaries return each year on their Hebrew date, with the right leap-year and yahrzeit rules. Hebrew birthdays can be saved on your contacts.</string>
     <string name="walkthrough_reminders_title">Never miss candle lighting</string>
@@ -84,4 +86,6 @@
     <string name="walkthrough_sample_dark">Dark</string>
     <string name="walkthrough_sample_material_you">Material You</string>
     <string name="walkthrough_sample_holiday">Chanukah</string>
+    <string name="walkthrough_sample_agenda_event">Dinner at the Levis</string>
+    <string name="walkthrough_sample_agenda_place">Rechavia</string>
 </resources>

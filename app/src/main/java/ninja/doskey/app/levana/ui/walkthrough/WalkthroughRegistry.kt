@@ -30,6 +30,12 @@ object WalkthroughRegistry {
             illustration = { DaysIllustration() },
         ),
         FeatureScreen(
+            id = "agenda",
+            title = R.string.walkthrough_agenda_title,
+            body = R.string.walkthrough_agenda_body,
+            illustration = { AgendaIllustration() },
+        ),
+        FeatureScreen(
             id = "personal-events",
             title = R.string.walkthrough_events_title,
             body = R.string.walkthrough_events_body,
