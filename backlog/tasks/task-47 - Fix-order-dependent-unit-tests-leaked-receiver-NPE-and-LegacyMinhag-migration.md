@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T00:47:00Z'
-updated_date: '2026-10-30T05:39:00Z'
+updated_date: '2026-10-30T05:49:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -37,3 +37,18 @@ Found during TASK-12.3 (2026-10-30). The JVM unit suite can fail depending on cl
 5. Audit the other tests for the same patterns (direct onReceive with goAsync, reliance on shared DataStore state or migrations, escaping coroutine exceptions); fix or list them.
 6. Prove order-independence: rerun the bad orders, run the full suite 3x with clean results and --rerun-tasks, run a suite with screenshot classes first, then the final check with verifyRoborazziDebug (116 unchanged).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reproduction (base 77b3556, before fixes):
+- Ordering tool: /tmp/task47/scripts/{gen_suite.py,run_order.sh,summarize.py} (outside the worktree). run_order.sh <order> generates a temporary JUnit Suite (app/src/test/.../order/OrderSuite.kt, deleted after each run, never committed) listing all 109 test classes in the chosen order (forward | reversed | shuffleN | screenshots-first), runs it in one JVM with --tests 'ninja.doskey.app.levana.order.OrderSuite', and summarizes the XML results. The class list is in /tmp/task47/classes.txt.
+- reversed: LegacyMinhagPreferenceTest fails with AssertionError: SEPHARDI (821 tests, 1 failed).
+- screenshots-first: LegacyMinhagPreferenceTest fails as above, and CalendarModeSelectorTest.choosingOtherOptionReportsItOnce fails with UncaughtExceptionsBeforeTest. The suppressed causes are 2x NPE 'PendingResult.finish() because this.$pendingResult is null' at NotificationAlarmReceiver.kt:29 (821 tests, 2 failed).
+- Two-class suite [VerifyReschedulingEndToEndTest, LegacyMinhagPreferenceTest] also fails LegacyMinhag. Running VerifyReschedulingEndToEndTest twice in one JVM failed receiverOnReceiveReadsPersistedPrefs on the second pass ('morning omer posted' timeout): the JVM-wide NotificationDeliveryLog had already recorded that Omer notice as delivered. This is a third shared-state dependency.
+- LegacyMinhag alone: passes with host TZ Asia/Jerusalem, but fails alone with TZ=America/New_York ./gradlew ... --tests '*LegacyMinhagPreferenceTest'.
+
+Root causes:
+1. VerifyReschedulingEndToEndTest called NotificationAlarmReceiver().onReceive directly, so goAsync() returned null. The coroutine on Dispatchers.Default outlived the test and NPE'd in finish(); kotlinx-coroutines-test then reported the NPE in the next runTest/Compose test.
+2. LegacyMinhagPreferenceTest is not really migration-order dependent. Its store.edit() initialises DataStore before the legacy keys exist, so IsraelModeMigration never runs on them in any order. The test was written (e41d6d4) while is_in_israel was a live key; TASK-5.3 (144509c) replaced it with israel_mode. After that, the test passed only when israel_mode was unset (AUTO) and the host zone was Asia/Jerusalem. Tests such as VerifyReschedulingEndToEndTest leave israel_mode=DIASPORA behind, which fails it.
+<!-- SECTION:NOTES:END -->

@@ -15,9 +15,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.room.Room
 import androidx.test.core.app.ActivityScenario
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
@@ -36,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import ninja.doskey.app.levana.AppDataStores
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.EventDataChanges
@@ -125,7 +123,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
             modules(allModules + overrides)
         }.koin
 
-        clearPreferences(app)
+        AppDataStores.clearPreferences(app)
         devicePreferences = runBlocking {
             seedPreferences(preferences)
             MutableStateFlow(preferences.preferences.first())
@@ -137,7 +135,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
         scenario?.close()
         stopKoin()
         db.close()
-        clearPreferences(app)
+        AppDataStores.clearPreferences(app)
         TimeZone.setDefault(savedZone)
     }
 
@@ -309,23 +307,5 @@ abstract class ScreenshotTest(private val variant: Variant) {
 
         @JvmStatic
         fun variants(): List<Array<Any>> = Variant.entries.map { arrayOf(it) }
-
-        /**
-         * The app's preferences DataStore: a process-wide singleton behind a private delegate
-         * in PreferencesRepository.kt, so it is reached by reflection.
-         */
-        @Suppress("UNCHECKED_CAST")
-        private fun rawStore(context: Context): DataStore<Preferences> {
-            val getter = Class.forName("ninja.doskey.app.levana.data.PreferencesRepositoryKt")
-                .getDeclaredMethod("getDataStore", Context::class.java)
-                .apply { isAccessible = true }
-            return getter.invoke(null, context) as DataStore<Preferences>
-        }
-
-        /** Empties the preferences, so these tests and the rest of the suite stay independent. */
-        fun clearPreferences(context: Context) {
-            val store = rawStore(context)
-            runBlocking { store.edit { it.clear() } }
-        }
     }
 }

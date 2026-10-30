@@ -5,6 +5,9 @@ import android.app.Application
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Looper
+import ninja.doskey.app.levana.AppDataStores
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.data.CityRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
@@ -14,6 +17,7 @@ import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.Location
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -26,12 +30,15 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowBroadcastPendingResult
 import org.robolectric.shadows.ShadowAlarmManager.ScheduledAlarm
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -96,6 +103,25 @@ class VerifyReschedulingEndToEndTest {
     private fun settle() = Thread.sleep(600)
 
     private fun save(block: suspend PreferencesRepository.() -> Unit) = runBlocking { repo.block() }
+
+    /**
+     * Sends [intent] to a registered [NotificationAlarmReceiver] as a real broadcast and waits
+     * for its goAsync work to finish. Calling onReceive directly gives it no PendingResult, and
+     * its work would outlive the test.
+     */
+    private fun deliver(intent: Intent) {
+        val receiver = NotificationAlarmReceiver()
+        app.registerReceiver(receiver, IntentFilter(intent.action), Context.RECEIVER_NOT_EXPORTED)
+        try {
+            app.sendBroadcast(Intent(intent).setComponent(null))
+            shadowOf(Looper.getMainLooper()).idle()
+            val pending = shadowOf(receiver).originalPendingResult
+            assertNotNull("receiver should go async", pending)
+            Shadow.extract<ShadowBroadcastPendingResult>(pending).future.get(5, TimeUnit.SECONDS)
+        } finally {
+            app.unregisterReceiver(receiver)
+        }
+    }
 
     @Before
     fun setUp() {
@@ -380,6 +406,8 @@ class VerifyReschedulingEndToEndTest {
 
     @Test
     fun receiverOnReceiveReadsPersistedPrefs() {
+        // The receiver posts each Omer notice once per JVM-wide delivery log
+        AppDataStores.clearDeliveryLog(app)
         save { saveNotifyOmer(true); saveNotifyOmerTzait(false); saveNotifyOmerMorning(true) }
         NotificationChannels.createAll(app)
         val nm = app.getSystemService(NotificationManager::class.java)
@@ -391,10 +419,9 @@ class VerifyReschedulingEndToEndTest {
         val morningIntent = Intent(tzaitIntent).apply {
             action = NotificationAlarmScheduler.ACTION_OMER_MORNING
         }
-        NotificationAlarmReceiver().onReceive(app, tzaitIntent)
-        settle()
+        deliver(tzaitIntent)
         assertTrue("tzait sub-option off → dropped", shadowOf(nm).allNotifications.isEmpty())
-        NotificationAlarmReceiver().onReceive(app, morningIntent)
-        awaitCondition("morning omer posted") { shadowOf(nm).allNotifications.size == 1 }
+        deliver(morningIntent)
+        assertEquals("morning omer posted", 1, shadowOf(nm).allNotifications.size)
     }
 }
