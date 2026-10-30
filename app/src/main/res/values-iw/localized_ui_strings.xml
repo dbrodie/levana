@@ -83,6 +83,8 @@
     <string name="about_version">גרסה</string>
     <string name="about_install_source">מקור ההתקנה</string>
     <string name="about_install_source_none">ללא</string>
+    <string name="about_licenses">רישיונות קוד פתוח</string>
+    <string name="about_licenses_summary">לבנה מופצת ברישיון MIT. הצגת הרישיונות של ספריות צד שלישי</string>
 
     <!-- Yahrzeit Adar rules -->
     <string name="settings_yahrzeit_leap_label">יארצייט של אדר בשנה מעוברת</string>
