@@ -87,13 +87,9 @@ internal fun NotificationsSection(
         )
 
         if (state.candleLightingNotifyMode == "morning") {
-            val hours = state.candleLightingMorningTime / 60
-            val minutes = state.candleLightingMorningTime % 60
             val timeLabel = stringResource(
                 R.string.settings_at_morning_time,
-                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
-                minutes,
-                hours
+                *morningTimeFormatArgs(state.candleLightingMorningTime)
             )
             SettingsStepperRow(
                 title = stringResource(R.string.settings_notification_time),
@@ -190,13 +186,9 @@ internal fun NotificationsSection(
         )
 
         if (state.notifyOmerMorning) {
-            val hours = state.notifyOmerMorningTime / 60
-            val minutes = state.notifyOmerMorningTime % 60
             val timeLabel = stringResource(
                 R.string.settings_at_morning_time,
-                if (hours == 0) 12 else if (hours > 12) hours - 12 else hours,
-                minutes,
-                hours
+                *morningTimeFormatArgs(state.notifyOmerMorningTime)
             )
             SettingsStepperRow(
                 title = stringResource(R.string.settings_reminder_time),
