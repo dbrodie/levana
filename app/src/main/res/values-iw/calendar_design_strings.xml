@@ -11,12 +11,6 @@
     <string name="calendar_show_details">הצג פרטי יום</string>
     <string name="calendar_go_to_date">עבור לתאריך</string>
     <string name="calendar_hebrew_date">תאריך עברי</string>
-    <string name="calendar_gregorian_date">תאריך לועזי</string>
-    <string name="calendar_invalid_date">תאריך לא תקין</string>
-    <string name="calendar_day">יום</string>
-    <string name="calendar_month">חודש</string>
-    <string name="calendar_year">שנה</string>
-    <string name="calendar_cancel">ביטול</string>
     <string name="calendar_clear">נקה</string>
     <string name="calendar_today">היום</string>
 </resources>

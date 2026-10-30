@@ -43,13 +43,8 @@
     <string name="event_yahrzeit_rules">החלת כללי יארצייט באדר</string>
     <string name="event_yahrzeit_rules_description">תאריכי אדר נקבעים לפי הגדרות ← הגדרות יארצייט. אדר א׳ ואדר ב׳ נשארים נפרדים.</string>
     <string name="event_notes_optional">הערות (רשות)</string>
-    <string name="event_date_picker_day">יום</string>
-    <string name="event_date_picker_month">חודש</string>
-    <string name="event_date_picker_year">שנה</string>
     <string name="event_save">שמירה</string>
     <string name="event_update">עדכון</string>
-    <string name="event_increase_value">הגדלת %1$s</string>
-    <string name="event_decrease_value">הקטנת %1$s</string>
     <string name="location_permission_needed">לפי אזור הזמן שלכם. הקישו כדי לאפשר גישה למיקום.</string>
     <string name="location_add">הוספת מיקום</string>
     <string name="location_delete">מחיקה</string>

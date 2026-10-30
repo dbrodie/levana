@@ -36,8 +36,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ninja.doskey.app.levana.ui.events.HebrewDatePicker
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.datepicker.HebrewDateField
+import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
+import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import ninja.doskey.app.levana.ui.events.formatHebrewDate
 import org.koin.androidx.compose.koinViewModel
 
@@ -147,43 +149,12 @@ fun ContactBirthdayScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-        Text(stringResource(R.string.calendar_hebrew_date), style = MaterialTheme.typography.titleSmall)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        BirthdayDatePicker(
-            day = state.hebrewDay,
-            month = state.hebrewMonth,
-            year = state.hebrewYear,
-            onDayChange = {
-                viewModel.onIntent(ContactBirthdayIntent.SetHebrewDay(it))
-            },
-            onMonthChange = {
-                viewModel.onIntent(
-                    ContactBirthdayIntent.SetHebrewMonth(it)
-                )
-            },
-            onYearChange = {
-                viewModel.onIntent(
-                    ContactBirthdayIntent.SetHebrewYear(it)
-                )
-            }
+        HebrewDateField(
+            label = stringResource(R.string.calendar_hebrew_date),
+            hebrewDate = formatHebrewDate(state.hebrewDay, state.hebrewMonth, state.hebrewYear),
+            gregorianDate = state.gregorianDate,
+            onClick = { viewModel.onIntent(ContactBirthdayIntent.OpenDatePicker) }
         )
-
-        // Date preview
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = formatHebrewDate(
-                state.hebrewDay,
-                state.hebrewMonth,
-                state.hebrewYear
-            ),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-            }
-        }
 
         if (state.errorMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
@@ -207,23 +178,13 @@ fun ContactBirthdayScreen(
             Text(stringResource(if (state.isEditing) R.string.event_update else R.string.event_save))
         }
     }
-}
 
-@Composable
-private fun BirthdayDatePicker(
-    day: Int,
-    month: Int,
-    year: Int,
-    onDayChange: (Int) -> Unit,
-    onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
-) {
-    HebrewDatePicker(
-        day = day,
-        month = month,
-        year = year,
-        onDayChange = onDayChange,
-        onMonthChange = onMonthChange,
-        onYearChange = onYearChange
-    )
+    if (state.showDatePicker) {
+        HebrewDatePickerDialog(
+            initialDate = state.gregorianDate,
+            leading = LeadingCalendar.HEBREW,
+            onConfirm = { viewModel.onIntent(ContactBirthdayIntent.SetHebrewDate(it)) },
+            onDismiss = { viewModel.onIntent(ContactBirthdayIntent.DismissDatePicker) }
+        )
+    }
 }

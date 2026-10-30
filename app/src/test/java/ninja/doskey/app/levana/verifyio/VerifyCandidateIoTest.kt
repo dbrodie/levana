@@ -53,6 +53,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import ninja.doskey.app.levana.ui.pickDay
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
@@ -436,7 +437,7 @@ class VerifyCandidateIoTest {
         val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(contactsProvider, 1)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         contactsProvider.gate!!.countDown()
         idleUntil(what = "load") { vm.state.value.isEditing }
         assertEquals("user's edit kept", 20, vm.state.value.hebrewDay)

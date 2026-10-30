@@ -1,7 +1,9 @@
 package ninja.doskey.app.levana.ui.events
 
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.data.HebrewDateMatcher
+import java.time.LocalDate
 
 data class AddEditEventState(
     val isEditing: Boolean = false,
@@ -15,7 +17,11 @@ data class AddEditEventState(
     val hebrewYear: Int = HebrewDateMatcher.hebrewYearOf(DeviceContext.realToday()),
     val notes: String = "",
     val useYahrzeitRules: Boolean = false,
+    val showDatePicker: Boolean = false,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    /** The shown Hebrew date's Gregorian day; the view model only holds real dates. */
+    val gregorianDate: LocalDate get() = JewishDate(hebrewYear, hebrewMonth, hebrewDay).localDate
+}

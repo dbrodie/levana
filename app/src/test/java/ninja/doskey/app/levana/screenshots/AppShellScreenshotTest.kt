@@ -2,17 +2,18 @@ package ninja.doskey.app.levana.screenshots
 
 import android.Manifest
 import android.content.Intent
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
-import kotlin.math.abs
 import kotlinx.coroutines.runBlocking
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.HebrewDateMatcher
 import ninja.doskey.app.levana.data.db.PersonalEvent
-import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,13 +88,9 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         awaitText(string(R.string.events_tab_birthdays))
         compose.onNodeWithContentDescription(string(R.string.events_add)).performClick()
         awaitText(string(R.string.design_birthday))
-        // A new birthday starts on the real Hebrew year; step it to TODAY's so the image never ages
-        val steps = HebrewDateMatcher.hebrewYearOf(TODAY) - HebrewDateMatcher.hebrewYearOf(DeviceContext.realToday())
-        val step = string(
-            if (steps > 0) R.string.event_increase_value else R.string.event_decrease_value,
-            string(R.string.event_date_picker_year)
-        )
-        repeat(abs(steps)) { compose.onNodeWithContentDescription(step).performClick() }
+        // A new birthday starts on 1 Tishrei of the device's (TODAY's) Hebrew year, so the image never ages
+        val tishrei1 = JewishDate(HebrewDateMatcher.hebrewYearOf(TODAY), JewishDate.TISHREI, 1).localDate
+        awaitText(tishrei1.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(app.resources.configuration.locales[0])))
         capture("app_contact_birthday")
     }
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="date_picker_title">בחירת תאריך</string>
+    <string name="date_picker_previous_month">החודש הקודם</string>
+    <string name="date_picker_next_month">החודש הבא</string>
+    <string name="date_picker_choose_year">בחירת שנה</string>
+    <string name="date_picker_choose_day">בחירת יום</string>
+    <string name="date_picker_change_date">שינוי תאריך</string>
+</resources>

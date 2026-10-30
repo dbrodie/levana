@@ -43,13 +43,8 @@
     <string name="event_yahrzeit_rules">Use yahrzeit Adar rules</string>
     <string name="event_yahrzeit_rules_description">Adar dates follow Settings → Yahrzeit settings. Adar I and II remain separate.</string>
     <string name="event_notes_optional">Notes (optional)</string>
-    <string name="event_date_picker_day">Day</string>
-    <string name="event_date_picker_month">Month</string>
-    <string name="event_date_picker_year">Year</string>
     <string name="event_save">Save</string>
     <string name="event_update">Update</string>
-    <string name="event_increase_value">Increase %1$s</string>
-    <string name="event_decrease_value">Decrease %1$s</string>
     <string name="location_permission_needed">Based on your time zone. Tap to allow location access.</string>
     <string name="location_add">Add location</string>
     <string name="location_delete">Delete</string>

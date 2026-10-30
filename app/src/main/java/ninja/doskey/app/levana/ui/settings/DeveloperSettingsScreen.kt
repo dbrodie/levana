@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.R
-import ninja.doskey.app.levana.ui.calendar.GoToDateDialog
+import ninja.doskey.app.levana.ui.datepicker.DatePickerAction
+import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
+import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import java.util.GregorianCalendar
 import org.koin.androidx.compose.koinViewModel
@@ -93,15 +95,15 @@ fun DeveloperSettingsScreen(
     }
 
     if (showDateDialog) {
-        GoToDateDialog(
+        HebrewDatePickerDialog(
             initialDate = state.overriddenDeviceDate ?: state.deviceToday ?: return,
-            calendarHebrewMode = true,
+            leading = LeadingCalendar.GREGORIAN,
             onConfirm = { date ->
                 viewModel.onIntent(SettingsIntent.SetDevDateOverride(date))
                 showDateDialog = false
             },
             onDismiss = { showDateDialog = false },
-            onClear = {
+            extraAction = DatePickerAction(stringResource(R.string.calendar_clear)) {
                 viewModel.onIntent(SettingsIntent.SetDevDateOverride(null))
                 showDateDialog = false
             }

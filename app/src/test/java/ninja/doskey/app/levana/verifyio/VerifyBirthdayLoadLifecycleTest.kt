@@ -21,6 +21,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 /** Same/different record requests, selection and Save against a pending stored load. */
 @RunWith(RobolectricTestRunner::class)
@@ -73,8 +76,8 @@ class VerifyBirthdayLoadLifecycleTest {
     fun sameRecordRequestedAgainAfterCompletionKeepsLaterEdits() {
         val vm = vm()
         load(vm, "k7")
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(JewishDate.IYAR))
+        vm.pickDay(20)
+        vm.pickMonth(JewishDate.IYAR)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         settle()
         assertEquals(20, vm.state.value.hebrewDay)
@@ -89,7 +92,7 @@ class VerifyBirthdayLoadLifecycleTest {
         val vm = vm()
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(provider, 1)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5760))
+        vm.pickYear(5760)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         gates["k7"]!!.countDown()
         idleUntil(what = "load") { vm.state.value.isEditing }
@@ -164,7 +167,7 @@ class VerifyBirthdayLoadLifecycleTest {
     fun aDifferentRecordAfterCompletionTakesItsOwnStoredDateNotEarlierEdits() {
         val vm = vm()
         load(vm, "k7")
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         load(vm, "k8")
         settle()
         assertEquals(3, vm.state.value.hebrewDay)
@@ -202,7 +205,7 @@ class VerifyBirthdayLoadLifecycleTest {
     fun saveWhileADifferentRecordLoadsSavesWhatIsShownAndThePendingLoadNeverApplies() {
         val vm = vm()
         load(vm, "k7")
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         gates["k8"] = CountDownLatch(1)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k8"))
         idleUntil(what = "k8 query") { queries("k8") == 1 }

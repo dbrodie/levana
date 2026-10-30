@@ -1,6 +1,8 @@
 package ninja.doskey.app.levana.ui.birthday
 
 import android.net.Uri
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import java.time.LocalDate
 
 sealed interface ContactBirthdayIntent {
     data class LoadBirthday(
@@ -13,8 +15,13 @@ sealed interface ContactBirthdayIntent {
         val name: String,
         val photoUri: String?
     ) : ContactBirthdayIntent
-    data class SetHebrewDay(val day: Int) : ContactBirthdayIntent
-    data class SetHebrewMonth(val month: Int) : ContactBirthdayIntent
-    data class SetHebrewYear(val year: Int) : ContactBirthdayIntent
+    data object OpenDatePicker : ContactBirthdayIntent
+    data object DismissDatePicker : ContactBirthdayIntent
+
+    /** A date picked in the date picker, which closes it. */
+    data class SetHebrewDate(val day: Int, val month: Int, val year: Int) : ContactBirthdayIntent {
+        constructor(date: LocalDate) : this(JewishDate(date))
+        private constructor(date: JewishDate) : this(date.jewishDayOfMonth, date.jewishMonth, date.jewishYear)
+    }
     data object Save : ContactBirthdayIntent
 }

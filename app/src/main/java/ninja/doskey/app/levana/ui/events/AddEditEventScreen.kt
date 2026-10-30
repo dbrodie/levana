@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.ui.events
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,18 +24,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.kosherjava.zmanim.hebrewcalendar.JewishDate
-import ninja.doskey.app.levana.data.HebrewDateMatcher
-import ninja.doskey.app.levana.domain.model.HebrewMonth
-import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.datepicker.HebrewDateField
+import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
+import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -101,39 +96,12 @@ fun AddEditEventScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Hebrew date picker
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-        Text(stringResource(R.string.event_hebrew_date_label), style = MaterialTheme.typography.titleSmall)
-        Spacer(modifier = Modifier.height(12.dp))
-        HebrewDatePicker(
-            day = state.hebrewDay,
-            month = state.hebrewMonth,
-            year = state.hebrewYear,
-            onDayChange = {
-                viewModel.onIntent(AddEditEventIntent.SetHebrewDay(it))
-            },
-            onMonthChange = {
-                viewModel.onIntent(AddEditEventIntent.SetHebrewMonth(it))
-            },
-            onYearChange = {
-                viewModel.onIntent(AddEditEventIntent.SetHebrewYear(it))
-            }
+        HebrewDateField(
+            label = stringResource(R.string.event_hebrew_date_label),
+            hebrewDate = formatHebrewDate(state.hebrewDay, state.hebrewMonth, state.hebrewYear),
+            gregorianDate = state.gregorianDate,
+            onClick = { viewModel.onIntent(AddEditEventIntent.OpenDatePicker) }
         )
-
-        // Show formatted date preview
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = formatHebrewDate(
-                state.hebrewDay,
-                state.hebrewMonth,
-                state.hebrewYear
-            ),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -205,214 +173,13 @@ fun AddEditEventScreen(
             Text(stringResource(if (state.isEditing) R.string.event_update else R.string.event_save))
         }
     }
-}
 
-@Composable
-internal fun HebrewDatePicker(
-    day: Int,
-    month: Int,
-    year: Int,
-    onDayChange: (Int) -> Unit,
-    onMonthChange: (Int) -> Unit,
-    onYearChange: (Int) -> Unit
-) {
-    val isLeapYear = try {
-        JewishDate(year, JewishDate.TISHREI, 1).isJewishLeapYear
-    } catch (_: Exception) {
-        false
-    }
-
-    val months = buildMonthList(isLeapYear)
-    val daysInMonth = HebrewDateMatcher.daysInMonth(year, month)
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Day picker
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.event_date_picker_day),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            // The view model keeps the day within the month (spec 1e)
-            NumberPicker(
-                value = day,
-                range = 1..daysInMonth,
-                onValueChange = onDayChange,
-                controlName = stringResource(R.string.event_date_picker_day),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        // Month picker
-        Column(modifier = Modifier.weight(2f)) {
-            Text(
-                text = stringResource(R.string.event_date_picker_month),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            MonthPicker(
-                selectedMonth = month,
-                months = months,
-                onMonthChange = onMonthChange,
-                controlName = stringResource(R.string.event_date_picker_month),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        // Year picker
-        Column(modifier = Modifier.weight(1.2f)) {
-            Text(
-                text = stringResource(R.string.event_date_picker_year),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            NumberPicker(
-                value = year,
-                range = SupportedHebrewYears.range,
-                onValueChange = onYearChange,
-                controlName = stringResource(R.string.event_date_picker_year),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-internal data class MonthOption(
-    val jewishDateMonth: Int,
-    val displayName: String,
-    val hebrewDisplayName: String
-)
-
-/** Months of the year in order; both names come from the shared HebrewMonth source. */
-internal fun buildMonthList(isLeapYear: Boolean): List<MonthOption> {
-    val months = buildList {
-        add(JewishDate.TISHREI)
-        add(JewishDate.CHESHVAN)
-        add(JewishDate.KISLEV)
-        add(JewishDate.TEVES)
-        add(JewishDate.SHEVAT)
-        add(JewishDate.ADAR)
-        if (isLeapYear) add(JewishDate.ADAR_II)
-        add(JewishDate.NISSAN)
-        add(JewishDate.IYAR)
-        add(JewishDate.SIVAN)
-        add(JewishDate.TAMMUZ)
-        add(JewishDate.AV)
-        add(JewishDate.ELUL)
-    }
-    return months.map { month ->
-        val shared = HebrewMonth.from(month, isLeapYear)
-        MonthOption(month, shared.englishName, shared.hebrewName)
-    }
-}
-
-@Composable
-private fun NumberPicker(
-    value: Int,
-    range: IntRange,
-    onValueChange: (Int) -> Unit,
-    controlName: String,
-    modifier: Modifier = Modifier
-) {
-    val increaseDescription = stringResource(R.string.event_increase_value, controlName)
-    val decreaseDescription = stringResource(R.string.event_decrease_value, controlName)
-    Column(
-        modifier = modifier,
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (value < range.last) onValueChange(value + 1)
-            },
-            enabled = value < range.last,
-            modifier = Modifier.semantics { contentDescription = increaseDescription }
-        ) {
-            Text(
-                "+",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+    if (state.showDatePicker) {
+        HebrewDatePickerDialog(
+            initialDate = state.gregorianDate,
+            leading = LeadingCalendar.HEBREW,
+            onConfirm = { viewModel.onIntent(AddEditEventIntent.SetHebrewDate(it)) },
+            onDismiss = { viewModel.onIntent(AddEditEventIntent.DismissDatePicker) }
         )
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (value > range.first) onValueChange(value - 1)
-            },
-            enabled = value > range.first,
-            modifier = Modifier.semantics { contentDescription = decreaseDescription }
-        ) {
-            Text(
-                "\u2212",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-    }
-}
-
-@Composable
-private fun MonthPicker(
-    selectedMonth: Int,
-    months: List<MonthOption>,
-    onMonthChange: (Int) -> Unit,
-    controlName: String,
-    modifier: Modifier = Modifier
-) {
-    val currentIndex = months.indexOfFirst {
-        it.jewishDateMonth == selectedMonth
-    }.coerceAtLeast(0)
-    val currentMonth = months[currentIndex]
-    val increaseDescription = stringResource(R.string.event_increase_value, controlName)
-    val decreaseDescription = stringResource(R.string.event_decrease_value, controlName)
-
-    Column(
-        modifier = modifier,
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (currentIndex < months.size - 1) {
-                    onMonthChange(months[currentIndex + 1].jewishDateMonth)
-                }
-            },
-            enabled = currentIndex < months.size - 1,
-            modifier = Modifier.semantics { contentDescription = increaseDescription }
-        ) {
-            Text(
-                "+",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-        Text(
-            text = if (Locale.current.language in setOf("he", "iw")) currentMonth.hebrewDisplayName else currentMonth.displayName,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-        androidx.compose.material3.IconButton(
-            onClick = {
-                if (currentIndex > 0) {
-                    onMonthChange(months[currentIndex - 1].jewishDateMonth)
-                }
-            },
-            enabled = currentIndex > 0,
-            modifier = Modifier.semantics { contentDescription = decreaseDescription }
-        ) {
-            Text(
-                "\u2212",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
     }
 }

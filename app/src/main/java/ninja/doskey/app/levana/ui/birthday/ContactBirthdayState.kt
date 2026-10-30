@@ -1,7 +1,9 @@
 package ninja.doskey.app.levana.ui.birthday
 
+import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.data.HebrewDateMatcher
+import java.time.LocalDate
 
 data class ContactBirthdayState(
     val isEditing: Boolean = false,
@@ -15,7 +17,11 @@ data class ContactBirthdayState(
     // real current Hebrew year; the view model replaces it with the device's
     // (developer override included) year, which is also used for a stored unknown year.
     val hebrewYear: Int = HebrewDateMatcher.hebrewYearOf(DeviceContext.realToday()),
+    val showDatePicker: Boolean = false,
     val isSaving: Boolean = false,
     val saveComplete: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    /** The shown Hebrew date's Gregorian day; the view model only holds real dates. */
+    val gregorianDate: LocalDate get() = JewishDate(hebrewYear, hebrewMonth, hebrewDay).localDate
+}
