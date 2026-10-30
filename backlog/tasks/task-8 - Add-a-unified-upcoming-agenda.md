@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-21T11:19:31Z'
-updated_date: '2026-10-30T07:40:00Z'
+updated_date: '2026-10-30T08:17:00Z'
 labels:
   - curated-import
   - source-specs
@@ -77,10 +77,10 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Agenda screen per design 1a: date rail (weekday, Hebrew day, Gregorian date, today highlight), typed cards (candle lighting, Shabbat/parasha + havdalah, personal and device events with location and time, yahrzeits, birthdays, holidays and Rosh Chodesh), month headers and the Hebrew/Gregorian toggle; top bar with a month jump through the TASK-45 picker, search across all listed items, and today
-- [ ] #2 All sources are included with correct chronological order and Hebrew recurrence; times use the selected city; device-calendar selection and permission are respected; no occurrence logic is duplicated
-- [ ] #3 Drawer gains a Calendar section with Month and Agenda; the city list and selection are unchanged (no per-city times); Month stays the start screen
-- [ ] #4 Unit tests for aggregation, ordering and search; emulator screenshots compared against the design in English/Hebrew, light/dark, a holiday theme; TalkBack labels; Roborazzi baselines added for the new screen and drawer
+- [x] #1 Agenda screen per design 1a: date rail (weekday, Hebrew day, Gregorian date, today highlight), typed cards (candle lighting, Shabbat/parasha + havdalah, personal and device events with location and time, yahrzeits, birthdays, holidays and Rosh Chodesh), month headers and the Hebrew/Gregorian toggle; top bar with a month jump through the TASK-45 picker, search across all listed items, and today
+- [x] #2 All sources are included with correct chronological order and Hebrew recurrence; times use the selected city; device-calendar selection and permission are respected; no occurrence logic is duplicated
+- [x] #3 Drawer gains a Calendar section with Month and Agenda; the city list and selection are unchanged (no per-city times); Month stays the start screen
+- [x] #4 Unit tests for aggregation, ordering and search; emulator screenshots compared against the design in English/Hebrew, light/dark, a holiday theme; TalkBack labels; Roborazzi baselines added for the new screen and drawer
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -107,6 +107,24 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 12. English + Hebrew strings. Unit tests: occurrencesBetween equivalence, assembler ordering/types, repository aggregation (recurrence, selected city times, permission), search, header formatting, VM window/jump. Roborazzi: list changed drawer images, re-record and inspect; add `app_agenda`, `app_agenda_gregorian`, `app_agenda_search`, `app_agenda_search_empty` (en/he × light/dark) on a fixed seeded range.
 13. Build/test/lint/verifyRoborazzi; emulator screenshots (en/he, light/dark, holiday theme, search, picker jump, card taps, calendar permission on/off, drawer) saved outside the worktree with a README.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**Implementation (tested commit e54ee1b)**
+- Shared occurrence logic, no duplication: `HebrewDateMatcher.occurrencesBetween` (range form of the one resolver; unit-tested equal to the day panel's per-day `occurrenceOn` over 2023–2029, Adar/day-30/yahrzeit rule sets); `PersonalEventRepository.getEventsBetween`, `ContactBirthdayRepository.getBirthdaysBetween`; `SystemCalendarRepository.getEventsForDateRange` (day panel's `getEventsForDate` now delegates to it; events gain `location`); `openDeviceCalendarEvent` extracted from the day panel; `CalendarHeaderFormatter.hebrewMonthRange` gained a month-based overload.
+- `domain/agenda`: `AgendaItem`/`AgendaDay`, pure `AgendaAssembler` (ordering: all-day holiday → Shabbat → yahrzeit → birthday → event → all-day device; then timed by time), `AgendaSearch` (range today −12 months .. today +12 months, inclusive; titles, notes, locations, English+Hebrew holiday/parasha names incl. "Rosh Chodesh <month>"). `data/AgendaRepository` gathers DayInfo + ShabbatInfo at `displayCity` (like the day panel) + events/birthdays/selected device events; reports calendar permission.
+- `ui/agenda` MVI. Window opens today −42 .. today +83 days, extends 42 days at either end near the list edges; jumps outside the window reload around the date; scroll requests are state (handled by the screen). Leading calendar = the shared `calendarHebrewMode` preference. Zone label ("Jerusalem time") on candle-lighting/havdalah when the city's zone differs.
+- Taps: event/yahrzeit → editor; birthday → contact birthday editor; device event → system calendar; holiday → Month on that day (CalendarRoute back-stack savedStateHandle `showDay`, new optional `showDate` param on CalendarScreen); candle lighting/Shabbat/havdalah → Zmanim.
+- Navigation (additive): `AgendaRoute`; drawer "Calendar" heading with Month + Agenda, divider, then My events / Settings (DrawerNavigationItem extracted); city card/list/Manage cities unchanged; LevanaApp hides the global top bar for Agenda as for Month. Start screen unchanged. ScreenshotHarness gained an `extraModules()` hook.
+
+**Verification**
+- `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks` on e54ee1b: BUILD SUCCESSFUL (963 tests). An earlier full run had one failure in the untouched `AppShellScreenshotTest.contactBirthday[HE_DARK]` (timeout waiting for the birthday title); it passed 3/3 when rerun alone and in the final full run, so treated as intermittent.
+- New unit tests: OccurrencesBetweenTest, AgendaAssemblerTest, AgendaSearchTest, AgendaRepositoryTest (selected-city times, recurrence incl. 30 Cheshvan and leap Adar, Israel/Diaspora, permission off/on with a fake provider, unselected calendar), AgendaFormatterTest, AgendaViewModelTest (window, edge loading, jumps, search + jump, shared toggle, city change reload + zone label). LevanaAppNavigationTest now walks Agenda → Month.
+- Roborazzi: first `verifyRoborazziDebug --rerun-tasks` failed only `app_drawer_{en,he}_{light,dark}` (the test stops at the first mismatch). Re-recorded; changed baselines (all 8 read; only the drawer nav section differs, header/city card/city list/Manage cities identical): app_drawer_en_light, app_drawer_en_dark, app_drawer_he_light, app_drawer_he_dark, app_drawer_cities_en_light, app_drawer_cities_en_dark, app_drawer_cities_he_light, app_drawer_cities_he_dark. Added (en/he × light/dark, 28 images): app_agenda, app_agenda_gregorian, app_agenda_month_header (Rosh Chodesh Teves/Chanukah/fast + month header, scrolled by list key), app_agenda_drawer, app_agenda_no_calendar, app_agenda_search, app_agenda_search_empty.
+- Emulator (API 36, device date 30 Oct 2026 Jerusalem): screenshots + README at /tmp/levana-agenda/task8-emulator/ — drawer, agenda en/he light/dark, Chanukah theme, calendar permission off → banner → grant/select → device events, search + far jump, month jump through the TASK-45 picker, card taps (holiday → Month day, candles → Zmanim, yahrzeit → editor, device event → Google Calendar launched). TalkBack labels confirmed in uiautomator dumps (e.g. day "כ׳ חשון תשפ״ז, Saturday, October 31, 2026"; card "Calendar event, Kiddush — Cohen bar mitzvah, 11:30 AM, Yeshurun Synagogue").
+- Limitations: Google Calendar showed "event not found" for the adb-created LOCAL calendar (emulator data, not the intent); the default emulator GPS (Mountain View) read in the Jerusalem zone gave 2:55 AM candle times until GPS was set to Jerusalem (existing TASK-5 behaviour); one ClassCastException on back-to-back locale+night changes = known TASK-50, not reproducible otherwise. Not tested on device: text scaling beyond the defaults, live TalkBack navigation.
+<!-- SECTION:NOTES:END -->
 
 ## Beads history
 
