@@ -2,12 +2,12 @@ package ninja.doskey.app.levana.data
 
 import android.app.Application
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import ninja.doskey.app.levana.AppDataStores
+import ninja.doskey.app.levana.domain.model.IsraelMode
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -15,6 +15,7 @@ import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,27 +36,21 @@ class LegacyMinhagPreferenceTest {
 
     private val minhag = stringPreferencesKey("minhag")
     private val candleOffset = doublePreferencesKey("candle_lighting_offset")
-    private val inIsrael = booleanPreferencesKey("is_in_israel")
-    private val inIsraelManual = booleanPreferencesKey("is_in_israel_manual")
+    private val israelMode = stringPreferencesKey("israel_mode")
     private val leapYearAdar = stringPreferencesKey("yahrzeit_leap_year_adar")
     private val firstYear = stringPreferencesKey("yahrzeit_first_year")
     private val nisan1 = booleanPreferencesKey("yahrzeit_adar_i_30_nisan_1")
     private val missingDay = stringPreferencesKey("yahrzeit_missing_day")
-    private val written = listOf(minhag, candleOffset, inIsrael, inIsraelManual, leapYearAdar, firstYear, nisan1, missingDay)
 
     /** The app's real preference store (one per JVM), which the repository has no raw access to. */
-    @Suppress("UNCHECKED_CAST")
-    private val store: DataStore<Preferences>
-        get() = Class.forName("ninja.doskey.app.levana.data.PreferencesRepositoryKt")
-            .getDeclaredMethod("getDataStore", Context::class.java)
-            .apply { isAccessible = true }
-            .invoke(null, app) as DataStore<Preferences>
+    private val store get() = AppDataStores.preferences(app)
+
+    // The store is shared by the whole JVM: start from nothing and leave nothing behind
+    @Before
+    fun setUp() = AppDataStores.clearPreferences(app)
 
     @After
-    fun tearDown() = runBlocking {
-        store.edit { prefs -> written.forEach { prefs.remove(it) } }
-        Unit
-    }
+    fun tearDown() = AppDataStores.clearPreferences(app)
 
     @Test
     fun legacyMinhagValuesAreIgnoredAndOtherSettingsSurvive() = runBlocking {
@@ -71,8 +66,7 @@ class LegacyMinhagPreferenceTest {
             store.edit { prefs ->
                 prefs[minhag] = legacy
                 prefs[candleOffset] = 40.0
-                prefs[inIsraelManual] = true
-                prefs[inIsrael] = true
+                prefs[israelMode] = IsraelMode.ISRAEL.name
                 prefs[leapYearAdar] = expectedRules.leapYearAdar.name
                 prefs[firstYear] = expectedRules.firstYear.name
                 prefs[nisan1] = expectedRules.adarI30AlsoNisan1
