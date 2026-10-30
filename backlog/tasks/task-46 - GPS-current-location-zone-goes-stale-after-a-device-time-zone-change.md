@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29T21:36:00Z'
-updated_date: '2026-10-30T06:03:00Z'
+updated_date: '2026-10-30T06:18:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -42,10 +42,10 @@ So the current location most likely became Ukiah's coordinates with `timezoneId 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The issue is reproduced on an emulator before any fix, with the steps, stored location values and screenshots recorded (or the hypothesis is refuted and the real cause is documented and agreed with the coordinator)
-- [ ] #2 After the fix, the device position's zmanim, day panel, Zmanim screen, widgets and reminder triggers use the current device zone; a GPS fix in a zone different from the coordinates, or a later zone change, never yields times shown in a mismatched zone
-- [ ] #3 Existing stored current locations with a stale zone are handled; Israel/Diaspora auto-detect and the TASK-5 device/display-city rules are unchanged
-- [ ] #4 Unit tests for the zone-mismatch and zone-change cases; emulator re-check of the original TASK-48 steps and the Kiritimati case passes
+- [x] #1 The issue is reproduced on an emulator before any fix, with the steps, stored location values and screenshots recorded (or the hypothesis is refuted and the real cause is documented and agreed with the coordinator)
+- [x] #2 After the fix, the device position's zmanim, day panel, Zmanim screen, widgets and reminder triggers use the current device zone; a GPS fix in a zone different from the coordinates, or a later zone change, never yields times shown in a mismatched zone
+- [x] #3 Existing stored current locations with a stale zone are handled; Israel/Diaspora auto-detect and the TASK-5 device/display-city rules are unchanged
+- [x] #4 Unit tests for the zone-mismatch and zone-change cases; emulator re-check of the original TASK-48 steps and the Kiritimati case passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -95,4 +95,31 @@ Evidence: /tmp/levana-emu-l_tterxt/artifacts/ (screenshots 01–11, 20–21; 02_
 - Per the coordinator's instructions, production code is unchanged. Stopped to report before Phase 2.
 
 Owner decision 2026-10-30 on GPS position vs device time zone mismatch (TASK-48 case): Option A. Keep the current rule (device zone decides; times for the device position are shown on the device clock). In addition, detect when the GPS position clearly does not fit the device's time zone and show a brief pop-up explaining that the phone's time zone doesn't match its location, so times may look wrong, and asking the user to fix the device's date & time settings (with a button that opens the system Date & time settings). Implemented as Phase 3 of this task.
+
+## Phase 2 + 3 implementation (@claude, code commit 7e086c2)
+- `PreferencesRepository.preferences`: a stored fix is decoded and then `copy(timezoneId = DeviceContext.realZone().id)`. The preferences already re-emit on system time/zone changes, so all readers follow the device zone with no new fix: DeviceNow.position, displayCity with no city selected, widgets, ReminderAlarmPlan/NotificationAlarmScheduler and the daily notices. Already-stored stale fixes are corrected at read time, so no migration is needed. The zone-fallback city is unchanged. New `UserPreferences.currentLocationIsFix`.
+- `device/ZoneMismatch.kt`: `solarDeviationHours` = zone offset − longitude/15. It is wrapped to ±12 h only when |lon| ≥ 145°, near the date line (Line Islands, Tonga, Samoa, Chatham, Fiji, Chukotka, Aleutians). Elsewhere a day's difference counts, so a California fix on a Kiritimati clock is caught: 22.2 h, although only −1.8 h after wrapping. `zoneMismatchKey` reports a mismatch when |deviation| > 4 h, and only for a real fix. Key = "<device zone>|<round(lon/15)>".
+- `ui/navigation/ZoneMismatchNotice.kt`, in LevanaApp next to LevanaStartupEffects: collects the preferences while STARTED. When the key ≠ the stored `zone_mismatch_notice` (internal DataStore key, not in UserPreferences), it records the key and shows a Material 3 AlertDialog: "Date & time settings" opens Settings.ACTION_DATE_SETTINGS (ActivityNotFound guarded), "Not now" dismisses. When the mismatch clears, the key is removed, so a new one shows again. Strings are EN + HE in localized_ui_strings.xml.
+- Spec: ARCHITECTURE_SPEC "Dates and Notifications" has a new bullet. TASK-5 rules are unchanged: Israel/Diaspora stays zone-based, and times stay on the device clock.
+- Test change: DisplayCityZmanimTest now sets the JVM zone to New York, the device it models. It had a New York DeviceContext clock but read the host's JVM zone (IST here), which the stored fix now follows.
+
+## Verification
+- `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks`: BUILD SUCCESSFUL. 834 tests, 0 failures/errors. Lint passes. Roborazzi summary total 116, unchanged 116 (0 changed/added). No order-dependent failure was seen.
+- New tests:
+  - CurrentLocationZoneTest (4, Robolectric, real DataStore): fix stamped Asia/Jerusalem read in LA (sunrise 7 AM); zone change to Kiritimati re-zones the same fix, including displayCity and DeviceNow.position; Today widget in Kiritimati shows Sunrise Sat 31 Oct 4 AM and candles Fri 14:xx on the +14 clock; fallback city is not a fix and keeps its zone. 3 of the 4 fail without the fix.
+  - ZoneMismatchTest (6): California/Jerusalem and California/Kiritimati are mismatches. No mismatch, summer and winter, for LA, Jerusalem, NY, London, Madrid, Vigo, Shanghai, Kashgar on Asia/Shanghai, Kolkata, Ahmedabad, Kaliningrad, Smolensk/Moscow, Samara, Mendoza, Nome, Adak, Attu, St John's, Kathmandu, Kiritimati, Tonga, Apia, Chatham, Fiji, Anadyr. The fallback city never mismatches; key stability; deviation values.
+  - ZoneMismatchNoticeTest (3, Compose): shows once; not again on re-open; cleared by a matching zone and shown again when the mismatch returns; button starts ACTION_DATE_SETTINGS; nothing for no fix or a fitting fix.
+- Screenshot tests: the harness clears preferences and seeds New York in America/New_York with a New York clock, so no mismatch is possible. 116 are unchanged.
+- Emulator re-check on build 7e086c2, Levana_Agent_Template_API_36_1, evidence /tmp/levana-emu-5__m41z1/artifacts/:
+  - A1: fresh install, zone Asia/Jerusalem, GPS Ukiah. The pop-up shows once the fix lands (key Asia/Jerusalem|-8); the panel stays on the device clock (4:38 PM, by design).
+  - A2: the button opens com.android.settings DateTimeSettingsActivity.
+  - A3: back/resume (new fix) and a full re-open: no pop-up again.
+  - B1: with the app in the foreground, the zone changes to LA. The stored zone is still Asia/Jerusalem (no new fix), and the panel shows NETZ 7:38 AM / SHKIA 6:13 PM / CANDLES 5:55 PM with no pop-up; the key was cleared. Before the fix this step showed 4:38 PM / 3:13 AM (Phase 1 05/06).
+  - C1: Kiritimati with the app in the background, stored zone America/Los_Angeles. The widget shows Next: Sunrise **Sat 4:38 AM**, Candle Lighting Fri 2:57 PM, Havdalah Sat 3:54 PM. Before the fix: 7:38 AM / Fri 5:55 PM / Sat 6:53 PM (Phase 1 09).
+  - C2/C3: opening the app in Kiritimati shows the pop-up (California fix on a +14 clock); panel NETZ 4:36 AM / SHKIA 3:16 PM on the device clock.
+  - D1: with the app locale set to Hebrew, the zone goes back to Jerusalem. The Hebrew pop-up is laid out RTL, with "לא עכשיו" and "הגדרות תאריך ושעה" buttons.
+- Limitations:
+  - The emulator's force-stop leaves the app's widget un-updated (stopped apps receive no broadcasts), which is platform behavior. The C1 check backgrounds the app with Home, as Phase 1 did.
+  - Reminder triggers are covered by unit tests (they read the same re-zoned position); no notification was delivered on the emulator.
+  - The detection can't tell Hawaii from Kiritimati (same longitude, a day apart): only lat/lon→zone data could, and that is out of scope.
 <!-- SECTION:NOTES:END -->
