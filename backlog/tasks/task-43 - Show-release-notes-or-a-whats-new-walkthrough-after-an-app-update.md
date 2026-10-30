@@ -4,7 +4,7 @@ title: 'Feature walkthrough: per-feature screens shown once, growing with each r
 status: To Do
 assignee: []
 created_date: '2026-10-29T20:55:00Z'
-updated_date: '2026-10-30T07:23:00Z'
+updated_date: '2026-10-30T07:29:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -43,6 +43,11 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 - **1a Welcome:** "Your Hebrew calendar" / "Hebrew dates, holidays and zmanim, side by side with the Gregorian calendar." The illustration is a two-week Hebrew month strip (חשוון ה׳תשפ״ז, Oct – Nov 2026) with event chips (candles, parasha, yahrzeit), today highlighted, and NETZ / SHKIA / CANDLES tiles.
 - **1b Choose a city:** "Zmanim for where you are" / "Use your location, or add the cities you care about. Switch between them from the menu." The illustration shows a CURRENT LOCATION card (Jerusalem, Israel, ticked), a city list (Tel Aviv-Yafo, Israel · GMT+2 · 14:12; New York, United States · GMT−4 · 08:12; London, United Kingdom · GMT+0 · 12:12) and an **Add city** button. This screen can be **interactive**: it can request location permission or add a city in place.
 - **1c Remember every date:** "Remember every date" / "Add birthdays, yahrzeits and anniversaries on their Hebrew date. Levana reminds you each year." The illustration shows event cards (e.g. "Avi & Noa — anniversary · כ״א כסלו · every year", with a heart icon and a bell for its reminder) and a + button to add one. It maps to the `personal-events` screen. The design shows 3 pages; the approved list has 8, so the dots scale with the count.
+- **Page indicator rules** (owner, 2026-10-30): the count is the number of screens **in the current run**, not the registry total.
+  - **1 screen** (typical after an update): no dots, no Back/Next; a single **Got it** button. Skip is redundant and can be hidden.
+  - **2–9 screens:** dots, as designed.
+  - **10 or more:** replace the dots with a text counter, e.g. "3 of 12" ("3 מתוך 12" in Hebrew).
+  - TalkBack always announces "page n of m" from the same count.
 
 **Requirements**
 - Registry of screens: ID, order, minimum condition (e.g. hidden if the feature is unavailable on the device), content (illustration composable, title and body strings in English and Hebrew) and an optional action (permission request or add city, per the owner decisions below).
@@ -86,4 +91,5 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 - [ ] #3 Location, notification, contacts and calendar permissions are requested on their screens with short explanations (contacts: saved on the contact, nothing leaves the device); Not now never blocks; granted state shown; denial leaves the app usable
 - [ ] #4 Never interrupts deep links or tests; replay from About; developer reset of seen state; ARCHITECTURE_SPEC documents how to add a screen
 - [ ] #5 Unit tests for the seen/unseen selection (fresh install, upgrade with a new screen, skip, replay); Roborazzi baselines for each screen; emulator screenshots of a fresh install including each permission step (grant and deny), and of an upgrade showing only a new screen
+- [ ] #6 The page indicator follows the run's screen count: a single screen shows only Got it (no dots, no Back/Next); 2–9 show dots; 10 or more show an 'n of m' counter; tests and Roborazzi images cover runs of 1, 3 and 12 screens
 <!-- AC:END -->
