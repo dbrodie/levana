@@ -332,11 +332,12 @@ private fun DayCell(
             .clip(CircleShape)
             .then(if (selected) Modifier.background(scheme.primary) else Modifier)
             .then(if (isToday && !selected) Modifier.border(1.dp, scheme.primary, CircleShape) else Modifier)
-            .semantics(mergeDescendants = true) {
+            .clickable(enabled = enabled, role = Role.Button) { onSelect(date) }
+            // On the clickable node itself, so a screen reader focuses one element per day
+            .semantics {
                 contentDescription = description
                 this.selected = selected
             }
-            .clickable(enabled = enabled, role = Role.Button) { onSelect(date) }
             .alpha(if (enabled) 1f else DISABLED_ALPHA),
         contentAlignment = Alignment.Center
     ) {
@@ -406,8 +407,8 @@ private fun YearGrid(state: DatePickerState, onPick: (Int) -> Unit) {
                     .clip(shape)
                     .then(if (selected) Modifier.background(scheme.primary) else Modifier)
                     .then(if (year == current && !selected) Modifier.border(1.dp, scheme.primary, shape) else Modifier)
-                    .semantics { this.selected = selected }
-                    .clickable(role = Role.Button) { onPick(year) },
+                    .clickable(role = Role.Button) { onPick(year) }
+                    .semantics { this.selected = selected },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
