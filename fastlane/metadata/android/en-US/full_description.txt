@@ -1,4 +1,4 @@
-Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora. It works completely offline, has no ads, and collects no data.
+Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora. It has no ads and collects no data.
 
 📅 HEBREW & GREGORIAN CALENDAR
 • Month view in Hebrew or Gregorian months, with Hebrew dates on every day
