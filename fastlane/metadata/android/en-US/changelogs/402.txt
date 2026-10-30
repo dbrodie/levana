@@ -1,0 +1,8 @@
+No app changes since 0.4.1. This release is signed with Levana's own release key, the same key used for Google Play and GitHub.
+
+New in 0.4.x:
+• Agenda view with search
+• Home-screen widgets: Today, Month and Zmanim
+• A short walkthrough of the app's features
+• One date picker for Hebrew and Gregorian dates
+• Light, dark or system theme, and wallpaper colors

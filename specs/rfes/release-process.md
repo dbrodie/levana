@@ -39,20 +39,41 @@ Store the `.keystore` file securely offline (not in the repo).
 
 ## Release Workflow
 
+1. Write the changelog for the new version in
+   `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
+   (e.g. `v0.4.3` → `403.txt`). Plain text, at most 500 characters, user-facing
+   changes only, based on what was actually merged since the previous tag. F-Droid
+   shows this file for the version.
+2. Commit it to `master` and push.
+3. Tag that commit and push the tag:
+
 ```bash
 git tag v0.1.1
 git push origin v0.1.1
 ```
 
-GitHub Actions builds and publishes automatically. No file edits needed.
+GitHub Actions builds and publishes automatically. The workflow's first step after
+parsing the tag checks the changelog: if `changelogs/<versionCode>.txt` is missing,
+empty or longer than 500 characters, the run fails before building, with an error
+naming the expected file. To recover, add the changelog, commit, delete the tag
+(`git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`) and tag the new commit.
+
+## Store Metadata
+
+`fastlane/metadata/android/en-US/` holds the store listing in Fastlane layout, which
+F-Droid reads from the tagged source: `title.txt` (≤ 50 chars), `short_description.txt`
+(≤ 80), `full_description.txt` (≤ 4000), `images/icon.png`, `images/featureGraphic.png`,
+`images/phoneScreenshots/` and `changelogs/`. English only. Keep the text in step
+with the Play Console listing.
 
 ## Files Changed
 
 - `app/build.gradle.kts` — version from env vars; release signing config
 - `.gitignore` — ignore `keystore.properties` and `*.keystore`
-- `.github/workflows/release.yml` — CI workflow
+- `.github/workflows/release.yml` — CI workflow (including the changelog check)
+- `fastlane/metadata/android/en-US/` — store metadata and per-version changelogs
 
 ## Future Extensions
 
 - **Play Store (AAB)**: Add `bundleRelease` step; same env vars apply
-- **F-Droid**: No changes needed; tag-based versioning is compatible
+- **F-Droid**: tag-based versioning is compatible; per-version changelogs are enforced (TASK-53)
