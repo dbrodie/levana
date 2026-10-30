@@ -1,11 +1,11 @@
 ---
 id: TASK-12.1
 title: 'Screenshot safety net: Roborazzi baselines for Settings and app shell'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:50:00Z'
-updated_date: '2026-10-30T00:29:00Z'
+updated_date: '2026-10-30T00:32:00Z'
 labels: []
 dependencies:
   - TASK-5
@@ -123,6 +123,18 @@ Hebrew renders right-to-left throughout.
 - **Orphaned tracked baselines:** `app/src/test/screenshots/dayOfWeekHeader_{gregorian_ltr,hebrew_rtl}.png` belong to a test removed in 48c03af. The plugin also re-syncs them from build/intermediates. They are left untouched; deleting them is recommended but needs approval.
 - **Platform scope:** Robolectric renders only; device behavior (permissions dialogs, edge-to-edge insets) is outside these images.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T00:32:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed harness (launch-readiness retry only, no production changes) and sample images; merged as f00f915. Combined assembleDebug + testDebugUnitTest + lintDebug + verifyRoborazziDebug (--rerun-tasks) passed: 808 tests, 0 failures; Roborazzi 116 unchanged. Open: two stale baselines from a removed test (dayOfWeekHeader_*.png) await owner decision.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
