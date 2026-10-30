@@ -28,16 +28,21 @@ Owner vision, 2026-10-30. This replaces the earlier per-version release-notes id
 **Design source:** Claude Design "Jewish Calendar App Design", Walkthrough, https://claude.ai/artifact/6QPAibYPQzQJhZhEXDZ87H (owner, 2026-10-30). Captured by the coordinator through the Paseo browser:
 - `/tmp/levana-walkthrough/01-welcome-and-city-top.png`
 - `/tmp/levana-walkthrough/02-welcome-and-city-text.png`
+- `/tmp/levana-walkthrough/03-remember-every-date-bottom-controls.png` (third screen and the bottom controls)
 
-The bottom of each frame (page indicator and next/done controls) couldn't be scrolled into view; get it from the owner or the live link before building.
+To see the whole page in the Paseo browser, scroll the page background, not a phone frame: the frames capture the wheel.
 
 **Screen anatomy (from the design)**
 - Full-screen page with **Skip** at the top end.
 - A large rounded illustration card showing a realistic mini-UI of the feature (not a static image).
 - A large title and a one- or two-line body below.
-- Next/Done controls and a page indicator are presumably at the bottom (to confirm).
+- **Bottom controls:**
+  - centred page dots, with the current page drawn as a wider dark pill;
+  - a text **Back** button (start side), which is not on the first page;
+  - a filled primary button (end side): **Next** on intermediate pages, presumably, and **Get started** on the last page.
 - **1a Welcome:** "Your Hebrew calendar" / "Hebrew dates, holidays and zmanim, side by side with the Gregorian calendar." The illustration is a two-week Hebrew month strip (חשוון ה׳תשפ״ז, Oct – Nov 2026) with event chips (candles, parasha, yahrzeit), today highlighted, and NETZ / SHKIA / CANDLES tiles.
 - **1b Choose a city:** "Zmanim for where you are" / "Use your location, or add the cities you care about. Switch between them from the menu." The illustration shows a CURRENT LOCATION card (Jerusalem, Israel, ticked), a city list (Tel Aviv-Yafo, Israel · GMT+2 · 14:12; New York, United States · GMT−4 · 08:12; London, United Kingdom · GMT+0 · 12:12) and an **Add city** button. This screen can be **interactive**: it can request location permission or add a city in place.
+- **1c Remember every date:** "Remember every date" / "Add birthdays, yahrzeits and anniversaries on their Hebrew date. Levana reminds you each year." The illustration shows event cards (e.g. "Avi & Noa — anniversary · כ״א כסלו · every year", with a heart icon and a bell for its reminder) and a + button to add one. It maps to the `personal-events` screen. The design shows 3 pages; the approved list has 8, so the dots scale with the count.
 
 **Requirements**
 - Registry of screens: ID, order, minimum condition (e.g. hidden if the feature is unavailable on the device), content (illustration composable, title and body strings in English and Hebrew) and an optional action (permission request or add city, per the owner decisions below).
@@ -60,13 +65,12 @@ The bottom of each frame (page indicator and next/done controls) couldn't be scr
    - **Calendar** (read-only) on the device-calendars screen. Make the same "nothing leaves the device" point.
    If a permission is already granted, show the granted state instead of a button. A denial must leave the app fully usable, and the existing in-app prompts still work later.
 3. **Screens 3 and 4 of the draft are merged** into one screen. Final list below.
-4. Still open: the design's bottom controls (page dots? Next / Get started?), which couldn't be captured. Confirm them with the owner or from the live link before building.
 
 **Feature-screen list (owner-approved, 8 screens, in order)**
 1. `welcome-hebrew-calendar`: **Your Hebrew calendar** (design 1a). Hebrew and Gregorian side by side, holidays, zmanim at a glance.
 2. `zmanim-location`: **Zmanim for where you are** (design 1b). Current location or saved cities, switched from the menu. Location permission request plus Add city.
 3. `days-shabbat-holidays`: **Every day, Shabbat and holiday.** Tap a day for zmanim, parasha, Omer and events, and choose which zmanim to show; candle lighting and havdalah, Yom Tov, fasts, Israel/Diaspora auto-detect.
-4. `personal-events`: **Birthdays, yahrzeits and events.** Recurring Hebrew dates with correct leap-year and yahrzeit rules; Hebrew birthdays saved on your contacts. Contacts permission request, explaining storage on the contact and that nothing leaves the device.
+4. `personal-events`: **Remember every date** (design 1c). Recurring Hebrew dates with correct leap-year and yahrzeit rules; Hebrew birthdays saved on your contacts. Contacts permission request, explaining storage on the contact and that nothing leaves the device.
 5. `reminders`: **Never miss candle lighting.** Reminders for candle lighting, holidays, fasts, events and the Omer. Notification permission request.
 6. `device-calendars`: **Your calendars together.** Selected phone calendars alongside Jewish dates. Calendar permission request, read-only, nothing leaves the device.
 7. `widgets`: **Levana on your home screen.** Today, Month and Zmanim widgets, the Quick Settings tile and the Hebrew-date app icon.
