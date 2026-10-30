@@ -1,10 +1,10 @@
 ---
 id: TASK-12
 title: Split SettingsScreen.kt and MainActivity.kt into focused files
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-10-21T11:19:33Z'
-updated_date: '2026-10-29T21:42:00Z'
+updated_date: '2026-10-30T01:01:00Z'
 labels:
   - curated-import
   - source-specs
@@ -49,10 +49,22 @@ Out of scope: visual or behavior changes, string or route renames, new ViewModel
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Screenshot baselines recorded from pre-refactor master cover Settings, its dialogs and sub-screens, the drawer and top bar, and verifyRoborazziDebug passes with zero diffs after each split
-- [ ] #2 SettingsScreen.kt and MainActivity.kt are split per subtasks 12.2/12.3 with no user-visible or behavior change; dead code removed in its own commit
-- [ ] #3 Build, unit tests, lint and verifyRoborazziDebug pass; emulator walkthrough in English/Hebrew, light/dark recorded
+- [x] #1 Screenshot baselines recorded from pre-refactor master cover Settings, its dialogs and sub-screens, the drawer and top bar, and verifyRoborazziDebug passes with zero diffs after each split
+- [x] #2 SettingsScreen.kt and MainActivity.kt are split per subtasks 12.2/12.3 with no user-visible or behavior change; dead code removed in its own commit
+- [x] #3 Build, unit tests, lint and verifyRoborazziDebug pass; emulator walkthrough in English/Hebrew, light/dark recorded
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T01:01:00Z
+
+---
+
+All subtasks merged and verified 2026-10-30 (12.1 baselines, 12.2 Settings split, 12.3 app-shell split). Emulator walkthroughs recorded in 12.2/12.3 notes.
+
+---
+<!-- COMMENTS:END -->
 
 ## Beads history
 

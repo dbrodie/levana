@@ -1,11 +1,11 @@
 ---
 id: TASK-12.3
 title: Split MainActivity.kt / LevanaApp into app-shell files
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T18:50:00Z'
-updated_date: '2026-10-30T00:59:00Z'
+updated_date: '2026-10-30T01:01:00Z'
 labels: []
 dependencies:
   - TASK-12.1
@@ -116,6 +116,18 @@ Run on 2c5d149-equivalent code (pre-rebase), then a smoke run on 2d428f2:
 
 Correction: the pre-rebase walkthrough ran on f5a93a8 (the split commit before the rebase), not 2c5d149.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T01:01:00Z
+
+---
+
+Coordinator integration 2026-10-30: merged as c508029. Combined assembleDebug + testDebugUnitTest + lintDebug + verifyRoborazziDebug (--rerun-tasks, clean test-results): 821 tests, 0 failures; Roborazzi 116 unchanged. MainActivity.kt 594 → 65 lines.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
