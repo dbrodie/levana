@@ -40,6 +40,7 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import ninja.doskey.app.levana.ui.ContentWidthBox
 
 @Composable
 fun ZmanimScreen(initialDate: LocalDate? = null, modifier: Modifier = Modifier, viewModel: ZmanimViewModel = koinViewModel()) {
@@ -56,17 +57,19 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
     }
     val formatter = if (DateFormat.is24HourFormat(LocalContext.current)) DateTimeFormatter.ofPattern("HH:mm") else DateTimeFormatter.ofPattern("h:mm a")
     val grouped = state.zmanim.groupBy { it.category }
-    LazyColumn(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        state.otherClockCityName?.let { item(key = "clock") { CityClockLabel(it) } }
-        ZmanCategory.entries.forEach { category ->
-            val zmanim = grouped[category].orEmpty()
-            if (zmanim.isNotEmpty()) item(key = category.name) { ZmanGroup(category, zmanim, formatter) }
+    ContentWidthBox(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { gutter ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp + gutter, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            state.otherClockCityName?.let { item(key = "clock") { CityClockLabel(it) } }
+            ZmanCategory.entries.forEach { category ->
+                val zmanim = grouped[category].orEmpty()
+                if (zmanim.isNotEmpty()) item(key = category.name) { ZmanGroup(category, zmanim, formatter) }
+            }
+            item { Spacer(Modifier.height(12.dp)) }
         }
-        item { Spacer(Modifier.height(12.dp)) }
     }
 }
 

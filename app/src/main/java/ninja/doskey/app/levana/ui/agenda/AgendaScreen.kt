@@ -104,6 +104,8 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.ContentWidthBox
+import ninja.doskey.app.levana.ui.contentWidth
 
 private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
 private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
@@ -248,16 +250,18 @@ private fun AgendaList(
     }
 
     val context = LocalContext.current
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-    ) {
-        if (state.loadingEarlier) item(key = "loading-earlier") { LoadingRow() }
-        items(rows, key = { it.key }) { row ->
-            AgendaRowItem(row, today, state, clickLabel = null) { item -> openItem(item, row.day.date, navigation, context) }
+    ContentWidthBox(Modifier.fillMaxSize()) { gutter ->
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 12.dp + gutter, end = 16.dp + gutter, top = 4.dp, bottom = 24.dp),
+        ) {
+            if (state.loadingEarlier) item(key = "loading-earlier") { LoadingRow() }
+            items(rows, key = { it.key }) { row ->
+                AgendaRowItem(row, today, state, clickLabel = null) { item -> openItem(item, row.day.date, navigation, context) }
+            }
+            if (state.loadingLater) item(key = "loading-later") { LoadingRow() }
         }
-        if (state.loadingLater) item(key = "loading-later") { LoadingRow() }
     }
 }
 
@@ -286,13 +290,15 @@ private fun SearchResults(
         else -> {
             val rows = remember(search.results, state.hebrewLeading) { agendaRows(search.results, state.hebrewLeading) }
             val showLabel = stringResource(R.string.agenda_show_in_agenda)
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-            ) {
-                items(rows, key = { it.key }) { row ->
-                    // A result shows its day in the agenda
-                    AgendaRowItem(row, today, state, clickLabel = showLabel) { onIntent(AgendaIntent.SelectSearchResult(row.day.date)) }
+            ContentWidthBox(Modifier.fillMaxSize()) { gutter ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 12.dp + gutter, end = 16.dp + gutter, top = 4.dp, bottom = 24.dp),
+                ) {
+                    items(rows, key = { it.key }) { row ->
+                        // A result shows its day in the agenda
+                        AgendaRowItem(row, today, state, clickLabel = showLabel) { onIntent(AgendaIntent.SelectSearchResult(row.day.date)) }
+                    }
                 }
             }
         }
@@ -380,7 +386,7 @@ private fun CalendarPermissionBanner(onChoose: () -> Unit, onDismiss: () -> Unit
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier.contentWidth().fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
             Text(stringResource(R.string.agenda_calendar_permission), style = MaterialTheme.typography.bodyMedium)

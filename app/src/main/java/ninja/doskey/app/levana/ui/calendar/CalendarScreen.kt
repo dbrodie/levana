@@ -72,6 +72,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.CappedFontScale
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
@@ -275,11 +276,14 @@ private fun GregorianCalendarContent(
                     if (state.isLoading) CircularProgressIndicator()
                 }
             } else {
-                GregorianMonthGrid(
-                    monthDays = days,
-                    today = today, selectedDate = state.selectedDate,
-                    onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
-                )
+                // Fixed cells: beyond a modest scale the day numbers overlap; the day panel shows them in full
+                CappedFontScale {
+                    GregorianMonthGrid(
+                        monthDays = days,
+                        today = today, selectedDate = state.selectedDate,
+                        onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
+                    )
+                }
             }
         }
     }
@@ -343,11 +347,14 @@ private fun HebrewCalendarContent(
                     if (state.isLoading) CircularProgressIndicator()
                 }
             } else {
-                HebrewMonthGrid(
-                    monthDays = days,
-                    today = today, selectedDate = state.selectedDate,
-                    onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
-                )
+                // Fixed cells: beyond a modest scale the day numbers overlap; the day panel shows them in full
+                CappedFontScale {
+                    HebrewMonthGrid(
+                        monthDays = days,
+                        today = today, selectedDate = state.selectedDate,
+                        onDayClick = { onIntent(CalendarIntent.SelectDay(it)) },
+                    )
+                }
             }
         }
     }

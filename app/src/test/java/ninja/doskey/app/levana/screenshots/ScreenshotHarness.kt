@@ -65,11 +65,16 @@ import org.robolectric.Shadows.shadowOf
  * Record: `./gradlew :app:recordRoborazziDebug --tests '*.screenshots.*'`;
  * verify: `./gradlew :app:verifyRoborazziDebug`. See specs/ARCHITECTURE_SPEC.md.
  */
-abstract class ScreenshotTest(private val variant: Variant, private val device: String? = null) {
+abstract class ScreenshotTest(
+    private val variant: Variant,
+    private val device: String? = null,
+    private val fontScale: Float? = null,
+) {
 
     /**
      * Light/dark × English/Hebrew, applied on top of the device before the activity starts:
      * the class's `@Config` qualifiers ([DEVICE]), or [device] when given (see [FoldableSize]).
+     * [fontScale], when given, is the system font size (2 = 200%).
      */
     enum class Variant(val qualifiers: String) {
         EN_LIGHT("+en-notnight"),
@@ -105,8 +110,9 @@ abstract class ScreenshotTest(private val variant: Variant, private val device: 
     fun setUpScreenshot() {
         savedZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone(ZONE))
-        device?.let { RuntimeEnvironment.setQualifiers(it) }
+        (Audit.size?.qualifiers ?: device)?.let { RuntimeEnvironment.setQualifiers(it) }
         RuntimeEnvironment.setQualifiers(variant.qualifiers)
+        (Audit.fontScale ?: fontScale)?.let { RuntimeEnvironment.setFontScale(it) }
         app = RuntimeEnvironment.getApplication()
 
         // About shows the version and installer; pin them so a git tag does not change it
@@ -282,7 +288,19 @@ abstract class ScreenshotTest(private val variant: Variant, private val device: 
     @OptIn(ExperimentalRoborazziApi::class)
     protected fun capture(name: String) {
         settle()
-        captureScreenRoboImage("$OUTPUT_DIR/${name}_${variant.tag}.png")
+        captureScreenRoboImage("${Audit.dir ?: OUTPUT_DIR}/${name}_${variant.tag}.png")
+    }
+
+    /**
+     * Opt-in layout audit (TASK-52.2): with `-Plevana.audit.size=<FoldableSize>` and
+     * `-Plevana.audit.dir=<absolute path outside the worktree>` (optionally
+     * `-Plevana.audit.fontScale=2`), `recordRoborazziDebug` renders every screenshot test at that
+     * window size into that directory instead of the baselines. Not for verify runs.
+     */
+    private object Audit {
+        val size: FoldableSize? = System.getProperty("levana.audit.size")?.let { FoldableSize.valueOf(it) }
+        val fontScale: Float? = System.getProperty("levana.audit.fontScale")?.toFloat()
+        val dir: String? = System.getProperty("levana.audit.dir")
     }
 
     private object NoEventChanges : EventDataChanges {

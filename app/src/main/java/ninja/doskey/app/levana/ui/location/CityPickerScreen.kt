@@ -32,6 +32,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.contentWidth
+import ninja.doskey.app.levana.ui.ContentWidthBox
 
 @Composable
 fun CityPickerScreen(
@@ -68,6 +70,7 @@ fun CityPickerScreen(
                 viewModel.onIntent(CityPickerIntent.Search(it))
             },
             modifier = Modifier
+                .contentWidth()
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             placeholder = { Text(stringResource(R.string.city_search_placeholder)) },
@@ -77,27 +80,29 @@ fun CityPickerScreen(
             singleLine = true
         )
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(state.cities, key = { "${it.name},${it.country}" }) { city ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        dismissKeyboard()
-                        viewModel.onIntent(CityPickerIntent.SelectCity(city))
+        ContentWidthBox(Modifier.fillMaxSize()) { gutter ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp + gutter, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(state.cities, key = { "${it.name},${it.country}" }) { city ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            dismissKeyboard()
+                            viewModel.onIntent(CityPickerIntent.SelectCity(city))
+                        }
+                    ) {
+                        ListItem(
+                            headlineContent = { Text(city.name, style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(city.country, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        )
                     }
-                ) {
-                    ListItem(
-                        headlineContent = { Text(city.name, style = MaterialTheme.typography.titleSmall) },
-                        supportingContent = { Text(city.country, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    )
                 }
+                item { androidx.compose.foundation.layout.Spacer(Modifier.padding(bottom = 24.dp)) }
             }
-            item { androidx.compose.foundation.layout.Spacer(Modifier.padding(bottom = 24.dp)) }
         }
     }
 }

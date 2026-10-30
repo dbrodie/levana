@@ -46,6 +46,7 @@ import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import java.util.GregorianCalendar
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import ninja.doskey.app.levana.ui.contentWidth
 
 @Composable
 fun DeveloperSettingsScreen(
@@ -58,7 +59,7 @@ fun DeveloperSettingsScreen(
     val scope = rememberCoroutineScope()
     var showDateDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).contentWidth()) {
         ListItem(
             headlineContent = { Text("Date Override") },
             supportingContent = {

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -75,6 +76,8 @@ import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.ui.targetedLabel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import ninja.doskey.app.levana.ui.ContentWidthBox
+import ninja.doskey.app.levana.ui.contentWidth
 
 private val hebrewFormatter = HebrewDateFormatter().apply {
     isHebrewFormat = true
@@ -260,7 +263,7 @@ fun EventsScreen(
         modifier = modifier
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            TabRow(selectedTabIndex = pagerState.currentPage) {
+            TabRow(selectedTabIndex = pagerState.currentPage, modifier = Modifier.contentWidth()) {
                 Tab(
                     selected = pagerState.currentPage == 0,
                     onClick = {
@@ -383,21 +386,24 @@ internal fun BirthdaysTab(
         return
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item { Spacer(modifier = Modifier.height(8.dp)) }
-        items(birthdays, key = { it.contactLookupKey }) { birthday ->
-            BirthdayCard(
-                birthday = birthday,
-                onClick = { onEditBirthday(birthday.contactLookupKey) },
-                onDelete = { onDeleteBirthday(birthday.contactLookupKey) }
-            )
+    ContentWidthBox(Modifier.fillMaxSize()) { gutter ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = gutter),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            items(birthdays, key = { it.contactLookupKey }) { birthday ->
+                BirthdayCard(
+                    birthday = birthday,
+                    onClick = { onEditBirthday(birthday.contactLookupKey) },
+                    onDelete = { onDeleteBirthday(birthday.contactLookupKey) }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
-        item { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
 
@@ -527,21 +533,24 @@ internal fun CustomEventsTab(
         return
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item { Spacer(modifier = Modifier.height(8.dp)) }
-        items(events, key = { it.id }) { event ->
-            EventCard(
-                event = event,
-                onClick = { onEditEvent(event.id) },
-                onDelete = { onDeleteEvent(event) }
-            )
+    ContentWidthBox(Modifier.fillMaxSize()) { gutter ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = gutter),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            items(events, key = { it.id }) { event ->
+                EventCard(
+                    event = event,
+                    onClick = { onEditEvent(event.id) },
+                    onDelete = { onDeleteEvent(event) }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
-        item { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
 
