@@ -3,11 +3,11 @@ id: TASK-45
 title: >-
   Replace the app's date pickers with one shared dual-calendar (design 1b)
   Hebrew date picker
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T21:22:00Z'
-updated_date: '2026-10-30T07:30:00Z'
+updated_date: '2026-10-30T07:33:00Z'
 labels: []
 dependencies:
   - TASK-24
@@ -191,6 +191,18 @@ Found during verification (not caused by this task):
 - Observation, unverified: in Nissan 5500 (1740) the existing holiday logic marks a day around 28 Nissan, probably a modern Israeli day (Yom HaShoah) computed for a pre-1948 year. The picker shows what CalendarRepository returns; the calendar screen would show the same.
 - Go to date opens on the calendar's selected day. That was the old dialog's behaviour too, and the selection does not follow a developer-override change.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T07:33:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed screenshots (Purim 5787 chip, Hebrew year list, he-dark Gregorian-led, add-event date card) against design 1b; merged as ee4440d. Clean run: 922 tests, 0 failures; Roborazzi 156 unchanged (12 editor baselines intentionally re-recorded, 24 picker baselines added). Evidence: /tmp/levana-task45-evidence/README.md. Follow-ups: TASK-50 (config-change crash, pre-existing); possible anachronistic modern holiday in 5500; Go-to-date initial date ignores the dev override.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
