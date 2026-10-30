@@ -4,6 +4,10 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
@@ -57,6 +61,11 @@ class ContactBirthdayScreenshotTest(variant: Variant) : ScreenshotTest(variant) 
         awaitText(string(R.string.design_edit_birthday))
         await(hasText(string(R.string.event_update)))
         capture("app_contact_birthday_existing")
+
+        // TalkBack announces the switch: the notice sits in a polite live region
+        val inLiveRegion = SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite) and
+            hasAnyDescendant(hasText(string(R.string.birthday_existing_notice, "", "").substringAfter(".").trim(), substring = true))
+        compose.onNode(inLiveRegion).assertExists()
     }
 
     companion object {
