@@ -8,7 +8,7 @@ import org.junit.Test
 class WalkthroughSelectionTest {
 
     private val approved = listOf(
-        "welcome-hebrew-calendar", "zmanim-location", "days-shabbat-holidays", "personal-events",
+        "welcome-hebrew-calendar", "zmanim-location", "days-shabbat-holidays", "agenda", "personal-events",
         "reminders", "device-calendars", "widgets", "appearance",
     )
     private val registry = WalkthroughRegistry.screens
@@ -34,16 +34,24 @@ class WalkthroughSelectionTest {
 
     @Test
     fun anUpgradeShowsOnlyTheNewScreen() {
-        val agenda = FeatureScreen("agenda", 0, 0) { }
-        val upgraded = registry.take(3) + agenda + registry.drop(3)
-        assertEquals(listOf("agenda"), onLaunch(seen = approved.toSet(), screens = upgraded))
+        val next = FeatureScreen("next-feature", 0, 0) { }
+        val upgraded = registry.take(3) + next + registry.drop(3)
+        assertEquals(listOf("next-feature"), onLaunch(seen = approved.toSet(), screens = upgraded))
     }
 
     @Test
     fun aNewInstallSeesANewScreenInItsPlace() {
-        val agenda = FeatureScreen("agenda", 0, 0) { }
-        val upgraded = registry.take(3) + agenda + registry.drop(3)
-        assertEquals(approved.take(3) + "agenda" + approved.drop(3), onLaunch(seen = emptySet(), screens = upgraded))
+        val next = FeatureScreen("next-feature", 0, 0) { }
+        val upgraded = registry.take(3) + next + registry.drop(3)
+        assertEquals(approved.take(3) + "next-feature" + approved.drop(3), onLaunch(seen = emptySet(), screens = upgraded))
+    }
+
+    /** TASK-8: users who saw TASK-43's walkthrough get the agenda screen alone, after the Shabbat screen. */
+    @Test
+    fun theAgendaScreenFollowsDaysAndIsAllAnExistingUserSees() {
+        assertEquals(approved.indexOf("days-shabbat-holidays") + 1, approved.indexOf("agenda"))
+        assertEquals(listOf("agenda"), onLaunch(seen = (approved - "agenda").toSet()))
+        assertEquals(null, registry.single { it.id == "agenda" }.permission)
     }
 
     @Test

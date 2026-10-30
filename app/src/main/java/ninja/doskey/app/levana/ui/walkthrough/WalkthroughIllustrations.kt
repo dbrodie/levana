@@ -47,6 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -56,6 +60,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+import ninja.doskey.app.levana.data.CalendarRepository
+import ninja.doskey.app.levana.domain.agenda.AgendaDay
+import ninja.doskey.app.levana.domain.agenda.AgendaItem
+import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
+import ninja.doskey.app.levana.ui.agenda.DayRow
+import java.time.LocalTime
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
@@ -765,5 +775,51 @@ private fun RowScope.LanguageSegment(label: String, selected: Boolean) {
             Spacer(Modifier.width(6.dp))
         }
         Text(label, style = MaterialTheme.typography.labelLarge, color = if (selected) colors.onSecondaryContainer else colors.onSurface)
+    }
+}
+
+// ── Agenda: two days of the real agenda list, with fixed sample entries ───────────────────
+
+@Composable
+internal fun AgendaIllustration() {
+    val hebrew = locale().isHebrew()
+    val calendar = remember { CalendarRepository() }
+    val shabbat = SAMPLE_DAY.plusDays(1)
+    val dinnerStart = SAMPLE_DAY.atTime(19, 0)
+    val dinner = SystemCalendarEvent(
+        eventId = 0, title = stringResource(R.string.walkthrough_sample_agenda_event),
+        startTime = dinnerStart, endTime = dinnerStart.plusHours(2), allDay = false,
+        calendarId = 0, calendarColor = MaterialTheme.colorScheme.primary.toArgb(),
+        location = stringResource(R.string.walkthrough_sample_agenda_place),
+    )
+    val days = listOf(
+        AgendaDay(
+            SAMPLE_DAY,
+            calendar.getHebrewDay(SAMPLE_DAY),
+            listOf(AgendaItem.CandleLighting(LocalTime.parse(SAMPLE_CANDLES)), AgendaItem.DeviceEventItem(dinner, dinnerStart.toLocalTime())),
+        ),
+        AgendaDay(
+            shabbat,
+            calendar.getHebrewDay(shabbat),
+            listOf(AgendaItem.Shabbat(parasha(shabbat, hebrew = false), parasha(shabbat, hebrew = true), null, LocalTime.parse(SAMPLE_HAVDALAH))),
+        ),
+    )
+    // The real list at a slightly smaller text size, so a phone-width row fits the frame;
+    // times in the same 24-hour form as the other illustrations' samples
+    val density = LocalDensity.current
+    Decorative {
+        CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * 0.85f)) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(horizontal = 4.dp, vertical = 8.dp)
+            ) {
+                days.forEach { day ->
+                    DayRow(
+                        day, isToday = day.date == SAMPLE_DAY, hebrewLeading = true, otherClockCityName = null,
+                        onClickItem = {}, clickLabel = null, use24Hour = true,
+                    )
+                }
+            }
+        }
     }
 }

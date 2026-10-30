@@ -436,21 +436,24 @@ private fun MonthHeaderRow(month: AgendaMonth) {
     }
 }
 
+/** A day with its cards; also the walkthrough's agenda illustration. */
 @Composable
-private fun DayRow(
+internal fun DayRow(
     day: AgendaDay,
     isToday: Boolean,
     hebrewLeading: Boolean,
     otherClockCityName: String?,
     onClickItem: (AgendaItem) -> Unit,
     clickLabel: String?,
+    /** Times in 24-hour form; null follows the device setting. */
+    use24Hour: Boolean? = null,
 ) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         DateRail(day, isToday, hebrewLeading)
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             day.items.forEach { item ->
-                AgendaCard(item, otherClockCityName, clickLabel) { onClickItem(item) }
+                AgendaCard(item, otherClockCityName, clickLabel, use24Hour) { onClickItem(item) }
             }
         }
     }
@@ -509,8 +512,14 @@ private data class CardContent(
 )
 
 @Composable
-private fun AgendaCard(item: AgendaItem, otherClockCityName: String?, clickLabel: String?, onClick: () -> Unit) {
-    val content = cardContent(item, otherClockCityName)
+private fun AgendaCard(
+    item: AgendaItem,
+    otherClockCityName: String?,
+    clickLabel: String?,
+    use24Hour: Boolean?,
+    onClick: () -> Unit,
+) {
+    val content = cardContent(item, otherClockCityName, use24Hour)
     val scheme = MaterialTheme.colorScheme
     val container = when (content.style) {
         CardStyle.OUTLINED -> scheme.surface
@@ -555,10 +564,10 @@ private fun AgendaCard(item: AgendaItem, otherClockCityName: String?, clickLabel
 }
 
 @Composable
-private fun cardContent(item: AgendaItem, otherClockCityName: String?): CardContent {
+private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour: Boolean?): CardContent {
     val context = LocalContext.current
     val hebrewUi = CalendarHeaderFormatter.isHebrew(LocalConfiguration.current.locales[0])
-    val timeFormat = if (DateFormat.is24HourFormat(context)) TIME_24H else TIME_12H
+    val timeFormat = if (use24Hour ?: DateFormat.is24HourFormat(context)) TIME_24H else TIME_12H
     fun time(t: LocalTime) = t.format(timeFormat)
     // Candle lighting and havdalah are the selected city's; label its clock when it differs
     val cityClock = otherClockCityName?.let { stringResource(R.string.zmanim_city_clock, it) }
