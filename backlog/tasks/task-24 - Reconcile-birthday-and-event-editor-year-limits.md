@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-21T12:03:24Z'
-updated_date: '2026-10-30T06:30:00Z'
+updated_date: '2026-10-30T06:38:00Z'
 labels:
   - curated-import
   - verified-followup
@@ -48,6 +48,21 @@ Policy (owner decision 2026-10-30): supported Hebrew years 5600..6000.
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner decision 2026-10-30: the supported Hebrew year range is 5600–6000 (≈1840–2240) for the event and birthday editors and for the shared date picker (TASK-45). Stored or imported dates outside the range are always preserved unchanged, never clamped or rewritten. Expose the range in a single place that TASK-45 uses for its bounds.
+
+Implementation (commit 6e029f5, tested):
+- Single policy definition: `SupportedHebrewYears` in app/src/main/java/ninja/doskey/app/levana/domain/model/SupportedHebrewYears.kt (FIRST = 5600, LAST = 6000, `range`, `contains`, `coerce`, `gregorianYears` = 1840..2239 for the Gregorian side). TASK-45's picker should read it.
+- Removed HebrewDateMatcher.EDITABLE_YEARS (5700..5900) and the editors' 3762..9999 clamp. MIN/MAX_KNOWN_YEAR (3762..9999) remain only as "stored/imported data the calendar library handles" (isKnownYear, import validation).
+- Year stepper (AddEditEventScreen.HebrewDatePicker, shared by both editors) and Go-to-date (Hebrew year field; Gregorian field now gregorianYears instead of 1940..2140) use the policy.
+- Editors: an entered year is coerced into 5600..6000; default year too; prefill keeps a known year, coerces an unusable one. A stored date whose year is outside 5600..6000 (incl. unknown 0/1/-1/99999) is kept verbatim (`preservedDate`) and written back exactly on Save until the user changes day, month or year (title/notes/contact/yahrzeit switch don't count). A day/month change keeps the shown year (5500 stays 5500); the stepper from 5500 goes "+" → 5600 ("−" disabled), from 6100 "−" → 6000 ("+" disabled). In-range dates keep the 1e/2a normalisation.
+- Behaviour change worth noting: saving an untouched unknown-year item now writes year 0 back instead of the current year (behaviour-equivalent by the existing editorDate design; documented in RFE sections 2 and 4).
+- RFE specs/rfes/fix-adar-and-year-followups.md: new "Supported years" section in 2; 1e, 2a, 2b, 4 and the test plan updated.
+
+Verification at 6e029f5:
+- `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks`: BUILD SUCCESSFUL; 850 unit tests, 0 failures/errors; lint 0 errors (84 warnings, none new; GoToDateDialog ModifierParameter warning is pre-existing); Roborazzi total 116, unchanged 116, changed 0.
+- New/updated tests: SupportedHebrewYearsTest; AddEditEventViewModelTest and ContactBirthdayViewModelTest (entered years 5599/5600/6000/6001 and extremes; open+save untouched for 5500, 6100, 5599, 6001, 3762, 9999, 30 Iyar 5500, Adar II of an ordinary year, unknown 0/1/-1/99999; editing other fields; day change keeps 5500/6100; stepping enters the range; 5600/6000 bounds normalise like in-range; imported JSON/CSV events open and save unchanged); EventSerializerTest (5500/5599/5600/6000/6001/6100 imported unchanged); EventsFileIoTest (import through EventsViewModel inserts 5500/6100/0 unchanged).
+- Emulator (Levana_Agent_Template_API_36_1, headless, debug APK of 6e029f5): contacts written via adb (another app) with Levana birthdays 30/8/5500 and 14/13/6100. Old one opens as 30 Cheshvan 5500 with year "−" disabled; Update untouched → contacts row still 30/8/5500. 6100 (ordinary) opens as 14 Adar 6100 with "+" disabled; Update untouched → row still 14/13/6100. "−" from 6100 → 6000 with "+" disabled; "+" from 5500 → 5600 with "−" disabled; Back without saving → rows unchanged. No crash.
+- Evidence: /tmp/levana-task24-evidence/ (screenshots + UI XML 05-old-open, 06-after-save, 07-future-open, 08-future-stepped, 10-old-stepped; task24-verify.log).
+- Limitations: emulator check covered the birthday editor only; the event editor shares the same stepper and is covered by unit tests. Hebrew-locale/RTL not re-checked (no string or layout changes).
 <!-- SECTION:NOTES:END -->
 
 ## Beads history
