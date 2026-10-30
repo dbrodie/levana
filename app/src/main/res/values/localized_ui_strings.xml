@@ -179,4 +179,10 @@
     <string name="settings_israel_mode_israel">Israel</string>
     <string name="settings_israel_mode_diaspora">Diaspora</string>
     <string name="zmanim_city_clock">%1$s time</string>
+
+    <!-- Time zone doesn't match the location fix -->
+    <string name="zone_mismatch_title">Time zone doesn\'t match your location</string>
+    <string name="zone_mismatch_text">Your phone\'s time zone doesn\'t match your current location, so zmanim and other times may look wrong. To fix this, check your phone\'s date and time settings.</string>
+    <string name="zone_mismatch_open_settings">Date &amp; time settings</string>
+    <string name="zone_mismatch_dismiss">Not now</string>
 </resources>

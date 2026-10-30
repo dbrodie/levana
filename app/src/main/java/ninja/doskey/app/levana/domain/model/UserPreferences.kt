@@ -2,10 +2,13 @@ package ninja.doskey.app.levana.domain.model
 
 data class UserPreferences(
     /**
-     * The device position: the last current-location fix, or the device time zone's fallback
-     * city without one. Read it through [ninja.doskey.app.levana.device.DeviceNow.position].
+     * The device position: the last current-location fix, always in the device's current time
+     * zone, or the device time zone's fallback city without one. Read it through
+     * [ninja.doskey.app.levana.device.DeviceNow.position].
      */
     val currentLocation: Location = Location.JERUSALEM,
+    /** Whether [currentLocation] is a real location fix rather than the zone's fallback city. */
+    val currentLocationIsFix: Boolean = false,
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
     val candleLightingOffset: Double = 18.0,

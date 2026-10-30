@@ -44,7 +44,7 @@ class LocationService(
             latitude = fix.latitude,
             longitude = fix.longitude,
             elevation = fix.altitude,
-            // A fix is in the device zone (TASK-5 case 10)
+            // A fix is in the device zone (TASK-5 case 10); it is re-zoned on every read (TASK-46)
             timezoneId = DeviceContext.realZone().id,
             name = resolvePlaceName(geocoder, fix.latitude, fix.longitude),
             country = ""

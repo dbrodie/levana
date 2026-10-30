@@ -111,6 +111,9 @@ class PreferencesRepository(
         // Internal update-checker state — NOT part of UserPreferences
         val LAST_NOTIFIED_UPDATE_VERSION =
             stringPreferencesKey("last_notified_update_version")
+
+        // The time-zone mismatch last shown (TASK-46) — NOT part of UserPreferences
+        val ZONE_MISMATCH_NOTICE = stringPreferencesKey("zone_mismatch_notice")
     }
 
     val preferences: Flow<UserPreferences> = combine(
@@ -118,9 +121,13 @@ class PreferencesRepository(
         systemTimeChanges.onStart { emit(Unit) }
     ) { prefs, _ -> prefs }.map { prefs ->
         val savedLocations = decodeSavedLocations(prefs)
-        val currentLocation = prefs[Keys.CURRENT_LOCATION]?.let {
+        // A fix keeps only its place: it is always in the device's current zone, whatever zone
+        // it was stored with, so a zone change re-zones it without waiting for a new fix
+        val fix = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
-        } ?: cityRepository.defaultForTimeZone(DeviceContext.realZone(), DeviceContext.realClock().instant())
+        }?.copy(timezoneId = DeviceContext.realZone().id)
+        val currentLocation = fix
+            ?: cityRepository.defaultForTimeZone(DeviceContext.realZone(), DeviceContext.realClock().instant())
 
         val candleOffset = prefs[Keys.CANDLE_LIGHTING_OFFSET] ?: 18.0
 
@@ -131,6 +138,7 @@ class PreferencesRepository(
 
         UserPreferences(
             currentLocation = currentLocation,
+            currentLocationIsFix = fix != null,
             savedLocations = savedLocations,
             activeLocationId = activeLocationId,
             candleLightingOffset = candleOffset,
@@ -384,6 +392,18 @@ class PreferencesRepository(
     suspend fun setLastNotifiedUpdateVersion(version: String) {
         context.dataStore.edit { prefs ->
             prefs[Keys.LAST_NOTIFIED_UPDATE_VERSION] = version
+        }
+    }
+
+    /** The key of the time-zone mismatch last shown, see [ninja.doskey.app.levana.device.zoneMismatchKey]. */
+    suspend fun getZoneMismatchNotice(): String? =
+        context.dataStore.data.first()[Keys.ZONE_MISMATCH_NOTICE]
+
+    /** Records the mismatch shown, or null once there is none, so a new one shows again. */
+    suspend fun setZoneMismatchNotice(key: String?) {
+        context.dataStore.edit { prefs ->
+            if (key != null) prefs[Keys.ZONE_MISMATCH_NOTICE] = key
+            else prefs.remove(Keys.ZONE_MISMATCH_NOTICE)
         }
     }
 }

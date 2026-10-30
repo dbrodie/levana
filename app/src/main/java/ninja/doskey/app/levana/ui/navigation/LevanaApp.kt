@@ -41,6 +41,7 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
     val currentPrefs = prefs ?: return
 
     LevanaStartupEffects(navController, deepLinkEpochDay, openZmanim)
+    ZoneMismatchNotice()
 
     val scope = rememberCoroutineScope()
     val showDrawer = isDrawerRoute(backStackEntry?.destination)
