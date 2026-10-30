@@ -1,10 +1,11 @@
 ---
 id: TASK-43
 title: 'Feature walkthrough: per-feature screens shown once, growing with each release'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-29T20:55:00Z'
-updated_date: '2026-10-30T07:29:00Z'
+updated_date: '2026-10-30T07:41:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -81,7 +82,6 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 7. `widgets`: **Levana on your home screen.** Today, Month and Zmanim widgets, the Quick Settings tile and the Hebrew-date app icon.
 8. `appearance`: **Make it yours.** Light/dark, Material You, holiday colours, Hebrew or English.
 - Future screens are added as features ship, e.g. `agenda` with TASK-8.
-
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -93,3 +93,21 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 - [ ] #5 Unit tests for the seen/unseen selection (fresh install, upgrade with a new screen, skip, replay); Roborazzi baselines for each screen; emulator screenshots of a fresh install including each permission step (grant and deny), and of an upgrade showing only a new screen
 - [ ] #6 The page indicator follows the run's screen count: a single screen shows only Got it (no dots, no Back/Next); 2–9 show dots; 10 or more show an 'n of m' counter; tests and Roborazzi images cover runs of 1, 3 and 12 screens
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Seen state: PreferencesRepository gains internal walkthrough state (NOT part of UserPreferences, like the zone-mismatch key): `walkthrough_seen_ids` string set in the user_preferences DataStore, with `walkthroughSeenIds` flow, `markWalkthroughSeen(ids)` and `resetWalkthroughSeen()`. No baseline pre-marking (owner decision 1).
+2. Registry (ui/walkthrough/WalkthroughRegistry.kt): ordered `WalkthroughScreen(id, title, body, permission?, isAvailable(Context), illustration)` entries for the 8 approved IDs. Pure selection in `WalkthroughSelection`: unseen + available screens in registry order; none on a deep-link launch; replay = all available screens; `PageIndicator.forCount(n)` = None (1) / Dots (2–9) / Counter (10+).
+3. Launch gate: `WalkthroughGate(showOnLaunch)` in Koin, false under Robolectric or an instrumentation runner, so existing Compose/Roborazzi tests never see it; tests that want it override the Koin binding.
+4. MVI: WalkthroughState / WalkthroughIntent / WalkthroughViewModel (activity-scoped). Intents: Start(deepLink), Replay, PageShown, Next, Back, Skip, Finish, PermissionResult, RefreshPermissions, NotNow, AddCity/CloseCityPicker. A page is marked seen when displayed (not during replay); Skip marks the whole run seen.
+5. Shell integration (small, additive): LevanaApp starts the VM with the deep-link flag and, while a run is active, shows WalkthroughScreen instead of the shell; LevanaStartupEffects gets `askForLocation` so the old launch-time location ask doesn't repeat right after the walkthrough asked. No new nav route; About reaches the activity-scoped VM directly, so LevanaNavHost is untouched (TASK-8 overlap).
+6. UI: full-screen page (edge-to-edge insets), Skip at the top end (hidden for 1 screen), rounded illustration card, title + body, optional permission card (explanation, Allow / Not now, granted state, "allow later in Settings" after a denial), bottom Back / Next / Get started or a single Got it; dots with a wide current pill, or "n of m" from 10 screens. HorizontalPager (RTL-aware, swipe), reduced motion = no page animation. TalkBack: page pane title + heading with "Page n of m" state description, labelled controls, decorative illustrations hidden.
+7. Illustrations: live mini-UIs in the app theme with fixed sample data (Cheshvan 5787 strip computed with KosherJava; cities; day card; event cards; notifications; calendars; widgets/tile/icon; theme swatches from levanaColorScheme). The zmanim illustration's Add city opens the existing CityPickerScreen in a full-screen dialog.
+8. Permissions reuse existing contracts and checks: LocationService.PERMISSIONS (grant → fetch the location fix), POST_NOTIFICATIONS, READ+WRITE_CONTACTS (saved on the contact, nothing leaves the device), READ_CALENDAR (read-only, nothing leaves the device). Rechecked on resume.
+9. Replay: About gets "Show walkthrough again" (replays all, seen state unchanged). Developer settings: "Reset walkthrough" clears the seen IDs. These change the 8 existing About/Developer baselines deliberately; every other baseline must stay identical.
+10. Strings in English and Hebrew (new walkthrough_strings.xml).
+11. Tests: selection unit tests (fresh install, existing user, upgrade with a new screen, unavailable screen, Skip, replay, deep link), VM tests, indicator tests, Robolectric launch tests (gate on/off, deep link deferral, Skip to shell). Roborazzi: 8 screens × en/he × light/dark, permission-granted states, runs of 1/3/12.
+12. ARCHITECTURE_SPEC: walkthrough section with "how to add a screen".
+13. Verify: assembleDebug, testDebugUnitTest, lintDebug, verifyRoborazziDebug --rerun-tasks; emulator screenshots (fresh install with grants/denials, existing user, simulated update with one new screen, replay, deep link, Hebrew + dark) saved outside the worktree with a README.
+<!-- SECTION:PLAN:END -->
