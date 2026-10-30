@@ -200,6 +200,17 @@ abstract class ScreenshotTest(private val variant: Variant) {
         check(awaitOrFalse(matcher, AWAIT_TIMEOUT_MILLIS)) { "Timed out waiting for ${matcher.description}" }
     }
 
+    /** Waits until no node matches [matcher] (an animation or navigation has finished), then until idle. */
+    protected fun awaitGone(matcher: SemanticsMatcher) {
+        val start = System.currentTimeMillis()
+        while (compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()) {
+            check(System.currentTimeMillis() - start <= AWAIT_TIMEOUT_MILLIS) { "Timed out waiting for no ${matcher.description}" }
+            Thread.sleep(10)
+            advanceFrame()
+        }
+        compose.waitForIdle()
+    }
+
     private fun awaitOrFalse(matcher: SemanticsMatcher, timeoutMillis: Long): Boolean {
         val start = System.currentTimeMillis()
         while (compose.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()) {
@@ -226,7 +237,7 @@ abstract class ScreenshotTest(private val variant: Variant) {
      */
     protected fun awaitText(text: String) = await(hasText(text) and onScreen())
 
-    private fun onScreen() = SemanticsMatcher("is within the screen's width") { node ->
+    protected fun onScreen() = SemanticsMatcher("is within the screen's width") { node ->
         val bounds = node.boundsInRoot
         val root = node.layoutInfo.coordinates.findRootCoordinates().size
         bounds.width > 0 && bounds.left >= 0 && bounds.right <= root.width
