@@ -3,11 +3,11 @@ id: TASK-51
 title: >-
   Adding a Hebrew birthday to a contact that already has one silently overwrites
   it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:07:00Z'
-updated_date: '2026-10-30T10:41:00Z'
+updated_date: '2026-10-30T11:28:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -33,9 +33,9 @@ Expected behaviour:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Picking a contact that already has a Hebrew birthday loads it and switches the screen to edit mode, with a visible notice and edit title; no silent overwrite
-- [ ] #2 Picking a contact without a birthday stays in (or returns to) add mode; switching contacts updates the mode correctly
-- [ ] #3 Unit tests for both paths, including a pending load and an out-of-range stored year; emulator screenshots in English and Hebrew; Roborazzi baselines for the notice
+- [x] #1 Picking a contact that already has a Hebrew birthday loads it and switches the screen to edit mode, with a visible notice and edit title; no silent overwrite
+- [x] #2 Picking a contact without a birthday stays in (or returns to) add mode; switching contacts updates the mode correctly
+- [x] #3 Unit tests for both paths, including a pending load and an out-of-range stored year; emulator screenshots in English and Hebrew; Roborazzi baselines for the notice
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,3 +77,15 @@ Emulator (Levana_Agent_Template_API_36_1, headless; APK with the app code of 58c
 Evidence: /tmp/levana-task51-screens/ (README.md, 13 PNG + UI XML, provider row dumps, seed scripts, verify.log).
 Limitation: the spoken TalkBack announcement wasn't checked on the device (only the live-region semantics, via test).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T11:28:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed screenshots (EN edit notice, HE replaced-date notice) in /tmp/levana-task51-screens/; merged as 206b698. Three clean full runs under heavy host load (TASK-52.1 emulators, load avg ~7) each had 1-3 wall-clock timeouts in tests TASK-51 doesn't touch (VerifyReactiveRefreshEndToEndTest; DatePickerScreenshotTest via the event editor), never an image diff (Roborazzi: all compared images unchanged). The failing classes pass in isolation (3/3 and 2/2). Branch's own clean run by the agent: 1043 tests, 0 failures, 260 unchanged. Harness timeout hardening filed separately.
+
+---
+<!-- COMMENTS:END -->
