@@ -8,11 +8,11 @@ import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.CalendarContract
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasScrollToKeyAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
@@ -102,10 +102,11 @@ class AgendaScreenshotTest(private val variant: Variant) : ScreenshotTest(varian
         capture("app_agenda_gregorian")
         clickable(string(R.string.calendar_mode_hebrew)).performClick()
 
-        // A new month in the leading calendar starts under its own header
-        val roshChodesh = if (hebrew) "ראש חודש טבת" else "Rosh Chodesh Teves"
-        compose.onAllNodes(hasScrollToNodeAction())[0].performScrollToNode(shows(roshChodesh))
-        compose.onAllNodes(hasScrollToNodeAction())[0].performScrollToNode(shows(if (hebrew) "טבת תשפ״ז" else "טבת 5787"))
+        // A new month in the leading calendar starts under its own header: 30 Kislev (Rosh
+        // Chodesh Teves) at the top, by its list key so the position is exact
+        val kislev30 = JewishDate(5787, JewishDate.KISLEV, 30).localDate
+        compose.onAllNodes(hasScrollToKeyAction())[0].performScrollToKey("day-${kislev30.toEpochDay()}")
+        awaitText(if (hebrew) "ראש חודש טבת" else "Rosh Chodesh Teves", partial = true)
         capture("app_agenda_month_header")
 
         openDrawer()
