@@ -89,18 +89,21 @@ class ContactBirthdayViewModelIoTest {
         val vm = viewModel()
 
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/1")))
-        awaitOnMain { vm.state.value.contactLookupKey.isNotBlank() }
+        awaitOnMain { vm.state.value.contactLookupKey.isNotBlank() && !vm.state.value.storedBirthdayUnchecked }
 
         assertEquals(FakeContactsProvider.KEY, vm.state.value.contactLookupKey)
         assertEquals(FakeContactsProvider.NAME, vm.state.value.contactName)
         assertEquals(FakeContactsProvider.PHOTO, vm.state.value.contactPhotoUri)
-        assertNotSame(mainThread, FakeContactsProvider.calls.single().thread)
+        // The contact, then its stored birthday (TASK-51)
+        assertEquals(2, FakeContactsProvider.calls.size)
+        FakeContactsProvider.calls.forEach { assertNotSame(mainThread, it.thread) }
     }
 
     @Test
     fun saveWritesOffTheMainThreadAndCompletes() {
         val vm = viewModel()
         vm.onIntent(ContactBirthdayIntent.ContactSelected(FakeContactsProvider.KEY, FakeContactsProvider.NAME, null))
+        awaitOnMain { !vm.state.value.storedBirthdayUnchecked }
         vm.pickYear(5790)
         vm.pickMonth(8)
         vm.pickDay(5)
@@ -125,6 +128,7 @@ class ContactBirthdayViewModelIoTest {
             deviceContextOn(LocalDate.of(2026, 10, 20))
         )
         vm.onIntent(ContactBirthdayIntent.ContactSelected(FakeContactsProvider.KEY, FakeContactsProvider.NAME, null))
+        awaitOnMain { !vm.state.value.storedBirthdayUnchecked }
 
         vm.onIntent(ContactBirthdayIntent.Save)
         awaitOnMain { vm.state.value.errorMessage != null }
@@ -141,6 +145,8 @@ class ContactBirthdayViewModelIoTest {
         FakeContactsProvider.hold = CountDownLatch(1)
         FakeContactsProvider.ignoreSignal = true
         FakeContactsProvider.failAfterHold = "stale pick failed"
+        // The newer choice's own birthday lookup answers normally
+        FakeContactsProvider.holdOnlyFirst = true
         val vm = viewModel()
 
         vm.onIntent(ContactBirthdayIntent.ContactPicked(Uri.parse("content://com.android.contacts/contacts/1")))
@@ -155,6 +161,7 @@ class ContactBirthdayViewModelIoTest {
         FakeContactsProvider.hold = CountDownLatch(1)
         FakeContactsProvider.ignoreSignal = true
         FakeContactsProvider.failAfterHold = "stale load failed"
+        FakeContactsProvider.holdOnlyFirst = true
         // The load has no error handling, so a late failure would escape to
         // the main thread's uncaught-exception handler
         val escaped = java.util.concurrent.CopyOnWriteArrayList<Throwable>()
@@ -242,6 +249,105 @@ class ContactBirthdayViewModelIoTest {
         assertEquals("kB", vm.state.value.contactLookupKey)
         assertEquals("Batya", vm.state.value.contactName)
         assertFalse(vm.state.value.isEditing)
+
+        // Batya has no birthday of her own: a new one is added
+        repository.stored("kB").complete(null)
+        awaitOnMain { !vm.state.value.storedBirthdayUnchecked }
+        assertFalse(vm.state.value.isEditing)
+        assertEquals("kB", vm.state.value.contactLookupKey)
+    }
+
+    // ── TASK-51: the picked contact's own stored birthday ───────────────────
+
+    @Test
+    fun aPickWhileTheStoredBirthdayLoadsShowsThePickedContactsOwnBirthday() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+        val uri = Uri.parse("content://com.android.contacts/contacts/2")
+
+        vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
+        vm.onIntent(ContactBirthdayIntent.ContactPicked(uri))
+        repository.picks.getValue(uri).complete(PickedContact("kB", "Batya", null))
+        awaitOnMain { vm.state.value.contactName == "Batya" }
+        repository.stored("kB").complete(ContactBirthday("kB", "Batya", null, 5, 8, 5760))
+        awaitOnMain { vm.state.value.isEditing }
+        // The superseded record's late result is dropped
+        repository.stored.complete(rivka())
+        idle()
+
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertEquals(Triple(5, 8, 5760), vm.state.value.date)
+        assertEquals(StoredBirthdayNotice(5, 8, 5760, replacedChosenDate = false), vm.state.value.storedBirthdayNotice)
+        vm.onIntent(ContactBirthdayIntent.Save)
+        awaitOnMain { vm.state.value.saveComplete }
+        assertEquals("kB" to Triple(5, 8, 5760), repository.saved)
+    }
+
+    @Test
+    fun saveIsRefusedUntilThePickedContactsBirthdayIsKnown() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        assertTrue(vm.state.value.storedBirthdayUnchecked)
+        vm.onIntent(ContactBirthdayIntent.Save)
+        idle()
+        assertFalse(vm.state.value.isSaving)
+        assertEquals(null, repository.saved)
+
+        repository.stored("kB").complete(ContactBirthday("kB", "Batya", null, 5, 8, 5760))
+        awaitOnMain { vm.state.value.isEditing }
+        vm.onIntent(ContactBirthdayIntent.Save)
+        awaitOnMain { vm.state.value.saveComplete }
+        assertEquals("kB" to Triple(5, 8, 5760), repository.saved)
+    }
+
+    @Test
+    fun aLaterChoiceSupersedesAPendingBirthdayCheck() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kA", "Avi", null))
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        repository.stored("kB").complete(null)
+        awaitOnMain { !vm.state.value.storedBirthdayUnchecked }
+        repository.stored("kA").complete(ContactBirthday("kA", "Avi", null, 5, 8, 5760))
+        idle()
+
+        assertEquals("kB", vm.state.value.contactLookupKey)
+        assertFalse(vm.state.value.isEditing)
+        assertEquals(null, vm.state.value.storedBirthdayNotice)
+        assertEquals(listOf("kA", "kB"), repository.loads)
+    }
+
+    @Test
+    fun dateEditsWhileThePickedContactsBirthdayLoadsAreReplacedAndSaid() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("key", "Rivka", null))
+        vm.pickDay(20)
+        repository.stored.complete(rivka())
+        awaitOnMain { vm.state.value.isEditing }
+
+        assertEquals(Triple(12, 3, 5750), vm.state.value.date)
+        assertTrue(vm.state.value.storedBirthdayNotice!!.replacedChosenDate)
+    }
+
+    @Test
+    fun aFailedBirthdayCheckShowsTheErrorAndKeepsSaveOff() {
+        val repository = GatedRepository()
+        val vm = gatedViewModel(repository)
+
+        vm.onIntent(ContactBirthdayIntent.ContactSelected("key", "Rivka", null))
+        repository.stored.completeExceptionally(SecurityException("Permission denied"))
+        awaitOnMain { vm.state.value.errorMessage != null }
+        vm.onIntent(ContactBirthdayIntent.Save)
+        idle()
+
+        assertEquals("Permission denied", vm.state.value.errorMessage)
+        assertTrue(vm.state.value.storedBirthdayUnchecked)
+        assertEquals(null, repository.saved)
     }
 
     @Test
@@ -287,7 +393,8 @@ class ContactBirthdayViewModelIoTest {
         idle()
 
         assertEquals("kB", vm.state.value.contactLookupKey)
-        assertEquals(listOf("key"), repository.loads)
+        // The route's record once; the chosen contact's own birthday (TASK-51)
+        assertEquals(listOf("key", "kB"), repository.loads)
     }
 
     // ── Repeated loads of the same record ───────────────────────────────────

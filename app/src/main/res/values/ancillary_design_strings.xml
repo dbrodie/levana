@@ -2,6 +2,9 @@
 <resources>
     <string name="birthday_date_title">Hebrew birthday</string>
     <string name="birthday_date_hint">Save the Hebrew date for an annual reminder.</string>
+    <!-- %1$s contact name, %2$s the stored Hebrew date -->
+    <string name="birthday_existing_notice">%1$s already has a Hebrew birthday: %2$s. You are now editing it, not adding a new one.</string>
+    <string name="birthday_existing_replaced">The date you chose was replaced by the saved one.</string>
     <string name="event_add_title">Remember a date</string>
     <string name="event_edit_title">Edit your event</string>
     <string name="event_date_hint">Choose the Hebrew date for this event.</string>

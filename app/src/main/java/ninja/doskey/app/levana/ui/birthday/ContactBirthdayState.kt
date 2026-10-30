@@ -20,8 +20,24 @@ data class ContactBirthdayState(
     val showDatePicker: Boolean = false,
     val isSaving: Boolean = false,
     val saveComplete: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    // Set while the chosen contact's stored birthday has not been looked up
+    // (or the lookup failed); Save stays off so it is never overwritten unseen
+    val storedBirthdayUnchecked: Boolean = false,
+    // The chosen contact already had a Hebrew birthday, now being edited
+    val storedBirthdayNotice: StoredBirthdayNotice? = null
 ) {
     /** The shown Hebrew date's Gregorian day; the view model only holds real dates. */
     val gregorianDate: LocalDate get() = JewishDate(hebrewYear, hebrewMonth, hebrewDay).localDate
 }
+
+/**
+ * The birthday stored for a contact picked in add mode (TASK-51): the date as stored, and
+ * whether it replaced a date the user had chosen before the pick.
+ */
+data class StoredBirthdayNotice(
+    val day: Int,
+    val month: Int,
+    val year: Int,
+    val replacedChosenDate: Boolean
+)

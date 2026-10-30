@@ -10,6 +10,7 @@ import android.provider.ContactsContract
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A Contacts provider holding at most one Hebrew birthday for contact "key".
@@ -37,7 +38,7 @@ class FakeContactsProvider : ContentProvider() {
         cancellationSignal: CancellationSignal?
     ): Cursor {
         calls += Call("query", Thread.currentThread(), cancellationSignal != null)
-        hold?.let { latch ->
+        hold?.takeIf { !holdOnlyFirst || heldQueries.getAndIncrement() == 0 }?.let { latch ->
             if (!ignoreSignal) {
                 cancellationSignal?.setOnCancelListener {
                     signalCancelled.countDown()
@@ -132,9 +133,15 @@ class FakeContactsProvider : ContentProvider() {
         /** Held queries fail with this message once released. */
         @Volatile var failAfterHold: String? = null
 
+        /** Only the first query is held (and fails); later ones answer at once. */
+        @Volatile var holdOnlyFirst = false
+        private val heldQueries = AtomicInteger()
+
         fun reset() {
             ignoreSignal = false
             failAfterHold = null
+            holdOnlyFirst = false
+            heldQueries.set(0)
             calls.clear()
             stored = null
             hold = null

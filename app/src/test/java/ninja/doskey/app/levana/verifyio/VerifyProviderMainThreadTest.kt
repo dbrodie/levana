@@ -141,6 +141,7 @@ class VerifyProviderMainThreadTest {
         val c = contacts.add(8, "k8", "Moshe")
         val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactSelected("k8", "Moshe", null))
+        idleUntil(what = "k8 checked") { !vm.state.value.storedBirthdayUnchecked }
         vm.pickYear(5760)
         vm.pickMonth(1)
         vm.pickDay(5)
@@ -156,6 +157,8 @@ class VerifyProviderMainThreadTest {
         contactsProvider.batchFailure = { IllegalStateException("provider exploded") }
         val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactSelected("k7", "Rivka", null))
+        // Save waits for Rivka's stored birthday (TASK-51)
+        idleUntil(what = "k7 loaded") { vm.state.value.isEditing }
         vm.onIntent(ContactBirthdayIntent.Save)
         idleUntil(what = "save failure") { !vm.state.value.isSaving }
         assertFalse(vm.state.value.saveComplete)

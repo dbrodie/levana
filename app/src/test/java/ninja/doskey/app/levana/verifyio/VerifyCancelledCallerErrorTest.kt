@@ -203,6 +203,8 @@ class VerifyCancelledCallerErrorTest {
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(contactsProvider, 1)
         vm.onIntent(ContactBirthdayIntent.ContactSelected("kB", "Batya", null))
+        // Batya's own birthday lookup (TASK-51) completes first
+        idleUntil(what = "kB checked") { !vm.state.value.storedBirthdayUnchecked }
         val before = vm.state.value
         hold.countDown()
         repeat(3) { Thread.sleep(40); idleUntil { true } }

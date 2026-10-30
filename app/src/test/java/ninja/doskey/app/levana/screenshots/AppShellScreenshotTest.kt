@@ -87,7 +87,7 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         clickable(string(R.string.design_my_events)).performClick()
         awaitText(string(R.string.events_tab_birthdays))
         compose.onNodeWithContentDescription(string(R.string.events_add)).performClick()
-        awaitText(string(R.string.design_birthday))
+        awaitText(string(R.string.design_add_birthday))
         // A new birthday starts on 1 Tishrei of the device's (TODAY's) Hebrew year, so the image never ages
         val tishrei1 = JewishDate(HebrewDateMatcher.hebrewYearOf(TODAY), JewishDate.TISHREI, 1).localDate
         awaitText(tishrei1.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(app.resources.configuration.locales[0])))

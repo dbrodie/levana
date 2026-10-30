@@ -12,5 +12,7 @@
     <string name="design_edit_event">Edit event</string>
     <string name="design_add_event">Add event</string>
     <string name="design_birthday">Birthday</string>
+    <string name="design_add_birthday">Add birthday</string>
+    <string name="design_edit_birthday">Edit birthday</string>
     <string name="design_open_menu">Open menu</string>
 </resources>
