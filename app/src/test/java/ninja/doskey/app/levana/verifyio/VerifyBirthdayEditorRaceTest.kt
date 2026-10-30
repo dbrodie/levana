@@ -18,6 +18,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 /**
  * Required: a later contact selection wins over any earlier pending lookup;
@@ -87,7 +90,7 @@ class VerifyBirthdayEditorRaceTest {
         val vm = vm()
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(provider, 1)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(JewishDate.IYAR))
+        vm.pickMonth(JewishDate.IYAR)
         finishLoad(vm) { vm.state.value.isEditing }
         assertEquals(12, vm.state.value.hebrewDay)
         assertEquals(JewishDate.IYAR, vm.state.value.hebrewMonth)
@@ -101,8 +104,8 @@ class VerifyBirthdayEditorRaceTest {
         val vm = vm()
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(provider, 1)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5760))
+        vm.pickDay(20)
+        vm.pickYear(5760)
         finishLoad(vm) { vm.state.value.isEditing }
         assertEquals(20, vm.state.value.hebrewDay)
         assertEquals(JewishDate.NISSAN, vm.state.value.hebrewMonth)
@@ -118,7 +121,7 @@ class VerifyBirthdayEditorRaceTest {
         val vm = vm()
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         awaitEntered(provider, 1)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         finishLoad(vm) { vm.state.value.isEditing }
         assertEquals("edit made during the (still pending) load", 20, vm.state.value.hebrewDay)

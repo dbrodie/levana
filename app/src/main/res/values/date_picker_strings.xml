@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="date_picker_title">Select date</string>
+    <string name="date_picker_previous_month">Previous month</string>
+    <string name="date_picker_next_month">Next month</string>
+    <string name="date_picker_choose_year">Choose year</string>
+    <string name="date_picker_choose_day">Choose day</string>
+    <string name="date_picker_change_date">Change date</string>
+</resources>

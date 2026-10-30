@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
+import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
@@ -201,9 +203,9 @@ fun CalendarScreen(
     }
 
     if (state.showGoToDateDialog) {
-        GoToDateDialog(
+        HebrewDatePickerDialog(
             initialDate = state.selectedDate,
-            calendarHebrewMode = state.calendarHebrewMode,
+            leading = if (state.calendarHebrewMode) LeadingCalendar.HEBREW else LeadingCalendar.GREGORIAN,
             onConfirm = { date -> viewModel.onIntent(CalendarIntent.GoToDate(date)) },
             onDismiss = { viewModel.onIntent(CalendarIntent.CloseGoToDateDialog) }
         )

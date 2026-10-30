@@ -78,23 +78,32 @@ class ContactBirthdayViewModel(
                 pickJob?.cancel()
                 selectContact(intent.lookupKey, intent.name, intent.photoUri)
             }
-            is ContactBirthdayIntent.SetHebrewDay -> {
-                editedWhileLoading += DateField.DAY
-                preservedDate = null
-                setDate(day = intent.day)
-            }
-            is ContactBirthdayIntent.SetHebrewMonth -> {
-                editedWhileLoading += DateField.MONTH
-                preservedDate = null
-                setDate(month = intent.month)
-            }
-            is ContactBirthdayIntent.SetHebrewYear -> {
-                editedWhileLoading += DateField.YEAR
-                preservedDate = null
-                setDate(year = SupportedHebrewYears.coerce(intent.year))
+            is ContactBirthdayIntent.OpenDatePicker ->
+                _state.value = _state.value.copy(showDatePicker = true)
+            is ContactBirthdayIntent.DismissDatePicker ->
+                _state.value = _state.value.copy(showDatePicker = false)
+            is ContactBirthdayIntent.SetHebrewDate -> {
+                _state.value = _state.value.copy(showDatePicker = false)
+                setPickedDate(intent.day, intent.month, intent.year)
             }
             is ContactBirthdayIntent.Save -> save()
         }
+    }
+
+    /**
+     * A date the user picked. Picking the shown date changes nothing, so an untouched
+     * out-of-range stored date is still saved as stored (TASK-24). The shown year is kept,
+     * even a stored one outside SupportedHebrewYears; another year is limited to that range.
+     * The fields that differ count as edited for a load still pending.
+     */
+    private fun setPickedDate(day: Int, month: Int, year: Int) {
+        val s = _state.value
+        if (day != s.hebrewDay) editedWhileLoading += DateField.DAY
+        if (month != s.hebrewMonth) editedWhileLoading += DateField.MONTH
+        if (year != s.hebrewYear) editedWhileLoading += DateField.YEAR
+        if (day == s.hebrewDay && month == s.hebrewMonth && year == s.hebrewYear) return
+        preservedDate = null
+        setDate(day, month, if (year == s.hebrewYear) year else SupportedHebrewYears.coerce(year))
     }
 
     /**

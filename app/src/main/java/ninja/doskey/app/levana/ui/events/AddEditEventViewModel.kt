@@ -49,17 +49,13 @@ class AddEditEventViewModel(
             is AddEditEventIntent.LoadEvent -> loadEvent(intent.eventId)
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
-            is AddEditEventIntent.SetHebrewDay -> {
-                preservedDate = null
-                setDate(day = intent.day)
-            }
-            is AddEditEventIntent.SetHebrewMonth -> {
-                preservedDate = null
-                setDate(month = intent.month)
-            }
-            is AddEditEventIntent.SetHebrewYear -> {
-                preservedDate = null
-                setDate(year = SupportedHebrewYears.coerce(intent.year))
+            is AddEditEventIntent.OpenDatePicker ->
+                _state.value = _state.value.copy(showDatePicker = true)
+            is AddEditEventIntent.DismissDatePicker ->
+                _state.value = _state.value.copy(showDatePicker = false)
+            is AddEditEventIntent.SetHebrewDate -> {
+                _state.value = _state.value.copy(showDatePicker = false)
+                setPickedDate(intent.day, intent.month, intent.year)
             }
             is AddEditEventIntent.SetNotes ->
                 _state.value = _state.value.copy(notes = intent.notes)
@@ -79,6 +75,18 @@ class AddEditEventViewModel(
             }
             is AddEditEventIntent.Save -> save()
         }
+    }
+
+    /**
+     * A date the user picked. Picking the shown date changes nothing, so an untouched
+     * out-of-range stored date is still saved as stored (TASK-24). The shown year is kept,
+     * even a stored one outside SupportedHebrewYears; another year is limited to that range.
+     */
+    private fun setPickedDate(day: Int, month: Int, year: Int) {
+        val s = _state.value
+        if (day == s.hebrewDay && month == s.hebrewMonth && year == s.hebrewYear) return
+        preservedDate = null
+        setDate(day, month, if (year == s.hebrewYear) year else SupportedHebrewYears.coerce(year))
     }
 
     /**

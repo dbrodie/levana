@@ -25,6 +25,7 @@ import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
 import ninja.doskey.app.levana.ui.daydetail.DayDetailViewModel
+import ninja.doskey.app.levana.ui.datepicker.DatePickerViewModel
 import ninja.doskey.app.levana.ui.events.AddEditEventViewModel
 import ninja.doskey.app.levana.ui.events.EventsViewModel
 import ninja.doskey.app.levana.ui.location.CityPickerViewModel
@@ -105,6 +106,7 @@ val viewModelModule = module {
     viewModel { AddEditEventViewModel(get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }
+    viewModel { DatePickerViewModel(get(), get(), get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

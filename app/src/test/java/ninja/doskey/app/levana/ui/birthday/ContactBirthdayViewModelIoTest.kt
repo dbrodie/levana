@@ -27,6 +27,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 /** The birthday editor keeps the main thread free while contacts are read and written. */
 @RunWith(RobolectricTestRunner::class)
@@ -66,7 +69,7 @@ class ContactBirthdayViewModelIoTest {
         assertTrue(FakeContactsProvider.queryStarted.await(5, TimeUnit.SECONDS))
 
         // Query blocked on another thread; the editor still reacts on main
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(7))
+        vm.pickDay(7)
         assertEquals(7, vm.state.value.hebrewDay)
         assertFalse(vm.state.value.isEditing)
 
@@ -98,9 +101,9 @@ class ContactBirthdayViewModelIoTest {
     fun saveWritesOffTheMainThreadAndCompletes() {
         val vm = viewModel()
         vm.onIntent(ContactBirthdayIntent.ContactSelected(FakeContactsProvider.KEY, FakeContactsProvider.NAME, null))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5790))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(8))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(5))
+        vm.pickYear(5790)
+        vm.pickMonth(8)
+        vm.pickDay(5)
 
         vm.onIntent(ContactBirthdayIntent.Save)
         assertTrue(vm.state.value.isSaving)
@@ -295,7 +298,7 @@ class ContactBirthdayViewModelIoTest {
         val vm = gatedViewModel(repository)
 
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
         repository.stored.complete(rivka())
         awaitOnMain { vm.state.value.isEditing }
@@ -312,7 +315,7 @@ class ContactBirthdayViewModelIoTest {
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
         repository.stored.complete(rivka())
         awaitOnMain { vm.state.value.isEditing }
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(25))
+        vm.pickDay(25)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
         idle()
 
@@ -328,7 +331,7 @@ class ContactBirthdayViewModelIoTest {
         val vm = gatedViewModel(repository)
 
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k1"))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
+        vm.pickDay(20)
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k2"))
         repository.stored("k2").complete(rivka("k2", day = 5))
         awaitOnMain { vm.state.value.isEditing }
@@ -401,8 +404,8 @@ class ContactBirthdayViewModelIoTest {
         val vm = gatedViewModel(repository)
 
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("key"))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(20))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5790))
+        vm.pickDay(20)
+        vm.pickYear(5790)
         repository.stored.complete(ContactBirthday("key", "Rivka", null, 12, 3, 5750))
         awaitOnMain { vm.state.value.isEditing }
 

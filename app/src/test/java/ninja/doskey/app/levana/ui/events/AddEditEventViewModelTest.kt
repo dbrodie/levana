@@ -13,10 +13,15 @@ import ninja.doskey.app.levana.data.db.PersonalEventDao
 import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
@@ -134,7 +139,7 @@ class AddEditEventViewModelTest {
             5600 to 5600, 6000 to 6000, 5599 to 5600, 6001 to 6000,
             -5 to 5600, 0 to 5600, 123456 to 6000
         )) {
-            vm.onIntent(AddEditEventIntent.SetHebrewYear(entered))
+            vm.pickYear(entered)
             assertEquals("entered $entered", held, vm.state.value.hebrewYear)
         }
         // A prefill with an unusable year lands in the range too
@@ -217,13 +222,64 @@ class AddEditEventViewModelTest {
         }
     }
 
+    // ── TASK-45: the date picker ────────────────────────────────────────────
+
+    @Test
+    fun confirmingThePickerOnTheShownDateKeepsAnOutOfRangeDate() {
+        for (date in outOfRange) {
+            val dao = FakeDao(listOf(storedAt(date)))
+            val vm = viewModel(dao, leapToday)
+            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            vm.onIntent(AddEditEventIntent.OpenDatePicker)
+            assertTrue(vm.state.value.showDatePicker)
+            // The picker opens on the shown date; OK without a new pick returns it
+            vm.onIntent(AddEditEventIntent.SetHebrewDate(vm.state.value.gregorianDate))
+            assertFalse(vm.state.value.showDatePicker)
+            vm.onIntent(AddEditEventIntent.Save)
+            assertEquals("$date", date, dao.events.single().date())
+        }
+    }
+
+    @Test
+    fun pickingAnotherDayInAnOutOfRangeYearSavesItInThatYear() {
+        val dao = FakeDao(listOf(storedAt(Triple(12, JewishDate.NISSAN, 5500))))
+        val vm = viewModel(dao, leapToday)
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        vm.onIntent(AddEditEventIntent.SetHebrewDate(vm.state.value.gregorianDate.plusDays(1)))
+        vm.onIntent(AddEditEventIntent.Save)
+        assertEquals(Triple(13, JewishDate.NISSAN, 5500), dao.events.single().date())
+    }
+
+    @Test
+    fun aPickedDateIsShownAndSaved() {
+        val dao = FakeDao()
+        val vm = viewModel(dao, leapToday)
+        vm.onIntent(AddEditEventIntent.SetTitle("Purim party"))
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+        // Purim 5787, in Adar II of a leap year
+        vm.onIntent(AddEditEventIntent.SetHebrewDate(LocalDate.of(2027, 3, 23)))
+        assertEquals(Triple(14, JewishDate.ADAR_II, 5787), vm.state.value.let { Triple(it.hebrewDay, it.hebrewMonth, it.hebrewYear) })
+        assertEquals(LocalDate.of(2027, 3, 23), vm.state.value.gregorianDate)
+        vm.onIntent(AddEditEventIntent.Save)
+        assertEquals(Triple(14, JewishDate.ADAR_II, 5787), dao.events.single().date())
+    }
+
+    @Test
+    fun dismissingThePickerKeepsTheDate() {
+        val vm = viewModel(today = leapToday)
+        val before = vm.state.value
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+        vm.onIntent(AddEditEventIntent.DismissDatePicker)
+        assertEquals(before, vm.state.value)
+    }
+
     @Test
     fun changingTheDayKeepsAStoredYearOutsideTheRange() {
         for (year in listOf(5500, 6100)) {
             val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
             val vm = viewModel(dao, leapToday)
             vm.onIntent(AddEditEventIntent.LoadEvent(1))
-            vm.onIntent(AddEditEventIntent.SetHebrewDay(15))
+            vm.pickDay(15)
             vm.onIntent(AddEditEventIntent.Save)
             assertEquals(Triple(15, JewishDate.KISLEV, year), dao.events.single().date())
         }
@@ -236,7 +292,7 @@ class AddEditEventViewModelTest {
             val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
             val vm = viewModel(dao, leapToday)
             vm.onIntent(AddEditEventIntent.LoadEvent(1))
-            vm.onIntent(AddEditEventIntent.SetHebrewYear(stepped))
+            vm.pickYear(stepped)
             assertEquals(expected, vm.state.value.hebrewYear)
             vm.onIntent(AddEditEventIntent.Save)
             assertEquals(Triple(14, JewishDate.KISLEV, expected), dao.events.single().date())
@@ -280,17 +336,17 @@ class AddEditEventViewModelTest {
     @Test
     fun adarIIBecomesAdarWhenTheYearBecomesRegular() {
         val vm = viewModel(today = leapToday)
-        vm.onIntent(AddEditEventIntent.SetHebrewMonth(JewishDate.ADAR_II))
-        vm.onIntent(AddEditEventIntent.SetHebrewYear(5788))
+        vm.pickMonth(JewishDate.ADAR_II)
+        vm.pickYear(5788)
         assertEquals(JewishDate.ADAR, vm.state.value.hebrewMonth)
     }
 
     // ── Spec 1e: day clamp ──────────────────────────────────────────────────
 
     private fun editor(vm: AddEditEventViewModel = viewModel()) = object : EditorDayClampCases.Editor {
-        override fun setDay(day: Int) = vm.onIntent(AddEditEventIntent.SetHebrewDay(day))
-        override fun setMonth(month: Int) = vm.onIntent(AddEditEventIntent.SetHebrewMonth(month))
-        override fun setYear(year: Int) = vm.onIntent(AddEditEventIntent.SetHebrewYear(year))
+        override fun setDay(day: Int) = vm.pickDay(day)
+        override fun setMonth(month: Int) = vm.pickMonth(month)
+        override fun setYear(year: Int) = vm.pickYear(year)
         override val day get() = vm.state.value.hebrewDay
         override val month get() = vm.state.value.hebrewMonth
         override val year get() = vm.state.value.hebrewYear
@@ -316,9 +372,9 @@ class AddEditEventViewModelTest {
         val dao = FakeDao()
         val vm = viewModel(dao)
         vm.onIntent(AddEditEventIntent.SetTitle("New"))
-        vm.onIntent(AddEditEventIntent.SetHebrewYear(EditorDayClampCases.ordinaryYear))
-        vm.onIntent(AddEditEventIntent.SetHebrewDay(30))
-        vm.onIntent(AddEditEventIntent.SetHebrewMonth(JewishDate.IYAR))
+        vm.pickYear(EditorDayClampCases.ordinaryYear)
+        vm.pickDay(30)
+        vm.pickMonth(JewishDate.IYAR)
         vm.onIntent(AddEditEventIntent.Save)
         assertEquals(29, dao.events.single().hebrewDay)
     }

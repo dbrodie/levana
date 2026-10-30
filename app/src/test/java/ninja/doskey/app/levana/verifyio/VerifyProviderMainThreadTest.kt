@@ -29,6 +29,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 /**
  * View-model level checks that only use APIs present before the fix, so the
@@ -114,7 +117,7 @@ class VerifyProviderMainThreadTest {
         val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.LoadBirthday("k7"))
         idleUntil(what = "load") { vm.state.value.isEditing }
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(14))
+        vm.pickDay(14)
 
         contactsProvider.gate = CountDownLatch(1)
         val before = contactsProvider.entered.get()
@@ -138,9 +141,9 @@ class VerifyProviderMainThreadTest {
         val c = contacts.add(8, "k8", "Moshe")
         val vm = ContactBirthdayViewModel(ContactBirthdayRepository(app()), deviceContextOn(LocalDate.of(2026, 1, 1)))
         vm.onIntent(ContactBirthdayIntent.ContactSelected("k8", "Moshe", null))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5760))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(1))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewDay(5))
+        vm.pickYear(5760)
+        vm.pickMonth(1)
+        vm.pickDay(5)
         vm.onIntent(ContactBirthdayIntent.Save)
         idleUntil(what = "save") { vm.state.value.saveComplete }
         assertEquals(Triple(5, 1, 5760), c.birthday)

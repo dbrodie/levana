@@ -9,12 +9,16 @@ import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.domain.model.SupportedHebrewYears
 import ninja.doskey.app.levana.ui.EditorDayClampCases
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import ninja.doskey.app.levana.ui.pickDay
+import ninja.doskey.app.levana.ui.pickMonth
+import ninja.doskey.app.levana.ui.pickYear
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class)
@@ -42,7 +46,7 @@ class ContactBirthdayViewModelTest {
     @Test
     fun setHebrewYearUpdatesState() {
         val vm = viewModel()
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5790))
+        vm.pickYear(5790)
         assertEquals(5790, vm.state.value.hebrewYear)
     }
 
@@ -50,15 +54,15 @@ class ContactBirthdayViewModelTest {
     fun enteredYearStaysInTheSupportedYears() {
         val vm = viewModel()
         for ((entered, held) in listOf(5600 to 5600, 6000 to 6000, 5599 to 5600, 6001 to 6000)) {
-            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(entered))
+            vm.pickYear(entered)
             assertEquals("entered $entered", held, vm.state.value.hebrewYear)
         }
         for (bad in listOf(0, 1, -1, 3761, Int.MIN_VALUE)) {
-            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(bad))
+            vm.pickYear(bad)
             assertEquals(SupportedHebrewYears.FIRST, vm.state.value.hebrewYear)
         }
         for (bad in listOf(10000, Int.MAX_VALUE)) {
-            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(bad))
+            vm.pickYear(bad)
             assertEquals(SupportedHebrewYears.LAST, vm.state.value.hebrewYear)
         }
     }
@@ -66,19 +70,19 @@ class ContactBirthdayViewModelTest {
     @Test
     fun adarIIBecomesAdarWhenTheYearBecomesRegular() {
         val vm = viewModel()
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5787))
-        vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(JewishDate.ADAR_II))
+        vm.pickYear(5787)
+        vm.pickMonth(JewishDate.ADAR_II)
         assertEquals(JewishDate.ADAR_II, vm.state.value.hebrewMonth)
-        vm.onIntent(ContactBirthdayIntent.SetHebrewYear(5788))
+        vm.pickYear(5788)
         assertEquals(JewishDate.ADAR, vm.state.value.hebrewMonth)
     }
 
     // ── Spec 1e: day clamp ──────────────────────────────────────────────────
 
     private fun editor(vm: ContactBirthdayViewModel = viewModel()) = object : EditorDayClampCases.Editor {
-        override fun setDay(day: Int) = vm.onIntent(ContactBirthdayIntent.SetHebrewDay(day))
-        override fun setMonth(month: Int) = vm.onIntent(ContactBirthdayIntent.SetHebrewMonth(month))
-        override fun setYear(year: Int) = vm.onIntent(ContactBirthdayIntent.SetHebrewYear(year))
+        override fun setDay(day: Int) = vm.pickDay(day)
+        override fun setMonth(month: Int) = vm.pickMonth(month)
+        override fun setYear(year: Int) = vm.pickYear(year)
         override val day get() = vm.state.value.hebrewDay
         override val month get() = vm.state.value.hebrewMonth
         override val year get() = vm.state.value.hebrewYear
@@ -187,10 +191,32 @@ class ContactBirthdayViewModelTest {
     }
 
     @Test
+    fun confirmingThePickerOnTheShownDateKeepsAnOutOfRangeBirthday() {
+        for (date in outOfRange) {
+            val (vm, repository) = open(birthday(date))
+            vm.onIntent(ContactBirthdayIntent.OpenDatePicker)
+            assertTrue(vm.state.value.showDatePicker)
+            // The picker opens on the shown date; OK without a new pick returns it (TASK-45)
+            vm.onIntent(ContactBirthdayIntent.SetHebrewDate(vm.state.value.gregorianDate))
+            assertFalse(vm.state.value.showDatePicker)
+            vm.onIntent(ContactBirthdayIntent.Save)
+            assertEquals("$date", date, repository.saved)
+        }
+    }
+
+    @Test
+    fun pickingAnotherDayInAnOutOfRangeYearSavesItInThatYear() {
+        val (vm, repository) = open(birthday(12, JewishDate.NISSAN, 5500))
+        vm.onIntent(ContactBirthdayIntent.SetHebrewDate(vm.state.value.gregorianDate.plusDays(1)))
+        vm.onIntent(ContactBirthdayIntent.Save)
+        assertEquals(Triple(13, JewishDate.NISSAN, 5500), repository.saved)
+    }
+
+    @Test
     fun changingTheDayKeepsAStoredYearOutsideTheRange() {
         for (year in listOf(5500, 6100)) {
             val (vm, repository) = open(birthday(14, JewishDate.KISLEV, year))
-            vm.onIntent(ContactBirthdayIntent.SetHebrewDay(15))
+            vm.pickDay(15)
             vm.onIntent(ContactBirthdayIntent.Save)
             assertEquals(Triple(15, JewishDate.KISLEV, year), repository.saved)
         }
@@ -200,7 +226,7 @@ class ContactBirthdayViewModelTest {
     fun steppingTheYearOfAnOutOfRangeBirthdayEntersTheRange() {
         for ((year, stepped, expected) in listOf(Triple(5500, 5501, 5600), Triple(6100, 6099, 6000))) {
             val (vm, repository) = open(birthday(14, JewishDate.KISLEV, year))
-            vm.onIntent(ContactBirthdayIntent.SetHebrewYear(stepped))
+            vm.pickYear(stepped)
             assertEquals(expected, vm.state.value.hebrewYear)
             vm.onIntent(ContactBirthdayIntent.Save)
             assertEquals(Triple(14, JewishDate.KISLEV, expected), repository.saved)
