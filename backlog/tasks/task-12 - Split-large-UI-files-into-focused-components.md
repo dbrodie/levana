@@ -1,10 +1,10 @@
 ---
 id: TASK-12
 title: Split SettingsScreen.kt and MainActivity.kt into focused files
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-21T11:19:33Z'
-updated_date: '2026-10-29T18:50:00Z'
+updated_date: '2026-10-29T21:42:00Z'
 labels:
   - curated-import
   - source-specs
