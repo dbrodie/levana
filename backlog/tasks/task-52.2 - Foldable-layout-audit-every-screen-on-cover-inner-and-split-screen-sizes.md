@@ -1,11 +1,11 @@
 ---
 id: TASK-52.2
 title: 'Foldable layout audit: every screen on cover, inner and split-screen sizes'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-30T13:14:00Z'
+updated_date: '2026-10-30T13:19:00Z'
 labels: []
 dependencies:
   - TASK-52.1
@@ -88,6 +88,18 @@ FoldableScreenshotTest covers calendar, date picker, Add event, Zmanim, Agenda (
 ## Verification (tested commit 74f76df)
 From a clean app/build/test-results: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 1101 tests, 0 failures, 0 errors, 0 skipped. Lint: 0 errors, 83 warnings (same as master). Log: /tmp/levana-task52.2-evidence/gradle-verify.log. The first full run hit the picker flake above (2 timeouts, testDebugUnitTest only); the rerun was clean.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T13:19:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed before/after pairs (settings 640dp cap, 200% picker header); merged as 7667f11. Clean run (load avg ~40): 1101 tests, 0 failures; Roborazzi 320 unchanged (52 foldable baselines added, no phone baseline changed). Fold8 Ultra checked via Roborazzi only (AVD install hung under load). Design items recorded in TASK-52.4. Evidence: /tmp/levana-task52.2-evidence/.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
