@@ -117,6 +117,9 @@ class PreferencesRepository(
 
         // The time-zone mismatch last shown (TASK-46) — NOT part of UserPreferences
         val ZONE_MISMATCH_NOTICE = stringPreferencesKey("zone_mismatch_notice")
+
+        // Walkthrough screen IDs already shown (TASK-43) — NOT part of UserPreferences
+        val WALKTHROUGH_SEEN_IDS = stringSetPreferencesKey("walkthrough_seen_ids")
     }
 
     val preferences: Flow<UserPreferences> = combine(
@@ -422,6 +425,22 @@ class PreferencesRepository(
             if (key != null) prefs[Keys.ZONE_MISMATCH_NOTICE] = key
             else prefs.remove(Keys.ZONE_MISMATCH_NOTICE)
         }
+    }
+
+    /** The walkthrough screen IDs the user has seen; IDs of removed screens are kept. */
+    val walkthroughSeenIds: Flow<Set<String>> =
+        context.dataStore.data.map { it[Keys.WALKTHROUGH_SEEN_IDS].orEmpty() }
+
+    suspend fun markWalkthroughSeen(ids: Collection<String>) {
+        if (ids.isEmpty()) return
+        context.dataStore.edit { prefs ->
+            prefs[Keys.WALKTHROUGH_SEEN_IDS] = prefs[Keys.WALKTHROUGH_SEEN_IDS].orEmpty() + ids
+        }
+    }
+
+    /** Developer settings: every walkthrough screen shows again on the next launch. */
+    suspend fun resetWalkthroughSeen() {
+        context.dataStore.edit { it.remove(Keys.WALKTHROUGH_SEEN_IDS) }
     }
 }
 

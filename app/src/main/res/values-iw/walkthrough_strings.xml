@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature walkthrough (TASK-43) -->
+    <string name="walkthrough_skip">דילוג</string>
+    <string name="walkthrough_back">הקודם</string>
+    <string name="walkthrough_next">הבא</string>
+    <string name="walkthrough_get_started">מתחילים</string>
+    <string name="walkthrough_got_it">הבנתי</string>
+    <string name="walkthrough_not_now">לא עכשיו</string>
+    <string name="walkthrough_page_of">עמוד %1$d מתוך %2$d</string>
+    <string name="walkthrough_counter">%1$d מתוך %2$d</string>
+    <string name="walkthrough_add_city">הוספת עיר</string>
+    <string name="walkthrough_show_again">הצגת הסיור שוב</string>
+    <string name="walkthrough_show_again_summary">סיור בתכונות העיקריות של לבנה</string>
+
+    <string name="walkthrough_welcome_title">הלוח העברי שלך</string>
+    <string name="walkthrough_welcome_body">תאריכים עבריים, חגים וזמנים, לצד הלוח הלועזי.</string>
+    <string name="walkthrough_location_title">זמנים לפי המקום שלך</string>
+    <string name="walkthrough_location_body">לפי המיקום שלך, או לפי הערים שחשובות לך. המעבר ביניהן נעשה מהתפריט.</string>
+    <string name="walkthrough_days_title">כל יום, שבת וחג</string>
+    <string name="walkthrough_days_body">בהקשה על יום מופיעים הזמנים, הפרשה, ספירת העומר והאירועים, ואפשר לבחור אילו זמנים להציג. הדלקת נרות, הבדלה, ימים טובים וצומות מותאמים אוטומטית לארץ או לחו״ל.</string>
+    <string name="walkthrough_events_title">לזכור כל תאריך</string>
+    <string name="walkthrough_events_body">ימי הולדת, יארצייט וימי נישואין חוזרים מדי שנה בתאריך העברי, לפי כללי השנה המעוברת והיארצייט. אפשר לשמור ימי הולדת עבריים באנשי הקשר.</string>
+    <string name="walkthrough_reminders_title">לא לפספס הדלקת נרות</string>
+    <string name="walkthrough_reminders_body">תזכורות להדלקת נרות, לחגים, לצומות, לאירועים שלך ולספירת העומר.</string>
+    <string name="walkthrough_calendars_title">כל היומנים שלך יחד</string>
+    <string name="walkthrough_calendars_body">היומנים שבחרת בטלפון מוצגים לצד התאריכים העבריים.</string>
+    <string name="walkthrough_widgets_title">לבנה במסך הבית</string>
+    <string name="walkthrough_widgets_body">ווידג׳טים של היום, החודש והזמנים, אריח בהגדרות המהירות וסמל אפליקציה שמראה את התאריך העברי של היום.</string>
+    <string name="walkthrough_appearance_title">בדיוק כמו שנוח לך</string>
+    <string name="walkthrough_appearance_body">בהיר או כהה, צבעי Material You וצבעי חג, בעברית או באנגלית.</string>
+
+    <!-- Permission asks -->
+    <string name="walkthrough_permission_location">לבנה משתמשת במיקום רק כדי לחשב זמנים בטלפון הזה. בלעדיו היא משתמשת בעיר באזור הזמן שלך.</string>
+    <string name="walkthrough_allow_location">שימוש במיקום שלי</string>
+    <string name="walkthrough_granted_location">גישה למיקום אושרה</string>
+    <string name="walkthrough_permission_contacts">ימי הולדת עבריים נשמרים באיש הקשר עצמו, בשדה משלהם. שום דבר לא יוצא מהמכשיר.</string>
+    <string name="walkthrough_allow_contacts">גישה לאנשי הקשר</string>
+    <string name="walkthrough_granted_contacts">גישה לאנשי הקשר אושרה</string>
+    <string name="walkthrough_permission_notifications">כדי שלבנה תוכל להזכיר, צריך לאשר התראות. בוחרים אילו תזכורות בהגדרות.</string>
+    <string name="walkthrough_allow_notifications">אישור התראות</string>
+    <string name="walkthrough_granted_notifications">התראות אושרו</string>
+    <string name="walkthrough_permission_calendar">לבנה רק קוראת את היומנים שלך ואף פעם לא משנה אותם. שום דבר לא יוצא מהמכשיר. בוחרים אילו יומנים להציג בהגדרות.</string>
+    <string name="walkthrough_allow_calendar">גישה ליומנים</string>
+    <string name="walkthrough_granted_calendar">גישה ליומנים אושרה</string>
+    <string name="walkthrough_permission_denied">לא אושר. כל השאר עובד, ואפשר לאשר מאוחר יותר בהגדרות.</string>
+
+    <!-- Sample data in the illustrations -->
+    <string name="walkthrough_sample_sunrise">הנץ</string>
+    <string name="walkthrough_sample_sunset">שקיעה</string>
+    <string name="walkthrough_sample_dawn">עלות השחר</string>
+    <string name="walkthrough_sample_nightfall">צאת הכוכבים</string>
+    <string name="walkthrough_sample_candles">נרות</string>
+    <string name="walkthrough_sample_yahrzeit">יארצייט</string>
+    <string name="walkthrough_sample_parasha">פרשה</string>
+    <string name="walkthrough_sample_shabbat">שבת %1$s</string>
+    <string name="walkthrough_sample_auto_detect">ארץ ישראל · זוהה אוטומטית</string>
+    <string name="walkthrough_sample_current_location">המיקום הנוכחי</string>
+    <string name="walkthrough_sample_jerusalem">ירושלים, ישראל</string>
+    <string name="walkthrough_sample_tel_aviv">תל אביב-יפו</string>
+    <string name="walkthrough_sample_tel_aviv_detail">ישראל · GMT+2</string>
+    <string name="walkthrough_sample_new_york">ניו יורק</string>
+    <string name="walkthrough_sample_new_york_detail">ארצות הברית · GMT−4</string>
+    <string name="walkthrough_sample_london">לונדון</string>
+    <string name="walkthrough_sample_london_detail">בריטניה · GMT+0</string>
+    <string name="walkthrough_sample_anniversary">אבי ונועה — יום נישואין</string>
+    <string name="walkthrough_sample_yahrzeit_event">סבא משה — יארצייט</string>
+    <string name="walkthrough_sample_birthday">שרה — יום הולדת</string>
+    <string name="walkthrough_sample_every_year">כל שנה</string>
+    <string name="walkthrough_sample_on_contact">באיש הקשר</string>
+    <string name="walkthrough_sample_notify_candles_title">הדלקת נרות ב־%1$s</string>
+    <string name="walkthrough_sample_notify_holiday_title">ראש חודש כסלו</string>
+    <string name="walkthrough_sample_notify_holiday_text">יום שלישי, 10 בנובמבר</string>
+    <string name="walkthrough_sample_notify_event_text">היום, %1$s</string>
+    <string name="walkthrough_sample_notify_omer_title">ספירת העומר</string>
+    <string name="walkthrough_sample_notify_omer_text">הלילה שנים עשר יום לעומר</string>
+    <string name="walkthrough_sample_calendar_family">משפחה</string>
+    <string name="walkthrough_sample_calendar_work">עבודה</string>
+    <string name="walkthrough_sample_calendar_birthdays">ימי הולדת</string>
+    <string name="walkthrough_sample_event_meeting">פגישת צוות</string>
+    <string name="walkthrough_sample_event_dinner">ארוחה משפחתית</string>
+    <string name="walkthrough_sample_read_only">קריאה בלבד</string>
+    <string name="walkthrough_sample_light">בהיר</string>
+    <string name="walkthrough_sample_dark">כהה</string>
+    <string name="walkthrough_sample_material_you">Material You</string>
+    <string name="walkthrough_sample_holiday">חנוכה</string>
+</resources>

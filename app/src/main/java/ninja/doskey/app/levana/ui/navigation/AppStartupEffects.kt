@@ -27,14 +27,16 @@ import ninja.doskey.app.levana.icon.DynamicIconManager
 import org.koin.compose.koinInject
 
 /**
- * The app shell's side effects: the location-permission ask, the current-location refresh on
- * resume, the launcher-icon refresh, and the notification and widget deep links.
+ * The app shell's side effects: the location-permission ask (unless [askForLocation] is off),
+ * the current-location refresh on resume, the launcher-icon refresh, and the notification and
+ * widget deep links.
  */
 @Composable
 internal fun LevanaStartupEffects(
     navController: NavHostController,
     deepLinkEpochDay: Long,
     openZmanim: Boolean,
+    askForLocation: Boolean = true,
 ) {
     val preferencesRepository: PreferencesRepository = koinInject()
     val locationService: LocationService = koinInject()
@@ -47,7 +49,7 @@ internal fun LevanaStartupEffects(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { }
     LaunchedEffect(Unit) {
-        if (!askedForLocation && !locationService.hasPermission()) {
+        if (askForLocation && !askedForLocation && !locationService.hasPermission()) {
             askedForLocation = true
             locationPermissionLauncher.launch(LocationService.PERMISSIONS)
         }

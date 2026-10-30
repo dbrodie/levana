@@ -46,12 +46,29 @@ Single Android app module; Kotlin and Gradle Kotlin DSL. Minimum API 34, target/
 - Inexact AlarmManager alarms deliver candle-lighting and Omer reminders. Reconcile alarms after relevant settings changes, reboot and device clock/timezone changes.
 - Persistent alarm identities and delivery records support cancellation and duplicate suppression.
 
+## Feature Walkthrough
+
+Each major feature has one walkthrough screen (`ui/walkthrough/`, TASK-43). The app records which screen IDs the user has seen; a seen screen is never shown again, so a new install sees every screen and an update shows only the screens it adds.
+
+- **Registry:** `WalkthroughRegistry.screens` lists `FeatureScreen`s in display order: a permanent ID, title and body strings, an optional `WalkthroughPermission` asked on the screen, an optional `isAvailable` check, and the illustration.
+- **Seen state:** `PreferencesRepository.walkthroughSeenIds` (DataStore key `walkthrough_seen_ids`, outside `UserPreferences`). A screen is seen once displayed; Skip, Get started and Got it mark the whole run seen. Replay from About records nothing; Developer settings → Reset walkthrough clears the set.
+- **When it opens:** `LevanaApp` starts the activity-scoped `WalkthroughViewModel` and shows `WalkthroughScreen` in place of the shell while a run is active. A launch from a notification, widget or tile (a deep link) shows nothing; the screens wait for the next normal launch. `WalkthroughGate` is off under Robolectric and instrumentation, so tests see the app as before unless they bind `WalkthroughGate(showOnLaunch = true)` (see `ScreenshotTest.testModules`).
+- **Page indicator:** counted over the run: one screen shows only Got it; 2–9 show dots; 10 or more show "n of m". Each page's title announces "Page n of m" to TalkBack.
+
+To add a screen when a major feature ships:
+1. Add a `FeatureScreen` to `WalkthroughRegistry.screens` at its place in the order, with a new kebab-case ID. Never rename, reuse or reorder IDs to mean something else; removing a screen leaves its ID unused for good.
+2. Write its illustration in `WalkthroughIllustrations.kt`: a small live mini-UI built from the app's components or simplified versions, in the app theme, with fixed sample data, wrapped in `Decorative` so TalkBack reads the title and body instead.
+3. Add the title, body and any sample strings in English and Hebrew (`walkthrough_strings.xml`). If the feature needs a permission, add a `WalkthroughPermission` with its reason, allow and granted strings.
+4. Add the ID to `WalkthroughSelectionTest`'s approved list, record the new baselines in `WalkthroughScreenshotTest` and keep the 1/3/12-screen runs passing.
+
+Bug fixes and small changes get no screen.
+
 ## Verification
 
 Unit and Robolectric tests cover calendar rules, repositories, provider IO, migrations, ViewModels and reminder planning. Compose tests cover UI behavior and semantics. Device checks remain necessary for platform behavior and accessibility.
 
 Roborazzi screenshot baselines cover the app shell and Settings:
-- **Scope:** the drawer and the top bar of each route, Settings with its dialogs and sub-screens, Locations, the city picker and system calendars. Each is captured in light/dark × English/Hebrew (RTL).
+- **Scope:** the drawer and the top bar of each route, Settings with its dialogs and sub-screens, Locations, the city picker, system calendars, the date picker and the feature walkthrough. Each is captured in light/dark × English/Hebrew (RTL).
 - **Location:** tests in `app/src/test/.../screenshots/`; baselines committed in `app/src/test/screenshots/`.
 - **How the tests run:** each launches the real `MainActivity` under Robolectric (NATIVE graphics, one fixed mdpi phone qualifier) and navigates by UI. They use the production Koin graph with a fixed `DeviceContext` clock, an in-memory database and seeded preferences.
 - **When images change:** a deliberate visual change re-records the affected baselines in the same commit; any other diff is a regression.
