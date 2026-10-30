@@ -1,10 +1,11 @@
 ---
 id: TASK-8
 title: Add an Agenda view and Month/Agenda drawer navigation (design 1a/1b)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-21T11:19:31Z'
-updated_date: '2026-10-30T06:45:00Z'
+updated_date: '2026-10-30T07:40:00Z'
 labels:
   - curated-import
   - source-specs
@@ -72,7 +73,6 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 3. **Tapping the month title** opens the shared dual-calendar date picker (TASK-45); the agenda scrolls to the chosen date.
 4. **Drawer:** add only the navigation (a Calendar section with Month and Agenda). Do not add per-city times or otherwise change the city list; that is unrelated to this task.
 5. **Start screen:** unchanged (Month).
-
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -82,6 +82,31 @@ If /tmp has been cleared, ask the owner to reopen the link in the Paseo browser 
 - [ ] #3 Drawer gains a Calendar section with Month and Agenda; the city list and selection are unchanged (no per-city times); Month stays the start screen
 - [ ] #4 Unit tests for aggregation, ordering and search; emulator screenshots compared against the design in English/Hebrew, light/dark, a holiday theme; TalkBack labels; Roborazzi baselines added for the new screen and drawer
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+**Data (no new calculation logic, one occurrence resolver)**
+1. `HebrewDateMatcher.occurrencesBetween(day, month, year, useYahrzeitRules, start, end, rules)`: the observed Gregorian dates in a range, from `occurrences()` for each Hebrew year spanned (invalid month/day skipped). Unit test: equals the per-day `occurrenceOn` result over several years (Adar, day 30, yahrzeit rules).
+2. `PersonalEventRepository.getEventsBetween(start, end)` and `ContactBirthdayRepository.getBirthdaysBetween(start, end)`: one read, then (1). `getEventsForDate` / `getBirthdaysForDate` unchanged.
+3. `SystemCalendarRepository.getEventsForDateRange(start, end, ids)`: the existing instance query, grouped by every covered date; `getEventsForDate` delegates to it. `SystemCalendarEvent` gains `location` (EVENT_LOCATION, default "").
+4. `domain/agenda`: `AgendaItem` (Holiday, CandleLighting, Shabbat [parasha + havdalah], Havdalah, PersonalEvent [yahrzeit flag], Birthday, DeviceEvent), `AgendaDay(date, hebrewDay, items)`. `AgendaAssembler` (pure): builds one day's items from `DayInfo`, `ShabbatInfo`, occurrences and device events, and orders them: all-day items first (holiday, Shabbat/parasha, yahrzeit, birthday, personal event, all-day device event), then timed items by time (candle lighting, havdalah, timed device events); ties by type then title. Days without items are dropped.
+5. `AgendaRepository.load(start, end, prefs)`: holidays via `CalendarRepository.getDayInfo` (Israel/Diaspora + modern-holiday setting), candle lighting/havdalah via `ZmanimRepository.getShabbatInfo` at the **selected city** (`displayCity`), events/birthdays/device events via (2)/(3) with the selected calendars. Missing contacts/calendar permission → those sources empty, `calendarPermission=false` reported. Runs off the main thread.
+6. `AgendaSearch` (pure): case-insensitive match (gershayim/apostrophes ignored) on titles, English and Hebrew holiday/parasha names, event notes, device-event locations. Range: **today − 12 months .. today + 12 months (Gregorian, inclusive)**, loaded once per search session, reloaded on data change.
+
+**Screen (MVI: `ui/agenda/AgendaState/Intent/ViewModel/Screen`)**
+7. VM: today from DeviceContext (`todayUpdates`), leading calendar from the shared `calendarHebrewMode` preference (same toggle as Month). Window loads in 6-week chunks: opens on today−6w..today+12w, extends forward/backward as the list nears an end (no fixed end). Jump (picker/search/today) inside the window scrolls; outside it reloads a window around the date. One-shot scroll targets through a channel. ChangeRefresher on events/permissions; prefs changes reload. `otherClockCityName` (TASK-5) for the zone label.
+8. UI: own header like Month (menu, month title with dropdown → TASK-45 `HebrewDatePickerDialog`, search, today), sub-header with the other calendar's span + `CalendarModeSelector`. LazyColumn: month headers when the leading month changes ("כסלו תשפ״ז  Nov – Dec 2026"), day rows with a date rail (weekday, leading-calendar day large, other date small, today in a filled circle; mirrors in RTL) and typed cards (outlined: candle lighting, events, yahrzeit, birthday; tonal: Shabbat; holiday-category-tinted: holidays/Rosh Chodesh/fasts). Times 12/24h per device; the selected city's zone label on candle-lighting/havdalah when it differs. Calendar-permission banner with Allow (session dismiss) when missing. Loading, loading-more and empty (search) states. TalkBack: day = both dates; card = type, title, time.
+9. Taps: personal event/yahrzeit → event editor; birthday → contact birthday editor; device event → system calendar (shared helper extracted from the day panel); holiday → Month on that day (calendar back-stack savedStateHandle, small additive CalendarScreen param); candle lighting/Shabbat/havdalah → Zmanim for that date.
+10. Search mode: top bar becomes a search field; results list (date + card); tapping scrolls the agenda to that day.
+
+**Navigation (small, additive; TASK-43 also edits ui/navigation)**
+11. `AgendaRoute`; drawer gets a "Calendar" section with Month (CalendarRoute) and Agenda, a divider, then My events and Settings unchanged; city card/list/Manage cities untouched. Agenda is a drawer route with its own header (global top bar hidden as for Month). Start screen stays Month.
+
+**Strings/tests/verification**
+12. English + Hebrew strings. Unit tests: occurrencesBetween equivalence, assembler ordering/types, repository aggregation (recurrence, selected city times, permission), search, header formatting, VM window/jump. Roborazzi: list changed drawer images, re-record and inspect; add `app_agenda`, `app_agenda_gregorian`, `app_agenda_search`, `app_agenda_search_empty` (en/he × light/dark) on a fixed seeded range.
+13. Build/test/lint/verifyRoborazzi; emulator screenshots (en/he, light/dark, holiday theme, search, picker jump, card taps, calendar permission on/off, drawer) saved outside the worktree with a README.
+<!-- SECTION:PLAN:END -->
 
 ## Beads history
 
