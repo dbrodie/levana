@@ -70,8 +70,9 @@ Unit and Robolectric tests cover calendar rules, repositories, provider IO, migr
 Roborazzi screenshot baselines cover the app shell and Settings:
 - **Scope:** the drawer and the top bar of each route, Settings with its dialogs and sub-screens, Locations, the city picker, system calendars, the date picker and the feature walkthrough. Each is captured in light/dark × English/Hebrew (RTL).
 - **Location:** tests in `app/src/test/.../screenshots/`; baselines committed in `app/src/test/screenshots/`.
-- **How the tests run:** each launches the real `MainActivity` under Robolectric (NATIVE graphics, one fixed mdpi phone qualifier) and navigates by UI. They use the production Koin graph with a fixed `DeviceContext` clock, an in-memory database and seeded preferences.
+- **How the tests run:** each launches the real `MainActivity` under Robolectric (NATIVE graphics, a fixed mdpi phone qualifier unless a test passes a foldable size) and navigates by UI. They use the production Koin graph with a fixed `DeviceContext` clock, an in-memory database and seeded preferences.
 - **When images change:** a deliberate visual change re-records the affected baselines in the same commit; any other diff is a regression.
+- **Foldable sizes:** `FoldableSize` holds the Galaxy Z Fold8 and Fold8 Ultra windows in dp: each cover, the inner display in portrait and landscape, and a split-screen half of the landscape inner. They are Samsung's published pixels at an assumed 420 dpi, as the whole display. A test passes `size.qualifiers` as the `ScreenshotTest` device, and the light/dark and language variant applies on top. `FoldableScreenshotTest` has one sample per size (the month calendar, English light). Specs and sources are in TASK-52.1. The matching emulators and fold/unfold commands are in the android-debug skill (`references/foldables.md`).
 - Record: `./gradlew :app:recordRoborazziDebug --tests '*.screenshots.*'`
 - Verify: `./gradlew :app:verifyRoborazziDebug`
 - Both commands are up-to-date-cached; add `:app:testDebugUnitTest --rerun` to force a fresh run.
