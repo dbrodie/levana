@@ -3,10 +3,11 @@ id: TASK-45
 title: >-
   Replace the app's date pickers with one shared dual-calendar (design 1b)
   Hebrew date picker
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-29T21:22:00Z'
-updated_date: '2026-10-30T06:27:00Z'
+updated_date: '2026-10-30T06:46:00Z'
 labels: []
 dependencies:
   - TASK-24
@@ -90,6 +91,40 @@ Related: TASK-24 (year-range policy; resolve first or together). TASK-25 was clo
 - [ ] #4 Unit tests cover picker state (sync, mode switch, year pick with month fitting, leap years, month lengths, bounds); existing event/birthday/go-to-date tests pass or are deliberately updated
 - [ ] #5 Emulator verification with screenshots compared to the 1b reference: every call site, English/Hebrew, light/dark, a holiday theme, a leap year (e.g. 5787), year view, and TalkBack labels
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Shared picker: new package ui/datepicker (MVI), replaces GoToDateDialog and the editors' stepper HebrewDatePicker.
+
+1. Pure logic (no Compose, no Android): DatePickerState + DatePickerIntent + DatePickerReducer.
+   - State: selection (LocalDate), leading calendar (HEBREW/GREGORIAN), viewed month (Hebrew year+month or YearMonth), year list open, today, allowed Hebrew years.
+   - Intents: SetLeading, PreviousMonth, NextMonth, SelectDay, ToggleYearList, PickYear.
+   - Switching the leading calendar re-anchors the view on the selection's month and closes the year list.
+   - Chevrons step the leading calendar's months (HebrewYearMonth.next/previous for Adar I/II).
+   - PickYear moves the selection to the same day and month in that year (owner decision 2): Hebrew via HebrewDateMatcher.monthForYear (Adar II -> Adar) and clampDay (30 -> 29); Gregorian 29 Feb -> 28 Feb. The view follows the selection and the year list closes.
+   - Bounds: selectable days are those whose Hebrew year is in SupportedHebrewYears (5600-6000), plus the initial date's Hebrew year when it lies outside. That way an out-of-range stored date opens unchanged, can be browsed within its own year, and the year list moves it into range. Month steps stop at the bounds. Year lists: 5600-6000 (Hebrew) and SupportedHebrewYears.gregorianYears 1840-2239 (Gregorian).
+2. DatePickerViewModel (Koin): Open(initialDate, leading) reads today, Israel/Diaspora (resolveIsInIsrael with the device zone) and the modern-holidays preference from DeviceContext/preferences once. It runs intents through the reducer and derives the month cells from CalendarRepository.getMonthDays/getHebrewMonthDays (existing holiday logic).
+3. UI: HebrewDatePickerDialog (variant 1b), styled with the app's M3 colour scheme (holiday themes, dark mode).
+   - Segmented Hebrew|Gregorian toggle; month title with dropdown arrow and the other calendar's span (reusing CalendarHeaderFormatter.hebrewMonthRange); chevrons.
+   - 7-column Sunday-first grid with two-line cells, today ring, filled primary selection and category-coloured holiday dots (holidayCategoryColor).
+   - 3-column year grid opened on the viewed year, with a current-year marker.
+   - Footer with both dates (leading first), a holiday chip (localized name + category icon), Cancel/OK, and an optional extra action ("Clear" for the developer override).
+   - Strings in English and Hebrew, correct RTL. TalkBack: each cell describes both dates, the holiday and "today", with selected state; all controls are labelled buttons, so they are keyboard focusable.
+4. Call sites:
+   - Event and birthday editors: the inline stepper becomes a date field card (Hebrew date + Gregorian equivalent) that opens the picker in Hebrew mode. VM intents OpenDatePicker / DatePicked(LocalDate) / CloseDatePicker, with the picker shown from VM state.
+   - DatePicked equal to the shown date is a no-op, so an out-of-range stored date (TASK-24 preservedDate) stays untouched until a different date is picked. Otherwise it sets the date (a known year is kept, other years are coerced) and clears preservedDate.
+   - SetHebrewDay/Month/Year are replaced by SetHebrewDate(day, month, year); the birthday editor's edited-while-loading merge stays field-wise.
+   - Go-to-date: the calendar's current mode leads; OK navigates (CalendarIntent.GoToDate).
+   - Developer override: Gregorian leads; OK sets the override, Clear removes it.
+5. Remove GoToDateDialog.kt, HebrewDatePicker/NumberPicker/MonthPicker/buildMonthList (moving EditorMonthNamesTest coverage to the picker's month names), and strings left unused.
+6. Tests:
+   - Reducer unit tests: sync/mode switch, month stepping incl. Adar I/II, 29/30-day months, year pick with month/day fitting both directions, Feb 29, bounds and the out-of-range initial date.
+   - VM tests: today/Israel from DeviceContext, holiday on Purim, Shushan Purim in Israel.
+   - Editor VM tests migrated to the new intents, plus picker no-op/preservation cases.
+   - Roborazzi: run verify first and list the diffs; re-record and inspect them; add picker baselines (Hebrew-led, Gregorian-led, year list, Purim 5787 Adar II chip, out-of-range stored date) x en/he x light/dark.
+7. Verify: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks. Emulator screenshots of every call site, both modes, year list, leap Adar + chip, en/he, light/dark, and TalkBack labels via the UI dump. Save them under /tmp/levana-task45-evidence, then record the evidence in the notes.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
