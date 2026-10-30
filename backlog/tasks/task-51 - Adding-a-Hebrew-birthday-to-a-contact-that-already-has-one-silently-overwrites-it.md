@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:07:00Z'
-updated_date: '2026-10-30T10:21:00Z'
+updated_date: '2026-10-30T10:41:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -55,3 +55,25 @@ Product choice (date changed before the pick): load the stored date. The stored 
 5. Roborazzi: new AppShell test picking a contact with a stored birthday through the picker result -> app_contact_birthday_existing (EN/HE x light/dark). Expected change: app_contact_birthday_* (4) title "Birthday" -> "Add birthday", required by the task; any other change is investigated.
 6. Verify: assemble, unit tests, lint, verifyRoborazziDebug --rerun-tasks from a clean test-results; emulator (android-debug) EN + HE: contact with birthday -> edit mode + notice, contact without -> add, saved values on the contact; screenshots + README outside the worktree.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (commits 58c7a65 fix, e3d6102 live-region test; plan d9e7314):
+- ContactBirthdayViewModel: loadBirthday now keeps only the route/rotation guard and calls a shared load(key, fromPick). A contact choice (ContactPicked once it resolves, or ContactSelected) runs load(fromPick = true) under the same token and loadJob. If the contact has a birthday, the stored date wins and the editor switches to editing it: editorDate plus TASK-24 preservedDate, isEditing, and state.storedBirthdayNotice (the date as stored, plus replacedChosenDate). If it has none, the editor returns to add mode and the add-mode date snapshot is restored, so one contact's date is never carried to another. Save is refused while state.storedBirthdayUnchecked is set. A failed lookup shows the error and keeps Save off.
+- Product choice: a date chosen before the pick is replaced by the stored one, and the notice says so ("The date you chose was replaced by the saved one."). See the plan for the reasoning.
+- UI: a notice card in a persistent polite live region (TalkBack). The Hebrew date is kept on one line (NBSP) and bidi-wrapped. The Save button is disabled while unchecked. The title is now "Add birthday" / "Edit birthday" (new design_add_birthday / design_edit_birthday, EN + HE). LevanaTopBar reads it from the route key or the route's ContactBirthdayViewModel through the back-stack entry. The Save/Update label already followed isEditing.
+- Tests: ContactBirthdayViewModelTest has 8 new tests: pick with/without a birthday, ContactSelected, switching A/N/C/A, a pre-pick date replaced and restored, an equal date not reported as replaced, out-of-range years (TASK-24 list incl. 5500/6100/0/99999) saved unchanged after a pick and not carried to another contact. ContactBirthdayViewModelIoTest has 5 new gated tests: a pick during a pending route load gets the picked contact's own birthday, Save refused until checked, a later choice supersedes a pending check, edits during the check are replaced and reported, a failed check keeps Save off. TopBarTitlesTest is updated.
+- Adjusted existing tests (they saved right after a contact choice, which now waits for the lookup): ContactBirthdayViewModelIoTest (3), VerifyProviderMainThreadTest (2), VerifyCancelledCallerErrorTest (1). FakeContactsProvider gained holdOnlyFirst so that a newer choice's own lookup isn't held or failed by the stale one.
+- Roborazzi: new ContactBirthdayScreenshotTest → app_contact_birthday_existing_{en,he}_{light,dark}. It also asserts the live region. Changed images: app_contact_birthday_{en,he}_{light,dark}. I checked them: the only change is the title, "Birthday"/"יום הולדת" → "Add birthday"/"הוספת יום הולדת", which the task requires. The other 252 baselines are unchanged.
+
+Verification at e3d6102 (clean app/build/test-results): `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks` BUILD SUCCESSFUL. 1043 tests, 0 failures/errors. Roborazzi 260 unchanged, 0 changed. Lint: 0 errors, 83 warnings, none in changed files. One earlier full run had a DatePickerScreenshotTest timeout (event editor, untouched). It passed on a focused rerun and in the final run, so I treat it as a Robolectric flake.
+Emulator (Levana_Agent_Template_API_36_1, headless; APK with the app code of 58c7a65), EN + HE:
+- Sarah (8 Kislev 5750) → Edit title, notice, Update. Changing to 10 Kislev updated the single row in place (10/9/5750).
+- David / Miriam (no birthday) → Add title, Save, new row.
+- HE: a date chosen before the pick was replaced, and the notice said so.
+- Yaakov 14 Kislev 5500 → edit mode. Update untouched left 14/9/5500.
+- No crash.
+Evidence: /tmp/levana-task51-screens/ (README.md, 13 PNG + UI XML, provider row dumps, seed scripts, verify.log).
+Limitation: the spoken TalkBack announcement wasn't checked on the device (only the live-region semantics, via test).
+<!-- SECTION:NOTES:END -->
