@@ -1,11 +1,11 @@
 ---
 id: TASK-53.1
 title: Add the MIT licence and third-party notices
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:24:00Z'
-updated_date: '2026-10-30T13:01:00Z'
+updated_date: '2026-10-30T13:07:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -22,7 +22,7 @@ Owner decision 2026-10-30: Levana is licensed **MIT**. Add a LICENSE file (MIT, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 LICENSE (MIT) is committed and GitHub shows MIT; third-party notices are generated from the real dependency graph and include KosherJava's LGPL-2.1
+- [x] #1 LICENSE (MIT) is committed and GitHub shows MIT; third-party notices are generated from the real dependency graph and include KosherJava's LGPL-2.1
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,3 +55,15 @@ Owner decision 2026-10-30: Levana is licensed **MIT**. Add a LICENSE file (MIT, 
 ## Handoff
 The AC is left unchecked for the coordinator: confirm that GitHub shows MIT after the push, and rerun the notices script after 53.2 merges (or ask 53.2 to).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T13:07:00Z
+
+---
+
+Coordinator integration 2026-10-30: merged as 7720dbf. Clean run (load avg ~40): 1051 tests, 0 failures; Roborazzi 268 unchanged (4 settings_about baselines re-recorded for the new Open-source licenses row). Pushed; GitHub now detects MIT License. Follow-up after TASK-53.2: rerun scripts/generate_third_party_notices.py to drop the Play Services entries.
+
+---
+<!-- COMMENTS:END -->
