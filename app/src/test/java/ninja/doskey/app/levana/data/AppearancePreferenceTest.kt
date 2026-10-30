@@ -3,6 +3,7 @@ package ninja.doskey.app.levana.data
 import android.app.Application
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import ninja.doskey.app.levana.AppDataStores
 import ninja.doskey.app.levana.domain.model.ThemeMode
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -25,17 +26,12 @@ class AppearancePreferenceTest {
     @Before
     fun setUp() {
         val app = RuntimeEnvironment.getApplication()
+        AppDataStores.clearPreferences(app)
         preferences = PreferencesRepository(app, CityRepository(app))
-        restoreDefaults()
     }
 
     @After
-    fun tearDown() = restoreDefaults()
-
-    private fun restoreDefaults() = runBlocking {
-        preferences.saveThemeMode(ThemeMode.SYSTEM)
-        preferences.saveMaterialYou(false)
-    }
+    fun tearDown() = AppDataStores.clearPreferences(RuntimeEnvironment.getApplication())
 
     @Test
     fun `defaults follow the system without wallpaper colors`() {
