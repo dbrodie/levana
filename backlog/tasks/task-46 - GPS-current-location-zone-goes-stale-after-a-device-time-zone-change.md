@@ -1,11 +1,11 @@
 ---
 id: TASK-46
 title: GPS current location keeps a stale or mismatched time zone (wrong zmanim)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T21:36:00Z'
-updated_date: '2026-10-30T06:18:00Z'
+updated_date: '2026-10-30T06:21:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -123,3 +123,15 @@ Owner decision 2026-10-30 on GPS position vs device time zone mismatch (TASK-48 
   - Reminder triggers are covered by unit tests (they read the same re-zoned position); no notification was delivered on the emulator.
   - The detection can't tell Hawaii from Kiritimati (same longitude, a day apart): only lat/lon→zone data could, and that is out of scope.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-30T06:21:00Z
+
+---
+
+Coordinator integration 2026-10-30: reviewed diff and pop-up screenshots (EN/HE); merged as 55502ff. Clean run (test-results deleted, --rerun-tasks): 834 tests, 0 failures; Roborazzi 116 unchanged. Known limitation: Hawaii vs Kiritimati-style date-line mismatches at the same longitude aren't detected.
+
+---
+<!-- COMMENTS:END -->
