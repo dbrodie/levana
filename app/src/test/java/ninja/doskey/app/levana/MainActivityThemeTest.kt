@@ -1,10 +1,13 @@
 package ninja.doskey.app.levana
 
 import java.time.LocalDate
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** MainActivity's holiday theme for the device's day. */
@@ -40,5 +43,18 @@ class MainActivityThemeTest {
         val forced = UserPreferences(dynamicHolidayTheme = false, devForceHolidayTheme = HolidayTheme.PURIM.name)
         assertEquals(HolidayTheme.PURIM, resolveHolidayTheme(forced, weekday))
         assertEquals(HolidayTheme.PURIM, resolveHolidayTheme(forced.copy(dynamicHolidayTheme = true), chanukah))
+    }
+
+    @Test
+    fun `the system mode applies until the preferences load`() {
+        assertTrue(resolveDarkTheme(null, systemDark = true))
+        assertFalse(resolveDarkTheme(null, systemDark = false))
+    }
+
+    @Test
+    fun `a forced mode overrides the system`() {
+        assertTrue(resolveDarkTheme(UserPreferences(themeMode = ThemeMode.DARK), systemDark = false))
+        assertFalse(resolveDarkTheme(UserPreferences(themeMode = ThemeMode.LIGHT), systemDark = true))
+        assertTrue(resolveDarkTheme(UserPreferences(), systemDark = true))
     }
 }

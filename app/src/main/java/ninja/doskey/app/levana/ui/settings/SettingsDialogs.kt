@@ -29,6 +29,7 @@ import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
 import ninja.doskey.app.levana.domain.model.IsraelMode
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import kotlin.math.roundToInt
 
 /** Single-choice dialog with an explanation above the options. */
@@ -114,6 +115,15 @@ internal fun yahrzeitMissingDayShortLabel(value: YahrzeitMissingDay): String = s
         YahrzeitMissingDay.FIRST_ANNIVERSARY -> R.string.settings_yahrzeit_missing_day_first_anniversary_short
         YahrzeitMissingDay.ROSH_CHODESH -> R.string.settings_yahrzeit_missing_day_rosh_chodesh_short
         YahrzeitMissingDay.BOTH -> R.string.settings_yahrzeit_missing_day_both_short
+    }
+)
+
+@Composable
+internal fun themeModeLabel(mode: ThemeMode): String = stringResource(
+    when (mode) {
+        ThemeMode.SYSTEM -> R.string.settings_theme_system
+        ThemeMode.LIGHT -> R.string.settings_theme_light
+        ThemeMode.DARK -> R.string.settings_theme_dark
     }
 )
 

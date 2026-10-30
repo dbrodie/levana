@@ -1,9 +1,11 @@
 package ninja.doskey.app.levana.screenshots
 
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -73,5 +75,31 @@ class LocationsNoPermissionScreenshotTest(variant: Variant) : SettingsStateScree
         openLocations()
         awaitText(string(R.string.location_permission_needed))
         capture("settings_locations_no_permission")
+    }
+}
+
+/**
+ * Settings → Theme set against the system: Dark while the system is light and Light while it
+ * is dark. The whole app, its Settings summary included, follows the setting (TASK-13).
+ */
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(application = android.app.Application::class, qualifiers = ScreenshotTest.DEVICE)
+class ForcedThemeScreenshotTest(private val variant: Variant) : SettingsStateScreenshotTest(variant) {
+
+    override suspend fun seedPreferences(preferences: PreferencesRepository) {
+        super.seedPreferences(preferences)
+        val systemDark = variant == Variant.EN_DARK || variant == Variant.HE_DARK
+        preferences.saveThemeMode(if (systemDark) ThemeMode.LIGHT else ThemeMode.DARK)
+    }
+
+    @Test
+    fun forcedAgainstTheSystem() {
+        launchCalendar()
+        capture("app_calendar_forced_theme")
+        openDrawer()
+        clickable(string(R.string.nav_settings)).performClick()
+        await(hasText(string(R.string.settings_developer_settings)))
+        clickable(string(R.string.settings_holiday_theming_label)).performScrollTo()
+        capture("settings_appearance_forced_theme")
     }
 }

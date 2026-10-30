@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.ui.settings
 
 import ninja.doskey.app.levana.domain.model.IsraelMode
+import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.YahrzeitFirstYear
 import ninja.doskey.app.levana.domain.model.YahrzeitLeapYearAdar
 import ninja.doskey.app.levana.domain.model.YahrzeitMissingDay
@@ -13,6 +14,8 @@ sealed interface SettingsIntent {
     data class SetAppLanguage(val language: AppLanguage) : SettingsIntent
     data class SetCandleLightingOffset(val offset: Double) : SettingsIntent
     data class SetDynamicHolidayTheme(val enabled: Boolean) : SettingsIntent
+    data class SetThemeMode(val mode: ThemeMode) : SettingsIntent
+    data class SetMaterialYou(val enabled: Boolean) : SettingsIntent
     data class SetDevDateOverride(val date: LocalDate?) : SettingsIntent
     data class SetDevForceHolidayTheme(val theme: String?) : SettingsIntent
     data class SetNotifyCandleLighting(val enabled: Boolean) : SettingsIntent

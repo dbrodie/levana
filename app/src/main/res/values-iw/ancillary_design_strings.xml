@@ -28,6 +28,13 @@
     <string name="settings_app_language_label">שפת האפליקציה</string>
     <string name="settings_language_system">ברירת מחדל של המערכת</string>
     <string name="settings_language_hebrew">עברית</string>
+    <string name="settings_theme_label">ערכת נושא</string>
+    <string name="settings_theme_description">צבעים בהירים או כהים, או לפי הגדרת המערכת.</string>
+    <string name="settings_theme_system">ברירת מחדל של המערכת</string>
+    <string name="settings_theme_light">בהירה</string>
+    <string name="settings_theme_dark">כהה</string>
+    <string name="settings_material_you_label">צבעי הטפט</string>
+    <string name="settings_material_you_description">שימוש בצבעי Material You מהטפט. בחגים, עיצוב החגים קודם להם.</string>
     <string name="settings_holiday_theming_label">עיצוב חגים</string>
     <string name="settings_holiday_theming_description">שינוי צבעי האפליקציה בתקופות חג</string>
     <string name="event_title_label">כותרת</string>

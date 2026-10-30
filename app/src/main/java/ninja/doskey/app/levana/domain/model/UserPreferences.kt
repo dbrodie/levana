@@ -19,6 +19,9 @@ data class UserPreferences(
     val showModernIsraeliHolidays: Boolean = true,
     val calendarHebrewMode: Boolean = false,
     val dynamicHolidayTheme: Boolean = true,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    /** Material You: wallpaper colors, when the device supports them and no holiday theme applies. */
+    val materialYou: Boolean = false,
     val selectedCalendarIds: Set<Long> = emptySet(),
     val showDeveloperSettings: Boolean = true,
     /**

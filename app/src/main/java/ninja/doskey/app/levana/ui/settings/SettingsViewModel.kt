@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.ui.theme.supportsMaterialYou
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +32,7 @@ class SettingsViewModel(
         } else {
             AppLanguage.SYSTEM
         }
-        _state.value = _state.value.copy(appLanguage = initialLanguage)
+        _state.value = _state.value.copy(appLanguage = initialLanguage, materialYouSupported = supportsMaterialYou)
         observePreferences()
     }
 
@@ -57,6 +58,10 @@ class SettingsViewModel(
                     preferencesRepository.saveCandleLightingOffset(intent.offset)
                 is SettingsIntent.SetDynamicHolidayTheme ->
                     preferencesRepository.saveDynamicHolidayTheme(intent.enabled)
+                is SettingsIntent.SetThemeMode ->
+                    preferencesRepository.saveThemeMode(intent.mode)
+                is SettingsIntent.SetMaterialYou ->
+                    preferencesRepository.saveMaterialYou(intent.enabled)
                 is SettingsIntent.SetDevDateOverride ->
                     preferencesRepository.saveDevDateOverride(intent.date)
                 is SettingsIntent.SetDevForceHolidayTheme ->
@@ -115,6 +120,8 @@ class SettingsViewModel(
                     showModernIsraeliHolidays = prefs.showModernIsraeliHolidays,
                     candleLightingOffset = prefs.candleLightingOffset,
                     dynamicHolidayTheme = prefs.dynamicHolidayTheme,
+                    themeMode = prefs.themeMode,
+                    materialYou = prefs.materialYou,
                     showDeveloperSettings = prefs.showDeveloperSettings,
                     deviceToday = device.today,
                     overriddenDeviceDate = prefs.devDateOverride,
