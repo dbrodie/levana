@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ExpandLess
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -42,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -60,7 +63,7 @@ private data class DrawerNavItem(
 )
 
 /** The top-level routes listed in the drawer; they show the menu button instead of back. */
-private val DrawerRoutes = listOf(CalendarRoute, PersonalEventsRoute)
+private val DrawerRoutes = listOf(CalendarRoute, AgendaRoute, PersonalEventsRoute)
 
 internal fun isDrawerRoute(destination: NavDestination?): Boolean =
     destination?.let { dest -> DrawerRoutes.any { route -> dest.hasRoute(route::class) } } == true
@@ -81,8 +84,11 @@ internal fun LevanaDrawerContent(
 ) {
     // The drawer's selected-city picker; only the Zmanim screen and day panel use the city
     val locationName = prefs.displayCity.name
+    val calendarNavItems = listOf(
+        DrawerNavItem(stringResource(R.string.nav_month), Icons.Filled.CalendarViewMonth, CalendarRoute),
+        DrawerNavItem(stringResource(R.string.nav_agenda), Icons.Filled.ViewAgenda, AgendaRoute),
+    )
     val drawerNavItems = listOf(
-        DrawerNavItem(stringResource(R.string.nav_calendar), Icons.Filled.CalendarMonth, CalendarRoute),
         DrawerNavItem(stringResource(R.string.design_my_events), Icons.Filled.Event, PersonalEventsRoute)
     )
 
@@ -169,23 +175,17 @@ internal fun LevanaDrawerContent(
             )
             HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 color = MaterialTheme.colorScheme.outlineVariant)
-            drawerNavItems.forEach { item ->
-                val selected = currentDestination?.hasRoute(item.route::class) == true
-                NavigationDrawerItem(
-                    label = { Text(item.label, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal) },
-                    icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
-                    selected = selected,
-                    modifier = Modifier.padding(vertical = 2.dp),
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onNavigateTopLevel(item.route)
-                    },
-                )
-            }
+            // The calendar views: Month and Agenda
+            Text(
+                text = stringResource(R.string.nav_calendar),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
+            )
+            calendarNavItems.forEach { item -> DrawerNavigationItem(item, currentDestination, drawerState, scope, onNavigateTopLevel) }
+            HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant)
+            drawerNavItems.forEach { item -> DrawerNavigationItem(item, currentDestination, drawerState, scope, onNavigateTopLevel) }
             NavigationDrawerItem(
                 label = { Text(stringResource(R.string.nav_settings)) },
                 icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(22.dp)) },
@@ -198,4 +198,29 @@ internal fun LevanaDrawerContent(
             )
         }
     }
+}
+
+@Composable
+private fun DrawerNavigationItem(
+    item: DrawerNavItem,
+    currentDestination: NavDestination?,
+    drawerState: DrawerState,
+    scope: CoroutineScope,
+    onNavigateTopLevel: (route: Any) -> Unit,
+) {
+    val selected = currentDestination?.hasRoute(item.route::class) == true
+    NavigationDrawerItem(
+        label = { Text(item.label, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal) },
+        icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(22.dp)) },
+        selected = selected,
+        modifier = Modifier.padding(vertical = 2.dp),
+        colors = NavigationDrawerItemDefaults.colors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        onClick = {
+            scope.launch { drawerState.close() }
+            onNavigateTopLevel(item.route)
+        },
+    )
 }

@@ -132,6 +132,9 @@ fun CalendarScreen(
     modifier: Modifier = Modifier,
     /** A day to select on opening (a widget or notification deep link), or null for today. */
     initialDate: LocalDate? = null,
+    /** A day another screen asked to show (the agenda's holidays); [onDateShown] once selected. */
+    showDate: LocalDate? = null,
+    onDateShown: () -> Unit = {},
     viewModel: CalendarViewModel = koinViewModel(),
     dayDetailViewModel: DayDetailViewModel = koinViewModel()
 ) {
@@ -151,6 +154,13 @@ fun CalendarScreen(
         if (today != null && initialDate != null && !initialDateShown) {
             initialDateShown = true
             if (initialDate != today) viewModel.onIntent(CalendarIntent.GoToDate(initialDate))
+        }
+    }
+
+    LaunchedEffect(showDate, today != null) {
+        if (today != null && showDate != null) {
+            viewModel.onIntent(CalendarIntent.GoToDate(showDate))
+            onDateShown()
         }
     }
 

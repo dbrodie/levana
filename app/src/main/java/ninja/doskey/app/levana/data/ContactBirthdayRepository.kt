@@ -120,6 +120,23 @@ open class ContactBirthdayRepository(
         }
     }
 
+    /** Birthdays observed from [start] to [end] (inclusive), by day, each with its occurrence label (agenda). */
+    suspend fun getBirthdaysBetween(start: LocalDate, end: LocalDate): Map<LocalDate, List<BirthdayOccurrence>> {
+        val birthdays = getAll()
+        return withContext(ioDispatcher) {
+            birthdays.flatMap { bday ->
+                HebrewDateMatcher.occurrencesBetween(
+                    bday.hebrewDay,
+                    bday.hebrewMonth,
+                    bday.hebrewYear,
+                    useYahrzeitRules = false,
+                    start,
+                    end
+                ).map { (date, occurrence) -> date to BirthdayOccurrence(bday, occurrence.label) }
+            }.groupBy({ it.first }, { it.second })
+        }
+    }
+
     suspend fun getBirthdayDaysForHebrewMonth(year: Int, month: Int): Set<Int> {
         val birthdays = getAll()
         return withContext(ioDispatcher) {

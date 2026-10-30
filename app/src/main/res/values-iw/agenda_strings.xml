@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_month">חודש</string>
+    <string name="nav_agenda">סדר יום</string>
+    <string name="agenda_search">חיפוש</string>
+    <string name="agenda_search_hint">חיפוש אירועים, חגים, פרשות</string>
+    <string name="agenda_search_close">סגירת החיפוש</string>
+    <string name="agenda_search_clear">ניקוי החיפוש</string>
+    <string name="agenda_search_prompt">החיפוש כולל את 12 החודשים האחרונים והבאים</string>
+    <string name="agenda_search_empty">לא נמצא „%1$s” ב־12 החודשים האחרונים או הבאים</string>
+    <string name="agenda_show_in_agenda">הצגה בסדר היום</string>
+    <string name="agenda_empty">אין פריטים בתקופה זו</string>
+    <string name="agenda_candle_lighting">הדלקת נרות</string>
+    <string name="agenda_havdalah">הבדלה</string>
+    <string name="agenda_havdalah_at">הבדלה %1$s</string>
+    <string name="agenda_parsha">פרשת %1$s</string>
+    <string name="agenda_yahrzeit_title">יארצייט — %1$s</string>
+    <string name="agenda_birthday_title">יום הולדת — %1$s</string>
+    <string name="agenda_type_holiday">חג</string>
+    <string name="agenda_type_fast">צום</string>
+    <string name="agenda_type_shabbat">שבת</string>
+    <string name="agenda_day_today">%1$s, היום</string>
+    <string name="agenda_calendar_permission">אפשר להציג כאן גם את אירועי היומן בטלפון</string>
+    <string name="agenda_calendar_choose">בחירת יומנים</string>
+    <string name="agenda_not_now">לא עכשיו</string>
+</resources>

@@ -336,6 +336,35 @@ object HebrewDateMatcher {
         29
     }
 
+    /**
+     * Every observed day of a stored date from [start] to [end] (inclusive), with its
+     * occurrence, from [occurrences] for each Hebrew year the range spans. A day is listed
+     * exactly where [occurrenceOn] finds an occurrence, without asking it day by day.
+     */
+    fun occurrencesBetween(
+        hebrewDay: Int,
+        hebrewMonth: Int,
+        hebrewYear: Int,
+        useYahrzeitRules: Boolean,
+        start: LocalDate,
+        end: LocalDate,
+        rules: YahrzeitRules = YahrzeitRules()
+    ): List<Pair<LocalDate, Occurrence>> {
+        if (end.isBefore(start)) return emptyList()
+        return (hebrewYearOf(start)..hebrewYearOf(end)).flatMap { year ->
+            occurrences(hebrewDay, hebrewMonth, hebrewYear, useYahrzeitRules, year, rules)
+                .mapNotNull { occurrence -> gregorianDate(year, occurrence.month, occurrence.day)?.let { it to occurrence } }
+        }.filter { (date, _) -> !date.isBefore(start) && !date.isAfter(end) }
+            .sortedBy { it.first }
+    }
+
+    /** The Gregorian date of a Hebrew date, or null when [year] has no such month or day. */
+    private fun gregorianDate(year: Int, month: Int, day: Int): LocalDate? {
+        if (!isValidMonth(month) || (month == JewishDate.ADAR_II && !isEventLeapYear(year))) return null
+        if (day < 1 || day > daysInMonth(year, month)) return null
+        return JewishDate(year, month, day).localDate
+    }
+
     /** The occurrence of a stored date on a target Hebrew day, or null. */
     fun occurrenceOn(
         hebrewDay: Int,

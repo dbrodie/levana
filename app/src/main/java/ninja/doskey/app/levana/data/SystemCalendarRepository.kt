@@ -80,10 +80,34 @@ class SystemCalendarRepository(
             return emptyList()
         }
 
+        return getEventsForDateRange(date, date, calendarIds)[date].orEmpty()
+    }
+
+    /**
+     * The selected calendars' events from [start] to [end] (inclusive), listed on every date
+     * each one covers, in start order (agenda, day panel).
+     */
+    suspend fun getEventsForDateRange(
+        start: LocalDate,
+        end: LocalDate,
+        calendarIds: Set<Long>
+    ): Map<LocalDate, List<SystemCalendarEvent>> {
+        if (!hasCalendarPermission() || calendarIds.isEmpty()) {
+            return emptyMap()
+        }
+
         val zone = DeviceContext.realZone()
-        return queryInstances(date, date, calendarIds, zone)
-            .filter { it.coveredDates.overlaps(date, date) }
-            .map { it.event }
+        val result = linkedMapOf<LocalDate, MutableList<SystemCalendarEvent>>()
+        for (instance in queryInstances(start, end, calendarIds, zone)) {
+            val dates = instance.coveredDates
+            var day = maxOf(dates.start, start)
+            val last = minOf(dates.endInclusive, end)
+            while (!day.isAfter(last)) {
+                result.getOrPut(day) { mutableListOf() }.add(instance.event)
+                day = day.plusDays(1)
+            }
+        }
+        return result
     }
 
     suspend fun getEventColorsForDateRange(
@@ -138,7 +162,8 @@ class SystemCalendarRepository(
             CalendarContract.Instances.END,
             CalendarContract.Instances.ALL_DAY,
             CalendarContract.Instances.CALENDAR_ID,
-            CalendarContract.Instances.CALENDAR_COLOR
+            CalendarContract.Instances.CALENDAR_COLOR,
+            CalendarContract.Instances.EVENT_LOCATION
         )
 
         val calendarIdList = calendarIds.joinToString(",")
@@ -174,6 +199,9 @@ class SystemCalendarRepository(
             val colorIdx = cursor.getColumnIndex(
                 CalendarContract.Instances.CALENDAR_COLOR
             )
+            val locationIdx = cursor.getColumnIndex(
+                CalendarContract.Instances.EVENT_LOCATION
+            )
 
             while (cursor.moveToNext()) {
                 signal.throwIfCanceled()
@@ -199,7 +227,8 @@ class SystemCalendarRepository(
                     ),
                     allDay = allDay,
                     calendarId = calId,
-                    calendarColor = cursor.getInt(colorIdx)
+                    calendarColor = cursor.getInt(colorIdx),
+                    location = if (locationIdx >= 0) cursor.getString(locationIdx).orEmpty() else ""
                 )
                 events.add(
                     CalendarInstance(
@@ -247,10 +276,5 @@ class SystemCalendarRepository(
             }
             return first..maxOf(first, last)
         }
-
-        private fun ClosedRange<LocalDate>.overlaps(
-            from: LocalDate,
-            to: LocalDate
-        ): Boolean = !start.isAfter(to) && !endInclusive.isBefore(from)
     }
 }

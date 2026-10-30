@@ -9,5 +9,7 @@ data class SystemCalendarEvent(
     val endTime: LocalDateTime,
     val allDay: Boolean,
     val calendarId: Long,
-    val calendarColor: Int
+    val calendarColor: Int,
+    /** The event's location as entered in the calendar, or blank. */
+    val location: String = ""
 )
