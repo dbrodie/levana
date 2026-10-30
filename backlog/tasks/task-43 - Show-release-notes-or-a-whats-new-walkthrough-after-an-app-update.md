@@ -138,6 +138,8 @@ To see the whole page in the Paseo browser, scroll the page background, not a ph
 - The emulator's GPS (California) vs zone (Israel) triggers the existing TASK-46 zone notice after the walkthrough; unrelated.
 - Granting notifications doesn't turn on any reminder category (unchanged defaults); the explanation points to Settings.
 - `agenda` screen deliberately not added (after TASK-8).
+
+- AC #2 caveat: the walkthrough and its illustrations take every color from MaterialTheme (except the fixed theme swatches and two sample calendar colors on the Appearance/Calendars cards), so Material You and holiday themes apply through LevanaTheme; no baselines or emulator shots were captured specifically in a holiday or Material You theme.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
