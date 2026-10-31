@@ -12,7 +12,7 @@ The app had no release pipeline. Builds were signed with the debug keystore and 
 
 - `versionName` = tag with `v` prefix stripped (e.g. `v0.1.1` → `"0.1.1"`)
 - `versionCode` = `major * 10000 + minor * 100 + patch` (e.g. `v1.2.3` → `10203`)
-- Local/dev builds without a tag fall back to `versionName = "0.0.0-dev"`, `versionCode = 0`
+- Local/dev builds without a tag fall back to `versionName = "0.0.0-dev"`, `versionCode = 1`
 
 The versionCode scheme is strictly increasing for monotonically increasing semver tags and supports up to `v2147.99.99`.
 
@@ -58,6 +58,21 @@ empty or longer than 500 characters, the run fails before building, with an erro
 naming the expected file. To recover, add the changelog, commit, delete the tag
 (`git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`) and tag the new commit.
 
+## Reproducible Build Check
+
+Every release APK must be reproducible from the tag without the signing key, because F-Droid
+publishes our signed APK only after its own unsigned rebuild matches it (TASK-53). After each
+successful Release run, `.github/workflows/verify-release.yml` rebuilds the tag with no secrets and
+compares it with the published `levana-v<ver>.apk` (`apksigcopier compare --unsigned`). It also
+checks the package, versionCode, versionName and the signing certificate SHA-256. On a mismatch,
+it uploads a diffoscope report and the release notes get a ❌ line; on success they get a ✅ line.
+To re-check any tag, run it from the Actions tab (**Run workflow**, enter the tag).
+
+The release workflow pins the JDK (Temurin 17.0.21+9), and both workflows must stay on the same
+one. Without a keystore, `assembleRelease` produces an unsigned APK; use
+`-Plevana.debugSignRelease=true` to sign a local release build with the debug key. Details,
+manual verification and key backup: `docs/fdroid/README.md`.
+
 ## Store Metadata
 
 `fastlane/metadata/android/en-US/` holds the store listing in Fastlane layout, which
@@ -70,7 +85,9 @@ with the Play Console listing.
 
 - `app/build.gradle.kts` — version from env vars; release signing config
 - `.gitignore` — ignore `keystore.properties` and `*.keystore`
-- `.github/workflows/release.yml` — CI workflow (including the changelog check)
+- `.github/workflows/release.yml` — CI workflow (including the changelog and certificate checks)
+- `.github/workflows/verify-release.yml` — secret-free reproducible-build check
+- `docs/fdroid/README.md` — reproducible build, manual verification, key backup
 - `fastlane/metadata/android/en-US/` — store metadata and per-version changelogs
 
 ## Future Extensions

@@ -1,0 +1,193 @@
+# Rebuilds a release tag from source without any secrets and checks that the result is the
+# developer-signed APK on the GitHub Release, apart from the signature. This is the same
+# check F-Droid runs before it publishes our APK (docs/fdroid/README.md).
+name: Verify reproducible release
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to verify, e.g. v0.4.3
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: verify-release-${{ inputs.tag || github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+env:
+  PACKAGE_ID: ninja.doskey.app.levana
+  # SHA-256 of the release signing certificate, which is also the Play app-signing certificate
+  EXPECTED_CERT_SHA256: ab02841e88825c51c8f0b0f013ff4e312bca47ea1bfbffa894b51890ad5a5117
+  BUILD_TOOLS_VERSION: 35.0.0
+  APKSIGCOPIER_VERSION: 1.1.1
+
+jobs:
+  verify:
+    name: Rebuild and compare
+    # Only releases from a tag push; this workflow never reads secrets
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Resolve tag
+        id: tag
+        env:
+          TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$TAG' is not a release tag (vX.Y.Z)"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          IFS='.' read -r MAJ MIN PAT <<< "$VERSION"
+          {
+            echo "tag=$TAG"
+            echo "name=$VERSION"
+            echo "code=$(( MAJ * 10000 + MIN * 100 + PAT ))"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: refs/tags/${{ steps.tag.outputs.tag }}
+          persist-credentials: false
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          java-version: '17.0.21+9'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      # No Gradle cache: the rebuild must not depend on anything an earlier run left behind
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          cache-disabled: true
+
+      - name: Build the unsigned release APK
+        env:
+          VERSION_NAME: ${{ steps.tag.outputs.name }}
+        run: |
+          ./gradlew :app:assembleRelease --no-daemon --no-build-cache
+          mkdir -p "$RUNNER_TEMP/apks"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/apks/rebuilt-unsigned.apk"
+
+      - name: Download the signed APK from the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "levana-$TAG.apk" --output "$RUNNER_TEMP/apks/signed.apk"
+
+      - name: Check package, version and signing certificate
+        env:
+          VERSION_NAME: ${{ steps.tag.outputs.name }}
+          VERSION_CODE: ${{ steps.tag.outputs.code }}
+        run: |
+          BT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION"
+          cd "$RUNNER_TEMP/apks"
+          status=0
+          for apk in signed.apk rebuilt-unsigned.apk; do
+            badging=$("$BT/aapt2" dump badging "$apk" | head -1)
+            echo "$apk: $badging"
+            expected="package: name='$PACKAGE_ID' versionCode='$VERSION_CODE' versionName='$VERSION_NAME' "
+            if [[ "$badging" != "$expected"* ]]; then
+              echo "::error::$apk: expected $expected"
+              status=1
+            fi
+          done
+          certs=$("$BT/apksigner" verify --print-certs signed.apk)
+          echo "$certs"
+          digests=$(grep -E '^Signer #[0-9]+ certificate SHA-256 digest:' <<< "$certs" | awk '{print $NF}')
+          if [ "$digests" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Signed APK certificate SHA-256 is '$digests'; expected exactly one signer with $EXPECTED_CERT_SHA256"
+            status=1
+          fi
+          exit $status
+
+      - name: Compare with apksigcopier
+        id: compare
+        run: |
+          pip install --quiet "apksigcopier==$APKSIGCOPIER_VERSION"
+          export PATH="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION:$PATH"
+          cd "$RUNNER_TEMP/apks"
+          if apksigcopier compare --unsigned signed.apk rebuilt-unsigned.apk; then
+            echo "Rebuilt APK matches the signed release APK (apart from the signature)."
+          else
+            echo "::error::The rebuilt APK does not match the signed release APK. See the diffoscope artifact."
+            exit 1
+          fi
+
+      - name: Diffoscope report
+        if: failure() && steps.compare.outcome == 'failure'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends diffoscope-minimal unzip
+          mkdir -p "$RUNNER_TEMP/diffoscope"
+          cd "$RUNNER_TEMP/apks"
+          diffoscope --html "$RUNNER_TEMP/diffoscope/report.html" \
+            --text "$RUNNER_TEMP/diffoscope/report.txt" \
+            signed.apk rebuilt-unsigned.apk || true
+          head -c 60000 "$RUNNER_TEMP/diffoscope/report.txt" || true
+
+      - name: Upload APKs and diffoscope report
+        if: failure() && steps.compare.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reproducibility-${{ steps.tag.outputs.tag }}
+          path: |
+            ${{ runner.temp }}/diffoscope
+            ${{ runner.temp }}/apks
+
+      - name: Summary
+        if: always()
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "### Reproducible build: $TAG"
+            echo ""
+            echo "Result: **$OUTCOME**. Expected certificate SHA-256: \`$EXPECTED_CERT_SHA256\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Records the outcome on the release page. Runs no repository code, so it is the only job
+  # with write access.
+  report:
+    name: Record result on the release
+    needs: verify
+    if: always() && needs.verify.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Update the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.verify.outputs.tag }}
+          RESULT: ${{ needs.verify.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$RESULT" = success ]; then
+            line="✅ Reproducible build verified: an independent rebuild of $TAG without the signing key matches this APK ([run]($RUN_URL))."
+          else
+            line="❌ Reproducible build check failed for $TAG ([run]($RUN_URL))."
+          fi
+          body=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body -q .body |
+            sed '/<!-- reproducible-build -->/,/<!-- \/reproducible-build -->/d')
+          printf '%s\n\n<!-- reproducible-build -->\n%s\n<!-- /reproducible-build -->\n' "$body" "$line" > "$RUNNER_TEMP/notes.md"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/notes.md"
+          if [ "$RESULT" != success ]; then
+            echo "::error::Reproducible build check for $TAG: $RESULT"
+            exit 1
+          fi
