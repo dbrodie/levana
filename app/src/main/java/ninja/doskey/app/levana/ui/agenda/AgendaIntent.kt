@@ -14,6 +14,8 @@ sealed interface AgendaIntent {
     data object CloseDatePicker : AgendaIntent
     data class GoToDate(val date: LocalDate) : AgendaIntent
     data class ScrollHandled(val id: Long) : AgendaIntent
+    /** [date] is the day at the top of the list; kept to reopen there after the process is killed. */
+    data class TopDayShown(val date: LocalDate) : AgendaIntent
     data object OpenSearch : AgendaIntent
     data object CloseSearch : AgendaIntent
     data class SetSearchQuery(val query: String) : AgendaIntent

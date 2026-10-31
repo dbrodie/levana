@@ -26,8 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -57,7 +57,7 @@ fun DeveloperSettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var showDateDialog by remember { mutableStateOf(false) }
+    var showDateDialog by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = modifier.verticalScroll(rememberScrollState()).contentWidth()) {
         ListItem(
@@ -139,7 +139,7 @@ fun DeveloperSettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HolidayThemePicker(selected: String?, onSelect: (String?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val options: List<HolidayTheme?> = listOf(null) + HolidayTheme.entries
     val selectedTheme = selected?.let { name -> HolidayTheme.entries.firstOrNull { it.name == name } }
     val displayValue = holidayThemeLabel(selectedTheme)

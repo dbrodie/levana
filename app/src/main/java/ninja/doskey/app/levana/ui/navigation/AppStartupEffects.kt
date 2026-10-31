@@ -1,5 +1,9 @@
 package ninja.doskey.app.levana.ui.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -24,6 +28,7 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.icon.DateRollover
 import ninja.doskey.app.levana.icon.DynamicIconManager
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 /**
@@ -55,17 +60,23 @@ internal fun LevanaStartupEffects(
         }
     }
 
-    // Current-location refresh on resume
+    // Current-location refresh on resume; not when a fold, rotation or resize recreated the
+    // activity (each new composition sees a resume), so no new fix or geocoder call for it
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val shell: ShellViewModel = koinViewModel()
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                scope.launch {
-                    locationService.getCurrentLocationOrNull()
-                        ?.let { preferencesRepository.updateCurrentLocation(it) }
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> if (shell.shouldRefreshLocation(SystemClock.elapsedRealtime())) {
+                    scope.launch {
+                        locationService.getCurrentLocationOrNull()
+                            ?.let { preferencesRepository.updateCurrentLocation(it) }
+                    }
                 }
+                Lifecycle.Event.ON_STOP -> shell.onStop(context.findActivity()?.isChangingConfigurations == true)
+                else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -94,4 +105,10 @@ internal fun LevanaStartupEffects(
             if (openZmanim) navController.navigate(ZmanimRoute(deepLinkEpochDay))
         }
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -55,7 +55,8 @@ class DayDetailViewModel(
 
     fun onIntent(intent: DayDetailIntent) {
         when (intent) {
-            is DayDetailIntent.LoadDay -> loadDay(intent.date)
+            // The day already shown (or loading) stays: a fold or rotation re-sends it
+            is DayDetailIntent.LoadDay -> if (intent.date != lastLoadedDate) loadDay(intent.date)
             is DayDetailIntent.Resume -> changeRefresher.onResume()
             is DayDetailIntent.Pause -> changeRefresher.onPause()
         }

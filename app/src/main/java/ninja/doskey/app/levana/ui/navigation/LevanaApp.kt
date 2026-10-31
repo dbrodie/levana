@@ -5,7 +5,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +20,7 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.ui.walkthrough.WalkthroughIntent
 import ninja.doskey.app.levana.ui.walkthrough.WalkthroughScreen
 import ninja.doskey.app.levana.ui.walkthrough.activityWalkthroughViewModel
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 /**
@@ -38,9 +38,9 @@ fun LevanaApp(deepLinkEpochDay: Long = 0L, openZmanim: Boolean = false) {
         navController.previousBackStackEntry != null
 
     val preferencesRepository: PreferencesRepository = koinInject()
-    val prefs by preferencesRepository.preferences.collectAsState(
-        initial = null
-    )
+    // Kept across recreations: a recreated shell shows at once, without an empty frame
+    val shell: ShellViewModel = koinViewModel()
+    val prefs by shell.preferences.collectAsStateWithLifecycle()
 
     val currentPrefs = prefs ?: return
 

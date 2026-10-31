@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.calendar
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.CalendarRepository
@@ -31,10 +32,12 @@ class CalendarViewModel(
     private val contactBirthdayRepository: ContactBirthdayRepository,
     private val systemCalendarRepository: SystemCalendarRepository,
     private val deviceContext: DeviceContext,
-    eventDataChanges: EventDataChanges
+    eventDataChanges: EventDataChanges,
+    /** Keeps the selected day and the Go to date dialog if the process is killed (TASK-52.3). */
+    private val savedState: SavedStateHandle = SavedStateHandle()
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(CalendarState())
+    private val _state = MutableStateFlow(CalendarState(showGoToDateDialog = savedState[KEY_GO_TO_DATE] ?: false))
     val state: StateFlow<CalendarState> = _state.asStateFlow()
 
     private val _hebrewScrollTarget = Channel<HebrewYearMonth>(Channel.CONFLATED)
@@ -50,9 +53,23 @@ class CalendarViewModel(
 
     private val changeRefresher = ChangeRefresher(viewModelScope, eventDataChanges, refresh = ::refresh)
 
+    // The day selected before the process was killed, if any
+    private val restoredDate: LocalDate? = savedState.get<Long>(KEY_SELECTED_DAY)?.let(LocalDate::ofEpochDay)
+
     init {
         observePreferences()
         observeToday()
+        saveState()
+    }
+
+    private fun saveState() {
+        viewModelScope.launch {
+            _state.collect { state ->
+                // The selected day is a placeholder until today is known
+                if (state.today != null) savedState[KEY_SELECTED_DAY] = state.selectedDate.toEpochDay()
+                savedState[KEY_GO_TO_DATE] = state.showGoToDateDialog
+            }
+        }
     }
 
     /** Moves the today highlight when the device date changes while the app is alive. */
@@ -173,11 +190,21 @@ class CalendarViewModel(
                     locationName = prefs.displayCity.name,
                     calendarHebrewMode = prefs.calendarHebrewMode,
                     today = today,
-                    // The calendar opens on the device's today
-                    selectedDate = if (firstLoad) today else _state.value.selectedDate
+                    // The calendar opens on the device's today, or after the process was killed on
+                    // the day selected before
+                    selectedDate = if (firstLoad) restoredDate ?: today else _state.value.selectedDate
                 )
                 if (_state.value.monthDays.isEmpty()) {
-                    onIntent(CalendarIntent.LoadToday)
+                    if (firstLoad && restoredDate != null) {
+                        // The month pager restores its own page and loads that month
+                        if (prefs.calendarHebrewMode) {
+                            loadHebrewMonth(HebrewYearMonth.from(restoredDate))
+                        } else {
+                            loadMonth(YearMonth.from(restoredDate))
+                        }
+                    } else {
+                        onIntent(CalendarIntent.LoadToday)
+                    }
                 } else if (modeChanged) {
                     // Switching calendar systems follows the currently selected day,
                     // rather than unexpectedly returning a browsed calendar to today.
@@ -379,5 +406,10 @@ class CalendarViewModel(
                 )
             }
         }
+    }
+
+    private companion object {
+        const val KEY_SELECTED_DAY = "selectedDay"
+        const val KEY_GO_TO_DATE = "goToDateOpen"
     }
 }

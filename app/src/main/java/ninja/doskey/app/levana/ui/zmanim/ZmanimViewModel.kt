@@ -23,7 +23,12 @@ class ZmanimViewModel(
     private val _state = MutableStateFlow(ZmanimState())
     val state: StateFlow<ZmanimState> = _state.asStateFlow()
 
+    // The screen re-sends its load when a fold or rotation recreates it; the first one stays
+    private var requested: ZmanimIntent? = null
+
     fun onIntent(intent: ZmanimIntent) {
+        if (intent == requested) return
+        requested = intent
         when (intent) {
             is ZmanimIntent.LoadDate -> loadZmanim(intent.date)
             is ZmanimIntent.LoadDefault -> viewModelScope.launch {

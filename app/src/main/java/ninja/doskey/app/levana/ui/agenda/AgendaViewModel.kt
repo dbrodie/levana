@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.agenda
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.AgendaRepository
@@ -28,10 +29,20 @@ class AgendaViewModel(
     private val agendaRepository: AgendaRepository,
     private val preferencesRepository: PreferencesRepository,
     private val deviceContext: DeviceContext,
-    eventDataChanges: EventDataChanges
+    eventDataChanges: EventDataChanges,
+    /**
+     * Keeps the day at the top, the search and the open date picker if the process is killed
+     * (TASK-52.3); a configuration change keeps the whole view model.
+     */
+    private val savedState: SavedStateHandle = SavedStateHandle()
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AgendaState())
+    private val _state = MutableStateFlow(
+        AgendaState(
+            datePickerDate = savedState.get<Long>(KEY_DATE_PICKER)?.let(LocalDate::ofEpochDay),
+            search = savedState.get<String>(KEY_SEARCH)?.let { AgendaSearchState(query = it) },
+        )
+    )
     val state: StateFlow<AgendaState> = _state.asStateFlow()
 
     private var prefs: UserPreferences? = null
@@ -56,6 +67,12 @@ class AgendaViewModel(
                 if (prefs != null) _state.value = _state.value.copy(today = today)
             }
         }
+        viewModelScope.launch {
+            _state.collect { state ->
+                savedState[KEY_DATE_PICKER] = state.datePickerDate?.toEpochDay()
+                savedState[KEY_SEARCH] = state.search?.query
+            }
+        }
     }
 
     fun onIntent(intent: AgendaIntent) {
@@ -75,6 +92,7 @@ class AgendaViewModel(
                 _state.value = _state.value.copy(datePickerDate = null)
                 jumpTo(intent.date)
             }
+            is AgendaIntent.TopDayShown -> savedState[KEY_TOP_DAY] = intent.date.toEpochDay()
             is AgendaIntent.ScrollHandled -> {
                 if (_state.value.scrollRequest?.id == intent.id) {
                     _state.value = _state.value.copy(scrollRequest = null)
@@ -108,8 +126,11 @@ class AgendaViewModel(
             otherClockCityName = otherClockCityName(new.displayCity, device.zone)
         )
         when {
-            // The agenda opens on today
-            old == null -> loadWindow(device.today)
+            // The agenda opens on today, or after the process was killed where it was
+            old == null -> {
+                loadWindow(savedState.get<Long>(KEY_TOP_DAY)?.let(LocalDate::ofEpochDay) ?: device.today)
+                if (_state.value.search != null) loadSearch()
+            }
             // The leading calendar only regroups the same days
             old.copy(calendarHebrewMode = new.calendarHebrewMode) != new -> refresh()
         }
@@ -249,5 +270,8 @@ class AgendaViewModel(
     companion object {
         /** Days loaded at a time; the first window spans one chunk back and two ahead. */
         const val CHUNK_DAYS = 42L
+        private const val KEY_TOP_DAY = "topDay"
+        private const val KEY_SEARCH = "search"
+        private const val KEY_DATE_PICKER = "datePicker"
     }
 }

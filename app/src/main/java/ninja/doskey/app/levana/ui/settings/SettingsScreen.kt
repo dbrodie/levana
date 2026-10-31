@@ -28,7 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -77,14 +77,14 @@ fun SettingsContent(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showYahrzeitLeapDialog by remember { mutableStateOf(false) }
-    var showYahrzeitFirstYearDialog by remember { mutableStateOf(false) }
-    var showYahrzeitMissingDayDialog by remember { mutableStateOf(false) }
-    var showAppLanguageDialog by remember { mutableStateOf(false) }
-    var showThemeModeDialog by remember { mutableStateOf(false) }
-    var showIsraelModeDialog by remember { mutableStateOf(false) }
-    var showCandleLightingOffsetDialog by remember { mutableStateOf(false) }
-    var showCandleLightingModeDialog by remember { mutableStateOf(false) }
+    var showYahrzeitLeapDialog by rememberSaveable { mutableStateOf(false) }
+    var showYahrzeitFirstYearDialog by rememberSaveable { mutableStateOf(false) }
+    var showYahrzeitMissingDayDialog by rememberSaveable { mutableStateOf(false) }
+    var showAppLanguageDialog by rememberSaveable { mutableStateOf(false) }
+    var showThemeModeDialog by rememberSaveable { mutableStateOf(false) }
+    var showIsraelModeDialog by rememberSaveable { mutableStateOf(false) }
+    var showCandleLightingOffsetDialog by rememberSaveable { mutableStateOf(false) }
+    var showCandleLightingModeDialog by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier
