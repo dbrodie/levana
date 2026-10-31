@@ -3,11 +3,11 @@ id: TASK-52.5
 title: >-
   Foldable postures and outer surfaces: half-folded, cover screen, widgets,
   tile, icon
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-30T13:37:00Z'
+updated_date: '2026-10-31T16:36:00Z'
 labels: []
 dependencies:
   - TASK-52.1
@@ -102,3 +102,15 @@ Setup: `Levana_Fold8_API_36_1` and `Levana_Fold8_Ultra_API_36_1`, headless and r
 ## Verification
 `rm -rf app/build/test-results && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks`: BUILD SUCCESSFUL. 1051 tests, 0 failures, 0 errors, 0 skipped. Roborazzi verify passed, and the git tree was clean afterwards (only the new TASK-54 file). Lint: 0 errors, 83 warnings (unchanged; no code touched). Log: /tmp/levana-task52.5-evidence/gradle-verify.log. Both emulators were stopped after use.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-31T16:36:00Z
+
+---
+
+Coordinator integration 2026-10-31: verification-only (no app code changed; branch's own clean run 1051 tests, 0 failures, Roborazzi unchanged). Merged as c4bf92e. All surfaces OK on Fold8/Fold8 Ultra AVDs folded, unfolded and half-folded; Samsung-only behaviour untested. Filed TASK-54 (Chanukah 'begins tomorrow' reminder). Optional design ideas (tabletop layout, widget previews, larger month-widget text) recorded in notes. Evidence: /tmp/levana-task52.5-evidence/.
+
+---
+<!-- COMMENTS:END -->
