@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.notifications
 
 import android.app.Application
+import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +23,7 @@ import ninja.doskey.app.levana.ui.zmanim.ZmanimViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
+import org.koin.core.parameter.parametersOf
 import org.junit.runner.RunWith
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -103,7 +105,8 @@ class IntegrationVerifierSettingsFlowTest {
             assertNotNull(koin.get<NotificationAlarmScheduler>())
             assertNotNull(koin.get<EventDataChanges>())
             assertNotNull(koin.get<EventFileRepository>())
-            assertNotNull(koin.get<CalendarViewModel>())
+            // koinViewModel() supplies the SavedStateHandle; here the test does
+            assertNotNull(koin.get<CalendarViewModel> { parametersOf(SavedStateHandle()) })
             assertNotNull(koin.get<DayDetailViewModel>())
             assertNotNull(koin.get<EventsViewModel>())
             assertNotNull(koin.get<ContactBirthdayViewModel>())

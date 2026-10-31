@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -41,6 +42,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
@@ -139,7 +141,7 @@ class VerifyReactiveRefreshLifecycleTest {
     }
 
     private fun calendarAt(month: YearMonth = browsedMonth, date: LocalDate = selected): CalendarViewModel {
-        val c = vm { koin.get<CalendarViewModel>() }
+        val c = vm { koin.get<CalendarViewModel> { parametersOf(SavedStateHandle()) } }
         awaitUntil("initial load") { !c.state.value.isLoading && c.state.value.monthDays.isNotEmpty() }
         c.onIntent(CalendarIntent.Resume)
         c.onIntent(CalendarIntent.LoadMonth(month))
@@ -360,7 +362,7 @@ class VerifyReactiveRefreshLifecycleTest {
         // The screen's pager opens on today's month, so use a day in it.
         val month = YearMonth.now()
         val day = month.atDay(if (LocalDate.now().dayOfMonth == 14) 15 else 14)
-        val c = vm { koin.get<CalendarViewModel>() }
+        val c = vm { koin.get<CalendarViewModel> { parametersOf(SavedStateHandle()) } }
         val d = vm { koin.get<DayDetailViewModel>() }
         val owner = Owner().apply { registry.currentState = Lifecycle.State.RESUMED }
         compose.setContent {

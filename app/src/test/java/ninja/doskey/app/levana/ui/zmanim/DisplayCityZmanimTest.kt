@@ -22,6 +22,7 @@ import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.ui.otherClockCityName
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -132,6 +133,21 @@ class DisplayCityZmanimTest {
             ZmanimRepository().getZmanim(thursday, Location.JERUSALEM, 18.0, false),
             state.zmanim
         )
+    }
+
+    @Test
+    fun aRepeatedLoadOfTheShownDateDoesNotReload() {
+        val vm = zmanimViewModel()
+        val friday = thursday.plusDays(1)
+        vm.onIntent(ZmanimIntent.LoadDate(friday))
+        awaitUntil { !vm.state.value.isLoading && vm.state.value.date == friday }
+        // A fold or rotation re-sends it: no spinner, same day
+        vm.onIntent(ZmanimIntent.LoadDate(friday))
+        assertFalse(vm.state.value.isLoading)
+        assertEquals(friday, vm.state.value.date)
+        // Another day still loads
+        vm.onIntent(ZmanimIntent.LoadDate(thursday))
+        awaitUntil { !vm.state.value.isLoading && vm.state.value.date == thursday }
     }
 
     @Test

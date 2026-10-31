@@ -19,7 +19,13 @@ import androidx.room.Room
 import androidx.test.core.app.ActivityScenario
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import android.os.Bundle
 import android.os.Looper
+import android.os.Parcel
+import androidx.lifecycle.Lifecycle
+import androidx.test.platform.app.InstrumentationRegistry
+import org.robolectric.Robolectric
+import org.robolectric.android.controller.ActivityController
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
@@ -92,6 +98,8 @@ abstract class ScreenshotTest(
     protected lateinit var koin: Koin
     protected lateinit var db: LevanaDatabase
     private var scenario: ActivityScenario<MainActivity>? = null
+    /** The activity [restoreAfterProcessDeath] started, outside [scenario]. */
+    private var restored: ActivityController<MainActivity>? = null
     private lateinit var savedZone: TimeZone
     private lateinit var devicePreferences: StateFlow<UserPreferences>
 
@@ -150,6 +158,7 @@ abstract class ScreenshotTest(
     @After
     fun tearDownScreenshot() {
         scenario?.close()
+        restored?.pause()?.stop()?.destroy()
         stopKoin()
         db.close()
         AppDataStores.clearPreferences(app)
@@ -208,9 +217,42 @@ abstract class ScreenshotTest(
         await(hasText(string(R.string.settings_developer_settings)))
     }
 
+    /**
+     * A configuration change, such as a fold, unfold, rotation or entering split screen: applies
+     * [qualifiers] (e.g. a [FoldableSize]'s) and recreates the activity, keeping its view models.
+     */
+    protected fun recreate(qualifiers: String? = null) {
+        qualifiers?.let { RuntimeEnvironment.setQualifiers(it) }
+        checkNotNull(scenario) { "launch first" }.recreate()
+        advanceFrame()
+    }
+
+    /**
+     * The process killed in the background and the app reopened: the activity's saved state
+     * (parcelled, as the system keeps it) goes to a new activity with new view models.
+     */
+    protected fun restoreAfterProcessDeath(intent: Intent = Intent(app, MainActivity::class.java)) {
+        val current = checkNotNull(scenario) { "launch first" }
+        val saved = Bundle()
+        current.moveToState(Lifecycle.State.CREATED)
+        current.onActivity { InstrumentationRegistry.getInstrumentation().callActivityOnSaveInstanceState(it, saved) }
+        current.close()
+        scenario = null
+        val parcel = Parcel.obtain()
+        val bundle = try {
+            parcel.writeBundle(saved)
+            parcel.setDataPosition(0)
+            parcel.readBundle(app.classLoader)
+        } finally {
+            parcel.recycle()
+        }
+        restored = Robolectric.buildActivity(MainActivity::class.java, intent).setup(bundle)
+        advanceFrame()
+    }
+
     /** Runs [block] on the launched activity, e.g. to deliver an activity result. */
     protected fun onActivity(block: (MainActivity) -> Unit) {
-        checkNotNull(scenario) { "launch first" }.onActivity(block)
+        restored?.let { block(it.get()) } ?: checkNotNull(scenario) { "launch first" }.onActivity(block)
         advanceFrame()
     }
 
