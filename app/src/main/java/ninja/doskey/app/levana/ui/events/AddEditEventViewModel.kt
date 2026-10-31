@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.events
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ninja.doskey.app.levana.data.HebrewDateMatcher
@@ -13,10 +14,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class AddEditEventViewModel(
     private val repository: PersonalEventRepository,
-    private val deviceContext: DeviceContext
+    private val deviceContext: DeviceContext,
+    /** Keeps unsaved input if the process is killed (TASK-52.3). */
+    private val savedState: SavedStateHandle = SavedStateHandle()
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddEditEventState())
@@ -37,16 +43,78 @@ class AddEditEventViewModel(
     // writes it back unchanged (TASK-24)
     private var preservedDate: Triple<Int, Int, Int>? = null
 
+    // The screen re-sends its load and prefill when a fold or rotation recreates it; each
+    // applies once, so they never replace what the user has typed or picked since
+    private var requestedEventId: Long? = null
+    private var prefilled = false
+
     init {
+        savedState.get<String>(KEY_DRAFT)?.let { restore(Json.decodeFromString<Draft>(it)) }
         viewModelScope.launch {
             val year = currentYear.await()
             if (!yearChosen) setDate(year = SupportedHebrewYears.coerce(year), chosen = false)
         }
+        viewModelScope.launch {
+            _state.collect { savedState[KEY_DRAFT] = Json.encodeToString(draft(it)) }
+        }
+    }
+
+    /** What the editor holds, enough to carry on after the process is killed. */
+    @Serializable
+    private data class Draft(
+        val loadedEventId: Long?,
+        val title: String,
+        val day: Int,
+        val month: Int,
+        val year: Int,
+        val notes: String,
+        val useYahrzeitRules: Boolean,
+        val showDatePicker: Boolean,
+        val yearChosen: Boolean,
+        val prefilled: Boolean,
+        val preservedDate: List<Int>?,
+    )
+
+    // A stored event counts as loaded once shown, so one killed mid-load loads again
+    private fun draft(s: AddEditEventState) = Draft(
+        loadedEventId = s.eventId.takeIf { s.isEditing },
+        title = s.title,
+        day = s.hebrewDay,
+        month = s.hebrewMonth,
+        year = s.hebrewYear,
+        notes = s.notes,
+        useYahrzeitRules = s.useYahrzeitRules,
+        showDatePicker = s.showDatePicker,
+        yearChosen = yearChosen,
+        prefilled = prefilled,
+        preservedDate = preservedDate?.toList(),
+    )
+
+    private fun restore(d: Draft) {
+        requestedEventId = d.loadedEventId
+        yearChosen = d.yearChosen
+        prefilled = d.prefilled
+        preservedDate = d.preservedDate?.let { (day, month, year) -> Triple(day, month, year) }
+        _state.value = AddEditEventState(
+            isEditing = d.loadedEventId != null,
+            eventId = d.loadedEventId ?: 0,
+            title = d.title,
+            hebrewDay = d.day,
+            hebrewMonth = d.month,
+            hebrewYear = d.year,
+            notes = d.notes,
+            useYahrzeitRules = d.useYahrzeitRules,
+            showDatePicker = d.showDatePicker,
+        )
     }
 
     fun onIntent(intent: AddEditEventIntent) {
         when (intent) {
-            is AddEditEventIntent.LoadEvent -> loadEvent(intent.eventId)
+            is AddEditEventIntent.LoadEvent -> {
+                if (intent.eventId == requestedEventId) return
+                requestedEventId = intent.eventId
+                loadEvent(intent.eventId)
+            }
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
             is AddEditEventIntent.OpenDatePicker ->
@@ -64,6 +132,8 @@ class AddEditEventViewModel(
                     useYahrzeitRules = intent.enabled
                 )
             is AddEditEventIntent.PreFillDate -> {
+                if (prefilled) return
+                prefilled = true
                 preservedDate = null
                 // A calendar date is kept as picked; an unusable year is not
                 val year = if (HebrewDateMatcher.isKnownYear(intent.year)) {
@@ -177,5 +247,9 @@ class AddEditEventViewModel(
                 saved = true
             )
         }
+    }
+
+    private companion object {
+        const val KEY_DRAFT = "draft"
     }
 }

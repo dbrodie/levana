@@ -55,6 +55,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -136,7 +137,7 @@ fun EventsScreen(
     }
 
     // Overflow menu state — defined here so the lambda registered below can capture it
-    val showOverflowMenuState = remember { mutableStateOf(false) }
+    val showOverflowMenuState = rememberSaveable { mutableStateOf(false) }
 
     // Register the MoreVert button into the parent's TopAppBar for this screen's lifetime.
     // The button is only visible on the Events tab (page 1), not the Birthdays tab.
@@ -409,7 +410,7 @@ internal fun BirthdaysTab(
 
 @Composable
 private fun BirthdayCard(birthday: ContactBirthday, onClick: () -> Unit, onDelete: () -> Unit) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -556,7 +557,7 @@ internal fun CustomEventsTab(
 
 @Composable
 private fun EventCard(event: PersonalEvent, onClick: () -> Unit, onDelete: () -> Unit) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDeleteDialog) {
         AlertDialog(

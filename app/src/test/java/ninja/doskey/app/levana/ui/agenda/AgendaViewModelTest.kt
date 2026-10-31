@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.ui.agenda
 
 import android.app.Application
 import android.os.Looper
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -93,7 +94,7 @@ class AgendaViewModelTest {
         TimeZone.setDefault(savedZone)
     }
 
-    private fun viewModel(): AgendaViewModel {
+    private fun viewModel(saved: SavedStateHandle = SavedStateHandle()): AgendaViewModel {
         val app = RuntimeEnvironment.getApplication()
         val device = DeviceContext(preferences.preferences, emptyFlow()) { fixedClock(today, LocalTime.NOON, zone) }
         repository = AgendaRepository(
@@ -103,7 +104,7 @@ class AgendaViewModelTest {
         val vm = ViewModelProvider(store, object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <V : ViewModel> create(modelClass: Class<V>): V =
-                AgendaViewModel(repository, preferences, device, NoChanges) as V
+                AgendaViewModel(repository, preferences, device, NoChanges, saved) as V
         })[AgendaViewModel::class.java]
         awaitUntil { !vm.state.value.isLoading }
         return vm
@@ -187,6 +188,26 @@ class AgendaViewModelTest {
         vm.onIntent(AgendaIntent.SelectSearchResult(LocalDate.of(2025, 11, 14)))
         assertNull(vm.state.value.search)
         awaitUntil { vm.state.value.scrollRequest?.date == LocalDate.of(2025, 11, 14) && !vm.state.value.isLoading }
+    }
+
+    @Test
+    fun `after the process is killed it reopens on the day it showed, with its search`() {
+        val saved = SavedStateHandle()
+        val vm = viewModel(saved)
+        val shown = today.plusDays(30)
+        vm.onIntent(AgendaIntent.TopDayShown(shown))
+        vm.onIntent(AgendaIntent.OpenSearch)
+        vm.onIntent(AgendaIntent.SetSearchQuery("moshe"))
+
+        // The process dies: only the saved state is left
+        store.clear()
+        val restored = viewModel(SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        awaitUntil { restored.state.value.search?.isLoading == false }
+        val state = restored.state.value
+        assertEquals(shown.minusDays(chunk), state.start)
+        assertEquals(shown, state.scrollRequest?.date)
+        assertEquals("moshe", state.search?.query)
+        assertEquals(listOf(LocalDate.of(2025, 11, 14), LocalDate.of(2026, 11, 3)), state.search!!.results.map { it.date })
     }
 
     @Test

@@ -9,23 +9,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ninja.doskey.app.levana.data.PreferencesRepository
-import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.UserPreferences
 import ninja.doskey.app.levana.notifications.NotificationPoster
 import ninja.doskey.app.levana.ui.navigation.LevanaApp
+import ninja.doskey.app.levana.ui.navigation.ShellViewModel
 import ninja.doskey.app.levana.ui.theme.HolidayTheme
 import ninja.doskey.app.levana.ui.theme.LevanaTheme
 import ninja.doskey.app.levana.ui.theme.activeHolidayTheme
 import java.time.LocalDate
-import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -46,13 +44,11 @@ class MainActivity : ComponentActivity() {
         ) ?: 0L
         val openZmanim = intent?.getBooleanExtra(EXTRA_OPEN_ZMANIM, false) ?: false
         setContent {
-            val preferencesRepository: PreferencesRepository = koinInject()
-            val deviceContext: DeviceContext = koinInject()
-            val prefs by preferencesRepository.preferences.collectAsState(
-                initial = null
-            )
+            // Kept across recreations, so a fold or rotation redraws in the same theme at once
+            val shell: ShellViewModel = koinViewModel()
+            val prefs by shell.preferences.collectAsStateWithLifecycle()
             // Follows midnight, clock and time-zone changes while the app is open
-            val deviceToday by deviceContext.todayUpdates.collectAsStateWithLifecycle(initialValue = null)
+            val deviceToday by shell.today.collectAsStateWithLifecycle()
             val holidayTheme = resolveHolidayTheme(prefs, deviceToday)
             val darkTheme = resolveDarkTheme(prefs, isSystemInDarkTheme())
             // The bars' icons follow the app's mode, which may differ from the system's

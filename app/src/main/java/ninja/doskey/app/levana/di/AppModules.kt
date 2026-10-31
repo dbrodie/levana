@@ -31,6 +31,7 @@ import ninja.doskey.app.levana.ui.datepicker.DatePickerViewModel
 import ninja.doskey.app.levana.ui.events.AddEditEventViewModel
 import ninja.doskey.app.levana.ui.events.EventsViewModel
 import ninja.doskey.app.levana.ui.location.CityPickerViewModel
+import ninja.doskey.app.levana.ui.navigation.ShellViewModel
 import ninja.doskey.app.levana.ui.settings.SettingsViewModel
 import ninja.doskey.app.levana.ui.walkthrough.AndroidWalkthroughDevice
 import ninja.doskey.app.levana.ui.walkthrough.WalkthroughDevice
@@ -107,18 +108,19 @@ val dataModule = module {
 }
 
 val viewModelModule = module {
-    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DayDetailViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CityPickerViewModel(get(), get()) }
     viewModel { ZmanimViewModel(get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), androidContext()) }
     viewModel { EventsViewModel(get(), get(), get()) }
-    viewModel { AddEditEventViewModel(get(), get()) }
+    viewModel { AddEditEventViewModel(get(), get(), get()) }
     viewModel { ContactBirthdayViewModel(get(), get()) }
     viewModel { CalendarSelectionViewModel(get(), get()) }
     viewModel { DatePickerViewModel(get(), get(), get()) }
     viewModel { WalkthroughViewModel(get(), get(), get(), get()) }
-    viewModel { AgendaViewModel(get(), get(), get(), get()) }
+    viewModel { AgendaViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ShellViewModel(get(), get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

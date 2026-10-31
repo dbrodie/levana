@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.events
 
+import androidx.lifecycle.SavedStateHandle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -47,8 +48,52 @@ class AddEditEventViewModelTest {
     private val leapToday = LocalDate.of(2027, 3, 1)
     private val regularToday = LocalDate.of(2026, 3, 1)
 
-    private fun viewModel(dao: FakeDao = FakeDao(), today: LocalDate = LocalDate.now()) =
-        AddEditEventViewModel(PersonalEventRepository(dao), deviceContextOn(today))
+    private fun viewModel(dao: FakeDao = FakeDao(), today: LocalDate = LocalDate.now(), saved: SavedStateHandle = SavedStateHandle()) =
+        AddEditEventViewModel(PersonalEventRepository(dao), deviceContextOn(today), saved)
+
+    @Test
+    fun aRepeatedLoadKeepsUnsavedInput() {
+        // A fold or rotation re-sends the screen's load
+        val vm = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 5784))), leapToday)
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        vm.onIntent(AddEditEventIntent.SetTitle("Changed"))
+        vm.onIntent(AddEditEventIntent.SetNotes("Notes"))
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        assertEquals("Changed", vm.state.value.title)
+        assertEquals("Notes", vm.state.value.notes)
+    }
+
+    @Test
+    fun aRepeatedPrefillKeepsThePickedDate() {
+        val vm = viewModel(today = leapToday)
+        vm.onIntent(AddEditEventIntent.PreFillDate(3, JewishDate.KISLEV, 5787))
+        vm.onIntent(AddEditEventIntent.SetHebrewDate(10, JewishDate.TEVES, 5787))
+        vm.onIntent(AddEditEventIntent.PreFillDate(3, JewishDate.KISLEV, 5787))
+        assertEquals(10, vm.state.value.hebrewDay)
+        assertEquals(JewishDate.TEVES, vm.state.value.hebrewMonth)
+    }
+
+    @Test
+    fun unsavedInputSurvivesTheProcessBeingKilled() {
+        val dao = FakeDao(listOf(stored(JewishDate.NISSAN, 5500)))
+        val saved = SavedStateHandle()
+        val vm = viewModel(dao, leapToday, saved)
+        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        vm.onIntent(AddEditEventIntent.SetTitle("Changed"))
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+
+        val restored = viewModel(dao, leapToday, SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        // The screen sends its load again; the draft stays
+        restored.onIntent(AddEditEventIntent.LoadEvent(1))
+        assertEquals(vm.state.value, restored.state.value)
+        assertTrue(restored.state.value.isEditing)
+        assertTrue(restored.state.value.showDatePicker)
+        // The out-of-range stored date is still saved as stored (TASK-24)
+        restored.onIntent(AddEditEventIntent.DismissDatePicker)
+        restored.onIntent(AddEditEventIntent.Save)
+        assertEquals(5500, dao.events.single().hebrewYear)
+        assertEquals("Changed", dao.events.single().title)
+    }
 
     private fun stored(month: Int, year: Int, yahrzeit: Boolean = false) = PersonalEvent(
         id = 1,

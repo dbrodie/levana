@@ -172,6 +172,7 @@ internal fun AgendaContent(
             rows.getOrNull((listState.firstVisibleItemIndex - leadingRows).coerceAtLeast(0))?.day?.date ?: today
         }
     }
+    LaunchedEffect(topDate) { onIntent(AgendaIntent.TopDayShown(topDate)) }
     var permissionDismissed by rememberSaveable { mutableStateOf(false) }
 
     val search = state.search

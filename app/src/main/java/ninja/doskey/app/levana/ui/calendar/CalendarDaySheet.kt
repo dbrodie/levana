@@ -28,7 +28,11 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -54,7 +58,11 @@ internal fun CalendarDaySheet(
     val fontScale = LocalDensity.current.fontScale
     val hasBadges = state.dayInfo?.let { it.holidays.isNotEmpty() || it.shabbatInfo?.isShabbat == true } == true
     val peekHeight = (136 + (if (hasBadges) 38 else 0) + (fontScale - 1).coerceAtLeast(0f) * 100).dp
+    // A newly selected day starts collapsed at the top; a fold or rotation keeps the sheet as it was
+    var sheetDate by rememberSaveable { mutableStateOf(selectedDate) }
     LaunchedEffect(selectedDate) {
+        if (selectedDate == sheetDate) return@LaunchedEffect
+        sheetDate = selectedDate
         scrollState.scrollTo(0)
         scaffoldState.bottomSheetState.partialExpand()
     }

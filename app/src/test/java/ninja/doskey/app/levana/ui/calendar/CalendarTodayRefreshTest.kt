@@ -2,6 +2,7 @@ package ninja.doskey.app.levana.ui.calendar
 
 import android.app.Application
 import android.os.Looper
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -77,14 +78,14 @@ class CalendarTodayRefreshTest {
         runBlocking { preferences.saveDevDateOverride(null) }
     }
 
-    private fun calendarViewModel(): CalendarViewModel {
+    private fun calendarViewModel(saved: SavedStateHandle = SavedStateHandle()): CalendarViewModel {
         val app = RuntimeEnvironment.getApplication()
         val device = DeviceContext(preferences.preferences, signals) { clock }
         val vm = ViewModelProvider(store, object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <V : ViewModel> create(modelClass: Class<V>): V = CalendarViewModel(
                 CalendarRepository(), preferences, PersonalEventRepository(db.personalEventDao()),
-                ContactBirthdayRepository(app), SystemCalendarRepository(app), device, NoChanges
+                ContactBirthdayRepository(app), SystemCalendarRepository(app), device, NoChanges, saved
             ) as V
         })[CalendarViewModel::class.java]
         awaitUntil { vm.state.value.today != null && !vm.state.value.isLoading }
@@ -107,6 +108,24 @@ class CalendarTodayRefreshTest {
         assertEquals(day, vm.state.value.today)
         assertEquals(day, vm.state.value.selectedDate)
         assertEquals(java.time.YearMonth.from(day), vm.state.value.currentMonth)
+    }
+
+    @Test
+    fun `after the process is killed the selected day and its month come back`() {
+        val saved = SavedStateHandle()
+        val vm = calendarViewModel(saved)
+        val picked = LocalDate.of(2027, 1, 12)
+        vm.onIntent(CalendarIntent.GoToDate(picked))
+        vm.onIntent(CalendarIntent.OpenGoToDateDialog)
+        awaitUntil { !vm.state.value.isLoading }
+
+        // The process dies: only the saved state is left
+        store.clear()
+        val restored = calendarViewModel(SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        assertEquals(picked, restored.state.value.selectedDate)
+        assertEquals(java.time.YearMonth.of(2027, 1), restored.state.value.currentMonth)
+        assertEquals(day, restored.state.value.today)
+        assertTrue(restored.state.value.showGoToDateDialog)
     }
 
     @Test

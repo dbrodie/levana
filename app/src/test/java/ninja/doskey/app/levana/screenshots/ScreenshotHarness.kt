@@ -19,7 +19,11 @@ import androidx.room.Room
 import androidx.test.core.app.ActivityScenario
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import android.app.Activity
+import android.os.Bundle
 import android.os.Looper
+import android.os.Parcel
+import androidx.activity.ComponentActivity
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
@@ -206,6 +210,52 @@ abstract class ScreenshotTest(
         // The view model starts from SettingsState(), which hides the developer group; the
         // stored preferences show it, so its row (below the fold) marks the loaded state
         await(hasText(string(R.string.settings_developer_settings)))
+    }
+
+    /**
+     * A configuration change, such as a fold, unfold, rotation or entering split screen: applies
+     * [qualifiers] (e.g. a [FoldableSize]'s) and recreates the activity, keeping its view models.
+     */
+    protected fun recreate(qualifiers: String? = null) {
+        qualifiers?.let { RuntimeEnvironment.setQualifiers(it) }
+        checkNotNull(scenario) { "launch first" }.recreate()
+        advanceFrame()
+    }
+
+    /**
+     * The process killed in the background and the app reopened: the activity comes back from
+     * its saved state alone. It is recreated as usual, but its view models (and the navigation
+     * entries') are dropped once the old instance is destroyed, and the saved state must survive
+     * being parcelled, as the system keeps it.
+     */
+    protected fun restoreAfterProcessDeath() {
+        val callbacks = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
+                val parcel = Parcel.obtain()
+                try {
+                    parcel.writeBundle(outState)
+                    parcel.setDataPosition(0)
+                    checkNotNull(parcel.readBundle(app.classLoader)).keySet()
+                } finally {
+                    parcel.recycle()
+                }
+            }
+            override fun onActivityDestroyed(activity: Activity) {
+                (activity as ComponentActivity).viewModelStore.clear()
+            }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+        }
+        app.registerActivityLifecycleCallbacks(callbacks)
+        try {
+            checkNotNull(scenario) { "launch first" }.recreate()
+        } finally {
+            app.unregisterActivityLifecycleCallbacks(callbacks)
+        }
+        advanceFrame()
     }
 
     /** Runs [block] on the launched activity, e.g. to deliver an activity result. */

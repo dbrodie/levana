@@ -31,6 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,11 +83,14 @@ fun ContactBirthdayScreen(
         if (state.saveComplete) onSaved()
     }
 
-    // Auto-launch contact picker for new birthdays
+    // Auto-launch contact picker for new birthdays, once: a fold or rotation while it is open
+    // (or after it was cancelled) does not open it again
+    var pickerLaunched by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (contactLookupKey.isBlank() &&
+        if (!pickerLaunched && contactLookupKey.isBlank() &&
             state.contactLookupKey.isBlank()
         ) {
+            pickerLaunched = true
             contactPickerLauncher.launch(null)
         }
     }
