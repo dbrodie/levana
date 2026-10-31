@@ -9,6 +9,10 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# The signing secrets are used only here, in the tag-triggered release job. The reproducible-build
+# check (verify-release.yml) rebuilds the tag without them.
+permissions: {}
+
 jobs:
   build-release:
     name: Build & publish release APK
@@ -17,7 +21,9 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Parse version from tag
         id: version
@@ -44,12 +50,16 @@ jobs:
           echo "Changelog for versionCode ${{ steps.version.outputs.code }}:"
           cat "$CHANGELOG"
 
-      - uses: actions/setup-java@v4
+      # Exact JDK: verify-release.yml and F-Droid rebuild this APK and must get identical bytes
+      # (docs/fdroid/README.md). Change both workflows together.
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
-          java-version: '17'
+          java-version: '17.0.21+9'
           distribution: 'temurin'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
 
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ${{ runner.temp }}/release.keystore
@@ -67,15 +77,29 @@ jobs:
       - name: Rename APK
         run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/levana-v${{ steps.version.outputs.name }}.apk
 
+      # Never publish an APK signed with anything but the release key, which is also the Play
+      # app-signing key (same value as in verify-release.yml)
+      - name: Check signing certificate
+        env:
+          APK: app/build/outputs/apk/release/levana-v${{ steps.version.outputs.name }}.apk
+          EXPECTED_CERT_SHA256: ab02841e88825c51c8f0b0f013ff4e312bca47ea1bfbffa894b51890ad5a5117
+        run: |
+          digests=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" |
+            grep -E '^Signer #[0-9]+ certificate SHA-256 digest:' | awk '{print $NF}')
+          if [ "$digests" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Release APK certificate SHA-256 is '$digests'; expected $EXPECTED_CERT_SHA256"
+            exit 1
+          fi
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: "v${{ steps.version.outputs.name }}"
           generate_release_notes: true
           files: app/build/outputs/apk/release/levana-v${{ steps.version.outputs.name }}.apk
 
       - name: Upload App Bundle to Google Play internal testing
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ninja.doskey.app.levana

@@ -44,6 +44,8 @@ fun signingProp(envKey: String, propKey: String): String? {
 android {
     namespace = "ninja.doskey.app.levana"
     compileSdk = 36
+    // Pinned for reproducible release builds (docs/fdroid/README.md)
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "ninja.doskey.app.levana"
@@ -76,12 +78,22 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Without a release keystore the APK is left unsigned, the way F-Droid builds it for
+            // the reproducible-build comparison (docs/fdroid/README.md). -Plevana.debugSignRelease=true
+            // signs it with the debug key instead, for installing a local release build.
             val rel = signingConfigs.getByName("release")
-            signingConfig = if (rel.storeFile?.exists() == true &&
-                                rel.storePassword != null &&
-                                rel.keyAlias      != null &&
-                                rel.keyPassword   != null) rel
-                            else signingConfigs.getByName("debug")
+            signingConfig = when {
+                rel.storeFile?.exists() == true &&
+                    rel.storePassword != null &&
+                    rel.keyAlias      != null &&
+                    rel.keyPassword   != null -> rel
+                providers.gradleProperty("levana.debugSignRelease").orNull == "true" ->
+                    signingConfigs.getByName("debug")
+                else -> null
+            }
+            // The commit hash file (META-INF/version-control-info.textproto) depends on how the
+            // source was checked out; leave it out so any checkout of the tag builds the same APK.
+            vcsInfo.include = false
         }
     }
 
@@ -102,6 +114,14 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+
+    packaging {
+        jniLibs {
+            // Ship the prebuilt .so files from AARs as they are. Without this AGP strips them only
+            // when an NDK happens to be installed, so the APK would depend on the build machine.
+            keepDebugSymbols += "**/*.so"
+        }
     }
 
     sourceSets {
