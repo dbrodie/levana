@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T07:27:00Z'
-updated_date: '2026-10-30T12:28:00Z'
+updated_date: '2026-10-31T18:49:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -69,6 +69,9 @@ Evidence: /tmp/levana-task52.3-evidence/task50/ (README.md, crash and lifecycle 
 
 ## Verification (tested commit: the TASK-50 commit on task-52.3-fold-continuity)
 rm -rf app/build/test-results && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL; 1053 tests, 0 failures/errors/skipped; Roborazzi verify passed, no image changes; lint 0 errors, 83 warnings (unchanged).
+
+## Rebased on origin/master 4fbf5c4 (now 36f004d on task-52.3-fold-continuity)
+Re-verified with the TASK-52.3 build (34832a1) on the Fold8 Ultra AVD: 6 back-to-back locale+night cycles from Settings, no crash, Settings kept (/tmp/levana-task52.3-evidence/task50/after-rebased-locale-night.txt); 3 fold/unfold cycles per scenario run on both AVDs, no crash. ShellStateRestorationTest passes in the full run (1144 tests, 0 failures).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
