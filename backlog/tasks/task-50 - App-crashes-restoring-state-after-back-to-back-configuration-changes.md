@@ -1,11 +1,11 @@
 ---
 id: TASK-50
 title: App crashes restoring state after back-to-back configuration changes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T07:27:00Z'
-updated_date: '2026-10-31T18:49:00Z'
+updated_date: '2026-10-31T18:52:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -73,6 +73,18 @@ rm -rf app/build/test-results && ./gradlew :app:assembleDebug :app:testDebugUnit
 ## Rebased on origin/master 4fbf5c4 (now 36f004d on task-52.3-fold-continuity)
 Re-verified with the TASK-52.3 build (34832a1) on the Fold8 Ultra AVD: 6 back-to-back locale+night cycles from Settings, no crash, Settings kept (/tmp/levana-task52.3-evidence/task50/after-rebased-locale-night.txt); 3 fold/unfold cycles per scenario run on both AVDs, no crash. ShellStateRestorationTest passes in the full run (1144 tests, 0 failures).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-31T18:52:00Z
+
+---
+
+Coordinator integration 2026-10-31: merged with TASK-52.3 as e4aced5. Root cause: nav controller and drawer state shared a positional saved-state key behind an early return. ShellStateRestorationTest reproduces and guards it; no crash in 12 locale/night cycles or fold cycles on emulator. Clean run: 1144 tests, 0 failures; Roborazzi 320 unchanged.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 

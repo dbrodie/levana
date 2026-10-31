@@ -1,11 +1,11 @@
 ---
 id: TASK-52.3
 title: 'Fold/unfold continuity: same screen, preserved state, correct relayout'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-31T18:49:00Z'
+updated_date: '2026-10-31T18:52:00Z'
 labels: []
 dependencies:
   - TASK-52.1
@@ -94,6 +94,18 @@ Evidence: /tmp/levana-task52.3-evidence/ (README.md, fold8/, fold8ultra/, fold8-
 - The birthday editor's unsaved input is kept across configuration changes but not across process death (its TASK-51 state is intricate; restoring part of it could save a wrong date). The date picker reopens at its starting date after process death (its session is a fresh view model).
 - In the Ultra's 472dp-tall split half the walkthrough page title is below the fold: layout (TASK-52.2).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-31T18:52:00Z
+
+---
+
+Coordinator integration 2026-10-31: merged as e4aced5. Clean run (load ~4): 1144 tests, 0 failures; Roborazzi 320 unchanged. FoldContinuityTest covers fold/unfold/rotation/split/process death at Fold8 and Ultra sizes; emulator 49/49 (Fold8) and 48/49 (Ultra, script check only). Known gaps: walkthrough resize not testable under Robolectric (verified on emulator); birthday editor input not restored after process death; Ultra split-half walkthrough title below the fold (layout, for TASK-52.4).
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
