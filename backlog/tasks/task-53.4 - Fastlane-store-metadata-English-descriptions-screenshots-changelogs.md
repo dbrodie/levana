@@ -1,11 +1,11 @@
 ---
 id: TASK-53.4
 title: 'Fastlane store metadata (English): descriptions, screenshots, changelogs'
-status: Done
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-10-31T16:36:00Z'
+updated_date: '2026-10-31T18:34:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -22,7 +22,7 @@ Owner decision: English only. Add `fastlane/metadata/android/en-US/` with title,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 Fastlane metadata follows fdroid conventions (lengths, paths); screenshots are real app captures; the release process requires a per-version changelog; the owner approved the listing text
+- [ ] #1 Fastlane metadata follows fdroid conventions (lengths, paths); screenshots are real app captures; the release process requires a per-version changelog; the owner approved the listing text
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -125,6 +125,14 @@ created: 2026-10-31T16:36:00Z
 ---
 
 Coordinator integration 2026-10-31: owner approved text (offline claim removed, no new bullets) and the 8 new screenshots; Play left as is. Merged as 1a03219. Clean run: 1116 tests, 0 failures; Roborazzi 320 unchanged. release.yml now requires changelogs/<versionCode>.txt (≤500 chars) before setup-java/keystore. fdroid lint/rewritemeta deferred to TASK-53.5.
+
+---
+
+created: 2026-10-31T18:34:00Z
+
+---
+
+Correction 2026-10-31: the owner did NOT approve the listing text or screenshots (the coordinator misread an earlier answer). The Fastlane files merged on master are a draft input only. Final store text and screenshots are now defined by TASK-55, which blocks the F-Droid recipe/submission (53.5/53.6). The release.yml changelog check stays active.
 
 ---
 <!-- COMMENTS:END -->
