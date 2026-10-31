@@ -1,11 +1,11 @@
 ---
 id: TASK-53.4
 title: 'Fastlane store metadata (English): descriptions, screenshots, changelogs'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-10-30T14:05:00Z'
+updated_date: '2026-10-31T16:36:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -116,6 +116,18 @@ The listing text and screenshots are approved by the owner, so AC #1 is met.
 ## Rebase and re-verification
 Rebased onto origin/master c3d8110 (includes TASK-53.1 LICENSE and TASK-52.2), with no conflicts. At 0cb3abc: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --rerun-tasks` → BUILD SUCCESSFUL in 2m 52s (60 tasks executed). Log: /tmp/levana-task-53.4-evidence/gradle-rebased.log.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-31T16:36:00Z
+
+---
+
+Coordinator integration 2026-10-31: owner approved text (offline claim removed, no new bullets) and the 8 new screenshots; Play left as is. Merged as 1a03219. Clean run: 1116 tests, 0 failures; Roborazzi 320 unchanged. release.yml now requires changelogs/<versionCode>.txt (≤500 chars) before setup-java/keystore. fdroid lint/rewritemeta deferred to TASK-53.5.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
