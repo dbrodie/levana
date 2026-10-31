@@ -4,42 +4,32 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
+import android.location.LocationManager
+import android.location.LocationRequest
+import android.os.CancellationSignal
+import android.os.SystemClock
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.device.DeviceContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeoutOrNull
 
 class LocationService(
     private val context: Context,
-    private val geocoder: ReverseGeocoder = AndroidReverseGeocoder(context)
+    private val geocoder: ReverseGeocoder = AndroidReverseGeocoder(context),
+    private val fixer: LocationFixer = LocationFixer(PlatformLocationSource(context))
 ) {
-
-    private val fusedClient =
-        LocationServices.getFusedLocationProviderClient(context)
 
     fun hasPermission(): Boolean =
         PERMISSIONS.any { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
 
     /**
-     * A fresh fix, or null when permission is missing, the fix fails, or it takes over 15s.
-     * The fix is named off the main thread; a failed lookup keeps the coordinates
-     * under [FALLBACK_PLACE_NAME].
+     * A recent or fresh fix, or null when permission is missing, no provider gives one, or it
+     * takes over 15s (see [LocationFixer]). The fix is named off the main thread; a failed
+     * lookup keeps the coordinates under [FALLBACK_PLACE_NAME].
      */
     suspend fun getCurrentLocationOrNull(): Location? {
         if (!hasPermission()) return null
-        val fix = try {
-            withTimeoutOrNull(15_000L) { getCurrentFix() }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        } ?: return null
+        val fix = fixer.fixOrNull() ?: return null
         return Location(
             latitude = fix.latitude,
             longitude = fix.longitude,
@@ -51,31 +41,42 @@ class LocationService(
         )
     }
 
-    @SuppressLint("MissingPermission")
-    private suspend fun getCurrentFix(): android.location.Location = suspendCancellableCoroutine { cont ->
-        val cts = CancellationTokenSource()
-        cont.invokeOnCancellation { cts.cancel() }
-
-        fusedClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            cts.token
-        ).addOnSuccessListener { loc ->
-            if (loc != null) {
-                cont.resume(loc)
-            } else {
-                cont.resumeWithException(
-                    Exception("Could not determine location")
-                )
-            }
-        }.addOnFailureListener { e ->
-            cont.resumeWithException(e)
-        }
-    }
-
     companion object {
         val PERMISSIONS = arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
     }
+}
+
+/** [LocationSource] over the platform [LocationManager]. */
+@SuppressLint("MissingPermission")
+class PlatformLocationSource(context: Context) : LocationSource {
+
+    private val manager = context.getSystemService(LocationManager::class.java)
+
+    override fun providers(): List<String> = manager.allProviders
+
+    override fun isEnabled(provider: String): Boolean = manager.isProviderEnabled(provider)
+
+    override fun lastKnown(provider: String): Fix? = manager.getLastKnownLocation(provider)?.toFix()
+
+    override fun elapsedRealtimeNanos(): Long = SystemClock.elapsedRealtimeNanos()
+
+    override suspend fun current(provider: String): Fix? = suspendCancellableCoroutine { cont ->
+        val signal = CancellationSignal()
+        cont.invokeOnCancellation { signal.cancel() }
+        manager.getCurrentLocation(provider, HIGH_ACCURACY, signal, Runnable::run) { loc -> cont.resume(loc?.toFix()) }
+    }
+
+    private companion object {
+        // The default is balanced, for which the fused provider may not turn on GPS
+        val HIGH_ACCURACY: LocationRequest = LocationRequest.Builder(0)
+            .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
+            .setDurationMillis(LocationFixer.TIMEOUT_MILLIS)
+            .build()
+    }
+
+    private fun android.location.Location.toFix() =
+        Fix(latitude, longitude, altitude, elapsedRealtimeNanos)
 }

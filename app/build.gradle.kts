@@ -98,6 +98,12 @@ android {
         compose = true
     }
 
+    // No Google-encrypted dependency list in the APK signing block or the bundle (F-Droid, TASK-53)
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     sourceSets {
         // Exported Room schemas for MigrationTestHelper. Robolectric only reads the
         // variant's merged assets, so they ship in debug builds but never in release.
@@ -158,7 +164,6 @@ dependencies {
     implementation(libs.acra.mail)
     implementation(libs.acra.dialog)
     implementation(libs.datastore.preferences)
-    implementation(libs.play.services.location)
     implementation(libs.compose.material.icons.extended)
 
     implementation(libs.androidx.room.runtime)
