@@ -3,11 +3,11 @@ id: TASK-53.2
 title: >-
   Remove Google Play Services location; use the platform LocationManager;
   disable the dependency-info block
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-10-30T13:47:00Z'
+updated_date: '2026-10-31T16:33:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -76,3 +76,15 @@ Evidence: /tmp/levana-task-53-2/ (README.md).
 ## Play
 Nothing needs doing in Play Console. Same applicationId, signing and permissions (ACCESS_FINE/COARSE_LOCATION unchanged); Play app signing doesn't need the dependency-info block. The only visible effect is the Console's 'Dependencies' / SDK insights for this release, which will be empty. The Data safety answers are unchanged: location stays on the device, and the published privacy policy already says 'your device's location services', which still holds. Upload was not exercised here (CI tag workflow).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-31T16:33:00Z
+
+---
+
+Coordinator integration 2026-10-31: merged as 68941a2. Clean run (with --continue): build incl. assembleRelease OK, 1116 tests 0 failures, Roborazzi 320 unchanged; release APK contains 0 com/google/android/gms references; THIRD_PARTY_NOTICES lists no proprietary libs. One earlier run hit the known DatePickerScreenshotTest load timeout. Limitation: no non-GMS (AOSP) emulator image available; GPS-only fallback (fused disabled) verified instead. AC #1 left unchecked for the non-GMS part pending owner decision on downloading an AOSP image.
+
+---
+<!-- COMMENTS:END -->
