@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T22:44:00Z'
-updated_date: '2026-10-31T22:44:00Z'
+updated_date: '2026-10-31T23:30:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,14 +24,14 @@ Maintain an editable Figma Design file that reproduces Levana's shipped Android 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Foundations: colour variables (light + dark), spacing/radius variables, text styles (incl. Hebrew), effect styles mapped to the Compose theme with Android code syntax
-- [ ] #2 Reusable components for every shared UI element, bound to variables and text styles
+- [x] #2 Reusable components for every shared UI element, bound to variables and text styles
 - [x] #3 Calendar, Zmanim, date picker, Agenda, My events/forms, System calendars and City picker screens built and verified against the emulator
-- [ ] #4 Settings (main, Halachic times, Locations, Developer, About) and its dialogs built and verified
-- [ ] #5 Onboarding walkthrough pages built and verified
-- [ ] #6 Home-screen widgets (Today, Month, Zmanim), quick tile and dynamic app icon represented
-- [ ] #7 Foundations page documents colours, type, spacing, radii, elevation and icons
+- [x] #4 Settings (main, Halachic times, Locations, Developer, About) and its dialogs built and verified
+- [x] #5 Onboarding walkthrough pages built and verified
+- [x] #6 Home-screen widgets (Today, Month, Zmanim), quick tile and dynamic app icon represented
+- [x] #7 Foundations page documents colours, type, spacing, radii, elevation and icons
 - [ ] #8 Screens linked as user flows (sections and/or prototype connections)
-- [ ] #9 Dark theme and Hebrew (RTL) variants of key screens
+- [x] #9 Dark theme and Hebrew (RTL) variants of key screens
 - [ ] #10 Process documented for updating Figma when the Compose UI changes
 <!-- AC:END -->
 
@@ -50,37 +50,36 @@ Remaining batch order (proposed): Settings + dialogs → Onboarding → Foundati
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-## Status (2026-11-01)
+## Status (2026-11-01, batch 3)
 
-Figma file: https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd ("Levana — Android App UI", in the user's drafts on "Daniel's team"). Pages: Foundations (empty so far), Components, Screens. Built with the official Figma MCP server (use_figma); no html_to_figma tool was available, and design-reference/claude-design-reference.html is a prototype, so the app code and emulator captures were the sources.
+Figma file: https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd ("Levana — Android App UI", drafts of "Daniel's team", now Pro). Built with the official Figma MCP server (use_figma). design-reference/claude-design-reference.html is a prototype, so code + emulator captures are the sources; no html_to_figma tool was available.
 
-### Done
-- Foundations: `Color` (35 M3 roles, Light) + `Color · Dark (reference)`; tint/state/scrim alpha variables (event-bar 18%, holiday 16%, onSurface 12/38%, drawer scrim 32%, dialog dim 60% measured on device); `Dimension` (spacing 1–24, radius 4–28 + full); 30+ text styles in Roboto, Hebrew styles in Noto Sans Hebrew; elevation/1, /3, sheet. Variables carry ANDROID code syntax (e.g. MaterialTheme.colorScheme.primary).
-- Components (~45): 38 Material icons, icon button, top app bar, calendar month header, mode selector/segments, day cell (State × Mode Gregorian/Hebrew), event bar, weekday header, sheet handle, day badge, quick-zman card, zman rows/cards, sheet event row, buttons, text fields, search field, switch, checkbox, FAB, tab, menu, drawer item/city card, Hebrew date field, agenda rail/card/month header/banner, My events list card, city row, calendar row, date-picker day cell and year pill, system status/gesture bars.
-- Screens (25 frames, all verified against emulator captures):
-  - 01 Calendar: Gregorian month, Hebrew month, day sheet expanded, drawer, drawer with city list
-  - 02 Zmanim: day list
-  - 03 Date picker: go-to-date (Gregorian-led), Hebrew-led day grid, year grid
-  - 04 Agenda: list + permission banner, search empty, search results, list with device event
-  - 05 My events: Birthdays (permission/empty/list), Events (list/overflow menu), Add event (empty/filled), Edit event, Add birthday (no contact/chosen)
-  - 06 Calendars & cities: System calendars (permission/list), City picker
+### Pages
+- **Foundations** — documentation page: colour roles with Light/Dark halves, alpha tints/scrims, holiday accent themes, every text style, spacing, radii, elevation, icon set.
+- **Components** — ~70 components/sets; 29 sets carry a `Direction=LTR/RTL` variant (mirrored layout, flipped AutoMirrored icons).
+- **Screens — Light** — 01 Calendar (month, Hebrew mode, sheet expanded, drawer ×2), 02 Zmanim, 03 Date picker ×3, 04 Agenda ×4, 05 My events & forms ×10, 06 System calendars & Cities ×3, 07 Settings ×10 (full scroll, viewport, 4 dialogs, Halachic times, Cities, About, Developer).
+- **Screens — Dark** — every Light section duplicated with the `Color` collection set to Dark mode (36 frames).
+- **Screens — Hebrew (RTL)** — 9 key screens in Hebrew UI: calendar, sheet, drawer, Zmanim, Agenda, My events, Add event, Hebrew date picker, Settings. Strings come from values-iw (316 pairs) plus device-captured dynamic strings.
+- **Onboarding** — reference pages 1/9 and 2/9 built from Walkthrough components (page dots, bottom bar, permission panel); spec cards for the template, all 9 pages and the process for adding pages.
+- **Widgets** — Today (Full/Compact), Month, Zmanim widget components on home-screen frames (Light + Dark), Quick Settings tile, adaptive launcher icon.
 
-### Remaining (see acceptance criteria)
-- Settings + sub-screens + dialogs; onboarding; widgets/tile/icon; Foundations page; flow links; dark/RTL variants.
-- Missing states: Omer card, device-events sheet section, holiday badges, delete/remove/import dialogs, snackbars, stored-birthday notice, contact photo, picker holiday chip, Gregorian year grid, Hebrew-led agenda, city search query, loading.
-- Not separately compared yet (built from verified components): agenda search empty/results, Edit event, Add event empty, Add birthday chosen, Birthdays empty/list, Events list, year grid.
+### Verification
+- Foundations vs code (script): 36/36 colour roles × 2 modes, 15/15 type styles (weight/size/declared line height), 5/5 shapes match Theme.kt/Type.kt; surfaceTint was missing and was added. 13 sampled emulator pixels match their tokens exactly.
+- Light, dark, Hebrew/RTL, Settings, onboarding and widget frames were compared side by side with emulator captures of the same state; gaps found were fixed (list-item line heights, RTL switch thumb, Hebrew segment widths, drawer label size, tint overrides, etc.).
+- Device: Levana_Agent_Template_API_36_1 (1080×2400, 420 dpi, 12-hour clock, clock set to 31 Oct 2026 09:47 IST), debug build of commit c0ce8b7. No Android source changes.
 
-### Findings / known differences
-- Compose's default LineHeightStyle trims leading on single lines, so text styles use AUTO line height (declared sp kept in each style description).
-- Variable-bound paint opacity is lost on instances; use alpha colour variables instead.
-- Hebrew gershayim/geresh render slightly smaller in Figma than on the device.
-- Capture date mix: most frames show 31 Oct 2026; Agenda-with-device-event, System calendars and City picker show 1 Nov (emulator clock rolled over).
-- Plan limits hit while on Starter (3 pages, 1 variable mode, MCP call cap); the user has since upgraded. Re-check whether Light/Dark can become modes of one collection.
+### Known differences / limits
+- Hebrew geresh/gershayim render slightly smaller in Figma (font fallback).
+- In Hebrew UI the device shows standalone times like "PM 4:27" (bidi); Figma keeps "4:27 PM".
+- Some batch-2 frames show 1 Nov data (emulator clock rolled over then); batch 3 pinned the clock to 31 Oct.
+- Not separately compared: Agenda search, Edit event, Birthdays empty/list, year grid (built from verified components).
+- Figma quirks recorded: resize() locks auto-layout sizing; variable-bound paint opacity is lost on instances (use alpha variables); cloning variants drops property bindings (rebind from twin).
+
+### Remaining (open ACs)
+- Prototype/flow links between screens (sections only today).
+- Written process for updating Figma when Compose UI changes.
+- Optional states listed earlier (Omer card, delete/import dialogs, snackbars, contact photo, Hebrew-led Agenda, loading).
 
 ### Evidence and working files (untracked, in this worktree)
-Kept in `.figma-migration/` (excluded via .git/info/exclude, not committed; delete when the task is done):
-- `emulator/batch1`, `emulator/batch2`: emulator screenshots (`*.png`, `*_s.png` scaled to 915px) and uiautomator dumps (`*.xml`)
-- `figma-compare/`: Figma frame screenshots used in comparisons
-- `state.json`: node-ID ledger for the Figma file; `icons/`, `icons.json`: Material icon SVGs; `scripts/`: capture/dump/pixel-sampling helpers
-Tested against debug build of commit c0ce8b7 on Levana_Agent_Template_API_36_1 (1080×2400, 420dpi, 12h clock). No Android source changes.
+`.figma-migration/` (excluded via .git/info/exclude; delete when done): `emulator/batch1–3` captures + UI dumps, `figma-compare/` Figma screenshots, `specs/` condensed code specs, `strings_en_he.json` / `rtl_dict.json`, `expected_tokens.json`, `state.json` node-ID ledger, `icons/`, `scripts/`.
 <!-- SECTION:NOTES:END -->
