@@ -144,8 +144,11 @@ fun CalendarScreen(
 
     // Nothing is shown until the view model has the device date
     val today = state.today
+    // Not again for the day the panel already shows: a fold or rotation re-runs this
     LaunchedEffect(state.selectedDate, today != null) {
-        if (today != null) dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+        if (today != null && dayDetailViewModel.state.value.dayInfo?.gregorianDate != state.selectedDate) {
+            dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(state.selectedDate))
+        }
     }
 
     // Selected once the device date is known, as the first load selects today; only once,
