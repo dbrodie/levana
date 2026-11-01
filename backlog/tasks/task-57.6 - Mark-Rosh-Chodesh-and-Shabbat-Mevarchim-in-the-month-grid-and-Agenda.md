@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T19:49:00Z'
+updated_date: '2026-11-01T20:53:00Z'
 labels:
   - design-review
 dependencies: []
@@ -89,4 +89,6 @@ Runtime (own headless emulator Levana_Agent_Template_API_36_1, device date 1 Nov
 - 05 en Agenda: second line 'Mevarchim Kislev · Molad Monday 10:27 PM and 3 chalakim'
 - 06 he Agenda 24h, 07 he month grid, 08 he day sheet 24h ('מולד: יום שני 22:27 ו־3 חלקים'), 09 he day sheet 12h ('10:27 PM' kept in order).
 Limitations: on a phone the Mevarchim suffix is usually ellipsized in the grid chip (owner-accepted; the full text is in the day sheet). Found a pre-existing bug, filed as TASK-57.26: in Hebrew with a 12-hour clock, the day-sheet zman rows and Havdalah read 'PM 5:22'.
+
+Coordinator review (2026-11-01): on phone widths the Saturday parasha chip truncates (e.g. "Chayei S…"), so the " · Mevarchim" suffix is usually not visible in the month grid. Owner accepted this as is (option 3): Shabbat Mevarchim is surfaced in the Agenda and the day sheet; the grid suffix only shows on wide cells (tablets, unfolded foldables). Alternatives considered and declined: Mevarchim-first chip text, a small moon icon.
 <!-- SECTION:NOTES:END -->
