@@ -28,10 +28,13 @@ object CalendarHeaderFormatter {
     private fun yearLabel(year: Int, locale: Locale): String =
         if (isHebrew(locale)) hebrewFormatter.formatHebrewNumber(year) else year.toString()
 
-    /** Title for the Hebrew-calendar mode, e.g. "תשרי 5787" (English) / "תשרי תשפ״ז" (Hebrew). */
+    /**
+     * Title for the Hebrew-calendar mode, e.g. "Cheshvan 5787" or "Adar II 5787" (English) /
+     * "חשון תשפ״ז" (Hebrew).
+     */
     fun hebrewMonthTitle(hym: HebrewYearMonth?, locale: Locale): String {
         if (hym == null) return ""
-        return "${hebrewMonthName(hym.year, hym.jewishDateMonth)} ${yearLabel(hym.year, locale)}"
+        return hebrewMonthRange(hym.year, hym.month, hym.year, hym.month, locale)
     }
 
     /**

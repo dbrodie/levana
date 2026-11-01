@@ -78,10 +78,27 @@ class CalendarHeaderFormatterTest {
     }
 
     @Test
-    fun `hebrew month title keeps english output and uses gematria in hebrew`() {
-        assertEquals("תשרי 5787", CalendarHeaderFormatter.hebrewMonthTitle(tishrei5787, english))
-        assertEquals("תשרי תשפ״ז", CalendarHeaderFormatter.hebrewMonthTitle(tishrei5787, hebrew))
+    fun `hebrew month title is transliterated in english and uses gematria in hebrew`() {
+        val cheshvan5787 = tishrei5787.next()
+        assertEquals("Cheshvan 5787", CalendarHeaderFormatter.hebrewMonthTitle(cheshvan5787, english))
+        assertEquals("חשון תשפ״ז", CalendarHeaderFormatter.hebrewMonthTitle(cheshvan5787, hebrew))
+        assertEquals("Tishrei 5787", CalendarHeaderFormatter.hebrewMonthTitle(tishrei5787, english))
         assertEquals("", CalendarHeaderFormatter.hebrewMonthTitle(null, hebrew))
+    }
+
+    @Test
+    fun `hebrew month title reads Adar I and Adar II in a leap year`() {
+        // 5787 is a leap year
+        val adarI = HebrewYearMonth.from(LocalDate.of(2027, 2, 15))
+        val adarII = adarI.next()
+        assertEquals("Adar I 5787", CalendarHeaderFormatter.hebrewMonthTitle(adarI, english))
+        assertEquals("Adar II 5787", CalendarHeaderFormatter.hebrewMonthTitle(adarII, english))
+        assertEquals("אדר א׳ תשפ״ז", CalendarHeaderFormatter.hebrewMonthTitle(adarI, hebrew))
+        assertEquals("אדר ב׳ תשפ״ז", CalendarHeaderFormatter.hebrewMonthTitle(adarII, hebrew))
+        // Ordinary year: plain Adar
+        val adar5786 = HebrewYearMonth.from(LocalDate.of(2026, 3, 1))
+        assertEquals("Adar 5786", CalendarHeaderFormatter.hebrewMonthTitle(adar5786, english))
+        assertEquals("אדר תשפ״ו", CalendarHeaderFormatter.hebrewMonthTitle(adar5786, hebrew))
     }
 
     @Test
