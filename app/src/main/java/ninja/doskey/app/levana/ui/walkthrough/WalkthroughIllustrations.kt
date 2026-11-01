@@ -59,7 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import ninja.doskey.app.levana.data.CalendarRepository
 import ninja.doskey.app.levana.domain.agenda.AgendaDay
 import ninja.doskey.app.levana.domain.agenda.AgendaItem
@@ -86,8 +86,6 @@ private const val SAMPLE_SUNRISE = "6:12"
 private const val SAMPLE_SUNSET = "16:41"
 private const val SAMPLE_HAVDALAH = "17:34"
 
-private val hebrewNumbers = HebrewDateFormatter().apply { isHebrewFormat = true }
-
 @Composable
 private fun locale(): Locale = LocalConfiguration.current.locales[0]
 
@@ -95,20 +93,20 @@ private fun Locale.isHebrew() = language == "iw" || language == "he"
 
 private fun jewishDate(date: LocalDate) = JewishCalendar(date)
 
-/** "19 Cheshvan 5787", or "י״ט חשוון תשפ״ז" in Hebrew. */
+/** "19 Cheshvan 5787", or "י״ט חשון תשפ״ז" in Hebrew. */
 private fun hebrewDate(date: LocalDate, hebrew: Boolean): String =
-    HebrewDateFormatter().apply { isHebrewFormat = hebrew }.format(jewishDate(date))
+    HebrewDateText.date(jewishDate(date), hebrew)
 
 /** "כ״א כסלו": a Hebrew date the way the event cards show it, whatever the app language. */
 private fun hebrewDayMonth(day: Int, month: Int): String {
     // A common year, so Adar is plain Adar
     val date = JewishDate(5786, month, day)
-    return "${hebrewNumbers.formatHebrewNumber(day)} ${hebrewNumbers.formatMonth(date)}"
+    return "${HebrewDateText.hebrewNumber(day)} ${HebrewDateText.hebrewMonth(date)}"
 }
 
 /** The parasha read on [shabbat], in the app language. */
 private fun parasha(shabbat: LocalDate, hebrew: Boolean): String =
-    HebrewDateFormatter().apply { isHebrewFormat = hebrew }.formatParsha(JewishCalendar(shabbat))
+    HebrewDateText.parsha(JewishCalendar(shabbat), hebrew)
 
 private fun dayLine(date: LocalDate, locale: Locale): String =
     date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale))
@@ -128,8 +126,8 @@ internal fun WelcomeIllustration() {
     Decorative {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.Bottom) {
             Text(
-                hebrewNumbers.formatMonth(jewishDate(SAMPLE_DAY)) + " " +
-                    hebrewNumbers.formatHebrewNumber(jewishDate(SAMPLE_DAY).jewishYear),
+                HebrewDateText.hebrewMonth(jewishDate(SAMPLE_DAY)) + " " +
+                    HebrewDateText.hebrewYear(jewishDate(SAMPLE_DAY).jewishYear),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
@@ -175,7 +173,7 @@ private fun RowScope.DayCell(date: LocalDate, today: Boolean, chip: String?) {
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Text(
-                hebrewNumbers.formatHebrewNumber(jewishDate(date).jewishDayOfMonth),
+                HebrewDateText.hebrewNumber(jewishDate(date).jewishDayOfMonth),
                 style = MaterialTheme.typography.labelLarge,
                 color = content,
                 maxLines = 1,
@@ -623,7 +621,7 @@ internal fun WidgetsIllustration() {
                 Modifier.weight(1.2f).clip(RoundedCornerShape(20.dp)).background(colors.surface).padding(12.dp)
             ) {
                 Text(
-                    hebrewNumbers.formatHebrewNumber(today.jewishDayOfMonth) + " " + hebrewNumbers.formatMonth(today),
+                    HebrewDateText.hebrewNumber(today.jewishDayOfMonth) + " " + HebrewDateText.hebrewMonth(today),
                     style = MaterialTheme.typography.headlineSmall,
                     color = colors.onSurface,
                     maxLines = 1,
@@ -641,7 +639,7 @@ internal fun WidgetsIllustration() {
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            AppIcon(hebrewNumbers.formatHebrewNumber(today.jewishDayOfMonth), stringResource(R.string.app_name), colors.primary, colors.onPrimary)
+            AppIcon(HebrewDateText.hebrewNumber(today.jewishDayOfMonth), stringResource(R.string.app_name), colors.primary, colors.onPrimary)
             AppIcon("", "", colors.surfaceContainerHighest, colors.onSurface)
             AppIcon("", "", colors.surfaceContainerHighest, colors.onSurface)
             AppIcon("", "", colors.surfaceContainerHighest, colors.onSurface)
@@ -654,7 +652,7 @@ private fun MiniMonth(modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
     Column(modifier.clip(RoundedCornerShape(20.dp)).background(colors.surface).padding(10.dp)) {
         Text(
-            hebrewNumbers.formatMonth(jewishDate(SAMPLE_DAY)),
+            HebrewDateText.hebrewMonth(jewishDate(SAMPLE_DAY)),
             style = MaterialTheme.typography.labelLarge,
             color = colors.onSurface,
         )

@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.domain.model
 
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 
 /**
@@ -33,12 +32,10 @@ enum class HebrewMonth(val jewishDateValue: Int, val englishName: String) {
         get() {
             // Reference years for month names only: 5785 is an ordinary year, 5784 a leap year
             val referenceYear = if (this == ADAR_I || this == ADAR_II) 5784 else 5785
-            return hebrewFormatter.formatMonth(JewishDate(referenceYear, jewishDateValue, 1))
+            return HebrewDateText.hebrewMonth(JewishDate(referenceYear, jewishDateValue, 1))
         }
 
     companion object {
-        private val hebrewFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
-
         fun from(jewishDateMonth: Int, isLeapYear: Boolean): HebrewMonth = when (jewishDateMonth) {
             JewishDate.TISHREI -> TISHREI
             JewishDate.CHESHVAN -> CHESHVAN

@@ -11,7 +11,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.R
@@ -44,8 +44,7 @@ class HebrewDateTileService : TileService() {
             val locales = localeManager.applicationLocales
             val isHebrew = !locales.isEmpty && locales[0]?.language.let { it == "iw" || it == "he" }
 
-            val formatter = HebrewDateFormatter().apply { isHebrewFormat = isHebrew }
-            val hebrewDate = formatter.format(jc)
+            val hebrewDate = HebrewDateText.date(jc, isHebrew)
 
             val subtitle = when {
                 jc.yomTovIndex >= 0 -> {
@@ -62,7 +61,7 @@ class HebrewDateTileService : TileService() {
                 )
             }
 
-            val hebrewDay = formatter.formatHebrewNumber(jc.jewishDayOfMonth)
+            val hebrewDay = HebrewDateText.hebrewNumber(jc.jewishDayOfMonth)
                 .replace("\u05F3", "")  // strip geresh — too small to read in icon
                 .replace("\u05F4", "")  // strip gershayim
 

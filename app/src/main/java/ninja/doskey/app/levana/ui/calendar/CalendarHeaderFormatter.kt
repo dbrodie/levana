@@ -1,7 +1,7 @@
 package ninja.doskey.app.levana.ui.calendar
 
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
@@ -18,15 +18,13 @@ import java.util.Locale
  */
 object CalendarHeaderFormatter {
 
-    private val hebrewFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
-
     fun isHebrew(locale: Locale): Boolean = locale.language in setOf("he", "iw")
 
     private fun hebrewMonthName(year: Int, jewishDateMonth: Int): String =
-        hebrewFormatter.formatMonth(JewishDate(year, jewishDateMonth, 1))
+        HebrewDateText.hebrewMonth(JewishDate(year, jewishDateMonth, 1))
 
     private fun yearLabel(year: Int, locale: Locale): String =
-        if (isHebrew(locale)) hebrewFormatter.formatHebrewNumber(year) else year.toString()
+        if (isHebrew(locale)) HebrewDateText.hebrewYear(year) else year.toString()
 
     /** Title for the Hebrew-calendar mode, e.g. "תשרי 5787" (English) / "תשרי תשפ״ז" (Hebrew). */
     fun hebrewMonthTitle(hym: HebrewYearMonth?, locale: Locale): String {

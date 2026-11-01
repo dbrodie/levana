@@ -1,17 +1,15 @@
 package ninja.doskey.app.levana.ui
 
 import android.content.Context
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import ninja.doskey.app.levana.notifications.isHebrewLanguage
 
 /*
  * The Omer count in [Context]'s language, shared by the day panel's Omer card and the Omer
  * notifications. Pass a context carrying the app language.
  */
-
-private val omerFormatter = HebrewDateFormatter().apply { isHebrewFormat = true }
 
 /**
  * The day of the Omer, 1–49: its number in English, and in Hebrew the traditional form from
@@ -52,5 +50,5 @@ private fun hebrewOmerDay(omerDay: Int): String {
         omerDay <= 44 -> JewishCalendar(5786, JewishCalendar.IYAR, omerDay - 15)
         else -> JewishCalendar(5786, JewishCalendar.SIVAN, omerDay - 44)
     }
-    return omerFormatter.formatOmer(jc)
+    return HebrewDateText.hebrewOmer(jc)
 }

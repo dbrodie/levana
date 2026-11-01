@@ -25,11 +25,11 @@ class DatePickerFormatterTest {
     @Test
     fun hebrewLedTitleAndGregorianSpan() {
         val cheshvan = hebrewMonth(5787, JewishDate.CHESHVAN)
-        assertEquals("חשון ה׳תשפ״ז", DatePickerFormatter.hebrewMonthTitle(cheshvan))
+        assertEquals("חשון תשפ״ז", DatePickerFormatter.hebrewMonthTitle(cheshvan))
         assertEquals("Oct – Nov 2026", DatePickerFormatter.gregorianSpan(repository.getHebrewMonthDays(cheshvan), english))
         val teves = hebrewMonth(5787, JewishDate.TEVES)
         assertEquals("Dec 2026 – Jan 2027", DatePickerFormatter.gregorianSpan(repository.getHebrewMonthDays(teves), english))
-        assertEquals("אדר ב׳ ה׳תשפ״ז", DatePickerFormatter.hebrewMonthTitle(hebrewMonth(5787, JewishDate.ADAR_II)))
+        assertEquals("אדר ב׳ תשפ״ז", DatePickerFormatter.hebrewMonthTitle(hebrewMonth(5787, JewishDate.ADAR_II)))
     }
 
     @Test
@@ -45,15 +45,15 @@ class DatePickerFormatterTest {
 
     @Test
     fun hebrewYearsAtTheRangeEnds() {
-        assertEquals("ה׳תר״צ", DatePickerFormatter.hebrewYear(5690))
-        assertEquals("ה׳ת״ר", DatePickerFormatter.hebrewYear(5600))
+        assertEquals("תר״צ", DatePickerFormatter.hebrewYear(5690))
+        assertEquals("ת״ר", DatePickerFormatter.hebrewYear(5600))
         assertEquals("ו׳ אלפים", DatePickerFormatter.hebrewYear(6000))
     }
 
     @Test
     fun footerDates() {
         val oct29 = LocalDate.of(2026, 10, 29)
-        assertEquals("י״ח חשון ה׳תשפ״ז", DatePickerFormatter.hebrewDate(oct29))
+        assertEquals("י״ח חשון תשפ״ז", DatePickerFormatter.hebrewDate(oct29))
         assertEquals("Thu, 29 Oct 2026", DatePickerFormatter.gregorianDate(oct29, english))
     }
 

@@ -1,7 +1,7 @@
 package ninja.doskey.app.levana.ui.datepicker
 
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.ui.calendar.CalendarHeaderFormatter
@@ -13,28 +13,18 @@ import java.util.Locale
 
 /**
  * The picker's text. Hebrew dates are written in Hebrew letters in both UI languages, as in
- * design 1b; Gregorian dates follow the UI locale. Done at composition time with the
+ * design 1b, with the app's short year form ([HebrewDateText]); Gregorian dates follow the UI locale. Done at composition time with the
  * current configuration's locale, like [CalendarHeaderFormatter].
  */
 object DatePickerFormatter {
 
-    private val hebrewFormatter = HebrewDateFormatter().apply {
-        isHebrewFormat = true
-        isUseLongHebrewYears = true
-    }
-
-    /**
-     * A Hebrew year in letters, e.g. "ה׳תשפ״ז". KosherJava writes "ה׳ תשפ״ז"; the space is
-     * kept only in a whole thousand, "ו׳ אלפים".
-     */
-    fun hebrewYear(year: Int): String = hebrewFormatter.formatHebrewNumber(year).let {
-        if (year % 1000 == 0) it else it.replaceFirst("׳ ", "׳")
-    }
+    /** A Hebrew year in letters, e.g. "תשפ״ז", or "ו׳ אלפים" for 6000. */
+    fun hebrewYear(year: Int): String = HebrewDateText.hebrewYear(year)
 
     fun hebrewMonthName(year: Int, jewishMonth: Int): String =
-        hebrewFormatter.formatMonth(JewishDate(year, jewishMonth, 1))
+        HebrewDateText.hebrewMonth(JewishDate(year, jewishMonth, 1))
 
-    /** The Hebrew-led title, e.g. "חשון ה׳תשפ״ז" or "אדר ב׳ ה׳תשפ״ז". */
+    /** The Hebrew-led title, e.g. "חשון תשפ״ז" or "אדר ב׳ תשפ״ז". */
     fun hebrewMonthTitle(month: HebrewYearMonth): String =
         "${hebrewMonthName(month.year, month.jewishDateMonth)} ${hebrewYear(month.year)}"
 
@@ -60,11 +50,10 @@ object DatePickerFormatter {
     fun hebrewSpan(days: List<HebrewDay>, locale: Locale): String =
         CalendarHeaderFormatter.hebrewMonthRange(days, locale)
 
-    /** The selection's Hebrew date, e.g. "י״ח חשון ה׳תשפ״ז". */
+    /** The selection's Hebrew date, e.g. "י״ח חשון תשפ״ז". */
     fun hebrewDate(date: LocalDate): String {
         val jd = JewishDate(date)
-        return "${hebrewFormatter.formatHebrewNumber(jd.jewishDayOfMonth)} " +
-            "${hebrewFormatter.formatMonth(jd)} ${hebrewYear(jd.jewishYear)}"
+        return HebrewDateText.hebrewDate(jd)
     }
 
     /** The selection's Gregorian date, e.g. "Thu, 29 Oct 2026". */
