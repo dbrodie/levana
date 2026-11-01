@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T17:39:00Z'
+updated_date: '2026-11-01T19:49:00Z'
 labels:
   - design-review
 dependencies: []
@@ -39,10 +39,10 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Rosh Chodesh (both days) has a chip in the month grid, Gregorian and Hebrew mode
-- [ ] #2 Shabbat Mevarchim is marked on the Saturday's parasha chip in the grid and as a Mevarchim/molad line on the Agenda Shabbat card
-- [ ] #3 Molad text is localized (English/Hebrew, 12/24-hour) and verified against a published molad table
-- [ ] #4 Figma month, Agenda and day-sheet frames updated to match
+- [x] #1 Rosh Chodesh (both days) has a chip in the month grid, Gregorian and Hebrew mode
+- [x] #2 Shabbat Mevarchim is marked on the Saturday's parasha chip in the grid and as a Mevarchim/molad line on the Agenda Shabbat card
+- [x] #3 Molad text is localized (English/Hebrew, 12/24-hour) and verified against a published molad table
+- [x] #4 Figma month, Agenda and day-sheet frames updated to match
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,3 +57,36 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 7. Tests: toHebrewDay RC (two-day RC Kislev 5787, one-day RC, RC Tevet during Chanukah keeps Chanukah), Shabbat Mevarchim detection (7 Nov 2026 yes, not in Elul), molad values vs published table, molad text en/he × 12/24h, Agenda assembler. Update Roborazzi baselines only where intended.
 8. Verify: assembleDebug, testDebugUnitTest, lintDebug, verifyRoborazziDebug; emulator check (Gregorian + Hebrew grid around 7–11 Nov 2026, Agenda, day sheet; en + he); evidence in /Users/daniel/.paseo/evidence/task-57.6/.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Tested commit: 235e1d0.
+
+Figma (E1IFrxKcldXbXnvXy5Nzhd):
+- Month frames Light/Dark/Hebrew (and the drawer/day-sheet/date-picker frames that show the October grid): Rosh Chodesh chip (Event bar Tone=Tertiary = MINOR) on 11-12 Oct and on 1/30 Cheshvan in Hebrew mode (21:307); parasha chip on Shabbat Mevarchim reads 'Bereshis · Mevarchim' / 'Chayei Sara · Mevarchim' / 'בראשית · מברכים'.
+- Date picker frames (Light 28:1752/28:2059, Dark): holiday dot on Rosh Chodesh days (the picker shares HebrewDay).
+- Agenda / Card component set (20:131): new optional 'Detail' line (Show detail + Detail props, bodyMedium onSurfaceVariant, up to 2 lines); Chayei Sara cards in Light/Dark/Hebrew Agenda frames show 'Mevarchim Kislev · Molad Monday 10:27 PM and 3 chalakim' / Hebrew.
+- New day-sheet frames for 7 Nov 2026 with the molad card: 'Calendar / Day sheet — Shabbat Mevarchim, molad (Light)' (76:11177) and '(Hebrew UI)' (76:11516). No dark day-sheet copy; dark comes from the theme.
+
+Code:
+- CalendarRepository.toHebrewDay: falls back to Rosh Chodesh when KosherJava has no (visible) Yom Tov; HebrewDay.isShabbatMevarchim.
+- DayInfo.molad is now a Molad(month, dayOfWeek, hour, minute, chalakim) for the month being blessed (from date+8 days).
+- ui/MoladText.kt: localized text (strings in values/values-iw molad_strings.xml), weekday in the app language, the screens' 12/24-hour format, time wrapped in an LTR isolate in Hebrew. Used by the day-sheet MoladSection and the Agenda Shabbat card (also in its TalkBack description).
+- Side effect (intended): the date picker and the month widget also mark Rosh Chodesh, because they share HebrewDay.
+
+Molad finding (source: Hebcal JSON API, e.g. https://www.hebcal.com/hebcal?v=1&cfg=json&year=2026&month=11&molad=on; months 4 and 7 of 2027 for Nisan/Tammuz):
+- Published: Kislev 5787 'Monday, 10:27pm and 3 chalakim'; Adar II 'Monday, 1:23am and 7'; Nisan 'Tuesday, 2:07pm and 8'; Sivan 'Friday, 3:35pm and 10'; Tammuz 'Sunday, 4:19am and 11'. Hebcal times equal the UTC instant + 2:20:56, i.e. Jerusalem mean time, the traditional reckoning.
+- The old code was wrong in two ways. (1) It showed the molad of the current month: on Shabbat Mevarchim Kislev it showed Molad Cheshvan. (2) It converted to Israeli civil time: 22:06 instead of 22:27 in winter, and in summer 14:46 instead of 14:07 for Nisan. Now uses getMolad() moladHours/Minutes/Chalakim of the next month, which matches Hebcal exactly. Pinned in RoshChodeshMevarchimTest. Only one independent source was found (chabad.org's calendar page has no molad text).
+
+Tests: RoshChodeshMevarchimTest (two-day RC Kislev 5787, one-day RC Nisan 5787, RC Tevet in Chanukah keeps Chanukah, Rosh Hashanah not RC, Hebrew-mode grid, Shabbat Mevarchim detection incl. Elul, molad vs Hebcal ×5), MoladTextTest (en/he × 12/24h, 1 chelek, 0 chalakim, Agenda line), AgendaAssemblerTest (Shabbat carries the molad).
+Verification: set -a && . ./.env && set +a && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:verifyRoborazziDebug → BUILD SUCCESSFUL (1167+ tests).
+Roborazzi: 65 baselines re-recorded, all reviewed as intended: grid RC chips, picker RC dots, Agenda Mevarchim line (incl. search 'sara' and foldable agenda), Hebrew-mode grid, drawer-over-calendar. Pre-update diff images: /Users/daniel/.paseo/evidence/task-57.6/roborazzi-diffs/.
+Runtime (own headless emulator Levana_Agent_Template_API_36_1, device date 1 Nov 2026, Jerusalem): /Users/daniel/.paseo/evidence/task-57.6/
+- 01/02 en month grid: RC chips 10-11 Nov, 7 Nov chip 'Chayei Sara · Mevarchim' (UI text; truncates to 'Chayei S…' on a phone, as agreed)
+- 03 en day sheet: 'Shabbat Mevarchim Kislev' / 'Molad: Monday 10:27 PM and 3 chalakim'
+- 04 en Hebrew-mode grid: RC on 1 and 30 Cheshvan, Mevarchim on 27 Cheshvan
+- 05 en Agenda: second line 'Mevarchim Kislev · Molad Monday 10:27 PM and 3 chalakim'
+- 06 he Agenda 24h, 07 he month grid, 08 he day sheet 24h ('מולד: יום שני 22:27 ו־3 חלקים'), 09 he day sheet 12h ('10:27 PM' kept in order).
+Limitations: on a phone the Mevarchim suffix is usually ellipsized in the grid chip (owner-accepted; the full text is in the day sheet). Found a pre-existing bug, filed as TASK-57.26: in Hebrew with a 12-hour clock, the day-sheet zman rows and Havdalah read 'PM 5:22'.
+<!-- SECTION:NOTES:END -->
