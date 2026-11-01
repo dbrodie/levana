@@ -67,7 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.data.db.PersonalEvent
@@ -79,10 +79,6 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.ContentWidthBox
 import ninja.doskey.app.levana.ui.contentWidth
-
-private val hebrewFormatter = HebrewDateFormatter().apply {
-    isHebrewFormat = true
-}
 
 @Composable
 fun EventsScreen(
@@ -650,7 +646,7 @@ internal fun formatHebrewDate(day: Int, month: Int, year: Int): String {
     val yearKnown = HebrewDateMatcher.isKnownYear(year)
     if (yearKnown) {
         try {
-            return hebrewFormatter.format(JewishDate(year, month, day))
+            return HebrewDateText.hebrewDate(JewishDate(year, month, day))
         } catch (_: Exception) {
             // A day or month that year does not have: build it from parts below
         }
@@ -658,9 +654,9 @@ internal fun formatHebrewDate(day: Int, month: Int, year: Int): String {
     return try {
         require(day in 1..30)
         val dayAndMonth =
-            "${hebrewFormatter.formatHebrewNumber(day)} ${hebrewMonthName(month, year)}"
+            "${HebrewDateText.hebrewNumber(day)} ${hebrewMonthName(month, year)}"
         if (yearKnown) {
-            "$dayAndMonth ${hebrewFormatter.formatHebrewNumber(year)}"
+            "$dayAndMonth ${HebrewDateText.hebrewYear(year)}"
         } else {
             dayAndMonth
         }
@@ -686,5 +682,5 @@ private fun hebrewMonthName(month: Int, year: Int): String {
     } else {
         REGULAR_REFERENCE_YEAR
     }
-    return hebrewFormatter.formatMonth(JewishDate(referenceYear, month, 1))
+    return HebrewDateText.hebrewMonth(JewishDate(referenceYear, month, 1))
 }

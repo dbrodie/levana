@@ -1,9 +1,9 @@
 package ninja.doskey.app.levana.data
 
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import ninja.doskey.app.levana.domain.model.DayInfo
+import ninja.doskey.app.levana.domain.model.HebrewDateText
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
@@ -15,14 +15,6 @@ import java.time.ZoneId
 import java.util.GregorianCalendar
 
 class CalendarRepository {
-
-    private val hebrewFormatter = HebrewDateFormatter().apply {
-        isHebrewFormat = true
-    }
-
-    private val translitFormatter = HebrewDateFormatter().apply {
-        isHebrewFormat = false
-    }
 
     fun getHebrewDay(date: LocalDate, inIsrael: Boolean = false): HebrewDay {
         val jewishCalendar = createJewishCalendar(date, inIsrael)
@@ -66,7 +58,7 @@ class CalendarRepository {
             hebrewYearMonth.jewishDateMonth,
             1
         )
-        return hebrewFormatter.formatMonth(jd)
+        return HebrewDateText.hebrewMonth(jd)
     }
 
     fun getDayInfo(
@@ -99,7 +91,7 @@ class CalendarRepository {
         val parsha = if (parshaEnum != null &&
             parshaEnum != JewishCalendar.Parsha.NONE
         ) {
-            translitFormatter.formatParsha(jewishCalendar)
+            HebrewDateText.parsha(jewishCalendar, hebrew = false)
         } else {
             null
         }
@@ -107,7 +99,7 @@ class CalendarRepository {
         val parshaHebrew = if (parshaEnum != null &&
             parshaEnum != JewishCalendar.Parsha.NONE
         ) {
-            hebrewFormatter.formatParsha(jewishCalendar)
+            HebrewDateText.parsha(jewishCalendar, hebrew = true)
         } else {
             null
         }
@@ -190,9 +182,9 @@ class CalendarRepository {
         val holiday = (if (yomTovIndex >= 0) HolidayMapper.mapHoliday(yomTovIndex) else null)
             ?.takeIf { showModernIsraeli || it.category != HolidayCategory.MODERN_ISRAELI }
         val parsha = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
-            ?.let { translitFormatter.formatParsha(jewishCalendar) }
+            ?.let { HebrewDateText.parsha(jewishCalendar, hebrew = false) }
         val parshaHebrew = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
-            ?.let { hebrewFormatter.formatParsha(jewishCalendar) }
+            ?.let { HebrewDateText.parsha(jewishCalendar, hebrew = true) }
         return HebrewDay(
             day = jewishCalendar.jewishDayOfMonth,
             month = HebrewMonth.from(
@@ -200,9 +192,9 @@ class CalendarRepository {
                 jewishCalendar.isJewishLeapYear
             ),
             year = jewishCalendar.jewishYear,
-            hebrewFormatted = hebrewFormatter.format(jewishCalendar),
-            transliterated = translitFormatter.format(jewishCalendar),
-            hebrewDayOfMonthFormatted = hebrewFormatter.formatHebrewNumber(
+            hebrewFormatted = HebrewDateText.hebrewDate(jewishCalendar),
+            transliterated = HebrewDateText.transliteratedDate(jewishCalendar),
+            hebrewDayOfMonthFormatted = HebrewDateText.hebrewNumber(
                 jewishCalendar.jewishDayOfMonth
             ),
             gregorianDate = date,
