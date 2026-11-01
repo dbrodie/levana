@@ -17,6 +17,8 @@ jobs:
   build-release:
     name: Build & publish release APK
     runs-on: ubuntu-latest
+    # Signing and Play secrets live in this environment, which only v*.*.* tags may deploy to
+    environment: release
     permissions:
       contents: write
 
