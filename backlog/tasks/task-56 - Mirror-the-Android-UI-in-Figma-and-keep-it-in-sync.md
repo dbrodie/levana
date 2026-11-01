@@ -1,7 +1,7 @@
 ---
 id: TASK-56
 title: Mirror the Android UI in Figma and keep it in sync
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-31T22:44:00Z'
@@ -86,3 +86,9 @@ Figma is now the UI design source; how to implement from it: specs/FIGMA.md (lin
 
 Flow-link criterion dropped by the user (2026-11-01): sections by feature are enough.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Figma file mirrors the shipped UI (foundations with Light/Dark modes, ~70 components with RTL variants, Light/Dark/Hebrew screens, Settings, onboarding references + specs, widgets), verified against code and emulator captures. Figma is now the UI design source (specs/FIGMA.md). Design-review follow-ups are tracked in TASK-57.
+<!-- SECTION:FINAL_SUMMARY:END -->
