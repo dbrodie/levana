@@ -4,7 +4,7 @@ title: Large-screen adaptive layouts for the inner display (design decision)
 status: To Do
 assignee: []
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-11-01T15:36:00Z'
+updated_date: '2026-11-01T17:57:00Z'
 labels: []
 dependencies:
   - TASK-52.2
@@ -162,4 +162,58 @@ Implementation sketch for the follow-up:
 - Zmanim times are approximate sample values.
 - PNGs are exported at 1x (dp = px).
 - The research is web-only: four apps are well sourced, others are thin or unverified, and no device was used.
+
+### Option E: list-detail with a draggable divider (added 2026-11-01, owner's direction)
+The owner chose this direction after reviewing A–D. The inspiration is the owner's "Levana Foldable" mockup (frames 1a "Month + day" and 1b "Agenda + day"), saved with a render in /tmp/levana-task52.4-month-design/inspiration/. It was used as inspiration only: E keeps Levana's fonts, colours, header actions (+, Today) and components. The mockup's other changes were not adopted: Manrope and Frank Ruhl fonts, a search icon in the header, a floating add button, and a Torah-reading card with the haftarah.
+
+**Rule**
+- Two panes when the window is at least 840dp wide (Material "expanded"): the Fold8 inner display in landscape and both Fold8 Ultra orientations.
+- Narrower windows keep today's phone layout unchanged: Fold8 inner portrait (704dp), the covers and split-screen halves.
+- The rule is by window width, not by orientation (owner, 2026-11-01).
+
+**Layout**
+- Month screen: month grid | day panel. Agenda screen: agenda list | the same day panel.
+- The month header and mode selector sit in the list pane.
+- The day panel runs full height on the right, with a date/place header and ‹ › day stepping.
+
+**Draggable divider**
+- A 16dp gutter with a 4×48dp handle.
+- Drag snaps to anchors: list ≈40%, 50% (the default) or 65% of the width.
+- Minimum sizes: grid ≥360dp (phone width), panel ≥300dp.
+- The position is remembered and shared by Month and Agenda.
+- Double-tapping the handle or the TalkBack actions cycle through the anchors.
+
+**Continuity**
+- Selected day, visible month or agenda scroll, and the divider position are kept.
+- Below 840dp the layout falls back to the phone screen with the same selected day, and the panel content becomes the day sheet.
+
+**Figma**
+- [Section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9942)
+- Fold8 landscape:
+  - [Month + day, divider at 50%](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7727)
+  - [Month + day, dragged to 65%](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8083)
+  - [Agenda + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8422)
+- Ultra portrait: [Month + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8706) · [Agenda + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9045)
+- Ultra landscape: [Month + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9329)
+- Fold8 portrait, below 840dp: [today's layout, unchanged](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9668)
+- New building blocks: [Pane divider](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7553) · [Agenda list](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7555)
+- PNGs: options/E1–E7 and annotations/E_annotation.png in /tmp/levana-task52.4-month-design/.
+
+**Pros**
+- One pattern on Month and Agenda, matching Google Calendar, Outlook and Android's default list-detail behaviour (one pane below 840dp).
+- The Agenda gains a detail pane instead of being duplicated inside Month (unlike D).
+- Users choose the balance between grid and day details.
+- Narrow windows need no new layout.
+
+**Cons**
+- Below 840dp the TASK-52.2 issues remain: the sheet is capped at 640dp with gutters, and there is a blank band under the grid on Fold8 portrait.
+- The divider adds anchor states to build and baseline.
+- The handle must not clash with horizontal month swipes.
+- At the 65% anchor the panel (~300dp) wraps the date header.
+
+**Open questions**
+1. Anchors: are 40/50/65% and the minimum sizes right? Should the panel also collapse completely (a full-width month)?
+2. Should the Agenda list pane keep its own header (title + mode selector, as drawn) or share one with Month?
+3. Below 840dp, keep today's layout as-is, or apply the small fix of letting the sheet use the full width?
+4. Do E's dark and Hebrew (RTL) frames need drawing now, or after the decision?
 <!-- SECTION:NOTES:END -->
