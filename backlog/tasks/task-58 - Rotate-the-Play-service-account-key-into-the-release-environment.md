@@ -1,0 +1,33 @@
+---
+id: TASK-58
+title: Rotate the Play service-account key into the release environment
+status: To Do
+assignee: []
+created_date: '2026-11-01T14:36:00Z'
+labels: []
+dependencies: []
+priority: low
+type: chore
+ordinal: 94000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Follow-up to TASK-53.3 (2026-11-01). The release job now runs in the GitHub environment `release`, which only `v*.*.*` tags can deploy to. The owner is moving the four signing secrets (KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD) there. `PLAY_SERVICE_ACCOUNT_JSON` stays a repo-level secret for now: the owner doesn't have the original JSON file, and GitHub never reveals secret values.
+
+Steps (owner, in consoles; credentials never go in the repo):
+1. Play Console → Setup → API access (or Users and permissions): identify the linked Google Cloud service account used for uploads.
+2. Google Cloud Console → IAM & Admin → Service accounts → that account → Keys → Add key → Create new key → JSON.
+3. GitHub → Settings → Environments → release: add the downloaded file as the environment secret `PLAY_SERVICE_ACCOUNT_JSON`; then delete the repo-level secret of the same name.
+4. In Cloud Console, delete the old key so the previous credential stops working. Delete the downloaded JSON from the local disk, or store it only in the password manager.
+5. Verify with the next tagged release: the "Upload App Bundle to Google Play internal testing" step succeeds.
+
+Also confirm the service account has only the Play permissions the upload needs (release to testing tracks), nothing broader.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 A new service-account JSON key is stored only as the release-environment secret PLAY_SERVICE_ACCOUNT_JSON; the repo-level secret and the old Cloud key are deleted
+- [ ] #2 The next tagged release uploads to Play successfully; the service account's permissions are limited to what the upload needs
+<!-- AC:END -->
