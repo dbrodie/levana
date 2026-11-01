@@ -1,11 +1,11 @@
 ---
 id: TASK-57.8
 title: Hebrew-mode month title mixes scripts ("5787 חשון")
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T15:36:00Z'
+updated_date: '2026-11-01T16:04:00Z'
 labels:
   - design-review
 dependencies: []

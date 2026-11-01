@@ -1,11 +1,11 @@
 ---
 id: TASK-57.25
 title: Hebrew years written the same way everywhere (date picker shows ה׳תשפ״ז)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T15:23:00Z'
-updated_date: '2026-11-01T15:38:00Z'
+updated_date: '2026-11-01T16:04:00Z'
 labels:
   - design-review
 dependencies: []
