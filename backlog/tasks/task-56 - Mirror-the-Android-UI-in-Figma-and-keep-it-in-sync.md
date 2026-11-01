@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T22:44:00Z'
-updated_date: '2026-10-31T23:30:00Z'
+updated_date: '2026-11-01T00:42:00Z'
 labels: []
 dependencies: []
 references:
@@ -32,7 +32,7 @@ Maintain an editable Figma Design file that reproduces Levana's shipped Android 
 - [x] #7 Foundations page documents colours, type, spacing, radii, elevation and icons
 - [ ] #8 Screens linked as user flows (sections and/or prototype connections)
 - [x] #9 Dark theme and Hebrew (RTL) variants of key screens
-- [ ] #10 Process documented for updating Figma when the Compose UI changes
+- [x] #10 Process documented for updating Figma when the Compose UI changes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,4 +82,6 @@ Figma file: https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd ("Levana — And
 
 ### Evidence and working files (untracked, in this worktree)
 `.figma-migration/` (excluded via .git/info/exclude; delete when done): `emulator/batch1–3` captures + UI dumps, `figma-compare/` Figma screenshots, `specs/` condensed code specs, `strings_en_he.json` / `rtl_dict.json`, `expected_tokens.json`, `state.json` node-ID ledger, `icons/`, `scripts/`.
+
+Process for keeping Figma in sync: specs/FIGMA.md (linked from AGENTS.md).
 <!-- SECTION:NOTES:END -->
