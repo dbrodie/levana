@@ -1,17 +1,19 @@
 # Figma
 
-The Figma file mirrors the shipped UI: [Levana — Android App UI](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd). Code is the source of truth.
+Design source for the UI: [Levana — Android App UI](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd). Design UI changes in Figma first, then implement them in Compose.
 
-## When the UI changes
+## File layout
 
-1. **Tokens** (`ui/theme/`): update the matching variable or text style. Colours have Light and Dark modes.
-2. **Shared UI**: update the component on the Components page. Mirror the change in its `Direction=RTL` variant.
-3. **Screens**: update the affected frames. Dark copies are in Screens — Dark, and key screens have Hebrew copies in Screens — Hebrew (RTL).
-4. **New screens**: build them from components, place them in their feature section, then add Dark and Hebrew copies.
-5. **Verify**: compare against emulator screenshots (`android-debug` skill), including the Hebrew and dark versions if affected.
+- **Foundations / variables**: tokens. Each variable's Android code syntax names its theme value (e.g. `MaterialTheme.colorScheme.primary`).
+- **Components**: one per shared composable. The description names the Compose source and its defaults.
+- **Screens — Light / Dark / Hebrew (RTL)**: one section per feature. Dark and Hebrew show expected results only; Compose derives them from the theme and layout direction.
+- **Onboarding**: reference pages plus a spec card per page. **Widgets**: Glance widgets, tile, launcher icon.
 
-## Rules
+## Implementing a design
 
-- Editable layers only; no screenshots inside frames.
-- Bind colours, spacing and radii to variables, and text to text styles.
-- New onboarding pages: add a spec card on the Onboarding page.
+1. Read the frame through the Figma MCP (`get_design_context`, with the `figma-design-to-code` skill).
+2. Map variables and text styles to `ui/theme/` and add missing tokens there first. Never hardcode values.
+3. Reuse the composable behind each component instance. Build a new composable only if it's a new component.
+4. Strings go in `values` and `values-iw`; the Hebrew frames show the expected text.
+5. Verify on the emulator (`android-debug` skill) in light, dark and Hebrew against the frames.
+6. If the implementation must deviate, update Figma so it stays accurate.

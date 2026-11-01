@@ -83,5 +83,5 @@ Figma file: https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd ("Levana — And
 ### Evidence and working files (untracked, in this worktree)
 `.figma-migration/` (excluded via .git/info/exclude; delete when done): `emulator/batch1–3` captures + UI dumps, `figma-compare/` Figma screenshots, `specs/` condensed code specs, `strings_en_he.json` / `rtl_dict.json`, `expected_tokens.json`, `state.json` node-ID ledger, `icons/`, `scripts/`.
 
-Process for keeping Figma in sync: specs/FIGMA.md (linked from AGENTS.md).
+Figma is now the UI design source; how to implement from it: specs/FIGMA.md (linked from AGENTS.md).
 <!-- SECTION:NOTES:END -->

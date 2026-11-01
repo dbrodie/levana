@@ -6,7 +6,7 @@ Levana is an open-source Android Hebrew calendar app for Orthodox Jewish users (
 
 - Full product vision: `specs/PROJECT_SPEC.md`
 - Technical decisions: `specs/ARCHITECTURE_SPEC.md`
-- Figma mirror of the UI (update it when UI changes): `specs/FIGMA.md`
+- UI design source (Figma) and how to implement from it: `specs/FIGMA.md`
 - Existing RFEs in `specs/rfes/` are historical references.
 
 ## Critical Frameworks
