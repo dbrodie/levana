@@ -76,7 +76,6 @@ import ninja.doskey.app.levana.ui.CappedFontScale
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
-private val HEBREW_LOCALE = Locale.forLanguageTag("he")
 
 private val DAYS_OF_WEEK = listOf(
     DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
@@ -470,7 +469,7 @@ private fun HebrewMonthGrid(
     if (monthDays.isEmpty()) return
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-        DayHeaderRow(HEBREW_LOCALE)
+        DayHeaderRow(LocalConfiguration.current.locales[0])
         monthGridWeeks(monthDays).forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 row.forEach { day ->
