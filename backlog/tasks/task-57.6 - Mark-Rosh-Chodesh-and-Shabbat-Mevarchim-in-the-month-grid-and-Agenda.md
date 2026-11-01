@@ -1,10 +1,11 @@
 ---
 id: TASK-57.6
 title: Mark Rosh Chodesh and Shabbat Mevarchim in the month grid and Agenda
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T17:36:00Z'
+updated_date: '2026-11-01T17:39:00Z'
 labels:
   - design-review
 dependencies: []
@@ -43,3 +44,16 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 - [ ] #3 Molad text is localized (English/Hebrew, 12/24-hour) and verified against a published molad table
 - [ ] #4 Figma month, Agenda and day-sheet frames updated to match
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Figma first (Levana file, specs/FIGMA.md): month frames (light, dark, Hebrew RTL) get a Rosh Chodesh chip on both RC days in the existing holiday-chip style/Rosh Chodesh category colour and the Mevarchim suffix on the Saturday parasha chip; Agenda Shabbat Mevarchim card gets a 'Mevarchim Kislev · Molad …' line; day-sheet molad card shows the localized text.
+2. Data: CalendarRepository.toHebrewDay falls back to ROSH_CHODESH when jc.isRoshChodesh and no (visible) Yom Tov/Chanukah holiday — grid, date picker and month widget share HebrewDay so all gain the chip. HebrewDay gets isShabbatMevarchim.
+3. Molad model: replace DayInfo.molad String with a Molad(month, dayOfWeek, hour, minute, chalakim) built from KosherJava's traditional getMolad() (moladHours/Minutes/Chalakim, Jerusalem mean time, no DST) for the month being blessed (the next month — check current code, which reads the current month's molad). Pin unit tests to a published molad table (Kislev, Nisan, Tammuz 5787) and record the source.
+4. Text: ui/MoladText.kt formats it from string resources (values + values-iw), weekday in the app language, 12/24-hour from the device setting; used by the day sheet MoladSection and the Agenda.
+5. Grid: parasha chip reads '<parasha> · Mevarchim' / Hebrew equivalent on Shabbat Mevarchim, no extra slot.
+6. Agenda: AgendaItem.Shabbat carries the Molad; card adds the Mevarchim/molad line (also in its content description).
+7. Tests: toHebrewDay RC (two-day RC Kislev 5787, one-day RC, RC Tevet during Chanukah keeps Chanukah), Shabbat Mevarchim detection (7 Nov 2026 yes, not in Elul), molad values vs published table, molad text en/he × 12/24h, Agenda assembler. Update Roborazzi baselines only where intended.
+8. Verify: assembleDebug, testDebugUnitTest, lintDebug, verifyRoborazziDebug; emulator check (Gregorian + Hebrew grid around 7–11 Nov 2026, Agenda, day sheet; en + he); evidence in /Users/daniel/.paseo/evidence/task-57.6/.
+<!-- SECTION:PLAN:END -->

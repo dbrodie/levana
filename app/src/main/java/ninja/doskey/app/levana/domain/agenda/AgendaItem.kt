@@ -5,6 +5,7 @@ import ninja.doskey.app.levana.domain.model.ContactBirthday
 import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.Holiday
+import ninja.doskey.app.levana.domain.model.Molad
 import ninja.doskey.app.levana.domain.model.OccurrenceLabel
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import java.time.LocalDate
@@ -26,12 +27,16 @@ sealed interface AgendaItem {
     /** Candle lighting on the evening that begins Shabbat or Yom Tov. */
     data class CandleLighting(override val time: LocalTime) : AgendaItem
 
-    /** A Shabbat with its weekly reading, and havdalah when it ends that evening. */
+    /**
+     * A Shabbat with its weekly reading, and havdalah when it ends that evening; on Shabbat
+     * Mevarchim, [molad] is the molad of the month being blessed.
+     */
     data class Shabbat(
         val parsha: String,
         val parshaHebrew: String?,
         val specialShabbat: String?,
-        val havdalah: LocalTime?
+        val havdalah: LocalTime?,
+        val molad: Molad? = null
     ) : AgendaItem {
         override val time: LocalTime? = null
     }

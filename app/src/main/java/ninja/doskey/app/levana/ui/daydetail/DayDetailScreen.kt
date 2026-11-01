@@ -53,8 +53,11 @@ import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.moladMonthName
+import ninja.doskey.app.levana.ui.moladTimeText
 import ninja.doskey.app.levana.ui.omerCardText
 import ninja.doskey.app.levana.domain.model.DayInfo
+import ninja.doskey.app.levana.domain.model.Molad
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
@@ -356,7 +359,9 @@ private fun ParshaSection(parsha: String, parshaHebrew: String?, specialShabbat:
 }
 
 @Composable
-private fun MoladSection(molad: String) {
+private fun MoladSection(molad: Molad) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val use24Hour = DateFormat.is24HourFormat(context)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -366,13 +371,13 @@ private fun MoladSection(molad: String) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = stringResource(R.string.sheet_shabbat_mevarchim),
+                text = stringResource(R.string.sheet_shabbat_mevarchim, moladMonthName(context, molad)),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = molad,
+                text = stringResource(R.string.sheet_molad, moladTimeText(context, molad, use24Hour)),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
