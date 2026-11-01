@@ -1,11 +1,11 @@
 ---
 id: TASK-57.10
 title: Zmanim list is added out of order
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T15:11:00Z'
+updated_date: '2026-11-01T15:19:00Z'
 labels:
   - design-review
 dependencies: []

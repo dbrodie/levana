@@ -1,11 +1,11 @@
 ---
 id: TASK-57.9
 title: Hebrew-primary month shows Hebrew weekday names in the English UI
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T15:12:00Z'
+updated_date: '2026-11-01T15:19:00Z'
 labels:
   - design-review
 dependencies: []
