@@ -1,0 +1,5 @@
+• Adding a Hebrew birthday to a contact that already has one now edits it instead of overwriting it
+• Better on foldables: wide screens use a centred layout, and folding, unfolding or rotating keeps your place, open dialogs and unsaved edits
+• Fixed a crash after quickly changing language or dark mode
+• Location no longer needs Google Play Services
+• Open-source licenses listed in About; Levana is now MIT-licensed
