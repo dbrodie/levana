@@ -1,10 +1,11 @@
 ---
 id: TASK-57.9
 title: Hebrew-primary month shows Hebrew weekday names in the English UI
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T15:02:00Z'
+updated_date: '2026-11-01T15:03:00Z'
 labels:
   - design-review
 dependencies: []
@@ -33,3 +34,12 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 <!-- AC:BEGIN -->
 - [ ] #1 Weekday labels follow the UI language in both calendar modes (English and Hebrew UI × Gregorian and Hebrew mode), covered by Roborazzi snapshots or a UI test
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. CalendarScreen.kt: HebrewMonthGrid passes LocalConfiguration.current.locales[0] to DayHeaderRow (same as GregorianMonthGrid); remove the now-unused HEBREW_LOCALE. Keep TextStyle.SHORT.
+2. Tests: add an AppShellScreenshotTest case that saves calendarHebrewMode=true before launch, asserts the weekday header shows the UI-language SHORT names, and captures app_calendar_hebrew_mode in all four variants (en/he × light/dark). Gregorian mode is already covered by app_calendar_*; add the same text assertion there so all four UI × mode combinations are asserted.
+3. Survey other weekday headers: HebrewDatePickerDialog already uses the app locale (NARROW); MonthWidget hardcodes Hebrew NARROW names in both languages -> file a separate task rather than widen this one.
+4. Verify: assembleDebug, testDebugUnitTest, lintDebug; runtime check on a dedicated emulator in English and Hebrew UI with Hebrew mode; screenshots outside the worktree.
+<!-- SECTION:PLAN:END -->

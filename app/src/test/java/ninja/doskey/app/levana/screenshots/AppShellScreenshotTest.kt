@@ -3,8 +3,10 @@ package ninja.doskey.app.levana.screenshots
 import android.Manifest
 import android.content.Intent
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
+import java.time.DayOfWeek
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -29,6 +31,7 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
     @Test
     fun calendarAndDrawer() {
         launchCalendar()
+        awaitWeekdayHeader()
         capture("app_calendar")
 
         openDrawer()
@@ -37,6 +40,15 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         compose.onNodeWithContentDescription(string(R.string.design_switch_city)).performClick()
         awaitText("London")
         capture("app_drawer_cities")
+    }
+
+    @Test
+    fun calendarHebrewMode() {
+        // The mode decides the grid; the weekday names still follow the UI language
+        runBlocking { preferences.saveCalendarHebrewMode(true) }
+        launchCalendar()
+        awaitWeekdayHeader()
+        capture("app_calendar_hebrew_mode")
     }
 
     @Test
@@ -104,6 +116,13 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
                 .putExtra(MainActivity.EXTRA_OPEN_ZMANIM, true)
         )
         capture("app_zmanim")
+    }
+
+    private fun awaitWeekdayHeader() {
+        val locale = app.resources.configuration.locales[0]
+        listOf(DayOfWeek.SUNDAY, DayOfWeek.SATURDAY).forEach {
+            awaitText(it.getDisplayName(TextStyle.SHORT, locale))
+        }
     }
 
     companion object {
