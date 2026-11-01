@@ -26,7 +26,7 @@ class AgendaFormatterTest {
 
     @Test
     fun `the titles follow the Month screen`() {
-        assertEquals("חשון 5787", AgendaFormatter.title(cheshvan, english))
+        assertEquals("Cheshvan 5787", AgendaFormatter.title(cheshvan, english))
         assertEquals("כסלו תשפ״ז", AgendaFormatter.title(kislev, hebrew))
         assertEquals("November 2026", AgendaFormatter.title(AgendaMonth.Gregorian(YearMonth.of(2026, 11)), english))
     }

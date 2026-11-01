@@ -103,7 +103,7 @@ class AgendaScreenshotTest(private val variant: Variant) : ScreenshotTest(varian
         clickable(string(R.string.calendar_mode_hebrew)).performClick()
         // The mode is a saved preference: wait for it to come back before scrolling, so the
         // scroll never races the regrouping
-        awaitText(if (hebrew) "כסלו תשפ״ז" else "כסלו 5787", partial = false)
+        awaitText(if (hebrew) "כסלו תשפ״ז" else "Kislev 5787", partial = false)
 
         // A new month in the leading calendar starts under its own header: 30 Kislev (Rosh
         // Chodesh Teves) at the top, by its list key so the position is exact
