@@ -578,7 +578,9 @@ private fun DayCell(
             }
             val bars = buildList {
                 day.holidayCategory?.let { add(((if (isHebrew) day.holidayLabelHebrew else day.holidayLabel) ?: stringResource(R.string.holidays)) to holidayCategoryColor(it)) }
-                (if (isHebrew) day.parshaLabelHebrew else day.parshaLabel)?.let { label -> if (size < 2) add(label to MaterialTheme.colorScheme.primary) }
+                (if (isHebrew) day.parshaLabelHebrew else day.parshaLabel)
+                    ?.let { if (day.isShabbatMevarchim) stringResource(R.string.calendar_parsha_mevarchim, it) else it }
+                    ?.let { label -> if (size < 2) add(label to MaterialTheme.colorScheme.primary) }
                 if (day.hasPersonalEvent) add(stringResource(R.string.calendar_event_personal) to MaterialTheme.colorScheme.tertiary)
                 if (day.systemEventColors.isNotEmpty()) add(stringResource(R.string.calendar_event_system) to MaterialTheme.colorScheme.onSurfaceVariant)
                 if (day.hasCandles && size < 2) add(stringResource(R.string.calendar_event_candles) to MaterialTheme.colorScheme.primary)

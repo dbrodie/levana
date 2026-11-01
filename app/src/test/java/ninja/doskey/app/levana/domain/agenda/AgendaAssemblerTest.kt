@@ -69,6 +69,17 @@ class AgendaAssemblerTest {
     }
 
     @Test
+    fun `a Shabbat Mevarchim carries the molad of the month it blesses`() {
+        val mevarchim = AgendaAssembler.day(calendar.getDayInfo(LocalDate.of(2026, 11, 7)), shabbat())!!
+        val molad = (mevarchim.items.single() as AgendaItem.Shabbat).molad!!
+        assertEquals(HebrewMonth.KISLEV, molad.month)
+        assertEquals(DayOfWeek.MONDAY, molad.dayOfWeek)
+
+        val plain = AgendaAssembler.day(calendar.getDayInfo(saturday), shabbat())!!
+        assertNull((plain.items.single() as AgendaItem.Shabbat).molad)
+    }
+
+    @Test
     fun `havdalah without a reading is its own timed entry`() {
         val weekday = LocalDate.of(2026, 11, 3)
         val day = AgendaAssembler.day(calendar.getDayInfo(weekday), shabbat(havdalah = LocalTime.of(19, 10)))!!

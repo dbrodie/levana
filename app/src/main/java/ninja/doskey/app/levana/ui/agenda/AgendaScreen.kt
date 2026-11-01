@@ -94,6 +94,7 @@ import ninja.doskey.app.levana.domain.agenda.AgendaItem
 import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.ui.calendar.CalendarModeSelector
 import ninja.doskey.app.levana.ui.calendar.CalendarHeaderFormatter
+import ninja.doskey.app.levana.ui.agendaMevarchimText
 import ninja.doskey.app.levana.ui.calendar.holidayCategoryColor
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
 import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
@@ -516,6 +517,8 @@ private data class CardContent(
     /** TalkBack: the entry's kind, then its title and time. */
     val description: String,
     val tint: Color? = null,
+    /** A further line under [secondary], up to two lines: the Shabbat Mevarchim molad. */
+    val detail: String? = null,
 )
 
 @Composable
@@ -561,6 +564,10 @@ private fun AgendaCard(
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
+                content.detail?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
             }
             content.trailing?.let {
                 Spacer(Modifier.width(8.dp))
@@ -605,8 +612,9 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
             val title = stringResource(R.string.agenda_parsha, if (hebrewUi) item.parshaHebrew ?: item.parsha else item.parsha)
             val havdalah = item.havdalah?.let { stringResource(R.string.agenda_havdalah_at, time(it)) }
             val secondary = listOfNotNull(havdalah, cityClock.takeIf { havdalah != null }).joinToString(" · ").ifEmpty { null }
+            val mevarchim = item.molad?.let { agendaMevarchimText(context, it, use24Hour ?: DateFormat.is24HourFormat(context)) }
             CardContent(Icons.AutoMirrored.Outlined.MenuBook, title, secondary, null, CardStyle.TONAL,
-                describe(stringResource(R.string.agenda_type_shabbat), title, secondary))
+                describe(stringResource(R.string.agenda_type_shabbat), title, secondary, mevarchim), detail = mevarchim)
         }
         is AgendaItem.Havdalah -> {
             val title = stringResource(R.string.agenda_havdalah)

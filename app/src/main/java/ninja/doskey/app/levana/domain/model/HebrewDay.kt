@@ -16,6 +16,8 @@ data class HebrewDay(
     val holidayLabelHebrew: String? = null,
     val parshaLabel: String? = null,
     val parshaLabelHebrew: String? = null,
+    /** The Shabbat before Rosh Chodesh (23–29 of any month but Elul), when it is blessed. */
+    val isShabbatMevarchim: Boolean = false,
     val hasPersonalEvent: Boolean = false,
     val systemEventColors: List<Int> = emptyList()
 )

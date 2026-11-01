@@ -8,10 +8,10 @@ import ninja.doskey.app.levana.domain.model.HebrewDay
 import ninja.doskey.app.levana.domain.model.HebrewMonth
 import ninja.doskey.app.levana.domain.model.HebrewYearMonth
 import ninja.doskey.app.levana.domain.model.HolidayCategory
+import ninja.doskey.app.levana.domain.model.Molad
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import java.util.GregorianCalendar
 
 class CalendarRepository {
@@ -106,11 +106,7 @@ class CalendarRepository {
 
         val specialShabbat = getSpecialShabbat(jewishCalendar)
 
-        val molad = if (jewishCalendar.isShabbosMevorchim) {
-            formatMolad(jewishCalendar)
-        } else {
-            null
-        }
+        val molad = if (jewishCalendar.isShabbosMevorchim) moladBlessedOn(date) else null
 
         val omerDay = jewishCalendar.dayOfOmer.let {
             if (it == -1) null else it
@@ -148,18 +144,22 @@ class CalendarRepository {
         }
     }
 
-    private fun formatMolad(jc: JewishCalendar): String {
-        val moladDate = jc.moladAsDate ?: return ""
-        val moladLocal = moladDate.toInstant()
-            .atZone(ZoneId.of("Asia/Jerusalem"))
-        val dayOfWeek = moladLocal.dayOfWeek.getDisplayName(
-            java.time.format.TextStyle.FULL,
-            java.util.Locale.getDefault()
+    /**
+     * The molad of the month blessed on [date]'s Shabbat Mevarchim (23–29 of the month, so
+     * the next month starts within 8 days). KosherJava's getMolad() gives the traditional
+     * reckoning that molad announcements use; getMoladAsDate() is the same instant in civil
+     * time and would differ by about 21 minutes (an hour more in Israeli summer time).
+     */
+    private fun moladBlessedOn(date: LocalDate): Molad {
+        val next = createJewishCalendar(date.plusDays(8))
+        val molad = next.molad
+        return Molad(
+            month = HebrewMonth.from(next.jewishMonth, next.isJewishLeapYear),
+            dayOfWeek = LocalDate.of(molad.gregorianYear, molad.gregorianMonth + 1, molad.gregorianDayOfMonth).dayOfWeek,
+            hour = molad.moladHours,
+            minute = molad.moladMinutes,
+            chalakim = molad.moladChalakim
         )
-        val time = moladLocal.toLocalTime()
-            .format(java.time.format.DateTimeFormatter.ofPattern("h:mm a"))
-        val chalakim = jc.moladChalakim
-        return "Molad: $dayOfWeek $time, $chalakim chalakim"
     }
 
     private fun createJewishCalendar(date: LocalDate, inIsrael: Boolean = false, useModernHolidays: Boolean = true): JewishCalendar {
@@ -179,8 +179,10 @@ class CalendarRepository {
             jewishCalendar.isErevYomTov ||
             jewishCalendar.isErevYomTovSheni
         val yomTovIndex = jewishCalendar.yomTovIndex
+        // KosherJava's yomTovIndex never reports Rosh Chodesh; a Yom Tov or Chanukah keeps the chip
         val holiday = (if (yomTovIndex >= 0) HolidayMapper.mapHoliday(yomTovIndex) else null)
             ?.takeIf { showModernIsraeli || it.category != HolidayCategory.MODERN_ISRAELI }
+            ?: HolidayMapper.mapHoliday(JewishCalendar.ROSH_CHODESH).takeIf { jewishCalendar.isRoshChodesh }
         val parsha = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
             ?.let { HebrewDateText.parsha(jewishCalendar, hebrew = false) }
         val parshaHebrew = jewishCalendar.parshah.takeIf { it != null && it != JewishCalendar.Parsha.NONE }
@@ -203,7 +205,8 @@ class CalendarRepository {
             holidayLabel = holiday?.name,
             holidayLabelHebrew = holiday?.hebrewName,
             parshaLabel = parsha,
-            parshaLabelHebrew = parshaHebrew
+            parshaLabelHebrew = parshaHebrew,
+            isShabbatMevarchim = jewishCalendar.isShabbosMevorchim
         )
     }
 }

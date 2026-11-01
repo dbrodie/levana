@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Molad: weekday (%1$s) and time (%2$s); a whole minute has no chalakim -->
+    <string name="molad_time">%1$s %2$s</string>
+    <plurals name="molad_time_chalakim">
+        <item quantity="one">%1$s %2$s and %3$d chelek</item>
+        <item quantity="other">%1$s %2$s and %3$d chalakim</item>
+    </plurals>
+    <!-- Day sheet card on Shabbat Mevarchim: the month blessed, then the molad -->
+    <string name="sheet_shabbat_mevarchim">Shabbat Mevarchim %1$s</string>
+    <string name="sheet_molad">Molad: %1$s</string>
+    <!-- Agenda Shabbat card line: the month blessed, then the molad -->
+    <string name="agenda_mevarchim">Mevarchim %1$s · Molad %2$s</string>
+    <!-- Month grid: the Saturday's parasha chip on Shabbat Mevarchim -->
+    <string name="calendar_parsha_mevarchim">%1$s · Mevarchim</string>
+</resources>

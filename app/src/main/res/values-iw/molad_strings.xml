@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="molad_time">%1$s %2$s</string>
+    <plurals name="molad_time_chalakim">
+        <item quantity="one">%1$s %2$s וחלק אחד</item>
+        <item quantity="two">%1$s %2$s ו־%3$d חלקים</item>
+        <item quantity="other">%1$s %2$s ו־%3$d חלקים</item>
+    </plurals>
+    <string name="sheet_shabbat_mevarchim">שבת מברכים חודש %1$s</string>
+    <string name="sheet_molad">מולד: %1$s</string>
+    <string name="agenda_mevarchim">מברכים %1$s · מולד %2$s</string>
+    <string name="calendar_parsha_mevarchim">%1$s · מברכים</string>
+</resources>

@@ -35,7 +35,7 @@ object AgendaAssembler {
             val havdalah = shabbatInfo.havdalahTime
             val parsha = dayInfo.parsha
             if (parsha != null) {
-                add(AgendaItem.Shabbat(parsha, dayInfo.parshaHebrew, dayInfo.specialShabbat, havdalah))
+                add(AgendaItem.Shabbat(parsha, dayInfo.parshaHebrew, dayInfo.specialShabbat, havdalah, dayInfo.molad))
             } else if (havdalah != null) {
                 add(AgendaItem.Havdalah(havdalah))
             }
