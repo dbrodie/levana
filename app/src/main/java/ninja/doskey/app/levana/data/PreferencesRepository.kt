@@ -173,8 +173,7 @@ class PreferencesRepository(
             notifyOmerTzait = prefs[Keys.NOTIFY_OMER_TZAIT] ?: true,
             notifyOmerMorning = prefs[Keys.NOTIFY_OMER_MORNING] ?: false,
             notifyOmerMorningTime = prefs[Keys.NOTIFY_OMER_MORNING_TIME] ?: 420,
-            selectedZmanim = prefs[Keys.SELECTED_ZMANIM]
-                ?: setOf("Sunrise", "Sunset", "Nightfall"),
+            selectedZmanim = parseSelectedZmanim(prefs[Keys.SELECTED_ZMANIM]),
             yahrzeitRules = parseYahrzeitRules(
                 prefs[Keys.YAHRZEIT_LEAP_YEAR_ADAR],
                 prefs[Keys.YAHRZEIT_FIRST_YEAR],
@@ -496,6 +495,11 @@ internal object IsraelModeMigration : DataMigration<Preferences> {
 
     override suspend fun cleanUp() = Unit
 }
+
+/** Saved zman keys, with renamed zmanim mapped to their current names. */
+internal fun parseSelectedZmanim(saved: Set<String>?): Set<String> =
+    saved?.mapTo(mutableSetOf()) { ZmanimRepository.RENAMED_ZMAN_KEYS[it] ?: it }
+        ?: setOf("Sunrise", "Sunset", "Nightfall")
 
 /** The stored theme mode; a missing or unrecognised value follows the system. */
 internal fun parseThemeMode(value: String?): ThemeMode =
