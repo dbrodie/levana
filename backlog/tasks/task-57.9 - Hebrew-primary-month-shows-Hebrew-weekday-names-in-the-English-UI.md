@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T15:03:00Z'
+updated_date: '2026-11-01T15:12:00Z'
 labels:
   - design-review
 dependencies: []
@@ -32,7 +32,7 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Weekday labels follow the UI language in both calendar modes (English and Hebrew UI × Gregorian and Hebrew mode), covered by Roborazzi snapshots or a UI test
+- [x] #1 Weekday labels follow the UI language in both calendar modes (English and Hebrew UI × Gregorian and Hebrew mode), covered by Roborazzi snapshots or a UI test
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,23 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 3. Survey other weekday headers: HebrewDatePickerDialog already uses the app locale (NARROW); MonthWidget hardcodes Hebrew NARROW names in both languages -> file a separate task rather than widen this one.
 4. Verify: assembleDebug, testDebugUnitTest, lintDebug; runtime check on a dedicated emulator in English and Hebrew UI with Hebrew mode; screenshots outside the worktree.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Tested commit: 775805c (code, tests, baselines).
+
+Change: CalendarScreen.kt HebrewMonthGrid now passes LocalConfiguration.current.locales[0] to DayHeaderRow, like GregorianMonthGrid; HEBREW_LOCALE removed. TextStyle.SHORT kept.
+
+Tests: AppShellScreenshotTest gains calendarHebrewMode (saves calendarHebrewMode=true, launches, asserts the SHORT Sunday/Saturday names in the UI locale, captures app_calendar_hebrew_mode_{en,he}_{light,dark}); calendarAndDrawer now asserts the same names in Gregorian mode. So all four UI × mode combinations are asserted, not only imaged. On the unfixed CalendarScreen.kt the new test fails in the two English variants (2 of 4 failed); with the fix all pass. Only the four new baselines were recorded; no existing baseline changed.
+
+Results: assembleDebug, testDebugUnitTest and lintDebug pass (exit 0); verifyRoborazziDebug passes.
+
+Runtime (Levana_Agent_Template_API_36_1, emulator-5556, own headless session, debug APK from this commit's source): Hebrew mode with English UI shows Sun…Sat; with app locale set to he (cmd locale set-app-locales) shows יום א׳…שבת. UI dump confirms the header texts.
+
+Evidence: /tmp/levana-task57.9-evidence/ (01_en_ui_hebrew_mode.png, 02_he_ui_hebrew_mode.png, t579_build.log, t579_verify.log).
+
+Survey of other weekday headers: HebrewDatePickerDialog already uses the app locale (NARROW). MonthWidget hardcodes Hebrew NARROW names in both languages; filed TASK-57.24 rather than widening this task (different file, and English NARROW names are ambiguous, so it needs a style decision).
+
+Limitations: Hebrew header style (SHORT 'יום א׳') unchanged, out of scope. TASK-57.24's ID was allocated in this worktree; check for a clash if a concurrent branch also created 57.24.
+<!-- SECTION:NOTES:END -->
