@@ -144,13 +144,18 @@ class ZmanimRepository {
             candleLightingOffset,
             inIsrael
         )
+        // Added in their fixed chronological order, matching ZMAN_NAMES, so no sort is needed.
+        // One known exception: Tefillah (MGA) is sunrise + day/3 - 24 min and Shema (GRA) is
+        // sunrise + day/4, so Tefillah (MGA) comes first when the day is shorter than 4.8
+        // hours (polar winter, roughly north of 60°). That order is accepted, not sorted.
         return buildList {
             add(zman(ALOT_HASHACHAR, czc.alosHashachar, ZmanCategory.MORNING, location))
             add(zman(MISHEYAKIR, czc.misheyakir11Degrees, ZmanCategory.MORNING, location))
             add(zman(SUNRISE, czc.seaLevelSunrise, ZmanCategory.MORNING, location))
-            add(zman(SOF_ZMAN_SHEMA_GRA, czc.sofZmanShmaGRA, ZmanCategory.MORNING, location))
             add(zman(SOF_ZMAN_SHEMA_MGA, czc.sofZmanShmaMGA, ZmanCategory.MORNING, location))
-            add(zman(SOF_ZMAN_TEFILLAH, czc.sofZmanTfilaGRA, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_SHEMA_GRA, czc.sofZmanShmaGRA, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_TEFILLAH_MGA, czc.sofZmanTfilaMGA, ZmanCategory.MORNING, location))
+            add(zman(SOF_ZMAN_TEFILLAH_GRA, czc.sofZmanTfilaGRA, ZmanCategory.MORNING, location))
             add(zman(CHATZOT, czc.chatzos, ZmanCategory.AFTERNOON, location))
             add(zman(MINCHA_GEDOLAH, czc.minchaGedola, ZmanCategory.AFTERNOON, location))
             add(zman(MINCHA_KETANAH, czc.minchaKetana, ZmanCategory.AFTERNOON, location))
@@ -259,9 +264,10 @@ class ZmanimRepository {
         val ALOT_HASHACHAR = ZmanName("Alot HaShachar", "עלות השחר")
         val MISHEYAKIR = ZmanName("Misheyakir", "משיכיר")
         val SUNRISE = ZmanName("Sunrise", "הנץ החמה")
-        val SOF_ZMAN_SHEMA_GRA = ZmanName("Sof Zman Shema (GRA)", "סוף זמן שמע (גר״א)")
         val SOF_ZMAN_SHEMA_MGA = ZmanName("Sof Zman Shema (MGA)", "סוף זמן שמע (מג״א)")
-        val SOF_ZMAN_TEFILLAH = ZmanName("Sof Zman Tefillah", "סוף זמן תפילה")
+        val SOF_ZMAN_SHEMA_GRA = ZmanName("Sof Zman Shema (GRA)", "סוף זמן שמע (גר״א)")
+        val SOF_ZMAN_TEFILLAH_MGA = ZmanName("Sof Zman Tefillah (MGA)", "סוף זמן תפילה (מג״א)")
+        val SOF_ZMAN_TEFILLAH_GRA = ZmanName("Sof Zman Tefillah (GRA)", "סוף זמן תפילה (גר״א)")
         val CHATZOT = ZmanName("Chatzot", "חצות היום")
         val MINCHA_GEDOLAH = ZmanName("Mincha Gedolah", "מנחה גדולה")
         val MINCHA_KETANAH = ZmanName("Mincha Ketanah", "מנחה קטנה")
@@ -278,9 +284,17 @@ class ZmanimRepository {
          */
         val ZMAN_NAMES: List<ZmanName> = listOf(
             ALOT_HASHACHAR, MISHEYAKIR, SUNRISE,
-            SOF_ZMAN_SHEMA_GRA, SOF_ZMAN_SHEMA_MGA, SOF_ZMAN_TEFILLAH,
+            SOF_ZMAN_SHEMA_MGA, SOF_ZMAN_SHEMA_GRA, SOF_ZMAN_TEFILLAH_MGA, SOF_ZMAN_TEFILLAH_GRA,
             CHATZOT, MINCHA_GEDOLAH, MINCHA_KETANAH, PLAG_HAMINCHA,
             CANDLE_LIGHTING, SUNSET, NIGHTFALL, HAVDALAH, CHATZOT_HALAYLAH
+        )
+
+        /**
+         * Persisted `selectedZmanim` keys of zmanim that were renamed, mapped to their
+         * current English name, so a saved selection keeps working after a rename.
+         */
+        val RENAMED_ZMAN_KEYS: Map<String, String> = mapOf(
+            "Sof Zman Tefillah" to SOF_ZMAN_TEFILLAH_GRA.english
         )
     }
 }

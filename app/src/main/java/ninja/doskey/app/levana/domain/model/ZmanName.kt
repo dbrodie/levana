@@ -2,7 +2,8 @@ package ninja.doskey.app.levana.domain.model
 
 /**
  * A zman's name in English and Hebrew. [english] is also the key persisted in
- * `selectedZmanim`, so it must not change. The full list is
+ * `selectedZmanim`, so a rename needs an entry in
+ * [ninja.doskey.app.levana.data.ZmanimRepository.RENAMED_ZMAN_KEYS]. The full list is
  * [ninja.doskey.app.levana.data.ZmanimRepository.ZMAN_NAMES].
  */
 data class ZmanName(val english: String, val hebrew: String)
