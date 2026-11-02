@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T08:56:00Z'
-updated_date: '2026-11-02T10:54:00Z'
+updated_date: '2026-11-02T10:57:00Z'
 labels: []
 dependencies:
   - TASK-52.4
@@ -132,6 +132,14 @@ created: 2026-11-02T10:54:00Z
 ---
 
 Coordinator integration 2026-11-02: reviewed emulator shots (EN Month 50%, HE dark Agenda 65%); merged as 7592d41. Clean run: assembleRelease + 1202 tests 0 failures, Roborazzi 420 unchanged (96 added, 11 foldable baselines intentionally changed). One earlier run hit the recurring DatePickerScreenshotTest 'Select date' 10s wait timeout (load ~4.6); passed on rerun. Figma: Option E as built added to Light/Dark/Hebrew pages, divider in Components, exploration page deleted (per agent). Agent's Agenda selection behaviour accepted pending owner review.
+
+---
+
+created: 2026-11-02T10:57:00Z
+
+---
+
+Owner 2026-11-02: Agenda selection rule narrowed to date-rail taps only; follow-up TASK-59.
 
 ---
 <!-- COMMENTS:END -->
