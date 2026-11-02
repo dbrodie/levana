@@ -1,7 +1,7 @@
 ---
 id: TASK-57.27
 title: 'Figma: write Hebrew years in the short form (תשפ״ז) to match the app'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T09:23:00Z'
