@@ -118,7 +118,7 @@ class PostMidnightHavdalahTest {
         )
 
         val hebrewBody = candleLightingNotificationText(hebrew(), friday, LocalTime.of(21, 40), end).body
-        assertTrue(hebrewBody, hebrewBody.contains("יום ראשון 00:13"))
+        assertTrue(hebrewBody, hebrewBody.contains("יום ראשון \u206800:13\u2069"))
         assertFalse(hebrewBody, hebrewBody.contains("יום שבת"))
     }
 

@@ -5,14 +5,7 @@ import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Molad
 import ninja.doskey.app.levana.notifications.isHebrewLanguage
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-
-private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
-private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
-
-/** Left-to-right isolate, so "10:27 PM" keeps its order inside Hebrew text. */
-private fun ltr(text: String) = "\u2066$text\u2069"
 
 /**
  * The molad's weekday, time and chalakim in [context]'s language, e.g. "Monday 10:27 PM and
@@ -20,8 +13,7 @@ private fun ltr(text: String) = "\u2066$text\u2069"
  */
 fun moladTimeText(context: Context, molad: Molad, use24Hour: Boolean): String {
     val weekday = molad.dayOfWeek.getDisplayName(TextStyle.FULL, context.resources.configuration.locales[0])
-    val clock = LocalTime.of(molad.hour, molad.minute).format(if (use24Hour) TIME_24H else TIME_12H)
-    val time = if (context.isHebrewLanguage()) ltr(clock) else clock
+    val time = formatClockTime(LocalTime.of(molad.hour, molad.minute), use24Hour, context.isHebrewLanguage())
     return if (molad.chalakim == 0) {
         context.getString(R.string.molad_time, weekday, time)
     } else {

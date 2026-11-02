@@ -1,10 +1,11 @@
 ---
 id: TASK-57.26
 title: 'Hebrew UI, 12-hour clock: day-sheet zman times read ''PM 5:22'''
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-01T18:03:00Z'
-updated_date: '2026-11-02T13:42:00Z'
+updated_date: '2026-11-02T13:44:00Z'
 labels:
   - design-review
 dependencies: []
@@ -35,3 +36,21 @@ Related: TASK-57.11 (acceptance criterion #2 "Hebrew UI renders times correctly 
 - [ ] #2 All time formatting goes through one shared helper, covered by unit tests; 12/24-hour behaviour per surface is unchanged
 - [ ] #3 Verified on the emulator in Hebrew and English UI, 12- and 24-hour, with Roborazzi baselines updated only where intended
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Shared helper: ui/ClockTime.kt `formatClockTime(time: LocalTime, use24Hour, hebrewUi, markerLocale: Locale? = null)` with the one pair of "h:mm a" / "HH:mm" formatters. In the Hebrew UI it wraps the result in a bidi isolate so "5:22 PM" keeps its order in RTL text/layout. Use FIRST STRONG isolate (U+2068…U+2069) rather than LRI: identical to LRI for "5:22 PM" / "17:22" (no strong char → LTR), but stays correct if the AM/PM marker is localised to Hebrew (notifications format 12h with the app locale, which can give "5:22 אחה״צ"; an LRI would flip that to read marker-first). MoladText's ltr() moves onto the helper.
+
+Call sites and their current 12/24 rule (kept unchanged):
+1. ui/MoladText.moladTimeText / agendaMevarchimText — caller's use24Hour; already isolated (LRI) in Hebrew.
+2. ui/daydetail/DayDetailScreen — QuickZmanimCards, HalachicTimesSection (zman rows), ShabbatTimeCard (candles/Havdalah), SystemEventsSection (event start–end), molad line: device DateFormat.is24HourFormat.
+3. ui/zmanim/ZmanimScreen — device setting.
+4. ui/agenda/AgendaScreen.cardContent (candles, havdalah, Shabbat havdalah line, mevarchim; also TalkBack descriptions) — use24Hour override (walkthrough passes true) ?: device setting.
+5. widget/WidgetCommon.timeFormatter → ZmanimWidget rows, TodayWidget next zman / candles / havdalah — device setting.
+6. notifications/NotificationTexts.notificationTime — Hebrew: device setting; English: always 12h; 12h markers in the app locale.
+7. ui/settings/SettingsTimeFormat.morningTimeFormatArgs — string-resource stepper value, not a LocalTime: English fixed 12h "AM", Hebrew 24h digits only (no bidi issue). Left as is; noted as an inconsistency for TASK-57.11.
+Quick tile shows no times.
+
+Steps: add helper + unit tests (en/he × 12/24, marker locale, isolate); route 1–6 through it; update MoladText/NotificationTexts tests for the isolate; build/test/lint/verifyRoborazzi, re-record only intended baselines; emulator check He 12h (day sheet, Zmanim, Agenda, widgets, notification), En 12h and He 24h spot checks.
+<!-- SECTION:PLAN:END -->

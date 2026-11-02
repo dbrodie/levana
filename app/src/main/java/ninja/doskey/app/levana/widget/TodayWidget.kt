@@ -117,7 +117,7 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
         DateBlock(snapshot, hebrewUi, locale, full, mirror, openCalendar(context, snapshot.today))
         if (full) {
             val openZmanim = openZmanim(context, snapshot.today)
-            val timeFormatter = timeFormatter(context)
+            val time = widgetTimeFormat(context)
             val dayFormatter = DateTimeFormatter.ofPattern("EEE", locale)
             val next = snapshot.nextZman
             TimeRow(
@@ -127,7 +127,7 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
                         zmanDisplayName(it.name, it.hebrewName, hebrewUi).primary,
                     )
                 } ?: context.getString(R.string.widget_next_zman_none),
-                value = next?.at?.let { relativeTime(it, snapshot.today, timeFormatter, dayFormatter) } ?: NO_TIME,
+                value = next?.at?.let { relativeTime(it, snapshot.today, time, dayFormatter) } ?: NO_TIME,
                 action = openZmanim,
                 mirror = mirror,
             )
@@ -135,9 +135,9 @@ private fun TodayContent(snapshot: TodayWidgetSnapshot) {
             if (shabbat != null) {
                 TimeRow(
                     label = context.getString(R.string.candle_lighting),
-                    value = timeOnDay(shabbat.candleLightingDate, shabbat.candleLighting, timeFormatter, dayFormatter),
+                    value = timeOnDay(shabbat.candleLightingDate, shabbat.candleLighting, time, dayFormatter),
                     secondaryLabel = context.getString(R.string.havdalah),
-                    secondaryValue = timeOnDay(shabbat.havdalahDate, shabbat.havdalah, timeFormatter, dayFormatter),
+                    secondaryValue = timeOnDay(shabbat.havdalahDate, shabbat.havdalah, time, dayFormatter),
                     action = openZmanim,
                     mirror = mirror,
                 )
@@ -275,13 +275,13 @@ private fun LabeledTime(label: String, value: String, mirror: Boolean, modifier:
 private fun relativeTime(
     at: ZonedDateTime,
     today: LocalDate,
-    timeFormatter: DateTimeFormatter,
+    time: (ZonedDateTime) -> String,
     dayFormatter: DateTimeFormatter,
-): String = if (at.toLocalDate() == today) at.format(timeFormatter) else timeOnDay(at.toLocalDate(), at, timeFormatter, dayFormatter)
+): String = if (at.toLocalDate() == today) time(at) else timeOnDay(at.toLocalDate(), at, time, dayFormatter)
 
 private fun timeOnDay(
     date: LocalDate,
     at: ZonedDateTime?,
-    timeFormatter: DateTimeFormatter,
+    time: (ZonedDateTime) -> String,
     dayFormatter: DateTimeFormatter,
-): String = "${date.format(dayFormatter)} ${at?.format(timeFormatter) ?: NO_TIME}"
+): String = "${date.format(dayFormatter)} ${at?.let(time) ?: NO_TIME}"

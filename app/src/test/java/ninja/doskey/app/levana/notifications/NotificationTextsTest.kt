@@ -60,8 +60,8 @@ class NotificationTextsTest {
     fun timesEnglish12HourHebrew24Hour() {
         assertEquals("6:06 PM", notificationTime(english(), candles))
         assertEquals("9:05 AM", notificationTime(english(), LocalTime.of(9, 5)))
-        assertEquals("18:06", notificationTime(hebrew(), candles))
-        assertEquals("09:05", notificationTime(hebrew(), LocalTime.of(9, 5)))
+        assertEquals("\u206818:06\u2069", notificationTime(hebrew(), candles))
+        assertEquals("\u206809:05\u2069", notificationTime(hebrew(), LocalTime.of(9, 5)))
     }
 
     @Test
@@ -87,13 +87,13 @@ class NotificationTextsTest {
     fun candleLightingHebrew() {
         val withEnd = candleLightingNotificationText(hebrew(), friday, candles, shabbatEnd)
         assertEquals("הדלקת נרות", withEnd.title)
-        assertEquals("הדלקת נרות בשעה 18:06 · צאת השבת 19:12", withEnd.body)
+        assertEquals("הדלקת נרות בשעה \u206818:06\u2069 · צאת השבת \u206819:12\u2069", withEnd.body)
         assertEquals(
-            "הדלקת נרות בשעה 18:06",
+            "הדלקת נרות בשעה \u206818:06\u2069",
             candleLightingNotificationText(hebrew(), friday, candles, null).body
         )
         assertEquals(
-            "הדלקת נרות בשעה 18:06 · צאת החג 19:12",
+            "הדלקת נרות בשעה \u206818:06\u2069 · צאת החג \u206819:12\u2069",
             candleLightingNotificationText(hebrew(), friday, candles, yomTovEndNextDay).body
         )
     }
@@ -131,8 +131,8 @@ class NotificationTextsTest {
     fun fastHebrew() {
         val text = fastNotificationText(hebrew(), gedaliah, LocalTime.of(5, 2), havdalah)
         assertEquals("יום צום", text.title)
-        assertEquals("צום גדליה · התחלה 05:02 · סיום 19:12", text.body)
-        assertEquals("צום גדליה · סיום 19:12", fastNotificationText(hebrew(), gedaliah, null, havdalah).body)
+        assertEquals("צום גדליה · התחלה \u206805:02\u2069 · סיום \u206819:12\u2069", text.body)
+        assertEquals("צום גדליה · סיום \u206819:12\u2069", fastNotificationText(hebrew(), gedaliah, null, havdalah).body)
     }
 
     @Test

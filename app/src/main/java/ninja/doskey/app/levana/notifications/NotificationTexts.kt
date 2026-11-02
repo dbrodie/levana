@@ -5,11 +5,11 @@ import android.text.format.DateFormat
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.ObservanceEnd
+import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.ui.omerDayLabel
 import ninja.doskey.app.levana.ui.omerWeeksText
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 
 /**
@@ -23,9 +23,6 @@ data class NotificationText(val title: String, val body: String)
 
 private const val SEPARATOR = " · "
 
-private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
-private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
-
 /** True when [this] context's language is Hebrew. */
 internal fun Context.isHebrewLanguage(): Boolean =
     resources.configuration.locales[0].language in setOf("he", "iw")
@@ -35,12 +32,13 @@ internal fun Context.isHebrewLanguage(): Boolean =
  * forces 12-hour). In English it stays `h:mm a`, as notifications always were.
  */
 fun notificationTime(context: Context, time: LocalTime): String {
-    val formatter = if (context.isHebrewLanguage() && DateFormat.is24HourFormat(context)) {
-        TIME_24H
-    } else {
-        TIME_12H.withLocale(context.resources.configuration.locales[0])
-    }
-    return time.format(formatter)
+    val hebrew = context.isHebrewLanguage()
+    return formatClockTime(
+        time,
+        use24Hour = hebrew && DateFormat.is24HourFormat(context),
+        hebrewUi = hebrew,
+        markerLocale = context.resources.configuration.locales[0]
+    )
 }
 
 /** A holiday or fast name in [context]'s language, from [ninja.doskey.app.levana.data.HolidayMapper]. */

@@ -95,6 +95,7 @@ import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.ui.calendar.CalendarModeSelector
 import ninja.doskey.app.levana.ui.calendar.CalendarHeaderFormatter
 import ninja.doskey.app.levana.ui.agendaMevarchimText
+import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.ui.calendar.holidayCategoryColor
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
 import ninja.doskey.app.levana.ui.datepicker.LeadingCalendar
@@ -108,8 +109,6 @@ import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.ContentWidthBox
 import ninja.doskey.app.levana.ui.contentWidth
 
-private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
-private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 
 /** Rows from the first loaded day within which the list asks for earlier days, and likewise at the end. */
 private const val EDGE_ROWS = 4
@@ -581,8 +580,8 @@ private fun AgendaCard(
 private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour: Boolean?): CardContent {
     val context = LocalContext.current
     val hebrewUi = CalendarHeaderFormatter.isHebrew(LocalConfiguration.current.locales[0])
-    val timeFormat = if (use24Hour ?: DateFormat.is24HourFormat(context)) TIME_24H else TIME_12H
-    fun time(t: LocalTime) = t.format(timeFormat)
+    val clock24 = use24Hour ?: DateFormat.is24HourFormat(context)
+    fun time(t: LocalTime) = formatClockTime(t, clock24, hebrewUi)
     // Candle lighting and havdalah are the selected city's; label its clock when it differs
     val cityClock = otherClockCityName?.let { stringResource(R.string.zmanim_city_clock, it) }
     fun describe(vararg parts: String?) = parts.filterNot { it.isNullOrBlank() }.joinToString(", ")
@@ -612,7 +611,7 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
             val title = stringResource(R.string.agenda_parsha, if (hebrewUi) item.parshaHebrew ?: item.parsha else item.parsha)
             val havdalah = item.havdalah?.let { stringResource(R.string.agenda_havdalah_at, time(it)) }
             val secondary = listOfNotNull(havdalah, cityClock.takeIf { havdalah != null }).joinToString(" · ").ifEmpty { null }
-            val mevarchim = item.molad?.let { agendaMevarchimText(context, it, use24Hour ?: DateFormat.is24HourFormat(context)) }
+            val mevarchim = item.molad?.let { agendaMevarchimText(context, it, clock24) }
             CardContent(Icons.AutoMirrored.Outlined.MenuBook, title, secondary, null, CardStyle.TONAL,
                 describe(stringResource(R.string.agenda_type_shabbat), title, secondary, mevarchim), detail = mevarchim)
         }

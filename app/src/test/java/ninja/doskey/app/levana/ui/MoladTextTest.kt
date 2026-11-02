@@ -54,12 +54,12 @@ class MoladTextTest {
     @Test
     fun hebrew() {
         val he = language("iw")
-        assertEquals("יום שני \u206622:27\u2069 ו־3 חלקים", moladTimeText(he, kislev, use24Hour = true))
-        assertEquals("יום שני \u206610:27 PM\u2069 ו־3 חלקים", moladTimeText(he, kislev, use24Hour = false))
-        assertEquals("יום ראשון \u206604:19\u2069 וחלק אחד", moladTimeText(he, oneChelek, use24Hour = true))
-        assertEquals("יום שלישי \u206614:07\u2069", moladTimeText(he, noChalakim, use24Hour = true))
+        assertEquals("יום שני \u206822:27\u2069 ו־3 חלקים", moladTimeText(he, kislev, use24Hour = true))
+        assertEquals("יום שני \u206810:27 PM\u2069 ו־3 חלקים", moladTimeText(he, kislev, use24Hour = false))
+        assertEquals("יום ראשון \u206804:19\u2069 וחלק אחד", moladTimeText(he, oneChelek, use24Hour = true))
+        assertEquals("יום שלישי \u206814:07\u2069", moladTimeText(he, noChalakim, use24Hour = true))
         assertEquals(
-            "מברכים כסלו · מולד יום שני \u206622:27\u2069 ו־3 חלקים",
+            "מברכים כסלו · מולד יום שני \u206822:27\u2069 ו־3 חלקים",
             agendaMevarchimText(he, kislev, use24Hour = true)
         )
     }
