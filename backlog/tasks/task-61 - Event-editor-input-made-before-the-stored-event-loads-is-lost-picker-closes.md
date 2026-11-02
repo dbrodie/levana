@@ -1,11 +1,11 @@
 ---
 id: TASK-61
 title: 'Event editor: input made before the stored event loads is lost (picker closes)'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T11:20:00Z'
-updated_date: '2026-11-02T13:56:00Z'
+updated_date: '2026-11-02T14:00:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -69,6 +69,18 @@ Owner decision 2026-11-02: use the standard explicit-loading architecture. The e
 - Figma: added 'Events / Edit event — loading' frames to section 05 on Screens — Light (98:6873), Dark (98:15728), and the Hebrew key-screens section (98:15776, 'עריכת אירוע' / 'האירוע נטען…'); the sections were widened to fit.
 - Limitations: TalkBack itself was not run on the emulator; the focus move was checked through the UI hierarchy's focused node.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T14:00:00Z
+
+---
+
+Coordinator integration 2026-11-02: merged as 2893af9. Clean run: 1225 tests, 0 failures; Roborazzi 420 unchanged. Loading state (spinner after 300 ms), single load from SavedStateHandle, restored draft wins, input ignored while loading; slowed-load and process-death checks on emulator. Figma: loading frames added (Light 98:6873, Dark 98:15728, Hebrew 98:15776). TalkBack checked via hierarchy only.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
