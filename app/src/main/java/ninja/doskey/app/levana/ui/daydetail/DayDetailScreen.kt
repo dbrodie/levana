@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.daydetail
 
+import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,6 +54,7 @@ import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.ui.moladMonthName
 import ninja.doskey.app.levana.ui.moladTimeText
 import ninja.doskey.app.levana.ui.omerCardText
@@ -66,10 +68,7 @@ import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.ui.openDeviceCalendarEvent
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
-private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
-private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
 fun DayDetailContent(
@@ -201,7 +200,7 @@ private fun DaySheetBadges(dayInfo: DayInfo) {
 @Composable
 private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) {
     val context = LocalContext.current
-    val formatter = if (DateFormat.is24HourFormat(context)) TIME_24H else TIME_12H
+    val time = clockTimeFormat(context)
     // Labels are the short NETZ / SHKIA / TZEIT strings; times are looked up by zman key
     val sunrise = times.firstOrNull { it.name == ZmanimRepository.SUNRISE.english }?.time
     val sunset = times.firstOrNull { it.name == ZmanimRepository.SUNSET.english }?.time
@@ -209,12 +208,12 @@ private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) 
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        QuickZmanCard(stringResource(R.string.sheet_netz), sunrise?.format(formatter) ?: "--:--", false, Modifier.weight(1f))
-        QuickZmanCard(stringResource(R.string.sheet_shkia), sunset?.format(formatter) ?: "--:--", false, Modifier.weight(1f))
+        QuickZmanCard(stringResource(R.string.sheet_netz), sunrise?.let(time) ?: "--:--", false, Modifier.weight(1f))
+        QuickZmanCard(stringResource(R.string.sheet_shkia), sunset?.let(time) ?: "--:--", false, Modifier.weight(1f))
         QuickZmanCard(
             stringResource(if (candleLighting != null) R.string.sheet_candles else R.string.sheet_tzeit),
-            candleLighting?.format(formatter)
-                ?: times.firstOrNull { it.name == ZmanimRepository.NIGHTFALL.english }?.time?.format(formatter)
+            candleLighting?.let(time)
+                ?: times.firstOrNull { it.name == ZmanimRepository.NIGHTFALL.english }?.time?.let(time)
                 ?: "--:--",
             true,
             Modifier.weight(1f)
@@ -253,8 +252,7 @@ private fun HalachicTimesSection(
     onShowAll: () -> Unit
 ) {
     val context = LocalContext.current
-    val is24Hour = DateFormat.is24HourFormat(context)
-    val formatter = if (is24Hour) TIME_24H else TIME_12H
+    val time = clockTimeFormat(context)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -293,7 +291,7 @@ private fun HalachicTimesSection(
                             )
                         }
                         Text(
-                            text = zman.time?.format(formatter) ?: "--:--",
+                            text = zman.time?.let(time) ?: "--:--",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -388,8 +386,7 @@ private fun MoladSection(molad: Molad) {
 private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
     val name = zmanName.displayName(isHebrewUi())
     val context = androidx.compose.ui.platform.LocalContext.current
-    val is24Hour = DateFormat.is24HourFormat(context)
-    val formatter = if (is24Hour) TIME_24H else TIME_12H
+    val clock = clockTimeFormat(context)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -411,7 +408,7 @@ private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = time?.format(formatter) ?: "--:--",
+                text = time?.let(clock) ?: "--:--",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -556,8 +553,7 @@ private fun PersonalEventsSection(events: List<CalendarEvent>) {
 @Composable
 private fun SystemEventsSection(events: List<SystemCalendarEvent>) {
     val context = LocalContext.current
-    val is24Hour = DateFormat.is24HourFormat(context)
-    val formatter = if (is24Hour) TIME_24H else TIME_12H
+    val time = clockTimeFormat(context)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -597,10 +593,8 @@ private fun SystemEventsSection(events: List<SystemCalendarEvent>) {
                             text = if (event.allDay) {
                                 stringResource(R.string.sheet_all_day)
                             } else {
-                                "${event.startTime.toLocalTime().format(formatter)} \u2013 " +
-                                    event.endTime.toLocalTime().format(
-                                        formatter
-                                    )
+                                "${time(event.startTime.toLocalTime())} \u2013 " +
+                                    time(event.endTime.toLocalTime())
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme
@@ -615,3 +609,11 @@ private fun SystemEventsSection(events: List<SystemCalendarEvent>) {
 
 @Composable
 private fun isHebrewUi(): Boolean = LocalConfiguration.current.locales[0].language in setOf("he", "iw")
+
+/** Formats a time on the device's 12/24-hour clock, isolated in the Hebrew UI. */
+@Composable
+private fun clockTimeFormat(context: Context): (LocalTime) -> String {
+    val use24Hour = DateFormat.is24HourFormat(context)
+    val hebrewUi = isHebrewUi()
+    return { formatClockTime(it, use24Hour, hebrewUi) }
+}

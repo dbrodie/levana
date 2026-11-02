@@ -34,12 +34,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanTime
+import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.ui.daydetail.CityClockLabel
 import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import ninja.doskey.app.levana.ui.ContentWidthBox
 
 @Composable
@@ -55,7 +54,7 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         return
     }
-    val formatter = if (DateFormat.is24HourFormat(LocalContext.current)) DateTimeFormatter.ofPattern("HH:mm") else DateTimeFormatter.ofPattern("h:mm a")
+    val use24Hour = DateFormat.is24HourFormat(LocalContext.current)
     val grouped = state.zmanim.groupBy { it.category }
     ContentWidthBox(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { gutter ->
         LazyColumn(
@@ -66,7 +65,7 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
             state.otherClockCityName?.let { item(key = "clock") { CityClockLabel(it) } }
             ZmanCategory.entries.forEach { category ->
                 val zmanim = grouped[category].orEmpty()
-                if (zmanim.isNotEmpty()) item(key = category.name) { ZmanGroup(category, zmanim, formatter) }
+                if (zmanim.isNotEmpty()) item(key = category.name) { ZmanGroup(category, zmanim, use24Hour) }
             }
             item { Spacer(Modifier.height(12.dp)) }
         }
@@ -74,7 +73,7 @@ private fun ZmanimContent(state: ZmanimState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, formatter: DateTimeFormatter) {
+private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, use24Hour: Boolean) {
     val label = stringResource(
         when (category) {
             ZmanCategory.MORNING -> R.string.zmanim_category_morning
@@ -96,11 +95,9 @@ private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, formatter:
                         Text(name.secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Text(formatTime(zman.time, formatter), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(zman.time?.let { formatClockTime(it, use24Hour, hebrewUi) } ?: "—", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
 }
-
-private fun formatTime(time: LocalTime?, formatter: DateTimeFormatter): String = time?.format(formatter) ?: "—"

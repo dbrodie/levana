@@ -9,10 +9,11 @@ import androidx.glance.action.Action
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.text.TextAlign
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.ZonedDateTime
 import java.util.Locale
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.notifications.NotificationPoster
+import ninja.doskey.app.levana.ui.formatClockTime
 
 /** The app language, which the widgets follow. */
 internal fun Context.widgetLocale(): Locale = resources.configuration.locales[0]
@@ -52,6 +53,9 @@ internal const val NO_TIME = "—"
 /** Text alignment that keeps a mirrored row's text against its edge. */
 internal fun textAlign(mirror: Boolean) = if (mirror) TextAlign.End else TextAlign.Start
 
-/** Times follow the device's 12/24-hour setting. */
-internal fun timeFormatter(context: Context): DateTimeFormatter =
-    DateTimeFormatter.ofPattern(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a")
+/** Formats a time on the device's 12/24-hour clock, isolated in the Hebrew UI. */
+internal fun widgetTimeFormat(context: Context): (ZonedDateTime) -> String {
+    val use24Hour = DateFormat.is24HourFormat(context)
+    val hebrewUi = context.widgetLocale().isHebrewUi()
+    return { formatClockTime(it.toLocalTime(), use24Hour, hebrewUi) }
+}

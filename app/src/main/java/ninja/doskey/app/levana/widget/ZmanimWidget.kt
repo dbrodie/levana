@@ -115,12 +115,12 @@ private fun ZmanimContent(snapshot: ZmanimWidgetSnapshot, pastColor: ColorProvid
                 modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp).clickable(openZmanim),
             )
         } else {
-            val timeFormatter = timeFormatter(context)
+            val time = widgetTimeFormat(context)
             LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                 items(snapshot.rows) { row ->
                     ZmanRow(
                         name = zmanDisplayName(row.name, row.hebrewName, hebrewUi).primary,
-                        time = row.at?.format(timeFormatter) ?: NO_TIME,
+                        time = row.at?.let(time) ?: NO_TIME,
                         state = row.state,
                         pastColor = pastColor,
                         mirror = mirror,
