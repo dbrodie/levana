@@ -90,14 +90,7 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         .fetchSemanticsNodes()
         .flatMap { node -> node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } }
 
-    private fun awaitShown(text: String) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (text !in shownTexts()) {
-            check(System.currentTimeMillis() < deadline) { "$text not shown in ${shownTexts()}" }
-            Thread.sleep(10)
-            compose.waitForIdle()
-        }
-    }
+    private fun awaitShown(text: String) = awaitUntil("$text on screen") { text in shownTexts() }
 
     private fun back() = onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
