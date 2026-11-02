@@ -67,3 +67,9 @@ Verification (tested commit f891eb0):
 - Final: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 1202/0, lint 0 errors (83 warnings), Roborazzi verify passed; git status clean, no baseline changed (422 tracked PNGs) (/tmp/task60/final.log.keep).
 - Limitation: the original timeout was not reproduced naturally in this session (it is rare). The mechanism was shown with an injected DB delay, and every recorded failure matches it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The DatePicker flake was a race, not slowness. The editor tests clicked the date field before the stored event loaded; the load replaced the editor state and closed the picker, so 'Select date' never appeared. The screenshot harness now runs Room on a counting executor and its waits hold until Room is idle. The editor test waits for its loaded fields. All waits share one 60 s bound with diagnostic failures. Test-only change; baselines unchanged. Verified with 20/20 isolated runs, 3 clean full suites (one under emulator load) and the final check. The production race (input before the load is lost) is TASK-61.
+<!-- SECTION:FINAL_SUMMARY:END -->
