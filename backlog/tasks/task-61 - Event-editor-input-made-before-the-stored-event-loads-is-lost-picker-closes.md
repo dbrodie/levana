@@ -4,6 +4,7 @@ title: 'Event editor: input made before the stored event loads is lost (picker c
 status: To Do
 assignee: []
 created_date: '2026-11-02T11:20:00Z'
+updated_date: '2026-11-02T13:40:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -25,3 +26,9 @@ ContactBirthdayViewModel already handles the same case: fields edited while load
 <!-- AC:BEGIN -->
 - [ ] #1 Opening the date picker or editing a field before a stored event has loaded never loses the input or closes the picker, and the picker never opens on a date other than the stored one; a ViewModel test covers a slow load
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decision 2026-11-02: use the standard explicit-loading architecture. The editor's state is Loading or Editing. While loading a stored event, the screen shows a brief loading indicator in place of the form (no input, no picker). The load runs once and switches to Editing with the stored values; after that, only user intents change the state, and nothing reloads over it. A restored draft (TASK-52.3 process-death restore) starts directly in Editing and is never overwritten. New events start in Editing with the defaults.
+<!-- SECTION:NOTES:END -->
