@@ -1,11 +1,11 @@
 ---
 id: TASK-60
 title: Fix the flaky DatePickerScreenshotTest wait ('Select date' timeout)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T10:57:00Z'
-updated_date: '2026-11-02T11:40:00Z'
+updated_date: '2026-11-02T12:24:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -67,6 +67,18 @@ Verification (tested commit f891eb0):
 - Final: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 1202/0, lint 0 errors (83 warnings), Roborazzi verify passed; git status clean, no baseline changed (422 tracked PNGs) (/tmp/task60/final.log.keep).
 - Limitation: the original timeout was not reproduced naturally in this session (it is rare). The mechanism was shown with an injected DB delay, and every recorded failure matches it.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T12:24:00Z
+
+---
+
+Coordinator integration 2026-11-02: test-only changes; merged as 08de8b6. Root cause: editor-load race (stored event load replaced editor state and closed the picker), not slowness. Clean run: 1202 tests, 0 failures; Roborazzi 420 unchanged. Agent evidence: 20/20 isolated, 3/3 full suite (one under emulator load). App-side race filed as TASK-61.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
