@@ -87,12 +87,13 @@ class AgendaViewModel(
                     viewModelScope.launch { preferencesRepository.saveCalendarHebrewMode(intent.hebrew) }
                 }
             }
-            is AgendaIntent.GoToToday -> today()?.let { select(it); jumpTo(it) }
+            // Today, a picked date and a search result only scroll the list; the day panel keeps
+            // the day whose date rail was tapped (TASK-59)
+            is AgendaIntent.GoToToday -> today()?.let(::jumpTo)
             is AgendaIntent.OpenDatePicker -> _state.value = _state.value.copy(datePickerDate = intent.date)
             is AgendaIntent.CloseDatePicker -> _state.value = _state.value.copy(datePickerDate = null)
             is AgendaIntent.GoToDate -> {
                 _state.value = _state.value.copy(datePickerDate = null)
-                select(intent.date)
                 jumpTo(intent.date)
             }
             is AgendaIntent.TopDayShown -> savedState[KEY_TOP_DAY] = intent.date.toEpochDay()
@@ -106,7 +107,6 @@ class AgendaViewModel(
             is AgendaIntent.SetSearchQuery -> setQuery(intent.query)
             is AgendaIntent.SelectSearchResult -> {
                 closeSearch()
-                select(intent.date)
                 jumpTo(intent.date)
             }
             is AgendaIntent.SelectDay -> select(intent.date)

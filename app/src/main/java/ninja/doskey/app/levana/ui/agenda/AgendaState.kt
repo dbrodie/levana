@@ -27,7 +27,8 @@ data class AgendaState(
     val search: AgendaSearchState? = null,
     /**
      * The day the day panel shows beside the list on wide windows (TASK-52.6); null for today.
-     * Phone-sized windows have no panel and show no selection.
+     * Only a tap on a day's date rail changes it (TASK-59). Phone-sized windows have no panel
+     * and show no selection.
      */
     val selectedDate: LocalDate? = null
 )
