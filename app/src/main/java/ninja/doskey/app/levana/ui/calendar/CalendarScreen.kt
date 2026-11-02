@@ -73,6 +73,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.CappedFontScale
+import ninja.doskey.app.levana.ui.panes.PaneLayout
+import ninja.doskey.app.levana.ui.panes.rememberPaneLayout
 
 private const val PAGER_PAGE_COUNT = 1200
 private const val PAGER_INITIAL_PAGE = 600
@@ -177,6 +179,9 @@ fun CalendarScreen(
         }
     }
 
+    // Null below 840dp: the phone layout with the day sheet
+    val panes = rememberPaneLayout()
+
     if (today == null) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         return
@@ -197,6 +202,7 @@ fun CalendarScreen(
                     dayDetailState = dayDetailState,
                     onShowZmanim = onShowZmanim,
                     onAddEvent = onAddEvent,
+                    panes = panes,
                     modifier = modifier
                 )
             } else {
@@ -209,6 +215,7 @@ fun CalendarScreen(
                     dayDetailState = dayDetailState,
                     onShowZmanim = onShowZmanim,
                     onAddEvent = onAddEvent,
+                    panes = panes,
                     modifier = modifier
                 )
             }
@@ -235,6 +242,7 @@ private fun GregorianCalendarContent(
     dayDetailState: ninja.doskey.app.levana.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
     onAddEvent: (Int, Int, Int) -> Unit,
+    panes: PaneLayout?,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = PAGER_INITIAL_PAGE, pageCount = { PAGER_PAGE_COUNT })
@@ -253,10 +261,11 @@ private fun GregorianCalendarContent(
             pagerState.animateScrollToPage(PAGER_INITIAL_PAGE + ((target.year - baseMonth.year) * 12 + target.monthValue - baseMonth.monthValue))
         }
     }
-    CalendarDaySheet(
+    CalendarDayLayout(
         state = dayDetailState,
         selectedDate = state.selectedDate,
         onShowZmanim = onShowZmanim,
+        panes = panes,
         modifier = modifier,
         header = {
             GregorianMonthHeader(
@@ -301,6 +310,7 @@ private fun HebrewCalendarContent(
     dayDetailState: ninja.doskey.app.levana.ui.daydetail.DayDetailState,
     onShowZmanim: (LocalDate) -> Unit,
     onAddEvent: (Int, Int, Int) -> Unit,
+    panes: PaneLayout?,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = PAGER_INITIAL_PAGE, pageCount = { PAGER_PAGE_COUNT })
@@ -318,10 +328,11 @@ private fun HebrewCalendarContent(
             pagerState.animateScrollToPage(PAGER_INITIAL_PAGE + baseMonth.stepsTo(target))
         }
     }
-    CalendarDaySheet(
+    CalendarDayLayout(
         state = dayDetailState,
         selectedDate = state.selectedDate,
         onShowZmanim = onShowZmanim,
+        panes = panes,
         modifier = modifier,
         header = {
             val locale = LocalConfiguration.current.locales[0]

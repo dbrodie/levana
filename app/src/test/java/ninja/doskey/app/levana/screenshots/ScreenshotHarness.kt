@@ -145,6 +145,7 @@ abstract class ScreenshotTest(
         }.koin
 
         AppDataStores.clearPreferences(app)
+        AppDataStores.clearPaneLayout(app)
         devicePreferences = runBlocking {
             seedPreferences(preferences)
             MutableStateFlow(preferences.preferences.first())
@@ -157,6 +158,7 @@ abstract class ScreenshotTest(
         stopKoin()
         db.close()
         AppDataStores.clearPreferences(app)
+        AppDataStores.clearPaneLayout(app)
         TimeZone.setDefault(savedZone)
     }
 

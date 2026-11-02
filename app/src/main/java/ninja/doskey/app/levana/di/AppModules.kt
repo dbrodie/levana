@@ -9,6 +9,7 @@ import ninja.doskey.app.levana.data.EventDataChanges
 import ninja.doskey.app.levana.data.EventFileRepository
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PersonalEventRepository
+import ninja.doskey.app.levana.data.PaneLayoutRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.SystemCalendarRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
@@ -27,6 +28,7 @@ import ninja.doskey.app.levana.ui.birthday.ContactBirthdayViewModel
 import ninja.doskey.app.levana.ui.calendar.CalendarViewModel
 import ninja.doskey.app.levana.ui.calendarselection.CalendarSelectionViewModel
 import ninja.doskey.app.levana.ui.daydetail.DayDetailViewModel
+import ninja.doskey.app.levana.ui.panes.PaneSplitViewModel
 import ninja.doskey.app.levana.ui.datepicker.DatePickerViewModel
 import ninja.doskey.app.levana.ui.events.AddEditEventViewModel
 import ninja.doskey.app.levana.ui.events.EventsViewModel
@@ -62,6 +64,7 @@ val dataModule = module {
             .shareIn(CoroutineScope(SupervisorJob() + Dispatchers.Default), SharingStarted.WhileSubscribed())
     }
     single { PreferencesRepository(get(), get(), get(SYSTEM_TIME_CHANGES)) }
+    single { PaneLayoutRepository(get()) }
     // The device's now/today/zone/position; the only clock the app reads
     single {
         DeviceContext(
@@ -121,6 +124,7 @@ val viewModelModule = module {
     viewModel { WalkthroughViewModel(get(), get(), get(), get()) }
     viewModel { AgendaViewModel(get(), get(), get(), get(), get()) }
     viewModel { ShellViewModel(get(), get()) }
+    viewModel { PaneSplitViewModel(get()) }
 }
 
 val allModules = listOf(dataModule, viewModelModule)

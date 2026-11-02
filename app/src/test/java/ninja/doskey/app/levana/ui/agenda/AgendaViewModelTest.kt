@@ -211,6 +211,29 @@ class AgendaViewModelTest {
     }
 
     @Test
+    fun `the day panel's day follows taps, jumps and today, and survives the process`() {
+        val saved = SavedStateHandle()
+        val vm = viewModel(saved)
+        // Today until something else is chosen, kept as null so it follows midnight
+        assertNull(vm.state.value.selectedDate)
+        val tapped = today.plusDays(8)
+        vm.onIntent(AgendaIntent.SelectDay(tapped))
+        assertEquals(tapped, vm.state.value.selectedDate)
+        val picked = today.plusDays(20)
+        vm.onIntent(AgendaIntent.GoToDate(picked))
+        assertEquals(picked, vm.state.value.selectedDate)
+        vm.onIntent(AgendaIntent.GoToToday)
+        assertNull(vm.state.value.selectedDate)
+        vm.onIntent(AgendaIntent.OpenSearch)
+        vm.onIntent(AgendaIntent.SelectSearchResult(LocalDate.of(2026, 11, 3)))
+        assertEquals(LocalDate.of(2026, 11, 3), vm.state.value.selectedDate)
+
+        store.clear()
+        val restored = viewModel(SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        assertEquals(LocalDate.of(2026, 11, 3), restored.state.value.selectedDate)
+    }
+
+    @Test
     fun `the leading calendar is the Month screen's setting`() {
         val vm = viewModel()
         vm.onIntent(AgendaIntent.SetHebrewLeading(false))

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The divider between the list and the day details on wide windows (TASK-52.6) -->
+    <string name="pane_divider">Divider between the list and the day details</string>
+    <string name="pane_divider_state">List at %1$d%% of the width</string>
+    <string name="pane_divider_hidden">Day details hidden</string>
+    <string name="pane_divider_next">Move the divider</string>
+    <string name="pane_divider_hide">Hide day details</string>
+    <string name="pane_divider_show">Show day details</string>
+</resources>

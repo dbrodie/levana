@@ -41,6 +41,7 @@ class AgendaViewModel(
         AgendaState(
             datePickerDate = savedState.get<Long>(KEY_DATE_PICKER)?.let(LocalDate::ofEpochDay),
             search = savedState.get<String>(KEY_SEARCH)?.let { AgendaSearchState(query = it) },
+            selectedDate = savedState.get<Long>(KEY_SELECTED_DAY)?.let(LocalDate::ofEpochDay),
         )
     )
     val state: StateFlow<AgendaState> = _state.asStateFlow()
@@ -71,6 +72,7 @@ class AgendaViewModel(
             _state.collect { state ->
                 savedState[KEY_DATE_PICKER] = state.datePickerDate?.toEpochDay()
                 savedState[KEY_SEARCH] = state.search?.query
+                savedState[KEY_SELECTED_DAY] = state.selectedDate?.toEpochDay()
             }
         }
     }
@@ -85,11 +87,12 @@ class AgendaViewModel(
                     viewModelScope.launch { preferencesRepository.saveCalendarHebrewMode(intent.hebrew) }
                 }
             }
-            is AgendaIntent.GoToToday -> today()?.let(::jumpTo)
+            is AgendaIntent.GoToToday -> today()?.let { select(it); jumpTo(it) }
             is AgendaIntent.OpenDatePicker -> _state.value = _state.value.copy(datePickerDate = intent.date)
             is AgendaIntent.CloseDatePicker -> _state.value = _state.value.copy(datePickerDate = null)
             is AgendaIntent.GoToDate -> {
                 _state.value = _state.value.copy(datePickerDate = null)
+                select(intent.date)
                 jumpTo(intent.date)
             }
             is AgendaIntent.TopDayShown -> savedState[KEY_TOP_DAY] = intent.date.toEpochDay()
@@ -103,8 +106,10 @@ class AgendaViewModel(
             is AgendaIntent.SetSearchQuery -> setQuery(intent.query)
             is AgendaIntent.SelectSearchResult -> {
                 closeSearch()
+                select(intent.date)
                 jumpTo(intent.date)
             }
+            is AgendaIntent.SelectDay -> select(intent.date)
             is AgendaIntent.Resume -> {
                 // The process may have been frozen across midnight or a time-zone change
                 today()?.let { _state.value = _state.value.copy(today = it) }
@@ -115,6 +120,11 @@ class AgendaViewModel(
     }
 
     private fun today(): LocalDate? = prefs?.let { deviceContext.now(it).today }
+
+    /** The day panel's day; today is kept as null, so it follows the date when the day changes. */
+    private fun select(date: LocalDate) {
+        _state.value = _state.value.copy(selectedDate = date.takeIf { it != today() })
+    }
 
     private fun onPreferences(new: UserPreferences) {
         val old = prefs
@@ -273,5 +283,6 @@ class AgendaViewModel(
         private const val KEY_TOP_DAY = "topDay"
         private const val KEY_SEARCH = "search"
         private const val KEY_DATE_PICKER = "datePicker"
+        private const val KEY_SELECTED_DAY = "selectedDay"
     }
 }

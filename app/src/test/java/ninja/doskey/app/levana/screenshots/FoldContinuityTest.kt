@@ -5,6 +5,10 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -23,6 +27,8 @@ import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.db.PersonalEvent
 import ninja.doskey.app.levana.domain.model.Location
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import ninja.doskey.app.levana.ui.panes.PANE_DIVIDER_TAG
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -52,10 +58,20 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         ),
     }
 
-    private fun fold() = recreate("+${device.cover.qualifiers}")
-    private fun unfold() = recreate("+${device.inner.qualifiers}")
-    private fun rotate() = recreate("+${device.rotated.qualifiers}")
-    private fun enterSplitScreen() = recreate("+${device.split.qualifiers}")
+    /** The window size now; the test starts on the inner display. */
+    private var size = device.inner
+
+    private fun resize(to: FoldableSize) {
+        size = to
+        recreate("+${to.qualifiers}")
+    }
+    private fun fold() = resize(device.cover)
+    private fun unfold() = resize(device.inner)
+    private fun rotate() = resize(device.rotated)
+    private fun enterSplitScreen() = resize(device.split)
+
+    /** Month and Agenda show the day panel beside the list from 840dp (TASK-52.6). */
+    private val twoPanes get() = size.widthDp >= 840
 
     /** Every size change the device goes through, checking [assertKept] after each. */
     private fun throughEverySize(assertKept: () -> Unit) {
@@ -86,20 +102,89 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
     private fun back() = onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
     @Test
-    fun theMonthKeepsItsMonthSelectedDayAndOpenSheet() {
+    fun theMonthKeepsItsMonthSelectedDayAndDivider() {
         launchCalendar()
-        // To December, then the 3rd; the day panel expanded
-        compose.onAllNodes(day("November 20, 2026"))[0].performTouchInput { swipeLeft() }
+        // To December (a swipe in the grid pane, which leaves the divider alone), then the 3rd
+        val dividerBefore = dividerState()
+        compose.onAllNodes(day("November 20, 2026"))[0].performTouchInput { swipeLeft(startX = right, endX = left - 4 * width) }
         await(day("December 3, 2026"))
+        assertEquals(dividerBefore, dividerState())
         compose.onAllNodes(day("December 3, 2026"))[0].performClick()
         assertSelected("December 3, 2026")
-        compose.onNode(hasContentDescription(string(R.string.sheet_expand))).performClick()
-        await(hasContentDescription(string(R.string.sheet_collapse)))
+        // The divider to its next stop (TalkBack's double tap): 50% -> 65%
+        divider().performSemanticsAction(SemanticsActions.OnClick)
+        val divider65 = dividerState()
+        assertTrue(divider65 != dividerBefore)
 
         throughEverySize {
             assertSelected("December 3, 2026")
+            if (twoPanes) {
+                // The panel beside the grid, no sheet; the divider where it was left
+                awaitText(string(R.string.sheet_more_times))
+                assertEquals(0, compose.onAllNodes(hasContentDescription(string(R.string.sheet_expand))).fetchSemanticsNodes().size)
+                if (size == device.inner) assertEquals(divider65, dividerState())
+            } else {
+                // The phone layout: the same day in the sheet, no divider
+                await(hasContentDescription(string(R.string.sheet_expand)))
+                assertEquals(0, compose.onAllNodes(hasTestTag(PANE_DIVIDER_TAG)).fetchSemanticsNodes().size)
+            }
+        }
+    }
+
+    @Test
+    fun theSheetStaysOpenBetweenPhoneSizes() {
+        launchCalendar()
+        fold()
+        compose.onAllNodes(day("November 20, 2026"))[0].performClick()
+        compose.onNode(hasContentDescription(string(R.string.sheet_expand))).performClick()
+        await(hasContentDescription(string(R.string.sheet_collapse)))
+        for (change in listOf(::enterSplitScreen, ::fold)) {
+            change()
+            assertSelected("November 20, 2026")
             await(hasContentDescription(string(R.string.sheet_collapse)))
         }
+    }
+
+    @Test
+    fun theDividerAndSelectedDaySurviveProcessDeath() {
+        launchCalendar()
+        compose.onAllNodes(day("November 20, 2026"))[0].performClick()
+        assertSelected("November 20, 2026")
+        divider().performCustomAction(string(R.string.pane_divider_hide))
+        await(hasTestTag(PANE_DIVIDER_TAG) and hasStateDescription(string(R.string.pane_divider_hidden)))
+
+        restoreAfterProcessDeath()
+        assertSelected("November 20, 2026")
+        await(hasTestTag(PANE_DIVIDER_TAG) and hasStateDescription(string(R.string.pane_divider_hidden)))
+        // Shown again at the stop it had
+        divider().performCustomAction(string(R.string.pane_divider_show))
+        awaitText(string(R.string.sheet_more_times))
+    }
+
+    @Test
+    fun theAgendaKeepsItsSelectedDay() {
+        launchCalendar()
+        openDrawer()
+        clickable(string(R.string.nav_agenda)).performClick()
+        await(hasScrollToIndexAction())
+        // The date rail shows its day in the panel
+        await(day("November 21, 2026") and hasClickAction())
+        compose.onAllNodes(day("November 21, 2026") and hasClickAction())[0].performClick()
+        assertSelected("November 21, 2026")
+        awaitShown("Vayetzei")
+
+        throughEverySize {
+            if (twoPanes) {
+                assertSelected("November 21, 2026")
+                awaitShown("Vayetzei")
+            } else {
+                // No panel and no selection on phone-sized windows
+                assertEquals(0, compose.onAllNodes(day("November 21, 2026") and isSelected()).fetchSemanticsNodes().size)
+            }
+        }
+
+        restoreAfterProcessDeath()
+        assertSelected("November 21, 2026")
     }
 
     @Test
@@ -152,7 +237,8 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         launchCalendar()
         compose.onAllNodes(day("November 20, 2026"))[0].performClick()
         assertSelected("November 20, 2026")
-        compose.onNode(hasContentDescription(string(R.string.sheet_expand))).performClick()
+        // On a phone-sized window the times are in the sheet; beside the grid they show already
+        if (!twoPanes) compose.onNode(hasContentDescription(string(R.string.sheet_expand))).performClick()
         clickable(string(R.string.sheet_more_times)).performScrollTo().performClick()
         await(hasText(string(R.string.zmanim_category_morning).uppercase()))
         // The first rows, which every size shows; their times are that day's
@@ -172,9 +258,9 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         clickable("21").performClick()
         compose.onNode(clickLabel(string(R.string.date_picker_choose_year))).performClick()
         await(hasText("2030"))
-        val picker = shownTexts()
+        val picker = pickerTexts()
 
-        throughEverySize { assertEquals(picker, shownTexts()) }
+        throughEverySize { assertEquals(picker, pickerTexts()) }
     }
 
     @Test
@@ -211,6 +297,23 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         await(hasText(string(R.string.settings_developer_settings)))
         back()
         assertSelected("November 20, 2026")
+    }
+
+    /** The date picker's texts, without the calendar behind it, whose layout depends on the width. */
+    private fun pickerTexts() = shownTexts().dropWhile { it != string(R.string.date_picker_title) }
+
+    private fun divider() = compose.onNode(hasTestTag(PANE_DIVIDER_TAG))
+
+    private fun dividerState(): String? = divider().fetchSemanticsNode().config.getOrNull(SemanticsProperties.StateDescription)
+
+    private fun hasStateDescription(text: String) = SemanticsMatcher("state $text") {
+        it.config.getOrNull(SemanticsProperties.StateDescription) == text
+    }
+
+    private fun SemanticsNodeInteraction.performCustomAction(label: String) {
+        val action = fetchSemanticsNode().config[SemanticsActions.CustomActions].first { it.label == label }
+        compose.runOnIdle { action.action() }
+        compose.waitForIdle()
     }
 
     private fun clickLabel(label: String) = SemanticsMatcher("has click label $label") {

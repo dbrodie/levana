@@ -26,6 +26,13 @@ internal object AppDataStores {
         context, "ninja.doskey.app.levana.notifications.NotificationDeliveryLogKt", "getDeliveryDataStore"
     )
 
+    /** The two-pane divider position behind PaneLayoutRepository. */
+    fun paneLayout(context: Context): DataStore<Preferences> =
+        store(context, "ninja.doskey.app.levana.data.PaneLayoutRepositoryKt", "getPaneLayoutDataStore")
+
+    /** Empties the divider position. */
+    fun clearPaneLayout(context: Context) = clear(paneLayout(context))
+
     /** Empties the user preferences. Clearing does not rerun the store's migrations. */
     fun clearPreferences(context: Context) = clear(preferences(context))
 
