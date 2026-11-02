@@ -1,10 +1,11 @@
 ---
 id: TASK-52.6
 title: Implement the foldable list-detail layout (Option E) for Month and Agenda
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-02T08:56:00Z'
-updated_date: '2026-11-02T09:32:00Z'
+updated_date: '2026-11-02T09:37:00Z'
 labels: []
 dependencies:
   - TASK-52.4
@@ -53,6 +54,23 @@ Implementation of the owner's chosen foldable layout, **Option E: list-detail wi
 - [ ] #5 Roborazzi baselines at the expanded sizes (EN/HE, light/dark, each anchor); emulator screenshots on the Fold8 and Fold8 Ultra AVDs compared to the Figma frames
 - [ ] #6 Figma updated: the implemented Option E screens are on the regular screen pages (Light, Dark, Hebrew) and the TASK-52.4 exploration page and leftovers are deleted; node links recorded
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Research (code read 2026-11-02 at be8ac93): Month = CalendarScreen -> Gregorian/HebrewCalendarContent -> CalendarDaySheet (BottomSheetScaffold, header as topBar, M3 default sheetMaxWidth 640dp). Agenda = AgendaScreen/AgendaContent (own header + LazyColumn, no selected day). No adaptive library yet.
+
+1. Window rule: add androidx.compose.material3.adaptive:adaptive and decide two panes from currentWindowAdaptiveInfo().windowSizeClass (width EXPANDED, >= 840dp). One helper, used by Month and Agenda; below 840dp the existing composition is used unchanged.
+2. Divider state (MVI): ui/panes/ PaneSplitState/Intent/ViewModel. PaneSplit(stop = LIST_40|LIST_50|LIST_65, collapsed) persisted in a small DataStore (PaneLayoutRepository, own file so the main UserPreferences flow is not re-emitted on every drag). Shared by Month and Agenda (same store). Intents: SetStop, Collapse, Expand, CycleStop.
+3. ListDetailPanes composable (ui/panes): Row(list | 16dp gutter with 4x48dp handle | day panel). List width = stop fraction of the window width, clamped to list >= 360dp and panel >= 300dp; collapsed = gutter at the end edge, list full width. Drag follows the finger (Animatable), release snaps to the nearest stop, or collapses when the panel would be under half its minimum; from collapsed, dragging back restores. Double-tap handle: collapsed -> last stop, else next stop. Semantics: state description, click = next stop, custom actions next position / hide or show day panel. Drag only in the gutter, so the pager's month swipes in the list pane never reach it. RTL mirrors via Row; the drag delta is mirrored.
+4. Month two-pane: one header (the existing CalendarMonthHeader, full width), then ListDetailPanes(grid pager | DayDetailContent in a surfaceContainer panel, no drag handle). Pager states and the day panel scroll state hoisted above the layout choice so they survive a size change.
+5. Below 840dp: CalendarDaySheet sheetMaxWidth = unbounded (full width). Phones are narrower than 640dp, so unchanged.
+6. Agenda two-pane: the existing header (full width), then list | the same day panel (own DayDetailViewModel, loaded only in two panes). AgendaState gains selectedDate (null = today; SavedStateHandle for process death); intent SelectDay. Tapping a day's date rail selects it; in two panes holiday/candle/Shabbat/havdalah cards select the day (the panel shows those) instead of leaving the screen; event/birthday/device cards still open their editor/app and also select the day. Today, Go to date and a search result also select that day. The selected day is highlighted only in two panes.
+7. Continuity: extend FoldContinuityTest: Month two-pane selected day + divider stop through fold/unfold/rotate/split, phone sheet on the cover on the same day; Agenda selected day + scroll; divider and selected day after process death. Adjust existing tests that expected the sheet on two-pane inner sizes.
+8. Roborazzi: phone baselines unchanged. Foldable below-840 baselines that change (sheet full width): list + inspect. New ListDetailScreenshotTest: Month and Agenda at Fold8 inner landscape, Ultra portrait, Ultra landscape x {40,50,65,collapsed} x EN/HE x light/dark. Existing foldable expanded-size calendar/agenda baselines change intentionally.
+9. Verify (full command from clean test-results), emulator on Fold8 and Fold8 Ultra (android-debug skill), evidence in /tmp/levana-task52.6-evidence with README.
+10. Figma after verification: as-built Option E frames on Screens Light/Dark/Hebrew, divider component, delete the TASK-52.4 exploration page and leftovers, record links.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
