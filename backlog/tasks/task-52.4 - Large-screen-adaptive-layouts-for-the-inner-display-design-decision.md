@@ -4,7 +4,7 @@ title: Large-screen adaptive layouts for the inner display (design decision)
 status: To Do
 assignee: []
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-11-01T17:57:00Z'
+updated_date: '2026-11-02T08:46:00Z'
 labels: []
 dependencies:
   - TASK-52.2
@@ -216,4 +216,8 @@ The owner chose this direction after reviewing A–D. The inspiration is the own
 2. Should the Agenda list pane keep its own header (title + mode selector, as drawn) or share one with Month?
 3. Below 840dp, keep today's layout as-is, or apply the small fix of letting the sheet use the full width?
 4. Do E's dark and Hebrew (RTL) frames need drawing now, or after the decision?
+
+### Update 2026-11-02: day panel matches the current expanded day sheet
+Owner feedback: the top of the right pane must look like the current day sheet ("Calendar / Day sheet — expanded" on Screens — Light); redesigning it is a separate discussion (TASK-57.2). The side panel used by A, B (landscape, Dark, Hebrew, drawer), C's side sheet and E is now a copy of the current expanded sheet content (Hebrew UI copy for RTL), with only the selected day's data changed (Shabbat 7 Nov: Chayei Sara, 6:00 AM / 4:45 PM / 5:22 PM). Removed: the date/place header with ‹ › arrows, the extra "Shabbat Mevarchim" badge and card, and the side-by-side Parsha/Havdalah. The drag handle is omitted in a side pane (nothing to drag). B's docked portrait panel uses the same cards in two columns without the custom header. D's agenda pane is unchanged (different concept). PNGs re-exported (A1–A4, B1–B7, C5, E1–E6, annotations).
+Open question carried to TASK-57.2: a persistent pane shows no date of its own (only the highlighted grid cell or agenda row indicates it), the same gap as review finding N1.
 <!-- SECTION:NOTES:END -->
