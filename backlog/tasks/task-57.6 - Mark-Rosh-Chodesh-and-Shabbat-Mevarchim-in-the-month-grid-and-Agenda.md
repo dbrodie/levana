@@ -1,11 +1,11 @@
 ---
 id: TASK-57.6
 title: Mark Rosh Chodesh and Shabbat Mevarchim in the month grid and Agenda
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-01T20:53:00Z'
+updated_date: '2026-11-02T08:42:00Z'
 labels:
   - design-review
 dependencies: []
