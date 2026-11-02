@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pane_divider">מפריד בין הרשימה לפרטי היום</string>
+    <string name="pane_divider_state">הרשימה ב־%1$d%% מהרוחב</string>
+    <string name="pane_divider_hidden">פרטי היום מוסתרים</string>
+    <string name="pane_divider_next">הזזת המפריד</string>
+    <string name="pane_divider_hide">הסתרת פרטי היום</string>
+    <string name="pane_divider_show">הצגת פרטי היום</string>
+</resources>

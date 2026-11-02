@@ -7,7 +7,7 @@ package ninja.doskey.app.levana.screenshots
  * landscape inner display. At mdpi, like [ScreenshotTest.DEVICE], so an image is the window
  * in dp. Sources and arithmetic are in TASK-52.1 and specs/ARCHITECTURE_SPEC.md.
  */
-enum class FoldableSize(widthDp: Int, heightDp: Int) {
+enum class FoldableSize(val widthDp: Int, val heightDp: Int) {
     FOLD8_COVER(475, 751),
     FOLD8_INNER_PORTRAIT(704, 933),
     FOLD8_INNER_LANDSCAPE(933, 704),

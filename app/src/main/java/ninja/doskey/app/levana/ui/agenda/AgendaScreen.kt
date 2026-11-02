@@ -65,6 +65,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -79,6 +83,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -107,6 +112,12 @@ import java.time.format.FormatStyle
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.ContentWidthBox
 import ninja.doskey.app.levana.ui.contentWidth
+import ninja.doskey.app.levana.ui.daydetail.DayDetailIntent
+import ninja.doskey.app.levana.ui.daydetail.DayDetailViewModel
+import ninja.doskey.app.levana.ui.panes.DayPanel
+import ninja.doskey.app.levana.ui.panes.ListDetailPanes
+import ninja.doskey.app.levana.ui.panes.PaneLayout
+import ninja.doskey.app.levana.ui.panes.rememberPaneLayout
 
 private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
 private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
@@ -132,15 +143,38 @@ fun AgendaScreen(
     navigation: AgendaNavigation,
     modifier: Modifier = Modifier,
     viewModel: AgendaViewModel = koinViewModel(),
+    dayDetailViewModel: DayDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val dayDetailState by dayDetailViewModel.state.collectAsStateWithLifecycle()
+    // Null below 840dp: the phone layout, without a day panel
+    val panes = rememberPaneLayout()
 
-    LifecycleResumeEffect(viewModel) {
+    LifecycleResumeEffect(viewModel, dayDetailViewModel) {
         viewModel.onIntent(AgendaIntent.Resume)
-        onPauseOrDispose { viewModel.onIntent(AgendaIntent.Pause) }
+        dayDetailViewModel.onIntent(DayDetailIntent.Resume)
+        onPauseOrDispose {
+            viewModel.onIntent(AgendaIntent.Pause)
+            dayDetailViewModel.onIntent(DayDetailIntent.Pause)
+        }
     }
 
-    AgendaContent(state = state, onIntent = viewModel::onIntent, navigation = navigation, modifier = modifier)
+    // The panel's day loads only while the panel shows; not again for the day it already shows
+    val panelDate = state.selectedDate ?: state.today
+    LaunchedEffect(panelDate, panes != null) {
+        if (panes != null && panelDate != null && dayDetailViewModel.state.value.dayInfo?.gregorianDate != panelDate) {
+            dayDetailViewModel.onIntent(DayDetailIntent.LoadDay(panelDate))
+        }
+    }
+
+    AgendaContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        navigation = navigation,
+        modifier = modifier,
+        panes = panes,
+        dayPanel = { panelDate?.let { DayPanel(dayDetailState, it, navigation.onShowZmanim) } },
+    )
 
     state.datePickerDate?.let { date ->
         HebrewDatePickerDialog(
@@ -158,6 +192,9 @@ internal fun AgendaContent(
     onIntent: (AgendaIntent) -> Unit,
     navigation: AgendaNavigation,
     modifier: Modifier = Modifier,
+    /** On wide windows, the list and [dayPanel] side by side under the header (TASK-52.6). */
+    panes: PaneLayout? = null,
+    dayPanel: @Composable () -> Unit = {},
 ) {
     val today = state.today
     if (today == null) {
@@ -179,6 +216,26 @@ internal fun AgendaContent(
     val search = state.search
     BackHandler(search != null) { onIntent(AgendaIntent.CloseSearch) }
 
+    // With a panel, the list shows its day and a tap on a day shows that day there
+    val selection = panes?.let { AgendaSelection(state.selectedDate ?: today) { onIntent(AgendaIntent.SelectDay(it)) } }
+    val list: @Composable (Modifier) -> Unit = { listModifier ->
+        Column(listModifier) {
+            if (search == null && !state.calendarPermission && !permissionDismissed) {
+                CalendarPermissionBanner(
+                    onChoose = navigation.onChooseCalendars,
+                    onDismiss = { permissionDismissed = true },
+                )
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                if (search != null) {
+                    SearchResults(search, today, state, onIntent)
+                } else {
+                    AgendaList(rows, listState, today, state, onIntent, navigation, selection)
+                }
+            }
+        }
+    }
+
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (search != null) {
             SearchHeader(search.query, onIntent)
@@ -192,22 +249,22 @@ internal fun AgendaContent(
                 onGoToToday = { onIntent(AgendaIntent.GoToToday) },
                 onSelectMode = { onIntent(AgendaIntent.SetHebrewLeading(it)) },
             )
-            if (!state.calendarPermission && !permissionDismissed) {
-                CalendarPermissionBanner(
-                    onChoose = navigation.onChooseCalendars,
-                    onDismiss = { permissionDismissed = true },
-                )
-            }
         }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (search != null) {
-                SearchResults(search, today, state, onIntent)
-            } else {
-                AgendaList(rows, listState, today, state, onIntent, navigation)
-            }
+        if (panes == null) {
+            list(Modifier.weight(1f).fillMaxWidth())
+        } else {
+            ListDetailPanes(
+                panes = panes,
+                modifier = Modifier.weight(1f),
+                list = { list(Modifier.fillMaxSize()) },
+                detail = dayPanel,
+            )
         }
     }
 }
+
+/** The day the panel beside the list shows, and how a tap in the list changes it. */
+private class AgendaSelection(val date: LocalDate, val onSelect: (LocalDate) -> Unit)
 
 @Composable
 private fun AgendaList(
@@ -217,6 +274,7 @@ private fun AgendaList(
     state: AgendaState,
     onIntent: (AgendaIntent) -> Unit,
     navigation: AgendaNavigation,
+    selection: AgendaSelection?,
 ) {
     if (state.isLoading && rows.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -260,15 +318,27 @@ private fun AgendaList(
         ) {
             if (state.loadingEarlier) item(key = "loading-earlier") { LoadingRow() }
             items(rows, key = { it.key }) { row ->
-                AgendaRowItem(row, today, state, clickLabel = null) { item -> openItem(item, row.day.date, navigation, context) }
+                AgendaRowItem(
+                    row, today, state, clickLabel = null,
+                    selected = selection?.date == row.day.date,
+                    onSelectDay = selection?.let { { it.onSelect(row.day.date) } },
+                ) { item -> openItem(item, row.day.date, navigation, context, selection) }
             }
             if (state.loadingLater) item(key = "loading-later") { LoadingRow() }
         }
     }
 }
 
-/** Opens what a tapped entry refers to. */
-private fun openItem(item: AgendaItem, date: LocalDate, navigation: AgendaNavigation, context: Context) {
+/**
+ * Opens what a tapped entry refers to. Beside the day panel, the entry's day is shown there
+ * first, and what the panel shows itself (holidays, candle lighting, Shabbat, havdalah) needs
+ * nothing more.
+ */
+private fun openItem(item: AgendaItem, date: LocalDate, navigation: AgendaNavigation, context: Context, selection: AgendaSelection?) {
+    if (selection != null) {
+        selection.onSelect(date)
+        if (item is AgendaItem.HolidayItem || item is AgendaItem.CandleLighting || item is AgendaItem.Shabbat || item is AgendaItem.Havdalah) return
+    }
     when (item) {
         is AgendaItem.PersonalEventItem -> navigation.onEditEvent(item.event.id)
         is AgendaItem.BirthdayItem -> navigation.onEditBirthday(item.birthday.contactLookupKey)
@@ -412,6 +482,8 @@ private fun AgendaRowItem(
     today: LocalDate,
     state: AgendaState,
     clickLabel: String?,
+    selected: Boolean = false,
+    onSelectDay: (() -> Unit)? = null,
     onClickItem: (AgendaItem) -> Unit,
 ) {
     Column {
@@ -423,6 +495,8 @@ private fun AgendaRowItem(
             otherClockCityName = state.otherClockCityName,
             onClickItem = onClickItem,
             clickLabel = clickLabel,
+            selected = selected,
+            onSelectDay = onSelectDay,
         )
     }
 }
@@ -455,9 +529,27 @@ internal fun DayRow(
     clickLabel: String?,
     /** Times in 24-hour form; null follows the device setting. */
     use24Hour: Boolean? = null,
+    /** The day the panel beside the list shows (TASK-52.6). */
+    selected: Boolean = false,
+    /** Shows this day in the panel beside the list; null without a panel. */
+    onSelectDay: (() -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        DateRail(day, isToday, hebrewLeading)
+    val highlight = MaterialTheme.colorScheme.primaryContainer
+    Row(
+        Modifier.fillMaxWidth()
+            // Drawn a little beyond the row, into the list's padding, so the cards keep their place
+            .then(if (selected) Modifier.drawBehind {
+                val outset = SelectionOutset.toPx()
+                drawRoundRect(
+                    color = highlight,
+                    topLeft = Offset(-outset, 0f),
+                    size = Size(size.width + 2 * outset, size.height),
+                    cornerRadius = CornerRadius(SelectionRadius.toPx()),
+                )
+            } else Modifier)
+            .padding(vertical = 6.dp)
+    ) {
+        DateRail(day, isToday, hebrewLeading, selected, onSelectDay)
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             day.items.forEach { item ->
@@ -467,9 +559,15 @@ internal fun DayRow(
     }
 }
 
-/** The weekday, the leading calendar's day (in a filled circle today) and the other calendar's date. */
+private val SelectionOutset = 6.dp
+private val SelectionRadius = 16.dp
+
+/**
+ * The weekday, the leading calendar's day (in a filled circle today) and the other calendar's
+ * date. With [onSelect], a tap shows the day in the panel beside the list.
+ */
 @Composable
-private fun DateRail(day: AgendaDay, isToday: Boolean, hebrewLeading: Boolean) {
+private fun DateRail(day: AgendaDay, isToday: Boolean, hebrewLeading: Boolean, selected: Boolean = false, onSelect: (() -> Unit)? = null) {
     val locale = LocalConfiguration.current.locales[0]
     val hebrewUi = CalendarHeaderFormatter.isHebrew(locale)
     val gregorianDay = day.date.dayOfMonth.toString()
@@ -485,7 +583,16 @@ private fun DateRail(day: AgendaDay, isToday: Boolean, hebrewLeading: Boolean) {
     val dates = "${day.hebrewDay.hebrewFormatted}, $fullDate"
     val description = if (isToday) stringResource(R.string.agenda_day_today, dates) else dates
     Column(
-        modifier = Modifier.width(64.dp).clearAndSetSemantics { contentDescription = description; heading() },
+        modifier = Modifier.width(64.dp)
+            .then(if (onSelect != null) Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onSelect) else Modifier)
+            .clearAndSetSemantics {
+                contentDescription = description
+                heading()
+                if (onSelect != null) {
+                    this.selected = selected
+                    onClick { onSelect(); true }
+                }
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(AgendaFormatter.weekday(day.date, locale), style = MaterialTheme.typography.labelMedium,

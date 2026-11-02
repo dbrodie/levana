@@ -35,16 +35,62 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ninja.doskey.app.levana.ui.panes.DayPanel
+import ninja.doskey.app.levana.ui.panes.ListDetailPanes
+import ninja.doskey.app.levana.ui.panes.PaneLayout
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.ui.daydetail.DayDetailContent
 import ninja.doskey.app.levana.ui.daydetail.DayDetailState
 
+/**
+ * The month and the selected day's details: on a phone-sized window the day sheet under the
+ * grid ([CalendarDaySheet]); with [panes], the grid and the day panel side by side under one
+ * full-width [header] (TASK-52.6).
+ */
+@Composable
+internal fun CalendarDayLayout(
+    state: DayDetailState,
+    selectedDate: LocalDate,
+    onShowZmanim: (LocalDate) -> Unit,
+    panes: PaneLayout?,
+    modifier: Modifier,
+    header: @Composable () -> Unit,
+    calendar: @Composable (Modifier) -> Unit,
+) {
+    if (panes == null) {
+        CalendarDaySheet(state, selectedDate, onShowZmanim, modifier, header, calendar)
+        return
+    }
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        header()
+        ListDetailPanes(
+            panes = panes,
+            modifier = Modifier.weight(1f),
+            list = { ScrollingGrid(Modifier.fillMaxSize(), calendar) },
+            detail = { DayPanel(state, selectedDate, onShowZmanim) },
+        )
+    }
+}
+
+/** The grid fills [modifier]'s height, but never below a readable minimum; then it scrolls. */
+@Composable
+private fun ScrollingGrid(modifier: Modifier, calendar: @Composable (Modifier) -> Unit) {
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(modifier) {
+        val gridHeight = maxOf(maxHeight, (320 * fontScale.coerceAtLeast(1f)).dp)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            calendar(Modifier.fillMaxWidth().height(gridHeight))
+        }
+    }
+}
+
 /** Native M3 anchors, drag semantics and nested scrolling keep the day sheet predictable. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CalendarDaySheet(
+private fun CalendarDaySheet(
     state: DayDetailState,
     selectedDate: LocalDate,
     onShowZmanim: (LocalDate) -> Unit,
@@ -77,6 +123,9 @@ internal fun CalendarDaySheet(
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetPeekHeight = peekHeight,
+        // The full window width: below 840dp (e.g. the Fold8 inner display upright) rather than
+        // Material's 640dp cap with gutters; phones are narrower than the cap anyway (TASK-52.6)
+        sheetMaxWidth = Dp.Unspecified,
         sheetDragHandle = {
             val expanded = scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded
             val actionLabel = stringResource(if (expanded) R.string.sheet_collapse else R.string.sheet_expand)
@@ -103,11 +152,6 @@ internal fun CalendarDaySheet(
             )
         },
     ) { padding ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
-            val gridHeight = maxOf(maxHeight, (320 * fontScale.coerceAtLeast(1f)).dp)
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                calendar(Modifier.fillMaxWidth().height(gridHeight))
-            }
-        }
+        ScrollingGrid(Modifier.fillMaxSize().padding(padding), calendar)
     }
 }
