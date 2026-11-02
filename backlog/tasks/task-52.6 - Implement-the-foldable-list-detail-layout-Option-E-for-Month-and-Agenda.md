@@ -1,11 +1,11 @@
 ---
 id: TASK-52.6
 title: Implement the foldable list-detail layout (Option E) for Month and Agenda
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T08:56:00Z'
-updated_date: '2026-11-02T10:47:00Z'
+updated_date: '2026-11-02T10:54:00Z'
 labels: []
 dependencies:
   - TASK-52.4
@@ -123,6 +123,18 @@ Compared with the Figma frames: matches E1/E3/E4–E6 except the owner-decided c
 - The gutter's touch area is 16dp (+16dp over the panel's padding): narrower than 48dp by design to avoid stealing month swipes; TalkBack users have the actions.
 - On the emulator the Hebrew drawer showed the city as "القدس" (the emulator geocoder's name), unrelated to this task.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T10:54:00Z
+
+---
+
+Coordinator integration 2026-11-02: reviewed emulator shots (EN Month 50%, HE dark Agenda 65%); merged as 7592d41. Clean run: assembleRelease + 1202 tests 0 failures, Roborazzi 420 unchanged (96 added, 11 foldable baselines intentionally changed). One earlier run hit the recurring DatePickerScreenshotTest 'Select date' 10s wait timeout (load ~4.6); passed on rerun. Figma: Option E as built added to Light/Dark/Hebrew pages, divider in Components, exploration page deleted (per agent). Agent's Agenda selection behaviour accepted pending owner review.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 

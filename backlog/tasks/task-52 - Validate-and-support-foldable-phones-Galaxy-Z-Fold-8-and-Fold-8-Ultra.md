@@ -1,9 +1,10 @@
 ---
 id: TASK-52
 title: Validate and support foldable phones (Galaxy Z Fold 8 and Fold 8 Ultra)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-30T10:30:00Z'
+updated_date: '2026-11-02T10:54:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -37,5 +38,17 @@ Other relevant points, folded into the subtasks:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All subtasks are done; the app is usable and correct on Fold 8 and Fold 8 Ultra cover and inner displays and across fold/unfold, with evidence recorded
+- [x] #1 All subtasks are done; the app is usable and correct on Fold 8 and Fold 8 Ultra cover and inner displays and across fold/unfold, with evidence recorded
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T10:54:00Z
+
+---
+
+Coordinator 2026-11-02: all subtasks done (52.1 setup, 52.2 layout audit, 52.3 continuity + TASK-50, 52.4 design decision Option E, 52.5 postures/surfaces, 52.6 list-detail implementation). Verified on Fold8/Fold8 Ultra AVDs (emulator only; no real device). Evidence per subtask notes.
+
+---
+<!-- COMMENTS:END -->
