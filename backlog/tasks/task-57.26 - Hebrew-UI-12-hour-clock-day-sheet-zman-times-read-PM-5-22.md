@@ -1,11 +1,11 @@
 ---
 id: TASK-57.26
 title: 'Hebrew UI, 12-hour clock: day-sheet zman times read ''PM 5:22'''
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T18:03:00Z'
-updated_date: '2026-11-02T14:16:00Z'
+updated_date: '2026-11-02T17:51:00Z'
 labels:
   - design-review
 dependencies: []
