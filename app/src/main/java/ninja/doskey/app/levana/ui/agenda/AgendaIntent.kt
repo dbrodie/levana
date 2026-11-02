@@ -20,7 +20,7 @@ sealed interface AgendaIntent {
     data object CloseSearch : AgendaIntent
     data class SetSearchQuery(val query: String) : AgendaIntent
     data class SelectSearchResult(val date: LocalDate) : AgendaIntent
-    /** Shows [date] in the day panel beside the list (wide windows). */
+    /** Shows [date] in the day panel beside the list (wide windows): a tap on the day's date rail. */
     data class SelectDay(val date: LocalDate) : AgendaIntent
     data object Resume : AgendaIntent
     data object Pause : AgendaIntent

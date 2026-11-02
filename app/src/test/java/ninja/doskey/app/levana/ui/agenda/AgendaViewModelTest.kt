@@ -211,26 +211,47 @@ class AgendaViewModelTest {
     }
 
     @Test
-    fun `the day panel's day follows taps, jumps and today, and survives the process`() {
+    fun `only a date rail tap changes the day panel's day, which survives the process`() {
         val saved = SavedStateHandle()
         val vm = viewModel(saved)
-        // Today until something else is chosen, kept as null so it follows midnight
+        vm.onIntent(AgendaIntent.ScrollHandled(vm.state.value.scrollRequest!!.id))
+        // Today until a day is tapped, kept as null so it follows midnight
         assertNull(vm.state.value.selectedDate)
         val tapped = today.plusDays(8)
         vm.onIntent(AgendaIntent.SelectDay(tapped))
         assertEquals(tapped, vm.state.value.selectedDate)
-        val picked = today.plusDays(20)
-        vm.onIntent(AgendaIntent.GoToDate(picked))
-        assertEquals(picked, vm.state.value.selectedDate)
-        vm.onIntent(AgendaIntent.GoToToday)
+        vm.onIntent(AgendaIntent.SelectDay(today))
         assertNull(vm.state.value.selectedDate)
+        vm.onIntent(AgendaIntent.SelectDay(tapped))
+
+        // A picked date, inside the window and outside it, only scrolls the list (TASK-59)
+        val picked = today.plusDays(20)
+        vm.onIntent(AgendaIntent.OpenDatePicker(today))
+        vm.onIntent(AgendaIntent.GoToDate(picked))
+        assertEquals(picked, vm.state.value.scrollRequest?.date)
+        assertNull(vm.state.value.datePickerDate)
+        assertEquals(tapped, vm.state.value.selectedDate)
+        val far = LocalDate.of(2028, 3, 1)
+        vm.onIntent(AgendaIntent.GoToDate(far))
+        awaitUntil { vm.state.value.start == far.minusDays(chunk) && !vm.state.value.isLoading }
+        assertEquals(tapped, vm.state.value.selectedDate)
+
+        // So does Today
+        vm.onIntent(AgendaIntent.GoToToday)
+        awaitUntil { vm.state.value.start == today.minusDays(chunk) && !vm.state.value.isLoading }
+        assertEquals(today, vm.state.value.scrollRequest?.date)
+        assertEquals(tapped, vm.state.value.selectedDate)
+
+        // And a search result
         vm.onIntent(AgendaIntent.OpenSearch)
         vm.onIntent(AgendaIntent.SelectSearchResult(LocalDate.of(2026, 11, 3)))
-        assertEquals(LocalDate.of(2026, 11, 3), vm.state.value.selectedDate)
+        assertNull(vm.state.value.search)
+        awaitUntil { vm.state.value.scrollRequest?.date == LocalDate.of(2026, 11, 3) }
+        assertEquals(tapped, vm.state.value.selectedDate)
 
         store.clear()
         val restored = viewModel(SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
-        assertEquals(LocalDate.of(2026, 11, 3), restored.state.value.selectedDate)
+        assertEquals(tapped, restored.state.value.selectedDate)
     }
 
     @Test

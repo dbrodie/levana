@@ -216,7 +216,7 @@ internal fun AgendaContent(
     val search = state.search
     BackHandler(search != null) { onIntent(AgendaIntent.CloseSearch) }
 
-    // With a panel, the list shows its day and a tap on a day shows that day there
+    // With a panel, the list highlights its day, and a tap on a day's date rail shows that day there
     val selection = panes?.let { AgendaSelection(state.selectedDate ?: today) { onIntent(AgendaIntent.SelectDay(it)) } }
     val list: @Composable (Modifier) -> Unit = { listModifier ->
         Column(listModifier) {
@@ -263,7 +263,7 @@ internal fun AgendaContent(
     }
 }
 
-/** The day the panel beside the list shows, and how a tap in the list changes it. */
+/** The day the panel beside the list shows, and how a tap on a date rail changes it. */
 private class AgendaSelection(val date: LocalDate, val onSelect: (LocalDate) -> Unit)
 
 @Composable
@@ -322,23 +322,15 @@ private fun AgendaList(
                     row, today, state, clickLabel = null,
                     selected = selection?.date == row.day.date,
                     onSelectDay = selection?.let { { it.onSelect(row.day.date) } },
-                ) { item -> openItem(item, row.day.date, navigation, context, selection) }
+                ) { item -> openItem(item, row.day.date, navigation, context) }
             }
             if (state.loadingLater) item(key = "loading-later") { LoadingRow() }
         }
     }
 }
 
-/**
- * Opens what a tapped entry refers to. Beside the day panel, the entry's day is shown there
- * first, and what the panel shows itself (holidays, candle lighting, Shabbat, havdalah) needs
- * nothing more.
- */
-private fun openItem(item: AgendaItem, date: LocalDate, navigation: AgendaNavigation, context: Context, selection: AgendaSelection?) {
-    if (selection != null) {
-        selection.onSelect(date)
-        if (item is AgendaItem.HolidayItem || item is AgendaItem.CandleLighting || item is AgendaItem.Shabbat || item is AgendaItem.Havdalah) return
-    }
+/** Opens what a tapped entry refers to; the same beside the day panel, whose day it leaves alone. */
+private fun openItem(item: AgendaItem, date: LocalDate, navigation: AgendaNavigation, context: Context) {
     when (item) {
         is AgendaItem.PersonalEventItem -> navigation.onEditEvent(item.event.id)
         is AgendaItem.BirthdayItem -> navigation.onEditBirthday(item.birthday.contactLookupKey)
