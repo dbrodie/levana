@@ -1,11 +1,11 @@
 ---
 id: TASK-59
 title: 'Agenda two-pane: only the date rail selects the panel''s day'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T10:57:00Z'
-updated_date: '2026-11-02T12:43:00Z'
+updated_date: '2026-11-02T12:46:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -70,6 +70,18 @@ Limitations: birthday cards (no contacts on the emulator) and standalone havdala
 ## Figma
 Checked the Option E frames on Screens — Light (section 08, 95-14327), Dark (95-23824) and Hebrew (95-28198), their annotations, and the Components descriptions (Agenda / Date rail 20-54, Agenda / Card 20-131, Pane divider 78-7553): nothing describes the old selection rule, and the Agenda frames show a day selected by its date rail, which the new rule still allows. No Figma change needed; nothing created.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T12:46:00Z
+
+---
+
+Coordinator integration 2026-11-02: merged as 689c745. Clean run: 1219 tests, 0 failures; Roborazzi 420 unchanged (no baseline changes). New AgendaTapTest and AgendaTwoPaneSelectionTest fail on the old code. Emulator (Fold8 landscape) checked; birthday and standalone havdalah cards covered by tests only. Figma needed no change.
+
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
