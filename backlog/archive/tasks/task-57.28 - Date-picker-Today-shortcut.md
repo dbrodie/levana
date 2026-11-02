@@ -4,7 +4,7 @@ title: 'Date picker: Today shortcut'
 status: To Do
 assignee: []
 created_date: '2026-11-02T09:31:00Z'
-updated_date: '2026-11-02T09:31:00Z'
+updated_date: '2026-11-02T10:11:00Z'
 labels:
   - design-review
 dependencies: []
@@ -77,4 +77,6 @@ Status: proposal awaiting the owner's choice of option and confirmation of the s
 Proposal created on 2026-11-02 by the design agent. No code changes were made.
 - Figma: the proposal frames are copies of the current picker frames. Light 28:2059, 28:1752 and 28:2312 were copied after TASK-57.14, and Hebrew RTL 44:2712 was copied in its state at that time. The originals and components were not modified. Reused: the Button component set 19:46 (Style=Text, LTR/RTL) and the Date picker / Day cell State=Today variant.
 - Observation, not fixed here: the existing Hebrew RTL frame 44:2712, and therefore its copy 92:6190, shows the לועזי (Gregorian) segment checked while the grid is Hebrew-led. That frame needs correcting when the Figma frames are next updated.
+
+Dropped by the owner (2026-11-02): Android's own Material date picker has no Today shortcut either, so this isn't important. The Figma proposal section (91:6399) was deleted; the existing picker frames were not changed.
 <!-- SECTION:NOTES:END -->
