@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
@@ -91,6 +92,8 @@ class DatePickerScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         awaitText("Stored")
         clickable("Stored").performClick()
         awaitText(string(R.string.design_edit_event))
+        // The title comes from the route; the stored event's own fields mark the load as done
+        await(hasText("Stored") and hasSetTextAction())
         openPicker()
     }
 

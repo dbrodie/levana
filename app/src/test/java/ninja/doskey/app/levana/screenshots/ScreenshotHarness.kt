@@ -98,6 +98,7 @@ abstract class ScreenshotTest(
     private var scenario: ActivityScenario<MainActivity>? = null
     private lateinit var savedZone: TimeZone
     private lateinit var devicePreferences: StateFlow<UserPreferences>
+    private val databaseWork = DatabaseIdling()
 
     protected val preferences get() = koin.get<PreferencesRepository>()
 
@@ -130,6 +131,7 @@ abstract class ScreenshotTest(
 
         db = Room.inMemoryDatabaseBuilder(app, LevanaDatabase::class.java)
             .allowMainThreadQueries()
+            .setQueryExecutor(databaseWork)
             .build()
         val overrides = module {
             single { db }
@@ -157,6 +159,7 @@ abstract class ScreenshotTest(
         scenario?.close()
         stopKoin()
         db.close()
+        databaseWork.shutdown()
         AppDataStores.clearPreferences(app)
         AppDataStores.clearPaneLayout(app)
         TimeZone.setDefault(savedZone)
@@ -181,7 +184,10 @@ abstract class ScreenshotTest(
         repeat(LAUNCH_ATTEMPTS) { attempt ->
             scenario = ActivityScenario.launch(intent)
             advanceFrame()
-            if (awaitOrFalse(ready, LAUNCH_TIMEOUT_MILLIS)) return
+            val shown = awaitOrFalse(LAUNCH_TIMEOUT_MILLIS, waitForDatabase = false) {
+                compose.onAllNodes(ready).fetchSemanticsNodes().isNotEmpty()
+            }
+            if (shown) return awaitUntil("the launch's queries") { true }
             println("ScreenshotTest: launch ${attempt + 1} of ${variant.tag} never showed its content; relaunching")
             scenario?.close()
             scenario = null
@@ -269,30 +275,42 @@ abstract class ScreenshotTest(
     protected fun string(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
 
     /** Waits until a node matching [matcher] is shown (async loads finish), then until idle. */
-    protected fun await(matcher: SemanticsMatcher) {
-        check(awaitOrFalse(matcher, AWAIT_TIMEOUT_MILLIS)) { "Timed out waiting for ${matcher.description}" }
+    protected fun await(matcher: SemanticsMatcher) = awaitUntil("a node that ${matcher.description}") {
+        compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
     }
 
     /** Waits until no node matches [matcher] (an animation or navigation has finished), then until idle. */
-    protected fun awaitGone(matcher: SemanticsMatcher) {
-        val start = System.currentTimeMillis()
-        while (compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()) {
-            check(System.currentTimeMillis() - start <= AWAIT_TIMEOUT_MILLIS) { "Timed out waiting for no ${matcher.description}" }
-            Thread.sleep(10)
-            advanceFrame()
-        }
-        compose.waitForIdle()
+    protected fun awaitGone(matcher: SemanticsMatcher) = awaitUntil("no node that ${matcher.description}") {
+        compose.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()
     }
 
-    private fun awaitOrFalse(matcher: SemanticsMatcher, timeoutMillis: Long): Boolean {
+    /**
+     * Waits until [condition] holds and the database is idle ([DatabaseIdling]), then until
+     * Compose is idle, so a screen's load has landed before the test acts on it. DataStore's IO
+     * thread is not tracked, so the wait runs frames in real time until both hold. The timeout
+     * only bounds a wait that will never end; a timeout fails with what the screen, the windows
+     * and the threads were doing.
+     */
+    protected fun awaitUntil(description: String, condition: () -> Boolean) {
+        check(awaitOrFalse(AWAIT_TIMEOUT_MILLIS, waitForDatabase = true, condition)) {
+            "Timed out after $AWAIT_TIMEOUT_MILLIS ms waiting for $description ($databaseWork)\n${HarnessDiagnostics.describe(compose)}"
+        }
+    }
+
+    private fun awaitOrFalse(timeoutMillis: Long, waitForDatabase: Boolean, condition: () -> Boolean): Boolean {
         val start = System.currentTimeMillis()
-        while (compose.onAllNodes(matcher).fetchSemanticsNodes().isEmpty()) {
+        val databaseIdle = { !waitForDatabase || databaseWork.isIdle }
+        compose.waitForIdle()
+        while (true) {
+            if (databaseIdle() && condition()) {
+                // Idling can start another query (a load's follow-up); wait for that one too
+                compose.waitForIdle()
+                if (databaseIdle()) return true
+            }
             if (System.currentTimeMillis() - start > timeoutMillis) return false
             Thread.sleep(10)
             advanceFrame()
         }
-        compose.waitForIdle()
-        return true
     }
 
     /**
@@ -371,7 +389,8 @@ abstract class ScreenshotTest(
         private val FRAME: Duration = Duration.ofMillis(16)
         private const val LAUNCH_ATTEMPTS = 5
         private const val LAUNCH_TIMEOUT_MILLIS = 3_000L
-        private const val AWAIT_TIMEOUT_MILLIS = 10_000L
+        /** A bound for waits that never end, not a duration any step should approach. */
+        private const val AWAIT_TIMEOUT_MILLIS = 60_000L
 
         val ZONE: ZoneId = ZoneId.of("America/New_York")
 
