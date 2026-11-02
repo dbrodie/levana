@@ -7,6 +7,7 @@
     <string name="birthday_existing_replaced">התאריך שבחרתם הוחלף בתאריך השמור.</string>
     <string name="event_add_title">שמירת תאריך</string>
     <string name="event_edit_title">עריכת אירוע</string>
+    <string name="event_loading">האירוע נטען…</string>
     <string name="event_date_hint">בחרו את התאריך העברי לאירוע זה.</string>
     <string name="zmanim_selection_hint">בחרו אילו זמנים יוצגו בלוח היום.</string>
     <string name="settings_group_calendar">לוח שנה</string>

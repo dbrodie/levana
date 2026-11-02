@@ -4,7 +4,6 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
 
 sealed interface AddEditEventIntent {
-    data class LoadEvent(val eventId: Long) : AddEditEventIntent
     data class SetTitle(val title: String) : AddEditEventIntent
     data object OpenDatePicker : AddEditEventIntent
     data object DismissDatePicker : AddEditEventIntent

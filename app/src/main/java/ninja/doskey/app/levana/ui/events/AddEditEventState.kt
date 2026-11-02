@@ -6,6 +6,8 @@ import ninja.doskey.app.levana.data.HebrewDateMatcher
 import java.time.LocalDate
 
 data class AddEditEventState(
+    /** A stored event is being loaded: the screen shows no form and input is ignored. */
+    val isLoading: Boolean = false,
     val isEditing: Boolean = false,
     val eventId: Long = 0,
     val title: String = "",

@@ -1,5 +1,7 @@
 package ninja.doskey.app.levana.ui.events
 
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -22,12 +25,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.datepicker.HebrewDateField
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
@@ -47,11 +60,9 @@ fun AddEditEventScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(eventId) {
-        if (eventId > 0) {
-            viewModel.onIntent(AddEditEventIntent.LoadEvent(eventId))
-        }
-    }
+    // Set once the loading indicator has been shown, so the form takes focus when it
+    // loads and TalkBack moves on from the indicator to it
+    var loadingShown by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(prefillDay, prefillMonth, prefillYear) {
         if (prefillDay > 0 && prefillMonth > 0 && prefillYear > 0 &&
@@ -71,6 +82,19 @@ fun AddEditEventScreen(
         if (state.saved) onSaved()
     }
 
+    if (state.isLoading) {
+        EventLoading(onShown = { loadingShown = true }, modifier = modifier)
+        return
+    }
+
+    val formFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        if (loadingShown) {
+            loadingShown = false
+            formFocus.requestFocus()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -78,7 +102,7 @@ fun AddEditEventScreen(
             .contentWidth()
             .padding(16.dp)
     ) {
-        Text(stringResource(R.string.event_date_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.event_date_hint), modifier = Modifier.focusRequester(formFocus).focusable(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -185,3 +209,36 @@ fun AddEditEventScreen(
         )
     }
 }
+
+/**
+ * Shown in place of the form while a stored event loads. A load normally takes
+ * milliseconds, so the indicator only appears if it is still loading after a moment,
+ * never as a flash.
+ */
+@Composable
+private fun EventLoading(onShown: () -> Unit, modifier: Modifier = Modifier) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(LOADING_INDICATOR_DELAY_MILLIS)
+        visible = true
+        onShown()
+    }
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (visible) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            ) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    stringResource(R.string.event_loading),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private const val LOADING_INDICATOR_DELAY_MILLIS = 300L

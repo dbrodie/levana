@@ -17,11 +17,16 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.navigation.toRoute
+import ninja.doskey.app.levana.ui.navigation.AddEditEventRoute
 
 class AddEditEventViewModel(
     private val repository: PersonalEventRepository,
     private val deviceContext: DeviceContext,
-    /** Keeps unsaved input if the process is killed (TASK-52.3). */
+    /**
+     * Holds the route (the event to edit) and keeps unsaved input if the process is
+     * killed (TASK-52.3).
+     */
     private val savedState: SavedStateHandle = SavedStateHandle()
 ) : ViewModel() {
 
@@ -43,19 +48,28 @@ class AddEditEventViewModel(
     // writes it back unchanged (TASK-24)
     private var preservedDate: Triple<Int, Int, Int>? = null
 
-    // The screen re-sends its load and prefill when a fold or rotation recreates it; each
-    // applies once, so they never replace what the user has typed or picked since
-    private var requestedEventId: Long? = null
+    // The screen re-sends its prefill when a fold or rotation recreates it; it applies
+    // once, so it never replaces a date the user has picked since
     private var prefilled = false
 
     init {
-        savedState.get<String>(KEY_DRAFT)?.let { restore(Json.decodeFromString<Draft>(it)) }
+        // The editor starts Editing a saved draft, Loading a stored event, or Editing a
+        // new one. A stored event loads once, here, and never over a draft (TASK-61).
+        val eventId = savedState.toRoute<AddEditEventRoute>().eventId
+        // A draft of this route only: an older one, kept mid-load, is not this event
+        val draft = savedState.get<String>(KEY_DRAFT)?.let { Json.decodeFromString<Draft>(it) }
+            ?.takeIf { eventId <= 0 || it.loadedEventId == eventId }
+        when {
+            draft != null -> restore(draft)
+            eventId > 0 -> loadEvent(eventId)
+        }
         viewModelScope.launch {
             val year = currentYear.await()
             if (!yearChosen) setDate(year = SupportedHebrewYears.coerce(year), chosen = false)
         }
         viewModelScope.launch {
-            _state.collect { savedState[KEY_DRAFT] = Json.encodeToString(draft(it)) }
+            // Nothing to keep while loading: a process killed then loads the event again
+            _state.collect { if (!it.isLoading) savedState[KEY_DRAFT] = Json.encodeToString(draft(it)) }
         }
     }
 
@@ -75,7 +89,6 @@ class AddEditEventViewModel(
         val preservedDate: List<Int>?,
     )
 
-    // A stored event counts as loaded once shown, so one killed mid-load loads again
     private fun draft(s: AddEditEventState) = Draft(
         loadedEventId = s.eventId.takeIf { s.isEditing },
         title = s.title,
@@ -91,7 +104,6 @@ class AddEditEventViewModel(
     )
 
     private fun restore(d: Draft) {
-        requestedEventId = d.loadedEventId
         yearChosen = d.yearChosen
         prefilled = d.prefilled
         preservedDate = d.preservedDate?.let { (day, month, year) -> Triple(day, month, year) }
@@ -109,12 +121,10 @@ class AddEditEventViewModel(
     }
 
     fun onIntent(intent: AddEditEventIntent) {
+        // The screen shows no form while loading; any input that still arrives is dropped,
+        // since the stored event replaces the whole state
+        if (_state.value.isLoading) return
         when (intent) {
-            is AddEditEventIntent.LoadEvent -> {
-                if (intent.eventId == requestedEventId) return
-                requestedEventId = intent.eventId
-                loadEvent(intent.eventId)
-            }
             is AddEditEventIntent.SetTitle ->
                 _state.value = _state.value.copy(title = intent.title)
             is AddEditEventIntent.OpenDatePicker ->
@@ -191,8 +201,11 @@ class AddEditEventViewModel(
     }
 
     private fun loadEvent(eventId: Long) {
+        _state.value = _state.value.copy(isLoading = true)
         viewModelScope.launch {
-            val event = repository.getById(eventId) ?: return@launch
+            // A missing (deleted) event opens the empty form, saved as a new event
+            val event = repository.getById(eventId)
+                ?: return@launch run { _state.value = _state.value.copy(isLoading = false) }
             // An event stored without a usable year (imported with year 0)
             // opens on the current Hebrew year
             val (day, month, year) = HebrewDateMatcher.editorDate(
