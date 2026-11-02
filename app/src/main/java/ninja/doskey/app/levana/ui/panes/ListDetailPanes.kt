@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.systemGestureExclusion
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -61,6 +63,9 @@ internal val MinListWidth = 360.dp
 internal val MinPanelWidth = 300.dp
 /** The divider also takes drags this far over the panel's edge, inside its padding. */
 private val DividerReach = 16.dp
+
+/** The height around the handle where a drag moves the divider rather than going back. */
+private val HandleExclusionHeight = 160.dp
 
 /** The divider's test tag. */
 const val PANE_DIVIDER_TAG = "pane_divider"
@@ -152,12 +157,21 @@ internal fun ListDetailPanes(
         val clickLabel = stringResource(if (split.collapsed) R.string.pane_divider_show else R.string.pane_divider_next)
         val toggleLabel = stringResource(if (split.collapsed) R.string.pane_divider_show else R.string.pane_divider_hide)
         val reach = minOf(DividerReach, panelDp)
+        val exclusionPx = with(density) { HandleExclusionHeight.toPx() }
         Box(
             Modifier
                 .offset { IntOffset(listPx.roundToInt(), 0) }
                 .width(PaneGutter + reach)
                 .fillMaxHeight()
                 .testTag(PANE_DIVIDER_TAG)
+                // Hidden panel: the gutter is at the screen's edge, where a drag would be the
+                // system's back gesture. Android exempts at most 200dp per edge, so only the
+                // stretch around the handle.
+                .systemGestureExclusion { coordinates ->
+                    val reachY = exclusionPx / 2
+                    val centerY = coordinates.size.height / 2f
+                    Rect(0f, centerY - reachY, coordinates.size.width.toFloat(), centerY + reachY)
+                }
                 .semantics {
                     contentDescription = dividerLabel
                     stateDescription = stateLabel

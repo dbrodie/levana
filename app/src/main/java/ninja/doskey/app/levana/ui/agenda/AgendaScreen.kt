@@ -584,7 +584,8 @@ private fun DateRail(day: AgendaDay, isToday: Boolean, hebrewLeading: Boolean, s
     val description = if (isToday) stringResource(R.string.agenda_day_today, dates) else dates
     Column(
         modifier = Modifier.width(64.dp)
-            .then(if (onSelect != null) Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onSelect) else Modifier)
+            // Not clipped: a long other-calendar date overflows the rail, as without a panel
+            .then(if (onSelect != null) Modifier.clickable(role = Role.Button, onClick = onSelect) else Modifier)
             .clearAndSetSemantics {
                 contentDescription = description
                 heading()
