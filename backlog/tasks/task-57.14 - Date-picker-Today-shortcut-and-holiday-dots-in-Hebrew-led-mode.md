@@ -1,11 +1,11 @@
 ---
 id: TASK-57.14
 title: 'Date picker: holiday dots in Hebrew-led Figma frames'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-02T08:55:00Z'
+updated_date: '2026-11-02T09:25:00Z'
 labels:
   - design-review
 dependencies: []
