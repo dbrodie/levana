@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T11:20:00Z'
-updated_date: '2026-11-02T13:43:00Z'
+updated_date: '2026-11-02T13:56:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -25,7 +25,7 @@ ContactBirthdayViewModel already handles the same case: fields edited while load
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Opening the date picker or editing a field before a stored event has loaded never loses the input or closes the picker, and the picker never opens on a date other than the stored one; a ViewModel test covers a slow load
+- [x] #1 Opening the date picker or editing a field before a stored event has loaded never loses the input or closes the picker, and the picker never opens on a date other than the stored one; a ViewModel test covers a slow load
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,29 @@ Design (owner decision 2026-11-02: explicit Loading / Editing):
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner decision 2026-11-02: use the standard explicit-loading architecture. The editor's state is Loading or Editing. While loading a stored event, the screen shows a brief loading indicator in place of the form (no input, no picker). The load runs once and switches to Editing with the stored values; after that, only user intents change the state, and nothing reloads over it. A restored draft (TASK-52.3 process-death restore) starts directly in Editing and is never overwritten. New events start in Editing with the defaults.
+
+## Implementation (commit ee6d442)
+- AddEditEventState.isLoading. AddEditEventViewModel decides its start in init from its SavedStateHandle: a saved draft of this route -> Editing with the draft (the stored event is never loaded); else the route's eventId (SavedStateHandle.toRoute<AddEditEventRoute>(), filled by navigation through Koin's extras) > 0 -> Loading, loaded once, then Editing with the stored values; else Editing with the defaults. The LoadEvent intent and the screen's LaunchedEffect(eventId) are gone, so recomposition, folds/rotation or a re-sent intent cannot reload. The first frame of an edit is already Loading.
+- While loading, onIntent drops every intent (title, notes, yahrzeit, picker open/confirm/dismiss, prefill, Save). The draft is not written while loading, so a process killed mid-load loads the event again; a draft is only used if it belongs to the route's event.
+- Missing/deleted event: unchanged from before — the load finds nothing, the editor shows the defaults (title bar still 'Edit event', from the route) and Save adds it as a new event. Covered by a test.
+- Screen: while loading, EventLoading replaces the whole form (no fields, no picker). The indicator (CircularProgressIndicator + 'Loading event…' / 'האירוע נטען…', polite live region, merged) appears only after 300 ms, so a normal load shows no flash and TalkBack announces only a visible wait. If it was shown, focus moves to the form's first line once loaded (FocusRequester on the hint text).
+- Birthday editor untouched (no shared code).
+
+## Tests
+- AddEditEventViewModelTest: existing tests open stored events through the route SavedStateHandle; new gated-DAO tests: aStoredEventOpensLoadingAndLoadsOnce, noInputIsAcceptedWhileLoading (incl. picker can't open, Save ignored, picker then opens on the stored date), editsAfterTheLoadAreNeverOverwritten, aRestoredDraftBeatsTheLoad (DAO never asked), aProcessKilledWhileLoadingLoadsAgain, aNewEventHasNoLoadingState, aMissingEventOpensTheEmptyForm. 40/40.
+- TASK-60 harness wait kept unchanged; DatePickerScreenshotTest passes in the full run.
+
+## Verification (tested commit ee6d442)
+- rm -rf app/build/test-results; assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL; 1225 tests, 0 failures/errors; lint 0 errors (83 warnings, as before); Roborazzi verify passed, no baseline changed (git status clean). Log: /tmp/task61/full.log
+- Emulator (Levana_Agent_Template_API_36_1, headless): created an event, opened it from My events -> Events: loads normally with stored values ('Update'); edited notes, rotation to landscape and back kept the draft; opened the date picker, HOME + am kill + relaunch: the picker and the edited notes were restored, Update saved.
+- Slowed load (uncommitted 3 s delay in loadEvent, debug build only, reverted; APK /tmp/task61/emu/app-debug-slowload.apk): the editor showed the 'Loading event…' indicator in place of the form; a tap where the date field would be did nothing; after the load the stored values showed, no picker opened, and focus was on the form's first line ('Choose the Hebrew date for this event.').
+- Evidence: /tmp/task61/emu/artifacts (03-edit-loaded, 04-rotated, 05-after-process-death, 06-draft-after-process-death, 07-slow-loading, 08-slow-loaded).
+- Figma: added 'Events / Edit event — loading' frames to section 05 on Screens — Light (98:6873), Dark (98:15728), and the Hebrew key-screens section (98:15776, 'עריכת אירוע' / 'האירוע נטען…'); the sections were widened to fit.
+- Limitations: TalkBack itself was not run on the emulator; the focus move was checked through the UI hierarchy's focused node.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The event editor now has an explicit Loading / Editing state. A stored event loads once in the view model (from the route in its SavedStateHandle); until it loads, the screen shows a delayed loading indicator instead of the form and the view model ignores all input, so nothing typed or picked can be lost and the picker opens on the stored date. A restored draft starts in Editing and is never overwritten; new events never load. Missing events keep today's behaviour (empty form, saved as new). New ViewModel tests use a slow, gated load. Full check green (1225 tests, lint, Roborazzi unchanged); emulator checked normal edit, rotation, process death and a temporarily slowed load. Figma has the new loading frame (Light, Dark, Hebrew).
+<!-- SECTION:FINAL_SUMMARY:END -->
