@@ -4,7 +4,7 @@ title: Large-screen adaptive layouts for the inner display (design decision)
 status: To Do
 assignee: []
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-10-30T12:54:00Z'
+updated_date: '2026-11-02T08:46:00Z'
 labels: []
 dependencies:
   - TASK-52.2
@@ -44,4 +44,180 @@ TASK-52.2 fixed only what needed no design decision: single-column content is ca
 - The top bars and the Agenda/Calendar headers (title, Hebrew/Gregorian toggle, actions) stay full width while their content is capped. Decide whether headers align with the content column.
 - The cap value (640dp, matching the bottom sheet) is a judgement call; revisit it together with these layouts.
 - Text at 200%: cell text in the month grid, date picker and walkthrough illustrations is capped at 1.3x. Alternatives are taller cells or fewer labels per cell, if the owner wants full scaling there.
+
+## Month view design exploration (2026-11-01, design agent, branch task-52.4-month-view-design)
+
+Scope: the Month view on the Fold8 / Fold8 Ultra inner display. This is design only: no app code changed and no existing Figma page was touched. Owner constraints: the slide-in drawer stays (no rail, no permanent drawer), and phone layouts are unchanged.
+
+- Figma page: "Explorations — Foldable Month (TASK-52.4)": https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=63-73. Everything there is built from instances of the existing Levana components, variables and text styles. Local "Explore /" building blocks are in its Building blocks section.
+- PNG exports, the README and the full research report: /tmp/levana-task52.4-month-design/ (README.md, options/, comparison.png, annotations/, research.md).
+
+### Research summary
+Full report with every link and confidence level: /tmp/levana-task52.4-month-design/research.md. "Inferred" means not seen directly.
+
+- **Window size classes:** width is compact <600, medium 600–839 and expanded ≥840 dp ([docs](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes)).
+  - Fold8 inner portrait (704) is medium width.
+  - Fold8 inner landscape (933) and both Ultra postures are expanded. Ultra portrait (859) is only 19dp above the boundary.
+- **Canonical layouts** ([docs](https://developer.android.com/develop/ui/compose/layouts/adaptive/canonical-layouts)):
+  - The supporting pane goes in a bottom sheet or below the content at compact width, 50/50 at medium and 70/30 at expanded.
+  - `SupportingPaneScaffold`'s default directive shows one pane at medium width ([guide](https://developer.android.com/develop/ui/compose/layouts/adaptive/build-a-supporting-pane-layout)). A two-panes-at-medium directive exists, but Google warns it can look packed.
+- **Samsung One UI** ([foldable guidance](https://developer.samsung.com/one-ui/largescreen-and-foldable/designing_for_foldable.html)): resume where the user left off and keep the scroll position across fold/unfold. Flex mode puts content on top and controls below.
+- **Google Calendar** (high confidence; [Google blog](https://blog.google/products/android/android-app-redesign-tablet-foldable/), [9to5Google](https://9to5google.com/2024/05/21/google-calendar-tablet-app/)):
+  - Month on the left, the selected day's events in a right pane.
+  - Top bar, no navigation rail.
+  - Resizable side mini-month in the Day/Week views; "smooth" transition from cover to inner screen.
+  - Portrait vs landscape is not documented.
+- **Samsung Calendar** (medium; [How-To Geek](https://www.howtogeek.com/why-i-use-samsung-calendar-instead-of-google-calendar/), [MakeUseOf](https://www.makeuseof.com/samsung-calendar-is-the-best-calendar-app/)):
+  - A bigger grid; swiping down expands the cells.
+  - Detail opens in a pop-up over the grid.
+  - No confirmed side-by-side month and day list.
+- **Outlook** (medium, 2020–21 sources; [Microsoft support](https://support.microsoft.com/en-US/Outlook/what-is-the-two-pane-layout-on-my-android-tablet-foldable-device)): list-detail (agenda | detail) with a one/two-pane toggle. Month could span both screens on the Surface Duo.
+- **Fantastical, iPad reference** (medium; [Flexibits](https://www.flexibits.com/fantastical-ios/help/calendar-views)): sidebar mini-month, and an older layout with the list beside the month. Narrow split view falls back to the phone layout.
+- **Business Calendar 2:** pop-up only (low). **aCalendar, Proton, DigiCal:** nothing found on large-screen layouts (unverified).
+- **Hebrew/Jewish apps** (HebDate, Luach, Pocket Luach, Hebcal, Chabad Hayom, My Zmanim): no documented foldable or tablet month layout. HebDate shows the week view on rotation. Levana would set the precedent.
+- **Patterns:**
+  - Common: a grid with a persistent day pane beside it (Google, Outlook, Fantastical), and a bigger grid with pop-up detail (Samsung, Business Calendar).
+  - Rare: Flex-mode calendar layouts and drag and drop.
+  - Narrow windows fall back to the phone layout.
+
+### Options (Figma frames)
+Sample data:
+- device today is Sun 1 Nov 2026;
+- the selected day is Shabbat 7 Nov: Chayei Sara, Shabbat Mevarchim Kislev, molad Monday night 10:27 PM and 3 chalakim (computed);
+- Rosh Chodesh Kislev is Tue–Wed 10–11 Nov;
+- the display city is Jerusalem;
+- times are illustrative.
+
+The Rosh Chodesh and Mevarchim bars in the grid are TASK-57.6's proposal. The day panel keeps today's sheet content and adds a date/place header with ‹ › day stepping (TASK-57.2 N1); its content is 57.2's decision.
+
+Sections: [Read me](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=69-7550) · [Comparison with researched apps](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=70-7509) · [Building blocks](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=63-74)
+
+- **A — Two panes everywhere** ([section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-2120)): grid | day panel in every inner posture. Panel width:
+  - 360dp: [Fold8 landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-772), [Ultra portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-1446)
+  - 320dp: [Fold8 portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-1109)
+  - 380dp: [Ultra landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-1783)
+- **B — Adaptive split, recommended** ([section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-4514)):
+  - Landscape: side by side, as in A.
+  - Portrait: a full-width grid with a docked, non-modal two-column day panel below it, draggable like the phone sheet.
+  - Frames:
+    - [Fold8 landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-2121)
+    - [Fold8 portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-2458)
+    - [Ultra portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-2801)
+    - [Ultra landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-3144)
+    - [Dark](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-3481)
+    - [Hebrew RTL](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-3818)
+    - [Drawer open](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-4155)
+- **C — Richer grid, day on demand** ([section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-5989)):
+  - Full-width grid with 11sp labels and up to 4 items per cell, including candle-lighting and havdalah times.
+  - A one-line selected-day strip; the full day panel opens as a modal side sheet (landscape) or bottom sheet (portrait).
+  - Frames:
+    - [Fold8 landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-4549)
+    - [Fold8 portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-4821)
+    - [Ultra portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-5093)
+    - [Ultra landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-5365)
+    - [Side sheet open](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-5637)
+- **D — Grid + agenda pane** ([section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-7666)):
+  - The pane holds a selected-day zmanim summary, then the agenda from the selected day onwards (Agenda components).
+  - Fold8 portrait stacks the pane under the grid.
+  - Frames:
+    - [Fold8 landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-5990)
+    - [Fold8 portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-6409)
+    - [Ultra portrait](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-6828)
+    - [Ultra landscape](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=68-7247)
+
+Folding to the cover screen gives the phone layout in every option, with the same selected day and month:
+- the panel or strip becomes the collapsed day sheet;
+- an open side sheet or expanded panel becomes the expanded sheet.
+
+This needs the selected date, visible month and panel state hoisted in the ViewModel (TASK-52.3).
+
+| | A Two panes | B Adaptive split | C Richer grid | D Agenda pane |
+|---|---|---|---|---|
+| Fold8 landscape (933) | Good | Good (same as A) | Good, but cells fit ~3 items | Good |
+| Fold8 portrait (704, medium) | Cramped: grid ≈376dp, phone-like truncation | Good: full-width grid, panel below | Cells ~93dp truncate | OK (stacked) |
+| Ultra portrait (859) | Narrow grid, tall panel | Good (stacked) | Good | OK |
+| Zmanim visible without a tap | Yes | Yes | No (strip shows 3–4 times) | Partial (quick zmanim only) |
+| Fit with TASK-57.2 day panel | Same content | Same content at two widths | Same content, behind a tap | Conflicts (agenda replaces day cards) |
+| Overlap with other screens | None | None | None | Duplicates Agenda / TASK-57.5 |
+| Precedent | Google Calendar, Outlook | M3 supporting pane (below at medium, beside at expanded) | Samsung Calendar | Fantastical, Outlook |
+| Build cost | Low (one rule) | Medium (two layouts) | High (new rich cell and per-cell data) | Medium |
+
+### Recommendation
+Option B. It puts the day panel beside the grid in landscape (the common Google/Outlook pattern) and below a full-width grid in portrait. That uses the inner display's height well, removes the blank band TASK-52.2 found, and avoids A's cramped 376dp grid on the Fold8's medium-width portrait. It also keeps the phone model: the panel and the sheet are one surface with the same content (57.2), shown at three widths.
+
+Implementation sketch for the follow-up:
+- Choose the layout from the window size and orientation (WindowSizeClass plus aspect), or with `SupportingPaneScaffold` and a custom directive.
+- Reuse the day sheet content composable in both panels.
+- Add Roborazzi baselines at compact, medium and expanded widths.
+
+### Open questions for the owner
+1. **Ultra portrait (859×954).** It is expanded width, but B stacks it because the window is nearly square and a side pane would leave a phone-width grid. Stack by aspect ratio (as drawn), or follow the width class and use two panes (A's frame)?
+2. **Docked panel in portrait.** Should it be draggable to full height (as drawn, like the phone sheet), or fixed? And in six-week months, shrink the panel (~270dp) or shorten the grid rows?
+3. **Day panel content is TASK-57.2's decision.** The drawn panel keeps the quick tiles plus the zmanim list, which duplicates times (57.2 Z5), and adds a date/place header and a Mevarchim card. If 57.2 changes the sheet, the wide panels follow it. Should 57.2 also cover the two-column docked arrangement?
+4. **Rosh Chodesh and Mevarchim grid bars** (57.6) are drawn as a proposal (secondary and tertiary tones), not decided here.
+5. **Header alignment.** The month header stays full width, with the mode selector above the pane in landscape. Should it move into the title row on wide windows (TASK-57.3 explores combining those rows)?
+
+### Limitations
+- The 420 dpi density is still an assumption (TASK-52.1).
+- Zmanim times are approximate sample values.
+- PNGs are exported at 1x (dp = px).
+- The research is web-only: four apps are well sourced, others are thin or unverified, and no device was used.
+
+### Option E: list-detail with a draggable divider (added 2026-11-01, owner's direction)
+The owner chose this direction after reviewing A–D. The inspiration is the owner's "Levana Foldable" mockup (frames 1a "Month + day" and 1b "Agenda + day"), saved with a render in /tmp/levana-task52.4-month-design/inspiration/. It was used as inspiration only: E keeps Levana's fonts, colours, header actions (+, Today) and components. The mockup's other changes were not adopted: Manrope and Frank Ruhl fonts, a search icon in the header, a floating add button, and a Torah-reading card with the haftarah.
+
+**Rule**
+- Two panes when the window is at least 840dp wide (Material "expanded"): the Fold8 inner display in landscape and both Fold8 Ultra orientations.
+- Narrower windows keep today's phone layout unchanged: Fold8 inner portrait (704dp), the covers and split-screen halves.
+- The rule is by window width, not by orientation (owner, 2026-11-01).
+
+**Layout**
+- Month screen: month grid | day panel. Agenda screen: agenda list | the same day panel.
+- The month header and mode selector sit in the list pane.
+- The day panel runs full height on the right, with a date/place header and ‹ › day stepping.
+
+**Draggable divider**
+- A 16dp gutter with a 4×48dp handle.
+- Drag snaps to anchors: list ≈40%, 50% (the default) or 65% of the width.
+- Minimum sizes: grid ≥360dp (phone width), panel ≥300dp.
+- The position is remembered and shared by Month and Agenda.
+- Double-tapping the handle or the TalkBack actions cycle through the anchors.
+
+**Continuity**
+- Selected day, visible month or agenda scroll, and the divider position are kept.
+- Below 840dp the layout falls back to the phone screen with the same selected day, and the panel content becomes the day sheet.
+
+**Figma**
+- [Section](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9942)
+- Fold8 landscape:
+  - [Month + day, divider at 50%](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7727)
+  - [Month + day, dragged to 65%](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8083)
+  - [Agenda + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8422)
+- Ultra portrait: [Month + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-8706) · [Agenda + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9045)
+- Ultra landscape: [Month + day](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9329)
+- Fold8 portrait, below 840dp: [today's layout, unchanged](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-9668)
+- New building blocks: [Pane divider](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7553) · [Agenda list](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd/?node-id=78-7555)
+- PNGs: options/E1–E7 and annotations/E_annotation.png in /tmp/levana-task52.4-month-design/.
+
+**Pros**
+- One pattern on Month and Agenda, matching Google Calendar, Outlook and Android's default list-detail behaviour (one pane below 840dp).
+- The Agenda gains a detail pane instead of being duplicated inside Month (unlike D).
+- Users choose the balance between grid and day details.
+- Narrow windows need no new layout.
+
+**Cons**
+- Below 840dp the TASK-52.2 issues remain: the sheet is capped at 640dp with gutters, and there is a blank band under the grid on Fold8 portrait.
+- The divider adds anchor states to build and baseline.
+- The handle must not clash with horizontal month swipes.
+- At the 65% anchor the panel (~300dp) wraps the date header.
+
+**Open questions**
+1. Anchors: are 40/50/65% and the minimum sizes right? Should the panel also collapse completely (a full-width month)?
+2. Should the Agenda list pane keep its own header (title + mode selector, as drawn) or share one with Month?
+3. Below 840dp, keep today's layout as-is, or apply the small fix of letting the sheet use the full width?
+4. Do E's dark and Hebrew (RTL) frames need drawing now, or after the decision?
+
+### Update 2026-11-02: day panel matches the current expanded day sheet
+Owner feedback: the top of the right pane must look like the current day sheet ("Calendar / Day sheet — expanded" on Screens — Light); redesigning it is a separate discussion (TASK-57.2). The side panel used by A, B (landscape, Dark, Hebrew, drawer), C's side sheet and E is now a copy of the current expanded sheet content (Hebrew UI copy for RTL), with only the selected day's data changed (Shabbat 7 Nov: Chayei Sara, 6:00 AM / 4:45 PM / 5:22 PM). Removed: the date/place header with ‹ › arrows, the extra "Shabbat Mevarchim" badge and card, and the side-by-side Parsha/Havdalah. The drag handle is omitted in a side pane (nothing to drag). B's docked portrait panel uses the same cards in two columns without the custom header. D's agenda pane is unchanged (different concept). PNGs re-exported (A1–A4, B1–B7, C5, E1–E6, annotations).
+Open question carried to TASK-57.2: a persistent pane shows no date of its own (only the highlighted grid cell or agenda row indicates it), the same gap as review finding N1.
 <!-- SECTION:NOTES:END -->
