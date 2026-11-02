@@ -7,6 +7,7 @@
     <string name="birthday_existing_replaced">The date you chose was replaced by the saved one.</string>
     <string name="event_add_title">Remember a date</string>
     <string name="event_edit_title">Edit your event</string>
+    <string name="event_loading">Loading event…</string>
     <string name="event_date_hint">Choose the Hebrew date for this event.</string>
     <string name="zmanim_selection_hint">Choose which zmanim appear in the day panel.</string>
     <string name="settings_group_calendar">Calendar</string>

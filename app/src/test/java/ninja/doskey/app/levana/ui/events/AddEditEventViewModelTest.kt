@@ -3,6 +3,8 @@ package ninja.doskey.app.levana.ui.events
 import androidx.lifecycle.SavedStateHandle
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import java.time.LocalDate
+import android.os.Looper
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import ninja.doskey.app.levana.data.EventSerializer
@@ -19,6 +21,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import ninja.doskey.app.levana.ui.pickDay
 import ninja.doskey.app.levana.ui.pickMonth
@@ -28,11 +31,20 @@ import ninja.doskey.app.levana.ui.pickYear
 @Config(application = android.app.Application::class)
 class AddEditEventViewModelTest {
 
-    private class FakeDao(initial: List<PersonalEvent> = emptyList()) : PersonalEventDao {
+    /** Answers at once, or, with a [gate], only once the gate opens (a slow load). */
+    private class FakeDao(
+        initial: List<PersonalEvent> = emptyList(),
+        val gate: CompletableDeferred<Unit>? = null
+    ) : PersonalEventDao {
         val events = initial.toMutableList()
+        var loads = 0
         override fun getAll(): Flow<List<PersonalEvent>> = flowOf(events)
         override suspend fun getAllOnce(): List<PersonalEvent> = events
-        override suspend fun getById(id: Long): PersonalEvent? = events.firstOrNull { it.id == id }
+        override suspend fun getById(id: Long): PersonalEvent? {
+            loads++
+            gate?.await()
+            return events.firstOrNull { it.id == id }
+        }
         override suspend fun getByHebrewDate(month: Int, day: Int): List<PersonalEvent> = emptyList()
         override suspend fun insert(event: PersonalEvent): Long {
             events.add(event)
@@ -48,19 +60,156 @@ class AddEditEventViewModelTest {
     private val leapToday = LocalDate.of(2027, 3, 1)
     private val regularToday = LocalDate.of(2026, 3, 1)
 
-    private fun viewModel(dao: FakeDao = FakeDao(), today: LocalDate = LocalDate.now(), saved: SavedStateHandle = SavedStateHandle()) =
-        AddEditEventViewModel(PersonalEventRepository(dao), deviceContextOn(today), saved)
+    /** An editor opened on the route's [eventId] (0: a new event), as navigation builds it. */
+    private fun viewModel(
+        dao: FakeDao = FakeDao(),
+        today: LocalDate = LocalDate.now(),
+        saved: SavedStateHandle = SavedStateHandle(),
+        eventId: Long = 0
+    ): AddEditEventViewModel {
+        if (eventId > 0) saved["eventId"] = eventId
+        return AddEditEventViewModel(PersonalEventRepository(dao), deviceContextOn(today), saved)
+    }
+
+    private fun idleMain() = shadowOf(Looper.getMainLooper()).idle()
+
+    // ── TASK-61: Loading, then Editing ──────────────────────────────────────
+
+    private val slowDao get() = FakeDao(listOf(stored(JewishDate.ADAR, 5784)), gate = CompletableDeferred())
+
+    private fun AddEditEventViewModel.finishLoad(dao: FakeDao) {
+        dao.gate!!.complete(Unit)
+        idleMain()
+    }
 
     @Test
-    fun aRepeatedLoadKeepsUnsavedInput() {
-        // A fold or rotation re-sends the screen's load
-        val vm = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 5784))), leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+    fun aStoredEventOpensLoadingAndLoadsOnce() {
+        val dao = slowDao
+        val vm = viewModel(dao, leapToday, eventId = 1)
+        assertTrue(vm.state.value.isLoading)
+        assertFalse(vm.state.value.isEditing)
+        assertEquals(1, dao.loads)
+
+        vm.finishLoad(dao)
+        with(vm.state.value) {
+            assertFalse(isLoading)
+            assertTrue(isEditing)
+            assertEquals("Stored", title)
+            assertEquals(Triple(14, JewishDate.ADAR, 5784), Triple(hebrewDay, hebrewMonth, hebrewYear))
+        }
+        assertEquals(1, dao.loads)
+    }
+
+    @Test
+    fun noInputIsAcceptedWhileLoading() {
+        val dao = slowDao
+        val vm = viewModel(dao, leapToday, eventId = 1)
+        val loading = vm.state.value
+        vm.onIntent(AddEditEventIntent.SetTitle("Typed early"))
+        vm.onIntent(AddEditEventIntent.SetNotes("Notes"))
+        vm.onIntent(AddEditEventIntent.SetUseYahrzeitRules(true))
+        vm.onIntent(AddEditEventIntent.SetHebrewDate(1, JewishDate.NISSAN, 5787))
+        vm.onIntent(AddEditEventIntent.PreFillDate(1, JewishDate.NISSAN, 5787))
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+        assertEquals(loading, vm.state.value)
+        assertFalse(vm.state.value.showDatePicker)
+        vm.onIntent(AddEditEventIntent.Save)
+        idleMain()
+        assertFalse(vm.state.value.saved)
+
+        vm.finishLoad(dao)
+        with(vm.state.value) {
+            assertEquals("Stored", title)
+            assertEquals("", notes)
+            assertFalse(useYahrzeitRules)
+            assertFalse(showDatePicker)
+            assertEquals(Triple(14, JewishDate.ADAR, 5784), Triple(hebrewDay, hebrewMonth, hebrewYear))
+            // The picker opens on the stored date
+        }
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+        assertTrue(vm.state.value.showDatePicker)
+        assertEquals(JewishDate(5784, JewishDate.ADAR, 14).localDate, vm.state.value.gregorianDate)
+        assertEquals(listOf(stored(JewishDate.ADAR, 5784)), dao.events)
+    }
+
+    @Test
+    fun editsAfterTheLoadAreNeverOverwritten() {
+        val dao = slowDao
+        val vm = viewModel(dao, leapToday, eventId = 1)
+        vm.finishLoad(dao)
         vm.onIntent(AddEditEventIntent.SetTitle("Changed"))
         vm.onIntent(AddEditEventIntent.SetNotes("Notes"))
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
-        assertEquals("Changed", vm.state.value.title)
-        assertEquals("Notes", vm.state.value.notes)
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+        // Later main-thread work (the default year, the draft writer) changes nothing
+        idleMain()
+        with(vm.state.value) {
+            assertEquals("Changed", title)
+            assertEquals("Notes", notes)
+            assertTrue(showDatePicker)
+            assertEquals(5784, hebrewYear)
+        }
+        assertEquals(1, dao.loads)
+    }
+
+    @Test
+    fun aRestoredDraftBeatsTheLoad() {
+        val dao = FakeDao(listOf(stored(JewishDate.ADAR, 5784)))
+        val saved = SavedStateHandle()
+        val vm = viewModel(dao, leapToday, saved, eventId = 1)
+        vm.onIntent(AddEditEventIntent.SetTitle("Draft"))
+        vm.onIntent(AddEditEventIntent.OpenDatePicker)
+
+        // The process is killed; the event is slow to load this time
+        val slow = FakeDao(dao.events, gate = CompletableDeferred())
+        val restored = viewModel(slow, leapToday, SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        assertFalse(restored.state.value.isLoading)
+        assertEquals("Draft", restored.state.value.title)
+        assertTrue(restored.state.value.showDatePicker)
+        restored.finishLoad(slow)
+        assertEquals(0, slow.loads)
+        assertEquals(vm.state.value, restored.state.value)
+    }
+
+    @Test
+    fun aProcessKilledWhileLoadingLoadsAgain() {
+        val dao = slowDao
+        val saved = SavedStateHandle()
+        viewModel(dao, leapToday, saved, eventId = 1)
+        idleMain()
+
+        val fast = FakeDao(dao.events)
+        val restored = viewModel(fast, leapToday, SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
+        assertEquals(1, fast.loads)
+        assertEquals("Stored", restored.state.value.title)
+        assertTrue(restored.state.value.isEditing)
+    }
+
+    @Test
+    fun aNewEventHasNoLoadingState() {
+        val dao = FakeDao(listOf(stored(JewishDate.ADAR, 5784)), gate = CompletableDeferred())
+        for (vm in listOf(viewModel(dao, leapToday), viewModel(dao, leapToday, SavedStateHandle(mapOf("prefillDay" to 3))))) {
+            assertFalse(vm.state.value.isLoading)
+            assertFalse(vm.state.value.isEditing)
+            vm.onIntent(AddEditEventIntent.SetTitle("New"))
+            assertEquals("New", vm.state.value.title)
+        }
+        assertEquals(0, dao.loads)
+    }
+
+    @Test
+    fun aMissingEventOpensTheEmptyForm() {
+        // As before TASK-61: a deleted event opens the defaults, and Save adds it anew
+        val dao = FakeDao()
+        val vm = viewModel(dao, leapToday, eventId = 7)
+        with(vm.state.value) {
+            assertFalse(isLoading)
+            assertFalse(isEditing)
+            assertEquals("", title)
+            assertEquals(5787, hebrewYear)
+        }
+        vm.onIntent(AddEditEventIntent.SetTitle("Again"))
+        vm.onIntent(AddEditEventIntent.Save)
+        assertEquals("Again", dao.events.single().title)
     }
 
     @Test
@@ -77,14 +226,12 @@ class AddEditEventViewModelTest {
     fun unsavedInputSurvivesTheProcessBeingKilled() {
         val dao = FakeDao(listOf(stored(JewishDate.NISSAN, 5500)))
         val saved = SavedStateHandle()
-        val vm = viewModel(dao, leapToday, saved)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(dao, leapToday, saved, eventId = 1)
         vm.onIntent(AddEditEventIntent.SetTitle("Changed"))
         vm.onIntent(AddEditEventIntent.OpenDatePicker)
 
         val restored = viewModel(dao, leapToday, SavedStateHandle(saved.keys().associateWith { saved.get<Any>(it) }))
-        // The screen sends its load again; the draft stays
-        restored.onIntent(AddEditEventIntent.LoadEvent(1))
+        // The route still names the event; the draft is kept, not reloaded
         assertEquals(vm.state.value, restored.state.value)
         assertTrue(restored.state.value.isEditing)
         assertTrue(restored.state.value.showDatePicker)
@@ -129,8 +276,7 @@ class AddEditEventViewModelTest {
 
     @Test
     fun storedKnownYearIsShownAsStored() {
-        val vm = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 5784))), leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 5784))), leapToday, eventId = 1)
         assertEquals(5784, vm.state.value.hebrewYear)
         assertEquals(JewishDate.ADAR, vm.state.value.hebrewMonth)
     }
@@ -138,8 +284,7 @@ class AddEditEventViewModelTest {
     @Test
     fun storedUnknownYearOpensOnTheCurrentYear() {
         for (unknown in listOf(0, 1, -1, 99999)) {
-            val vm = viewModel(FakeDao(listOf(stored(JewishDate.KISLEV, unknown))), leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(FakeDao(listOf(stored(JewishDate.KISLEV, unknown))), leapToday, eventId = 1)
             assertEquals(5787, vm.state.value.hebrewYear)
             assertEquals(JewishDate.KISLEV, vm.state.value.hebrewMonth)
         }
@@ -148,13 +293,11 @@ class AddEditEventViewModelTest {
     @Test
     fun unknownYearAdarOpensWhereItFallsThisYear() {
         // Leap current year: Adar II, so saving unchanged does not move it to Adar I
-        val leap = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 0))), leapToday)
-        leap.onIntent(AddEditEventIntent.LoadEvent(1))
+        val leap = viewModel(FakeDao(listOf(stored(JewishDate.ADAR, 0))), leapToday, eventId = 1)
         assertEquals(JewishDate.ADAR_II, leap.state.value.hebrewMonth)
 
         // Regular current year: Adar, also for a stored Adar II
-        val regular = viewModel(FakeDao(listOf(stored(JewishDate.ADAR_II, 0))), regularToday)
-        regular.onIntent(AddEditEventIntent.LoadEvent(1))
+        val regular = viewModel(FakeDao(listOf(stored(JewishDate.ADAR_II, 0))), regularToday, eventId = 1)
         assertEquals(JewishDate.ADAR, regular.state.value.hebrewMonth)
         assertEquals(5786, regular.state.value.hebrewYear)
     }
@@ -162,8 +305,7 @@ class AddEditEventViewModelTest {
     @Test
     fun savingAnUnknownYearAdarEventKeepsItInAdarII() {
         val dao = FakeDao(listOf(stored(JewishDate.ADAR, 0)))
-        val vm = viewModel(dao, leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(dao, leapToday, eventId = 1)
         vm.onIntent(AddEditEventIntent.Save)
 
         val saved = dao.events.single()
@@ -239,8 +381,7 @@ class AddEditEventViewModelTest {
     fun outOfRangeStoredDateOpensAndSavesUnchanged() {
         for (date in outOfRange) for (yahrzeit in listOf(false, true)) {
             val dao = FakeDao(listOf(storedAt(date, yahrzeit)))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             if (HebrewDateMatcher.isKnownYear(date.third)) {
                 // A known year is shown as stored
                 assertEquals("$date", date.third, vm.state.value.hebrewYear)
@@ -255,8 +396,7 @@ class AddEditEventViewModelTest {
     fun editingOtherFieldsKeepsAnOutOfRangeDate() {
         for (date in outOfRange) {
             val dao = FakeDao(listOf(storedAt(date)))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             vm.onIntent(AddEditEventIntent.SetTitle("Renamed"))
             vm.onIntent(AddEditEventIntent.SetNotes("Notes"))
             vm.onIntent(AddEditEventIntent.SetUseYahrzeitRules(true))
@@ -273,8 +413,7 @@ class AddEditEventViewModelTest {
     fun confirmingThePickerOnTheShownDateKeepsAnOutOfRangeDate() {
         for (date in outOfRange) {
             val dao = FakeDao(listOf(storedAt(date)))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             vm.onIntent(AddEditEventIntent.OpenDatePicker)
             assertTrue(vm.state.value.showDatePicker)
             // The picker opens on the shown date; OK without a new pick returns it
@@ -288,8 +427,7 @@ class AddEditEventViewModelTest {
     @Test
     fun pickingAnotherDayInAnOutOfRangeYearSavesItInThatYear() {
         val dao = FakeDao(listOf(storedAt(Triple(12, JewishDate.NISSAN, 5500))))
-        val vm = viewModel(dao, leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(dao, leapToday, eventId = 1)
         vm.onIntent(AddEditEventIntent.SetHebrewDate(vm.state.value.gregorianDate.plusDays(1)))
         vm.onIntent(AddEditEventIntent.Save)
         assertEquals(Triple(13, JewishDate.NISSAN, 5500), dao.events.single().date())
@@ -322,8 +460,7 @@ class AddEditEventViewModelTest {
     fun changingTheDayKeepsAStoredYearOutsideTheRange() {
         for (year in listOf(5500, 6100)) {
             val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             vm.pickDay(15)
             vm.onIntent(AddEditEventIntent.Save)
             assertEquals(Triple(15, JewishDate.KISLEV, year), dao.events.single().date())
@@ -335,8 +472,7 @@ class AddEditEventViewModelTest {
         // The stepper offers +1 from 5500 and -1 from 6100
         for ((year, stepped, expected) in listOf(Triple(5500, 5501, 5600), Triple(6100, 6099, 6000))) {
             val dao = FakeDao(listOf(storedAt(Triple(14, JewishDate.KISLEV, year))))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             vm.pickYear(stepped)
             assertEquals(expected, vm.state.value.hebrewYear)
             vm.onIntent(AddEditEventIntent.Save)
@@ -349,8 +485,7 @@ class AddEditEventViewModelTest {
         // 30 Iyar never exists: an in-range year saves 29 (spec 1e)
         for (year in listOf(SupportedHebrewYears.FIRST, SupportedHebrewYears.LAST)) {
             val dao = FakeDao(listOf(storedAt(Triple(30, JewishDate.IYAR, year))))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             assertEquals(year, vm.state.value.hebrewYear)
             vm.onIntent(AddEditEventIntent.Save)
             assertEquals(Triple(29, JewishDate.IYAR, year), dao.events.single().date())
@@ -370,8 +505,7 @@ class AddEditEventViewModelTest {
             assertEquals(importable, imported.map { it.date() })
             for (event in imported) {
                 val dao = FakeDao(listOf(event.copy(id = 1)))
-                val vm = viewModel(dao, leapToday)
-                vm.onIntent(AddEditEventIntent.LoadEvent(1))
+                val vm = viewModel(dao, leapToday, eventId = 1)
                 vm.onIntent(AddEditEventIntent.Save)
                 assertEquals(event.date(), dao.events.single().date())
             }
@@ -437,8 +571,7 @@ class AddEditEventViewModelTest {
     fun openingAStoredDay30ThatExistsKeepsIt() {
         val full = EditorDayClampCases.fullYear(JewishDate.CHESHVAN)
         val dao = FakeDao(listOf(storedDay30(JewishDate.CHESHVAN, full)))
-        val vm = viewModel(dao, leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(dao, leapToday, eventId = 1)
         assertEquals(30, vm.state.value.hebrewDay)
         assertEquals(full, vm.state.value.hebrewYear)
         vm.onIntent(AddEditEventIntent.Save)
@@ -446,8 +579,7 @@ class AddEditEventViewModelTest {
 
         // 30 Adar I of a leap year
         val leap = EditorDayClampCases.leapYear
-        val vm2 = viewModel(FakeDao(listOf(storedDay30(JewishDate.ADAR, leap))), leapToday)
-        vm2.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm2 = viewModel(FakeDao(listOf(storedDay30(JewishDate.ADAR, leap))), leapToday, eventId = 1)
         assertEquals(30, vm2.state.value.hebrewDay)
     }
 
@@ -456,8 +588,7 @@ class AddEditEventViewModelTest {
         val short = EditorDayClampCases.shortYear(JewishDate.CHESHVAN)
         for (stored in listOf(storedDay30(JewishDate.CHESHVAN, short), storedDay30(JewishDate.IYAR, 5785))) {
             val dao = FakeDao(listOf(stored))
-            val vm = viewModel(dao, leapToday)
-            vm.onIntent(AddEditEventIntent.LoadEvent(1))
+            val vm = viewModel(dao, leapToday, eventId = 1)
             assertEquals(29, vm.state.value.hebrewDay)
             assertEquals(stored.hebrewMonth, vm.state.value.hebrewMonth)
             assertEquals(stored.hebrewYear, vm.state.value.hebrewYear)
@@ -470,8 +601,7 @@ class AddEditEventViewModelTest {
 
     @Test
     fun openingAnUnknownYearDay30CheshvanKeepsDay30() {
-        val vm = viewModel(FakeDao(listOf(storedDay30(JewishDate.CHESHVAN, 0))), leapToday)
-        vm.onIntent(AddEditEventIntent.LoadEvent(1))
+        val vm = viewModel(FakeDao(listOf(storedDay30(JewishDate.CHESHVAN, 0))), leapToday, eventId = 1)
         assertEquals(30, vm.state.value.hebrewDay)
         assertEquals(30, EditorDayClampCases.days(vm.state.value.hebrewYear, JewishDate.CHESHVAN))
     }
