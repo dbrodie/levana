@@ -1,10 +1,10 @@
 ---
 id: TASK-52.4
-title: Large-screen adaptive layouts for the inner display (design decision)
-status: To Do
+title: 'Large-screen adaptive layouts for the inner display: design decision'
+status: Done
 assignee: []
 created_date: '2026-10-30T10:31:00Z'
-updated_date: '2026-11-02T08:46:00Z'
+updated_date: '2026-11-02T08:56:00Z'
 labels: []
 dependencies:
   - TASK-52.2
@@ -29,7 +29,8 @@ Start with a short proposal and mockups (Claude Design) for owner approval. Phon
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Owner-approved adaptive design recorded; implemented for the agreed screens with phone layouts unchanged; baselines at compact, medium and expanded widths
+- [x] #1 Research of comparable apps and Material large-screen guidance recorded with sources
+- [x] #2 Owner chose a design (Option E, list-detail with a draggable divider) with Figma frames and PNG exports; implementation tracked separately in TASK-52.6
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -221,3 +222,15 @@ The owner chose this direction after reviewing A–D. The inspiration is the own
 Owner feedback: the top of the right pane must look like the current day sheet ("Calendar / Day sheet — expanded" on Screens — Light); redesigning it is a separate discussion (TASK-57.2). The side panel used by A, B (landscape, Dark, Hebrew, drawer), C's side sheet and E is now a copy of the current expanded sheet content (Hebrew UI copy for RTL), with only the selected day's data changed (Shabbat 7 Nov: Chayei Sara, 6:00 AM / 4:45 PM / 5:22 PM). Removed: the date/place header with ‹ › arrows, the extra "Shabbat Mevarchim" badge and card, and the side-by-side Parsha/Havdalah. The drag handle is omitted in a side pane (nothing to drag). B's docked portrait panel uses the same cards in two columns without the custom header. D's agenda pane is unchanged (different concept). PNGs re-exported (A1–A4, B1–B7, C5, E1–E6, annotations).
 Open question carried to TASK-57.2: a persistent pane shows no date of its own (only the highlighted grid cell or agenda row indicates it), the same gap as review finding N1.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-02T08:56:00Z
+
+---
+
+2026-11-02: owner chose Option E (list-detail with draggable divider; day panel = current expanded day sheet). Design notes merged as 75701e6. Implementation split into TASK-52.6.
+
+---
+<!-- COMMENTS:END -->
