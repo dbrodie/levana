@@ -97,7 +97,7 @@ Owner 2026-11-03: no dark-mode screenshot. Shot 1 is now the light Hebrew-months
 Owner approved the 8 generated screenshots 2026-11-03; committed with the removal of the TASK-53.4 hand-captured set.
 
 ## Store text and images approved (owner, 2026-11-03)
-- **Full description:** rewritten concisely (673 characters): 8 bullets, no section headings, the GitHub link. Committed in fastlane/metadata/android/en-US/full_description.txt. Title and short description unchanged.
+- **Full description:** rewritten concisely (671 characters): 8 bullets, no section headings, the GitHub link. Committed in fastlane/metadata/android/en-US/full_description.txt. Title and short description unchanged.
 - **Feature graphic:** recreated from docs/store/feature-graphic.svg, without "לבנה" and without the "Fully offline · No ads · No tracking" tagline; subtitle "Hebrew Calendar & Zmanim". Render with scripts/render-feature-graphic.sh (Mac and Chrome). Approved and committed.
 - **Privacy policy:** "Levana works offline" → "Levana's features work without an internet connection".
 - **README:** "a home-screen widget" → "home-screen widgets".
