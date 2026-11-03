@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Play / F-Droid feature graphic (1024×500), the source of
+  fastlane/metadata/android/en-US/images/featureGraphic.png. Render with
+  scripts/render-feature-graphic.sh. See specs/STORE_LISTING.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <radialGradient id="background" cx="260" cy="250" r="768" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c3050"/>
+      <stop offset="0.4" stop-color="#111f35"/>
+      <stop offset="1" stop-color="#0a1525"/>
+    </radialGradient>
+    <!-- The crescent: a disc with an offset disc cut out of it -->
+    <mask id="crescent">
+      <rect width="1024" height="500" fill="#fff"/>
+      <circle cx="215" cy="243" r="63" fill="#000"/>
+    </mask>
+    <clipPath id="card">
+      <rect x="205" y="189" width="116" height="135" rx="10"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#background)"/>
+
+  <!-- Mark: gold crescent behind a calendar page showing א -->
+  <circle cx="192" cy="244" r="73" fill="#f9a825" mask="url(#crescent)"/>
+  <g clip-path="url(#card)">
+    <rect x="205" y="189" width="116" height="135" fill="#ffffff"/>
+    <rect x="205" y="189" width="116" height="40" fill="#37474f"/>
+  </g>
+  <rect x="251" y="177" width="24" height="24" rx="5" fill="#f9a825"/>
+  <text x="262" y="291" text-anchor="middle" fill="#0d1525"
+        font-family="'Arial Hebrew', 'Noto Sans Hebrew', Arial, sans-serif" font-weight="300" font-size="60">א</text>
+
+  <!-- Wordmark and subtitle -->
+  <text x="430" y="251" fill="#ffffff"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="94.5">Levana</text>
+  <text x="433" y="312" fill="#e6ecf5"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="29">Hebrew Calendar &amp; Zmanim</text>
+</svg>

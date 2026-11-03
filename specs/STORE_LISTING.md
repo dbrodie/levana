@@ -16,7 +16,7 @@ How Levana presents itself on Google Play, F-Droid and GitHub, and how that stay
 | `changelogs/<versionCode>.txt` | 500 ("What's new") | 500 |
 
 - Every claim must be true of the shipped app; check against `specs/PROJECT_SPEC.md` and the code. Don't claim the app is fully offline: the GitHub update check (sideloaded installs) and naming the current location use the network.
-- `images/icon.png` (512×512) and `images/featureGraphic.png` (1024×500) are uploaded too. The feature graphic still says "Fully offline"; fix it before its next upload.
+- `images/icon.png` (512×512) and `images/featureGraphic.png` (1024×500) are uploaded too. The feature graphic shows the mark, "Levana" and "Hebrew Calendar & Zmanim". Its source is `docs/store/feature-graphic.svg`; `scripts/render-feature-graphic.sh` renders it on a Mac with headless Chrome, because the fonts are macOS's. Revisit it when the app icon changes (TASK-57.22).
 - README.md's Features section is written by hand. Keep it consistent with the full description.
 
 ## Screenshots
