@@ -1,0 +1,32 @@
+Categories:
+  - Calendar & Agenda
+License: MIT
+AuthorName: Daniel Brodie
+SourceCode: https://github.com/dbrodie/levana
+IssueTracker: https://github.com/dbrodie/levana/issues
+Changelog: https://github.com/dbrodie/levana/releases
+
+AutoName: Levana
+
+RepoType: git
+Repo: https://github.com/dbrodie/levana.git
+Binaries: https://github.com/dbrodie/levana/releases/download/v%v/levana-v%v.apk
+
+Builds:
+  - versionName: 0.4.3
+    versionCode: 403
+    commit: 39e1fb8a0f09fc8de1d11efb33646a98bad7f597
+    subdir: app
+    gradle:
+      - yes
+    prebuild: sed -i -e 's/signingConfigs.getByName("release")/signingConfigs.create("release")/'
+      build.gradle.kts
+
+AllowedAPKSigningKeys: ab02841e88825c51c8f0b0f013ff4e312bca47ea1bfbffa894b51890ad5a5117
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: HTTP
+UpdateCheckData: 
+  https://github.com/dbrodie/levana/releases/latest/download/fdroid-version.txt|versionCode=(\d+)|.|versionName=([\d.]+)
+CurrentVersion: 0.4.3
+CurrentVersionCode: 403

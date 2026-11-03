@@ -38,6 +38,8 @@ jobs:
       contents: read
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      name: ${{ steps.tag.outputs.name }}
+      code: ${{ steps.tag.outputs.code }}
     steps:
       - name: Resolve tag
         id: tag
@@ -191,3 +193,19 @@ jobs:
             echo "::error::Reproducible build check for $TAG: $RESULT"
             exit 1
           fi
+
+      # F-Droid's update check reads this asset from the latest release (fdroiddata
+      # UpdateCheckData), because the versionCode is computed from the tag and is in no
+      # committed file. It is only published once the rebuild matched, so F-Droid never
+      # picks up a version that it couldn't reproduce.
+      - name: Publish fdroid-version.txt
+        if: needs.verify.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.verify.outputs.tag }}
+          VERSION_NAME: ${{ needs.verify.outputs.name }}
+          VERSION_CODE: ${{ needs.verify.outputs.code }}
+        run: |
+          printf 'versionCode=%s\nversionName=%s\n' "$VERSION_CODE" "$VERSION_NAME" > "$RUNNER_TEMP/fdroid-version.txt"
+          cat "$RUNNER_TEMP/fdroid-version.txt"
+          gh release upload "$TAG" "$RUNNER_TEMP/fdroid-version.txt" --repo "$GITHUB_REPOSITORY" --clobber
