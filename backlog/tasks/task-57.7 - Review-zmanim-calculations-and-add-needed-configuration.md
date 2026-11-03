@@ -4,6 +4,7 @@ title: Review zmanim calculations and add needed configuration
 status: To Do
 assignee: []
 created_date: '2026-11-01T11:34:00Z'
+updated_date: '2026-11-03T22:59:00Z'
 labels:
   - design-review
 dependencies: []
@@ -33,3 +34,16 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 - [ ] #2 Implemented and verified against known values
 - [ ] #3 Figma updated
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Cross-reference from TASK-57.31 high-latitude research (2026-11-04)
+
+Report: /Users/daniel/.paseo/evidence/task-57.31/high-latitude-zmanim-research.md (Parts 2.2, 3.3, 3.7). Relevant to the Z3 havdalah method and the method-visibility work:
+- A havdalah/nightfall method picker (Tzeit 8.5° default / 42 / 50 / 72 min / custom) also resolves most high-latitude havdalah gaps: fixed-minute tzais exists whenever sunset exists (St. Petersburg 21 Jun 2027: 8.5° null, 72 min = 23:37, 50 min = 23:15). Label it as the method, not as a fallback, and note in the picker that fixed-minute options work in northern summers. KosherJava: getTzais72/getTzais50/getTzais60 or getTimeOffset(seaLevelSunset, minutes).
+- One opt-in setting recommended, default off: "When nightfall or dawn isn't reached: use solar midnight (chatzot halayla)". Backing: Star-K sub-Arctic summer rule (Shabbos ends at chatzos halayla), Chabad.org calculator (dawn/misheyakir only, labelled "The Chabad custom ... consult your local rabbi"), Reykjavik/Helsinki/Oslo practice. KosherJava: ComplexZmanimCalendar.getSolarMidnight() (midnight after the date; for dawn use the previous date's). Never apply in polar day/night.
+- No polar-region method (Ben Ish Chai 6/18, Sternbuch, Tiferes Yisrael) in v1; show "ask your rabbi".
+- Note: Levana's Sof Zman Shema/Tefillah (MGA) use KosherJava's fixed 72-minute alos/tzais (getSofZmanShmaMGA), not 16.1°, so they stay available in white nights; the Z1 method label should say "72 min".
+- Decisions needed before implementation are listed in the report, section 3.7 (defaults, alot fallback, Omer reminder behaviour, label wording).
+<!-- SECTION:NOTES:END -->
