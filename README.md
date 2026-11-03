@@ -9,7 +9,7 @@ Levana is an open-source Hebrew calendar app for Android, for Orthodox Jewish us
 - Location-based zmanim, candle lighting and havdalah, with a choice of which zmanim to show.
 - Personal Hebrew-date events, including birthdays and yahrzeits; optional Android Contacts and Calendar integration.
 - Notifications for candle lighting, holidays, fasts, personal events and the Omer.
-- Hebrew and English with RTL layout, Material 3 theming, a Hebrew-date launcher icon, a Quick Settings tile and a home-screen widget.
+- Hebrew and English with RTL layout, Material 3 theming, a Hebrew-date launcher icon, a Quick Settings tile and home-screen widgets.
 
 ## Install
 
