@@ -94,7 +94,9 @@ successful Release run, `.github/workflows/verify-release.yml` rebuilds the tag 
 compares it with the published `levana-v<ver>.apk` (`apksigcopier compare --unsigned`). It also
 checks the package, versionCode, versionName and the signing certificate SHA-256. On a mismatch,
 it uploads a diffoscope report and the release notes get a ❌ line; on success they get a ✅ line.
-To re-check any tag, run it from the Actions tab (**Run workflow**, enter the tag).
+To re-check any tag, run it from the Actions tab (**Run workflow**, enter the tag). On success it
+also uploads `fdroid-version.txt` (`versionCode=…`, `versionName=…`) to the release. That's how
+F-Droid's update check learns about the new version (`docs/fdroid/README.md`).
 
 The release workflow pins the JDK (Temurin 17.0.21+9), and both workflows must stay on the same
 one. Without a keystore, `assembleRelease` produces an unsigned APK; use

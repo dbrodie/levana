@@ -81,9 +81,11 @@ android {
             // Without a release keystore the APK is left unsigned, the way F-Droid builds it for
             // the reproducible-build comparison (docs/fdroid/README.md). -Plevana.debugSignRelease=true
             // signs it with the debug key instead, for installing a local release build.
-            val rel = signingConfigs.getByName("release")
+            // findByName: F-Droid's build deletes the signingConfigs block above before building.
+            val rel = signingConfigs.findByName("release")
             signingConfig = when {
-                rel.storeFile?.exists() == true &&
+                rel != null &&
+                    rel.storeFile?.exists() == true &&
                     rel.storePassword != null &&
                     rel.keyAlias      != null &&
                     rel.keyPassword   != null -> rel

@@ -6,8 +6,119 @@ our key, and checks that its unsigned APK is byte-for-byte our release APK apart
 signature (`apksigcopier compare --unsigned`). Our own CI runs the same check on every release
 (`.github/workflows/verify-release.yml`).
 
-The F-Droid recipe (fdroiddata `metadata/ninja.doskey.app.levana.yml`), its local validation and the
-submission are documented by TASK-53.5 and TASK-53.6.
+- The F-Droid recipe and how F-Droid finds new versions: [The F-Droid recipe](#the-f-droid-recipe).
+- What happens on each release: [Release flow](#release-flow-with-f-droid).
+- Validating the recipe locally with fdroidserver: [Local F-Droid validation](#local-f-droid-validation).
+- Licences, dependencies, anti-features and open items: [COMPLIANCE.md](COMPLIANCE.md).
+- The submission itself (the fdroiddata merge request) is TASK-53.6 and needs the owner's approval.
+
+## The F-Droid recipe
+
+F-Droid keeps the recipe in its own repository, fdroiddata, as
+`metadata/ninja.doskey.app.levana.yml`. The copy in [ninja.doskey.app.levana.yml](ninja.doskey.app.levana.yml)
+is the version validated here and proposed in the merge request. Once the merge request is
+merged, fdroiddata's copy is the one that counts. F-Droid's bot then adds a build entry for each
+new version on its own.
+
+| Field | Value | Why |
+|---|---|---|
+| `Repo` / `commit` | the GitHub repo; the tag's commit hash (later builds: the tag `v%v`) | F-Droid builds the tagged source |
+| `subdir` / `gradle` | `app` / `yes` | `assembleRelease`; without a keystore it writes `app-release-unsigned.apk` |
+| `Binaries` | `https://github.com/dbrodie/levana/releases/download/v%v/levana-v%v.apk` | our signed APK, which F-Droid compares with its build and then publishes |
+| `AllowedAPKSigningKeys` | `ab02841e…5117` | the only certificate F-Droid accepts on that APK (see [Signing identity](#signing-identity)) |
+| `License` | `MIT` | `LICENSE` |
+| `Categories` | `Calendar & Agenda` | from fdroiddata's `config/categories.yml` |
+| `AntiFeatures` | none | see [COMPLIANCE.md](COMPLIANCE.md) |
+| Summary, description, icon, screenshots, changelogs | not in the recipe | read from `fastlane/metadata/android/en-US/` at the tag |
+
+F-Droid builds with its buildserver's default JDK (OpenJDK 21), not Temurin 17. That gives the
+same APK (see [Pinned toolchain](#pinned-toolchain)), so the recipe doesn't install a JDK.
+
+### How F-Droid finds new versions
+
+F-Droid's update check (`fdroid checkupdates`) has to find both the versionName and the
+versionCode. The versionCode exists only as `major*10000 + minor*100 + patch` computed from the
+tag, and fdroidserver can't calculate it: its `Tags` mode can only cut one contiguous number out
+of the tag name, and `403` is not in `v0.4.3`. So the recipe uses `UpdateCheckMode: HTTP`, a common
+pattern in fdroiddata:
+
+```yaml
+AutoUpdateMode: Version v%v
+UpdateCheckMode: HTTP
+UpdateCheckData: https://github.com/dbrodie/levana/releases/latest/download/fdroid-version.txt|versionCode=(\d+)|.|versionName=([\d.]+)
+```
+
+`fdroid-version.txt` is a release asset (`versionCode=403` / `versionName=0.4.3`). It's uploaded by
+`verify-release.yml` only after the reproducibility check passes, so F-Droid only sees a version
+that it can rebuild. Nothing about releasing changes: the tag stays the only version source, and
+no version file is committed. When F-Droid sees a new version, it adds a build entry for
+`commit: v<version>` and builds it.
+
+### F-Droid removes signing configs before building
+
+Before it builds, fdroidserver deletes every `signingConfigs { … }` block from `build.gradle.kts`
+(`remove_signing_keys`). So the build script must not rely on that block. `app/build.gradle.kts`
+uses `signingConfigs.findByName("release")`, which then returns null, and the APK stays
+unsigned. Up to v0.4.3, it used `getByName`, which fails once the block is gone. That's why the
+recipe's v0.4.3 entry has a `prebuild` that creates an empty `release` config. It doesn't change
+the APK. Builds from the first tag with `findByName` don't need it. `checkupdates` copies the
+previous entry's fields into new entries, and there the `sed` matches nothing, so it's harmless.
+Still, it's best to submit the recipe with the first release that has `findByName`, and drop
+the `prebuild` line.
+
+## Release flow with F-Droid
+
+1. Release as usual (`specs/rfes/release-process.md`): commit the changelog, then tag `vX.Y.Z`. The
+   Release workflow publishes `levana-vX.Y.Z.apk` and uploads the bundle to Play.
+2. `verify-release.yml` rebuilds the tag without secrets and compares. On success it adds the ✅
+   line to the release notes and uploads `fdroid-version.txt`.
+3. F-Droid's checkupdates bot (it runs a few times a day) reads `fdroid-version.txt` from the
+   latest release and commits a new build entry to fdroiddata.
+4. F-Droid's buildserver builds the tag, downloads `levana-vX.Y.Z.apk`, checks it with
+   `apksigcopier compare` and `AllowedAPKSigningKeys`, and publishes our signed APK. It usually
+   appears in the F-Droid client a day or a few days after the tag.
+
+If step 2 fails, F-Droid sees nothing new. Fix the cause and make a new patch release; don't
+re-tag. If step 4 fails, F-Droid's build log (on monitor.f-droid.org and in fdroiddata) shows the
+diff. Usually it's the same failure that `verify-release.yml` would have shown.
+
+## Local F-Droid validation
+
+This repeats fdroiddata's GitLab CI jobs (`fdroid lint`, `fdroid rewritemeta`, `checkupdates`,
+schema validation and `fdroid build`) on a local fdroiddata checkout. It doesn't need a GitLab
+account or a fork.
+
+```bash
+W=/tmp/fdroid-check && mkdir -p $W && cd $W
+git clone --depth 1 https://gitlab.com/fdroid/fdroiddata.git
+git clone https://gitlab.com/fdroid/fdroidserver.git      # fdroiddata CI uses fdroidserver master
+cp /path/to/levana/docs/fdroid/ninja.doskey.app.levana.yml fdroiddata/metadata/
+git -C fdroiddata config core.fileMode false
+git -C fdroiddata checkout -b levana && git -C fdroiddata add metadata && git -C fdroiddata commit -m 'New app: Levana'
+
+# Metadata checks (as fdroiddata's CI jobs: debian:trixie-slim with the fdroidserver deb for dependencies)
+docker run --rm -v $W:/work debian:trixie-slim bash -c '
+  apt-get update -q && apt-get install -qy --no-install-recommends fdroidserver git ca-certificates >/dev/null
+  git config --global --add safe.directory "*"
+  export PATH=/work/fdroidserver:$PATH PYTHONPATH=/work/fdroidserver serverwebroot=/tmp
+  cd /work/fdroiddata && chmod 0600 config.yml
+  fdroid readmeta && fdroid rewritemeta ninja.doskey.app.levana && git diff --exit-code &&
+  fdroid lint ninja.doskey.app.levana && fdroid checkupdates --auto -v ninja.doskey.app.levana &&
+  git diff --exit-code'
+```
+
+`checkupdates` must leave the recipe unchanged when the newest version is already listed.
+
+For `fdroid build`, use fdroiddata's `fdroid build` CI job: the image
+`registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie`, user `vagrant`, and
+`fdroid build --verbose --test --refresh-scanner --on-server --no-tarball ninja.doskey.app.levana:<versionCode>`.
+A pass ends with `compared built binary to supplied reference binary successfully` and
+`supplied reference binary has allowed signer ab02841e…`, and leaves
+`tmp/binaries/ninja.doskey.app.levana_<versionCode>.binary.apk`. That image is amd64 only. On Apple
+silicon, Gradle under qemu emulation is too slow (lint alone ran for hours). TASK-53.5 instead used
+an arm64 Debian 13 container set up the same way (same OpenJDK 21 package, SDK licences,
+`gradlew-fdroid` and `bsenv.sh` from the official image). The scripts and logs are listed in
+TASK-53.5's notes.
 
 ## How the build is made reproducible
 
@@ -46,8 +157,8 @@ submission are documented by TASK-53.5 and TASK-53.6.
 Keep the release JDK and the rebuild JDK on the same 17.0.x release, and update both workflows
 together. In testing, the output didn't depend on the JDK: Temurin 17.0.21 and JetBrains Runtime
 21.0.9 produced byte-identical APKs, because Kotlin targets JVM 17 and D8/R8 produce the dex.
-F-Droid's current buildserver image (Debian 13) defaults to OpenJDK 21. Its recipe (TASK-53.5)
-may use that, but installing JDK 17 is the safer match.
+F-Droid's buildserver (Debian 13) builds with OpenJDK 21. `fdroid build` with OpenJDK 21.0.13
+reproduced the v0.4.3 release APK (TASK-53.5), so the recipe uses that JDK and doesn't install one.
 
 Gradle dependency verification (`verification-metadata.xml`) is not used. It would protect
 against a tampered repository artifact, not against nondeterminism, which the fixed versions and
