@@ -3,11 +3,11 @@ id: TASK-55
 title: >-
   Store listing: one shared text, generated screenshots and an owner-approved
   release-time update (Play, F-Droid, GitHub)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-31T18:34:00Z'
-updated_date: '2026-11-03T18:18:00Z'
+updated_date: '2026-11-03T22:10:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -106,3 +106,15 @@ Owner approved the 8 generated screenshots 2026-11-03; committed with the remova
   - check that the listing job succeeds (service-account listing permission, TASK-58);
   - TASK-53.5/53.6 can now use the approved fastlane folder.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-03T22:10:00Z
+
+---
+
+Coordinator integration 2026-11-04: merged as 3c3c08c with owner authorization. Clean run: 1236 tests, 0 failures; Roborazzi 420 unchanged; actionlint clean. Owner-approved: 8 generated screenshots, feature graphic (SVG source), 671-char description, privacy/README fixes. Release flow: changelog check now a warning; changelog -> Play What's new + GitHub notes; store-listing job (release environment, fastlane supply) gated by the store-listing-published tag.
+
+---
+<!-- COMMENTS:END -->
