@@ -14,7 +14,7 @@ Levana is a free, open-source Hebrew calendar app for Android. This policy expla
 
 ## Information that stays on your device
 
-Levana works offline. To provide its features it uses the following, only on your device:
+Levana's features work without an internet connection. To provide its features it uses the following, only on your device:
 
 - **Location:** to calculate zmanim (halachic times) and candle-lighting times for where you are. You can pick a city from a list instead and never grant location access. If you choose "Use GPS", your device's location services find your position, and Android's built-in geocoder looks up the nearby city name. On most devices both are provided by Google and are covered by [Google's Privacy Policy](https://policies.google.com/privacy). Levana keeps only the result, on your device.
 - **Contacts:** only if you add Hebrew birthdays. Levana reads your contact list so you can pick a person, and saves the Hebrew birthday into that contact on your device.

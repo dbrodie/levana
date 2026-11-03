@@ -4,9 +4,11 @@ title: Submit the fdroiddata merge request (owner authorization required)
 status: To Do
 assignee: []
 created_date: '2026-10-30T12:25:00Z'
+updated_date: '2026-11-03T10:42:00Z'
 labels: []
 dependencies:
   - TASK-53.5
+  - TASK-55
 parent_task_id: TASK-53
 priority: medium
 type: task

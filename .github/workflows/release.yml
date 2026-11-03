@@ -35,22 +35,27 @@ jobs:
           echo "name=$TAG"                                   >> "$GITHUB_OUTPUT"
           echo "code=$(( MAJ * 10000 + MIN * 100 + PAT ))"  >> "$GITHUB_OUTPUT"
 
-      # F-Droid shows fastlane/metadata/android/en-US/changelogs/<versionCode>.txt for each
-      # version; every tag must ship one (see specs/rfes/release-process.md).
-      - name: Require a changelog for this version
+      # fastlane/metadata/android/en-US/changelogs/<versionCode>.txt is F-Droid's changelog, the
+      # GitHub release notes and Play's "What's new" (specs/rfes/release-process.md). A missing or
+      # over-long file only warns: the release goes ahead without those notes.
+      - name: Read the changelog for this version
         run: |
           CHANGELOG="fastlane/metadata/android/en-US/changelogs/${{ steps.version.outputs.code }}.txt"
+          : > "$RUNNER_TEMP/release-notes.md"
           if [ ! -s "$CHANGELOG" ]; then
-            echo "::error file=$CHANGELOG::Missing changelog for ${GITHUB_REF_NAME} (versionCode ${{ steps.version.outputs.code }}). Add $CHANGELOG (at most 500 characters), commit it, and tag that commit."
-            exit 1
+            echo "::warning file=$CHANGELOG::No changelog for ${GITHUB_REF_NAME} (versionCode ${{ steps.version.outputs.code }}): the GitHub release gets only generated notes and Play no What's new. Add $CHANGELOG (at most 500 characters) before the next tag."
+            exit 0
           fi
-          LENGTH=$(LC_ALL=C.UTF-8 wc -m < "$CHANGELOG")
-          if [ "$LENGTH" -gt 500 ]; then
-            echo "::error file=$CHANGELOG::Changelog is $LENGTH characters; F-Droid allows at most 500."
-            exit 1
-          fi
+          cp "$CHANGELOG" "$RUNNER_TEMP/release-notes.md"
           echo "Changelog for versionCode ${{ steps.version.outputs.code }}:"
           cat "$CHANGELOG"
+          LENGTH=$(LC_ALL=C.UTF-8 wc -m < "$CHANGELOG")
+          if [ "$LENGTH" -gt 500 ]; then
+            echo "::warning file=$CHANGELOG::Changelog is $LENGTH characters; F-Droid and Play allow at most 500, so Play gets no What's new."
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/whatsnew"
+          cp "$CHANGELOG" "$RUNNER_TEMP/whatsnew/whatsnew-en-US"
 
       # Exact JDK: verify-release.yml and F-Droid rebuild this APK and must get identical bytes
       # (docs/fdroid/README.md). Change both workflows together.
@@ -97,6 +102,7 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: "v${{ steps.version.outputs.name }}"
+          body_path: ${{ runner.temp }}/release-notes.md
           generate_release_notes: true
           files: app/build/outputs/apk/release/levana-v${{ steps.version.outputs.name }}.apk
 
@@ -108,3 +114,66 @@ jobs:
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           tracks: internal
           status: completed
+          # whatsnew-en-US from the changelog; absent when the changelog is missing or too long
+          whatsNewDirectory: ${{ runner.temp }}/whatsnew
+
+  # Uploads the Play listing (fastlane/metadata/android/en-US: text and images, not changelogs)
+  # when it changed since the last upload, marked by the tag store-listing-published. The owner
+  # approves every fastlane/ change before it is committed (specs/STORE_LISTING.md), so the tag
+  # itself is the go-ahead. Without that tag nothing is uploaded.
+  store-listing:
+    name: Upload the Play store listing if it changed
+    needs: build-release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compare the listing with the last upload
+        id: listing
+        run: |
+          if ! git rev-parse -q --verify refs/tags/store-listing-published > /dev/null; then
+            echo "::notice::No store-listing-published tag, so the Play listing is not uploaded (specs/rfes/release-process.md)."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          PATHS=(fastlane/metadata/android/en-US ':(exclude)fastlane/metadata/android/en-US/changelogs')
+          if git diff --quiet store-listing-published HEAD -- "${PATHS[@]}"; then
+            echo "The listing is unchanged since $(git rev-parse --short store-listing-published)."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --stat store-listing-published HEAD -- "${PATHS[@]}"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
+        if: steps.listing.outputs.changed == 'true'
+        with:
+          ruby-version: '3.3'
+
+      - name: Upload the listing to Google Play
+        if: steps.listing.outputs.changed == 'true'
+        env:
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          SUPPLY_PACKAGE_NAME: ninja.doskey.app.levana
+          SUPPLY_METADATA_PATH: fastlane/metadata/android
+          SUPPLY_SKIP_UPLOAD_APK: 'true'
+          SUPPLY_SKIP_UPLOAD_AAB: 'true'
+          SUPPLY_SKIP_UPLOAD_CHANGELOGS: 'true'
+          # Images whose checksum matches Play's are left alone
+          SUPPLY_SYNC_IMAGE_UPLOAD: 'true'
+        run: |
+          gem install fastlane -v 2.241.2 --no-document
+          fastlane supply
+
+      - name: Mark this commit as the uploaded listing
+        if: steps.listing.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/store-listing-published" -f sha="$GITHUB_SHA" -F force=true

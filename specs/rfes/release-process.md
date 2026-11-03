@@ -39,24 +39,52 @@ Store the `.keystore` file securely offline (not in the repo).
 
 ## Release Workflow
 
-1. Write the changelog for the new version in
+When the owner asks for a release, the coordinator:
+
+1. **Checks the store listing** (`specs/STORE_LISTING.md`, "Keeping it current"). It lists
+   the tasks merged since the previous tag that carry the `store-listing` label, skims the
+   commits, and regenerates only the affected screenshots (`scripts/store-screenshots.sh 2,5`).
+   It drafts any store-text change.
+2. **Drafts the changelog** in
    `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
-   (e.g. `v0.4.3` → `403.txt`). Plain text, at most 500 characters, user-facing
-   changes only, based on what was actually merged since the previous tag. F-Droid
-   shows this file for the version.
-2. Commit it to `master` and push.
-3. Tag that commit and push the tag:
+   (e.g. `v0.4.3` → `403.txt`): plain text, at most 500 characters, user-facing changes
+   only, based on what was actually merged since the previous tag. F-Droid shows it for the
+   version, it becomes the GitHub release notes, and Play shows it as "What's new"
+   (no promotional wording, per Play's rules).
+3. **Asks the owner to approve** the changelog, the before/after screenshots and any text
+   change, in one message. Nothing under `fastlane/` is committed without that approval.
+4. Commits what was approved to `master` (`git restore` the rest) and pushes.
+5. Tags that commit and pushes the tag:
 
 ```bash
 git tag v0.1.1
 git push origin v0.1.1
 ```
 
-GitHub Actions builds and publishes automatically. The workflow's first step after
-parsing the tag checks the changelog: if `changelogs/<versionCode>.txt` is missing,
-empty or longer than 500 characters, the run fails before building, with an error
-naming the expected file. To recover, add the changelog, commit, delete the tag
-(`git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`) and tag the new commit.
+GitHub Actions builds and publishes automatically. The workflow checks the changelog
+after parsing the tag. If `changelogs/<versionCode>.txt` is missing, empty or longer than
+500 characters, it **warns** and carries on: the GitHub release then has only the
+generated notes, and Play gets no "What's new". An over-long file is still used on GitHub,
+but not sent to Play.
+
+### Store listing upload
+
+After the build, the `store-listing` job uploads the Play listing (text and images from
+`fastlane/metadata/android/en-US/`) with fastlane `supply`. It skips the AAB, the APK and
+the changelogs. It runs only when the listing changed since the commit tagged
+`store-listing-published`, the last successful upload. Changes under `changelogs/` don't
+count. After uploading, it moves that tag to the released commit. Without the tag the job
+does nothing, so the first upload is armed by hand once the owner has approved the listing:
+
+```bash
+git tag store-listing-published <a commit before the approved listing>   # e.g. v0.4.3
+git push origin store-listing-published
+```
+
+The job uses the `PLAY_SERVICE_ACCOUNT_JSON` secret. The service account needs permission to
+edit the store listing (TASK-58). A failure here doesn't affect the APK, the GitHub release
+or the AAB upload. Fix the cause and re-run the job; the listing is uploaded on the next
+tag otherwise.
 
 ## Reproducible Build Check
 
@@ -78,14 +106,15 @@ manual verification and key backup: `docs/fdroid/README.md`.
 `fastlane/metadata/android/en-US/` holds the store listing in Fastlane layout, which
 F-Droid reads from the tagged source: `title.txt` (≤ 50 chars), `short_description.txt`
 (≤ 80), `full_description.txt` (≤ 4000), `images/icon.png`, `images/featureGraphic.png`,
-`images/phoneScreenshots/` and `changelogs/`. English only. Keep the text in step
-with the Play Console listing.
+`images/phoneScreenshots/` and `changelogs/`. English only. It is the single source
+for both stores: Play's listing is uploaded from it (see above). What the screenshots show,
+how to regenerate them and the approval rules are in `specs/STORE_LISTING.md`.
 
 ## Files Changed
 
 - `app/build.gradle.kts` — version from env vars; release signing config
 - `.gitignore` — ignore `keystore.properties` and `*.keystore`
-- `.github/workflows/release.yml` — CI workflow (including the changelog and certificate checks)
+- `.github/workflows/release.yml` — CI workflow (changelog and certificate checks, Play "What's new", store listing upload)
 - `.github/workflows/verify-release.yml` — secret-free reproducible-build check
 - `docs/fdroid/README.md` — reproducible build, manual verification, key backup
 - `fastlane/metadata/android/en-US/` — store metadata and per-version changelogs

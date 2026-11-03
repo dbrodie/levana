@@ -1,31 +1,12 @@
-Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora. It has no ads and collects no data.
+Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora. No ads, no data collection.
 
-📅 HEBREW & GREGORIAN CALENDAR
-• Month view in Hebrew or Gregorian months, with Hebrew dates on every day
-• Holidays, fasts and the weekly parsha
-• Israel and Diaspora schedules, including second-day Yom Tov
-• Optional modern Israeli holidays
-• Jump to any Hebrew or Gregorian date
+• Hebrew and Gregorian month views, plus an Agenda with search
+• Holidays, fasts, parsha, Omer and molad, for Israel or the Diaspora
+• Zmanim, candle lighting and havdalah for your location or any city
+• Yahrzeits, Hebrew birthdays and other events by their Hebrew date
+• Your phone's calendar events alongside the Jewish dates
+• Reminders for candle lighting, holidays, fasts, the Omer and your events
+• Widgets, a Quick Settings tile and an icon showing today's Hebrew date
+• Hebrew or English, light or dark
 
-🕯️ ZMANIM
-• Netz, shkia, tzeit and the full list of halachic times for your location
-• Sof zman Shema (GRA and Magen Avraham) and Tefillah, chatzot, mincha gedola and ketana, plag hamincha
-• Candle-lighting and havdalah times, with a configurable candle-lighting offset
-• Choose which times appear in the day view
-• Pick your city from a built-in list, or use your phone's location
-
-🗓️ YAHRZEITS, BIRTHDAYS & PERSONAL EVENTS
-• Add Hebrew birthdays to your contacts and see them on the calendar
-• Track yahrzeits and other recurring events by their Hebrew date
-• Adar in leap years handled the way your community does it, with settings for the annual and first-year yahrzeit and for dates like 30 Cheshvan and 30 Kislev
-• Export and import your events
-
-🔔 REMINDERS
-• Candle lighting, holidays, fasts, Sefirat HaOmer, birthdays and your own events
-
-✨ MADE FOR YOU
-• Full Hebrew interface (עברית) and English
-• Holiday-themed colors
-• Shows events from your phone's calendars
-
-Levana is free and open source: github.com/dbrodie/levana
+Free and open source: github.com/dbrodie/levana
