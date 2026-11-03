@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T18:34:00Z'
-updated_date: '2026-11-03T13:50:00Z'
+updated_date: '2026-11-03T18:18:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -56,7 +56,7 @@ The TASK-53.4 Fastlane files remain the draft input.
 - [x] #2 One command regenerates all or selected store screenshots (8 shots, 1080x1920, RGB, in the agreed order) into the fastlane folder; it is not part of the normal Roborazzi verify
 - [x] #3 AGENTS.md and the release process require owner approval for any fastlane/ change, a store-listing label and note on affecting tasks, and a release-time listing check
 - [x] #4 release.yml: the changelog check warns instead of failing; the changelog feeds GitHub release notes and Play What's new; the Play listing uploads only when fastlane/ changed since the last upload
-- [ ] #5 The owner approves the first screenshot set and store text, which are then committed
+- [x] #5 The owner approves the first screenshot set and store text, which are then committed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -95,4 +95,14 @@ The TASK-53.4 Fastlane files remain the draft input.
 Owner 2026-11-03: no dark-mode screenshot. Shot 1 is now the light Hebrew-months view (1_hebrew-months.png), regenerated with scripts/store-screenshots.sh 1.
 
 Owner approved the 8 generated screenshots 2026-11-03; committed with the removal of the TASK-53.4 hand-captured set.
+
+## Store text and images approved (owner, 2026-11-03)
+- **Full description:** rewritten concisely (673 characters): 8 bullets, no section headings, the GitHub link. Committed in fastlane/metadata/android/en-US/full_description.txt. Title and short description unchanged.
+- **Feature graphic:** recreated from docs/store/feature-graphic.svg, without "לבנה" and without the "Fully offline · No ads · No tracking" tagline; subtitle "Hebrew Calendar & Zmanim". Render with scripts/render-feature-graphic.sh (Mac and Chrome). Approved and committed.
+- **Privacy policy:** "Levana works offline" → "Levana's features work without an internet connection".
+- **README:** "a home-screen widget" → "home-screen widgets".
+- **Remaining for the coordinator:**
+  - after merging and pushing, create the `store-listing-published` tag at v0.4.3 so the next release uploads the approved listing to Play;
+  - check that the listing job succeeds (service-account listing permission, TASK-58);
+  - TASK-53.5/53.6 can now use the approved fastlane folder.
 <!-- SECTION:NOTES:END -->
