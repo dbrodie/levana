@@ -58,7 +58,7 @@ class StoreScreenshotTest(private val shot: Shot) : ScreenshotTest(shot.variant)
 
     /** Each shot in store order; [number] is its position and file-name prefix. */
     enum class Shot(val number: Int, val slug: String, val variant: Variant) {
-        HEBREW_MONTHS_DARK(1, "hebrew-months-dark", Variant.EN_DARK),
+        HEBREW_MONTHS(1, "hebrew-months", Variant.EN_LIGHT),
         GREGORIAN_MONTH(2, "gregorian-month", Variant.EN_LIGHT),
         HEBREW_INTERFACE(3, "hebrew-interface", Variant.HE_LIGHT),
         AGENDA(4, "agenda", Variant.EN_LIGHT),
@@ -91,7 +91,7 @@ class StoreScreenshotTest(private val shot: Shot) : ScreenshotTest(shot.variant)
         preferences.addSavedLocation(NEW_YORK)
         preferences.addSavedLocation(LONDON)
         preferences.setActiveLocation(null)
-        preferences.saveCalendarHebrewMode(shot == Shot.HEBREW_MONTHS_DARK || shot == Shot.HEBREW_INTERFACE || shot == Shot.AGENDA)
+        preferences.saveCalendarHebrewMode(shot == Shot.HEBREW_MONTHS || shot == Shot.HEBREW_INTERFACE || shot == Shot.AGENDA)
         preferences.saveSelectedCalendarIds(setOf(CAL_ID))
     }
 
@@ -119,7 +119,7 @@ class StoreScreenshotTest(private val shot: Shot) : ScreenshotTest(shot.variant)
     @Test
     fun store() {
         when (shot) {
-            Shot.HEBREW_MONTHS_DARK, Shot.GREGORIAN_MONTH, Shot.HEBREW_INTERFACE -> launchCalendar()
+            Shot.HEBREW_MONTHS, Shot.GREGORIAN_MONTH, Shot.HEBREW_INTERFACE -> launchCalendar()
             Shot.AGENDA -> {
                 launchCalendar()
                 openDrawer()

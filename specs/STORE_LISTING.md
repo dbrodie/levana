@@ -33,8 +33,8 @@ The window is 432×768dp at 400dpi, with no system bars.
 
 | # | File | Shows | Depends on |
 |---|---|---|---|
-| 1 | `1_hebrew-months-dark.png` | Month view in Hebrew months (Kislev 5787, with Rosh Chodesh, parshiyot, candle lighting and Chanukah), dark theme, day sheet collapsed | Month grid and day cells, holiday/parsha/event chips, top bar and mode toggle, collapsed day sheet tiles, dark colors |
-| 2 | `2_gregorian-month.png` | Month view in Gregorian months (November 2026), light | Same as 1, in light |
+| 1 | `1_hebrew-months.png` | Month view in Hebrew months (Kislev 5787, with Rosh Chodesh, parshiyot, candle lighting and Chanukah), day sheet collapsed | Month grid and day cells, holiday/parsha/event chips, top bar and mode toggle, collapsed day sheet tiles |
+| 2 | `2_gregorian-month.png` | Month view in Gregorian months (November 2026) | Same as 1 |
 | 3 | `3_hebrew-interface.png` | Hebrew interface (RTL), month view in Hebrew months | Same as 1, plus Hebrew strings and RTL layout |
 | 4 | `4_agenda.png` | Agenda: anniversary, birthday, yahrzeit, candle lighting, phone-calendar events, Shabbat with havdalah | Agenda list, entry cards, date column, top bar |
 | 5 | `5_day-sheet-erev-shabbat.png` | Day sheet expanded on Friday 20 November (erev Shabbat): tiles, zmanim card, candle lighting, calendar events | Expanded day sheet, quick tiles, zmanim/candle-lighting/calendar cards |
@@ -42,7 +42,7 @@ The window is 432×768dp at 400dpi, with no system bars.
 | 7 | `7_event-date-picker.png` | Editing the yahrzeit, with the Hebrew/Gregorian date picker open | Event editor, date picker dialog |
 | 8 | `8_cities.png` | Sidebar open with the city list expanded (current location, New York, London) | Navigation drawer, city switcher, drawer items |
 
-Theme, typography, terminology (string) and color changes affect every shot.
+All shots use the light theme (owner decision, 2026-11-03: no dark-mode shot). Theme, typography, terminology (string) and color changes affect every shot.
 
 **Regenerate:** `scripts/store-screenshots.sh` (all shots) or `scripts/store-screenshots.sh 2,5` (only those). Then `git status fastlane/` shows what changed. The test only runs when asked, so it never takes part in `verifyRoborazziDebug`.
 
@@ -62,7 +62,7 @@ The in-app walkthrough (`ui/walkthrough/WalkthroughRegistry`, see ARCHITECTURE_S
 | `reminders` | Reminders for candle lighting, holidays, fasts, events, Omer (notification permission) | none |
 | `device-calendars` | Phone calendars alongside Jewish dates (calendar permission) | 4, 5 |
 | `widgets` | Widgets, Quick Settings tile, Hebrew-date app icon | none (not rendered by the harness) |
-| `appearance` | Light/dark, Material You and holiday colors, Hebrew/English | 1, 3 |
+| `appearance` | Light/dark, Material You and holiday colors, Hebrew/English | 3 |
 
 A new major feature gets a walkthrough screen (ARCHITECTURE_SPEC). It may also deserve a store bullet or screenshot; propose that to the owner.
 
