@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-11-03T14:17:00Z'
+updated_date: '2026-11-03T22:23:00Z'
 labels: []
 dependencies:
   - TASK-53.1
@@ -88,4 +88,16 @@ docs/fdroid/README.md (recipe, update-check handling, signing-config stripping, 
 - TASK-53.6 submission.
 - Follow-up TASK-63 (other F-Droid clients run the GitHub update check). The ID may collide with tasks on other branches.
 - Cleanup: colima delete --profile fdroid (separate VM created for this; the default profile was untouched).
+
+## 2026-11-04 rebase and revalidation (@claude)
+- Rebased onto origin/master d995974 (TASK-55 merged): no conflicts. Kept the findByName fix and the verify-release.yml fdroid-version.txt upload; release.yml is master's (this branch doesn't touch it). Branch commit is now e8c3ef4 plus this update.
+- Approved fastlane metadata, read with fdroidserver's own reader (insert_localized_app_metadata, F-Droid char_limits): nothing truncated.
+  - Text: title 23/50, summary 70/80, description 671/4000; changelogs 401/402/403 at 471/360/417 (limit 500).
+  - Images: icon 512x512, featureGraphic 1024x500, eight phoneScreenshots/<n>_<name>.png at 1080x1920 (F-Droid sorts by file name). Log: /tmp/levana-task-53.5-evidence/fastlane-parse.log.
+- Recipe unchanged (byte-identical to docs/fdroid/ninja.doskey.app.levana.yml): readmeta, rewritemeta (no changes), lint, check-jsonschema and tools/check-* pass again (meta-checks-rerun.log).
+- fdroid build :403 not rerun: it builds the v0.4.3 tag (39e1fb8), which the rebase doesn't change, and the recipe is unchanged; the 2026-11-03 PASS stands.
+- New point for TASK-53.6: F-Droid reads the listing from the built commit's fastlane/. v0.4.3 still has the pre-TASK-55 draft, which is a second reason to submit with the next release (with findByName, and without the prebuild).
+- rm -rf app/build/test-results, then assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug --rerun-tasks: BUILD SUCCESSFUL, 61 tasks executed, 1236 tests, 0 failures; Roborazzi verified with no screenshot changes. actionlint 1.7.12 on all workflows: clean.
+- Docs: TASK-55 approval removed from Remaining in COMPLIANCE.md; store-metadata check section added; README recommendation extended.
+- Cleanup: colima profile fdroid deleted (its containers and images went with it); the default profile and Docker context are unchanged; evidence kept in /tmp/levana-task-53.5-evidence.
 <!-- SECTION:NOTES:END -->

@@ -64,7 +64,8 @@ recipe's v0.4.3 entry has a `prebuild` that creates an empty `release` config. I
 the APK. Builds from the first tag with `findByName` don't need it. `checkupdates` copies the
 previous entry's fields into new entries, and there the `sed` matches nothing, so it's harmless.
 Still, it's best to submit the recipe with the first release that has `findByName`, and drop
-the `prebuild` line.
+the `prebuild` line. That release is also the first tag with the owner-approved store listing
+(TASK-55), which F-Droid reads from the built commit's `fastlane/` directory.
 
 ## Release flow with F-Droid
 

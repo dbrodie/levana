@@ -1,6 +1,6 @@
 # F-Droid compliance report: Levana (`ninja.doskey.app.levana`)
 
-State on 2026-11-03, for the fdroiddata submission (TASK-53.6). The build and recipe are
+State on 2026-11-04, for the fdroiddata submission (TASK-53.6). The build and recipe are
 described in [README.md](README.md), and the recipe is [ninja.doskey.app.levana.yml](ninja.doskey.app.levana.yml).
 
 ## Summary
@@ -80,7 +80,7 @@ aren't recognised yet, so those installs still run the GitHub check. TASK-63 tra
 
 ## Test results
 
-Run on 2026-11-03 against a local fdroiddata checkout (master `80bcda3e`) with fdroidserver master
+Run on 2026-11-03 (recipe checks repeated on 2026-11-04 after the TASK-55 merge) against a local fdroiddata checkout (master `80bcda3e`) with fdroidserver master
 `cdfdce83` (newer than the commit fdroiddata's CI pins, `a35fdfdd`, which is what that CI pulls
 forward to). Each job was run the way fdroiddata's `.gitlab-ci.yml` runs it.
 
@@ -108,16 +108,36 @@ The build ran in an arm64 Debian 13 container set up like F-Droid's
 `buildserver-trixie` image, not in that amd64 image itself: under emulation on Apple silicon,
 Gradle was too slow to finish. The MR's GitLab CI pipeline will run the real image.
 
+### Store metadata (`fastlane/metadata/android/en-US/`)
+
+The owner approved the listing in TASK-55 (2026-11-03). It was checked on 2026-11-04 against
+fdroidserver's own reader (`fdroid update`'s `insert_localized_app_metadata`, with F-Droid's
+`char_limits`). Nothing is truncated:
+
+| File | Length | F-Droid limit |
+|---|---|---|
+| `title.txt` | 23 | 50 |
+| `short_description.txt` | 70 | 80 |
+| `full_description.txt` | 671 | 4000 |
+| `changelogs/401.txt`, `402.txt`, `403.txt` | 471, 360, 417 | 500 |
+
+The images follow F-Droid's layout:
+- `images/icon.png`, 512×512;
+- `images/featureGraphic.png`, 1024×500;
+- eight `images/phoneScreenshots/<n>_<name>.png`, each 1080×1920. F-Droid sorts them by file
+  name, so the number prefix sets their order.
+
 ## Remaining blockers and owner actions
 
-1. **Approve the store text and screenshots** (TASK-55). F-Droid shows them from `fastlane/` at
-   the tag. The validation used the current draft.
-2. **Publish `fdroid-version.txt`** for the current release. Without it, F-Droid's update check
+1. **Publish `fdroid-version.txt`** for the current release. Without it, F-Droid's update check
    fails with HTTP 404. After this change is merged, either make a new release, or run
    *Verify reproducible release* manually for `v0.4.3` (it uploads the file when it passes).
-3. **Preferably submit with the first release that contains the `findByName` fix**, and drop
-   the recipe's `prebuild` line. v0.4.3 needs that line; see
-   [README.md](README.md#f-droid-removes-signing-configs-before-building).
-4. **Submit the merge request** to https://gitlab.com/fdroid/fdroiddata (TASK-53.6, owner
+2. **Submit with the first release that contains the `findByName` fix**, and drop the recipe's
+   `prebuild` line. v0.4.3 needs that line; see
+   [README.md](README.md#f-droid-removes-signing-configs-before-building). There is a second
+   reason: F-Droid shows the listing from `fastlane/` in the checkout of the built commit. The
+   v0.4.3 tag still has the draft text and screenshots from before TASK-55, while the next
+   tag will have the approved ones.
+3. **Submit the merge request** to https://gitlab.com/fdroid/fdroiddata (TASK-53.6, owner
    authorization required). Its pipeline must pass `fdroid build` on the real buildserver image.
-5. Follow-up, not blocking: TASK-63 (update check with other F-Droid clients).
+4. Follow-up, not blocking: TASK-63 (update check with other F-Droid clients).
