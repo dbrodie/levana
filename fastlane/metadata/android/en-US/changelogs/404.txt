@@ -1,0 +1,5 @@
+• Foldables and tablets: Month and Agenda show the day's details side by side, with an adjustable divider
+• Rosh Chodesh and Shabbat Mevarchim marked in the month grid and Agenda, with the molad
+• Zmanim listed in order, with Tefillah by both GRA and Magen Avraham
+• Hebrew years in the short form; month titles and weekday names follow your language
+• Fixes for times in the Hebrew interface and for editing an event while it loads
