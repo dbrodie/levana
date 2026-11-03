@@ -1,11 +1,11 @@
 ---
 id: TASK-53.5
 title: fdroiddata recipe, local F-Droid validation and docs/fdroid
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-11-03T22:23:00Z'
+updated_date: '2026-11-03T22:33:00Z'
 labels: []
 dependencies:
   - TASK-53.1
@@ -34,7 +34,7 @@ Write `docs/fdroid/README.md` (release and verification flow, key backup and rec
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 fdroid lint, rewritemeta and checkupdates pass, and fdroid build reproduces and accepts the GitHub APK locally; docs/fdroid/README.md and the compliance report are committed
+- [x] #1 fdroid lint, rewritemeta and checkupdates pass, and fdroid build reproduces and accepts the GitHub APK locally; docs/fdroid/README.md and the compliance report are committed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -101,3 +101,15 @@ docs/fdroid/README.md (recipe, update-check handling, signing-config stripping, 
 - Docs: TASK-55 approval removed from Remaining in COMPLIANCE.md; store-metadata check section added; README recommendation extended.
 - Cleanup: colima profile fdroid deleted (its containers and images went with it); the default profile and Docker context are unchanged; evidence kept in /tmp/levana-task-53.5-evidence.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-03T22:33:00Z
+
+---
+
+Coordinator integration 2026-11-04: rebased branch merged as f941724. Clean run: assembleRelease + 1236 tests, 0 failures; Roborazzi 420 unchanged; actionlint clean. Dispatched verify-release for v0.4.3 (run 41731081901): rebuild matches, fdroid-version.txt published; releases/latest/download/fdroid-version.txt returns versionCode=403 / versionName=0.4.3. fdroid colima VM deleted. Recipe in docs/fdroid/ninja.doskey.app.levana.yml; submission is TASK-53.6 (recommend the first release with findByName + approved listing, i.e. v0.4.4, dropping the prebuild).
+
+---
+<!-- COMMENTS:END -->
