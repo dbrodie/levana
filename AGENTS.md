@@ -2,7 +2,7 @@
 
 ## Project
 
-Levana is an open-source Android Hebrew calendar app for Orthodox Jewish users (Diaspora & Israel). It operates fully offline and provides zmanim, Jewish holidays, Torah readings, personal events, and notifications.
+Levana is an open-source Android Hebrew calendar app for Orthodox Jewish users (Diaspora & Israel). It provides zmanim, Jewish holidays, Torah readings, personal events, and notifications; its calendar calculations and stored data work offline (network is used only for the GitHub update check on sideloaded installs and for naming the current location).
 
 - Full product vision: `specs/PROJECT_SPEC.md`
 - Technical decisions: `specs/ARCHITECTURE_SPEC.md`

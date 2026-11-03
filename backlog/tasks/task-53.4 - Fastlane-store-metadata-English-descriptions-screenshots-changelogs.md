@@ -1,11 +1,11 @@
 ---
 id: TASK-53.4
 title: 'Fastlane store metadata (English): descriptions, screenshots, changelogs'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-10-31T18:34:00Z'
+updated_date: '2026-11-03T22:11:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-53
@@ -133,6 +133,14 @@ created: 2026-10-31T18:34:00Z
 ---
 
 Correction 2026-10-31: the owner did NOT approve the listing text or screenshots (the coordinator misread an earlier answer). The Fastlane files merged on master are a draft input only. Final store text and screenshots are now defined by TASK-55, which blocks the F-Droid recipe/submission (53.5/53.6). The release.yml changelog check stays active.
+
+---
+
+created: 2026-11-03T22:11:00Z
+
+---
+
+Closed 2026-11-04 as superseded by TASK-55: its draft Fastlane listing was replaced by TASK-55's owner-approved text, screenshots and feature graphic (merged 9ab3336). The draft itself was never approved.
 
 ---
 <!-- COMMENTS:END -->
