@@ -111,10 +111,14 @@ abstract class ScreenshotTest(
     /** Whether the device has granted location; set before [launch]. */
     protected open val locationPermission = true
 
+    /** The device's time zone; the clock stays at noon on [TODAY] there. */
+    protected open val zone: ZoneId get() = ZONE
+
     @Before
     fun setUpScreenshot() {
         savedZone = TimeZone.getDefault()
-        TimeZone.setDefault(TimeZone.getTimeZone(ZONE))
+        TimeZone.setDefault(TimeZone.getTimeZone(zone))
+        val clock = Clock.fixed(ZonedDateTime.of(TODAY, LocalTime.NOON, zone).toInstant(), zone)
         (Audit.size?.qualifiers ?: device)?.let { RuntimeEnvironment.setQualifiers(it) }
         RuntimeEnvironment.setQualifiers(variant.qualifiers)
         (Audit.fontScale ?: fontScale)?.let { RuntimeEnvironment.setFontScale(it) }
@@ -137,7 +141,7 @@ abstract class ScreenshotTest(
             single { db }
             single<Flow<Unit>>(named("systemTimeChanges")) { emptyFlow() }
             // The device reads the seeded preferences without a DataStore round trip
-            single { DeviceContext(devicePreferences, emptyFlow()) { FIXED_CLOCK } }
+            single { DeviceContext(devicePreferences, emptyFlow()) { clock } }
             single<EventDataChanges> { NoEventChanges }
         }
         koin = startKoin {
@@ -355,10 +359,13 @@ abstract class ScreenshotTest(
         }
     }
 
+    protected fun capture(name: String) = captureFile("${Audit.dir ?: OUTPUT_DIR}/${name}_${variant.tag}.png")
+
+    /** Captures the screen to [path], relative to the app module, once in-flight values have landed. */
     @OptIn(ExperimentalRoborazziApi::class)
-    protected fun capture(name: String) {
+    protected fun captureFile(path: String) {
         settle()
-        captureScreenRoboImage("${Audit.dir ?: OUTPUT_DIR}/${name}_${variant.tag}.png")
+        captureScreenRoboImage(path)
     }
 
     /**
@@ -400,7 +407,6 @@ abstract class ScreenshotTest(
          * capture occasionally preceded it, so the images avoid holiday colors altogether.
          */
         val TODAY: LocalDate = LocalDate.of(2026, 11, 17)
-        val FIXED_CLOCK: Clock = Clock.fixed(ZonedDateTime.of(TODAY, LocalTime.NOON, ZONE).toInstant(), ZONE)
 
         val NEW_YORK = Location(
             latitude = 40.7128, longitude = -74.0060, elevation = 10.0,
