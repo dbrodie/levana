@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T18:34:00Z'
-updated_date: '2026-11-03T13:25:00Z'
+updated_date: '2026-11-03T13:50:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -93,4 +93,6 @@ The TASK-53.4 Fastlane files remain the draft input.
   - the store text wording (offline claim, feature graphic, bullets).
 
 Owner 2026-11-03: no dark-mode screenshot. Shot 1 is now the light Hebrew-months view (1_hebrew-months.png), regenerated with scripts/store-screenshots.sh 1.
+
+Owner approved the 8 generated screenshots 2026-11-03; committed with the removal of the TASK-53.4 hand-captured set.
 <!-- SECTION:NOTES:END -->
