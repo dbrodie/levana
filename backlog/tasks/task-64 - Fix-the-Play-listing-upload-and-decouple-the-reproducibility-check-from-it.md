@@ -4,7 +4,7 @@ title: Fix the Play listing upload and decouple the reproducibility check from i
 status: To Do
 assignee: []
 created_date: '2026-11-03T22:55:00Z'
-updated_date: '2026-11-04T10:16:00Z'
+updated_date: '2026-11-04T13:45:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -26,13 +26,30 @@ Keep the security model: secrets only in the release environment, which only `v*
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The listing job uploads the approved listing to Play successfully (verified in Play Console) and moves store-listing-published
-- [ ] #2 verify-release runs whenever the APK release job succeeded, even if the listing upload fails; a listing failure is visible
-- [ ] #3 The listing can be uploaded or retried on demand without a new release, within the release environment's protections (documented)
+- [ ] #1 The store-listing job is removed from release.yml; verify-release runs whenever the APK release succeeds
+- [ ] #2 A documented local script uploads the en-US listing with fastlane supply: dry-run by default, explicit confirmed upload, credentials from a path outside the repo, fastlane pinned, the production-track release lookup fixed per current docs
+- [ ] #3 No real listing upload performed in this task; the first upload is discussed with the owner afterwards
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner decision 2026-11-04: CI keeps uploading releases to the internal track only. Promotion to closed and, later, production is done manually in Play Console; no promote job. Note: the store listing (text, screenshots, feature graphic) is app-wide, not per track, so the listing upload doesn't need to follow promotion. Release notes ('What's new') travel with the release when it's promoted in the Console. The SUPPLY_TRACK/VERSION_CODE setting in this task only satisfies fastlane's release lookup.
+
+## Owner decisions (2026-11-04)
+1. **Separate the listing upload from the release (2a).** The Release workflow does only the APK work: build, sign, certificate check, GitHub Release with changelog notes, Play internal upload with "What's new". **Remove the `store-listing` job from release.yml entirely.** The reproducibility check (verify-release.yml) then depends only on the APK release succeeding.
+2. **No GitHub workflow for the listing at all, for now.** Uploading the store listing to Play is a **manual action the owner runs locally from the repo**: a script, e.g. `scripts/upload-store-listing.sh`, wrapping `fastlane supply`. A better long-term mechanism can be decided later.
+3. **Listing upload is manual only.** Releases never touch the store listing.
+4. **The first real listing upload** is to be discussed with the owner after everything else is done. **Don't perform any real upload in this task.**
+
+## Implementation guidance
+- **The local script:**
+  - **Dry-run by default** (`fastlane supply --validate_only` or equivalent) with a clear summary of what would be uploaded. A real upload only with an explicit flag (e.g. `--upload`) and a confirmation prompt.
+  - Upload only the main listing for en-US: title, short and full description, icon, feature graphic, phone screenshots. Skip APK, AAB and changelogs.
+  - Fix the original failure: supply looked up a release on the default production track. Use the internal track with the latest version code, or whatever metadata-only mode fastlane's **current** docs recommend. Verify against the docs, and with a dry run if credentials are available.
+  - **Credentials:** read the service-account JSON from a path the owner provides (e.g. an env var such as `PLAY_SERVICE_ACCOUNT_JSON_PATH`), never from the repo. Never print it. The owner currently has no local copy of the JSON; creating a key is part of TASK-58. Document this prerequisite, and fail with a helpful message if the path isn't set.
+  - **Fastlane version:** pin it (Gemfile/Gemfile.lock, or a documented version) so runs are reproducible.
+  - **The `store-listing-published` tag** (currently at v0.4.3): either keep it as the record of the last uploaded listing (show the diff since the tag; move and push the tag after a successful real upload), or remove the concept. Choose, justify it, and keep it simple. Don't move or delete the tag in this task.
+- **Docs:** update specs/STORE_LISTING.md, specs/rfes/release-process.md and AGENTS.md if they mention the listing job. Releases keep "What's new" via `whatsNewDirectory` and the changelog warning.
+- **Checks:** actionlint on workflows; shellcheck on the script if available. Run the dry-run path as far as possible without credentials (argument parsing, the missing-credentials message).
 <!-- SECTION:NOTES:END -->
