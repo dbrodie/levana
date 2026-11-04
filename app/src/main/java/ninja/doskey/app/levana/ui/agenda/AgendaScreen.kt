@@ -100,6 +100,7 @@ import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.ui.calendar.CalendarModeSelector
 import ninja.doskey.app.levana.ui.calendar.CalendarHeaderFormatter
 import ninja.doskey.app.levana.ui.agendaMevarchimText
+import ninja.doskey.app.levana.ui.MISSING_TIME
 import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.ui.calendar.holidayCategoryColor
 import ninja.doskey.app.levana.ui.datepicker.HebrewDatePickerDialog
@@ -682,6 +683,7 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
     val hebrewUi = CalendarHeaderFormatter.isHebrew(LocalConfiguration.current.locales[0])
     val clock24 = use24Hour ?: DateFormat.is24HourFormat(context)
     fun time(t: LocalTime) = formatClockTime(t, clock24, hebrewUi)
+    fun timeOrMissing(t: LocalTime?) = t?.let(::time) ?: MISSING_TIME
     // Candle lighting and havdalah are the selected city's; label its clock when it differs
     val cityClock = otherClockCityName?.let { stringResource(R.string.zmanim_city_clock, it) }
     fun describe(vararg parts: String?) = parts.filterNot { it.isNullOrBlank() }.joinToString(", ")
@@ -704,12 +706,12 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
         }
         is AgendaItem.CandleLighting -> {
             val title = stringResource(R.string.agenda_candle_lighting)
-            CardContent(Icons.Outlined.WbTwilight, title, cityClock, time(item.time), CardStyle.OUTLINED,
-                describe(title, time(item.time), cityClock))
+            CardContent(Icons.Outlined.WbTwilight, title, cityClock, timeOrMissing(item.time), CardStyle.OUTLINED,
+                describe(title, timeOrMissing(item.time), cityClock))
         }
         is AgendaItem.Shabbat -> {
             val title = stringResource(R.string.agenda_parsha, if (hebrewUi) item.parshaHebrew ?: item.parsha else item.parsha)
-            val havdalah = item.havdalah?.let { stringResource(R.string.agenda_havdalah_at, time(it)) }
+            val havdalah = if (item.hasHavdalah) stringResource(R.string.agenda_havdalah_at, timeOrMissing(item.havdalah)) else null
             val secondary = listOfNotNull(havdalah, cityClock.takeIf { havdalah != null }).joinToString(" · ").ifEmpty { null }
             val mevarchim = item.molad?.let { agendaMevarchimText(context, it, clock24) }
             CardContent(Icons.AutoMirrored.Outlined.MenuBook, title, secondary, null, CardStyle.TONAL,
@@ -717,8 +719,8 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
         }
         is AgendaItem.Havdalah -> {
             val title = stringResource(R.string.agenda_havdalah)
-            CardContent(Icons.Outlined.NightsStay, title, cityClock, time(item.time), CardStyle.TONAL,
-                describe(title, time(item.time), cityClock))
+            CardContent(Icons.Outlined.NightsStay, title, cityClock, timeOrMissing(item.time), CardStyle.TONAL,
+                describe(title, timeOrMissing(item.time), cityClock))
         }
         is AgendaItem.PersonalEventItem -> {
             val label = item.label?.let { occurrenceLabelText(context, it) }

@@ -9,15 +9,19 @@ data class ShabbatInfo(
     val isErevShabbat: Boolean,
     val isShabbat: Boolean,
     val isErevYomTov: Boolean,
-    val isYomTov: Boolean
+    val isYomTov: Boolean,
+    /** Candles are lit this evening, even when [candleLightingTime] can't be computed. */
+    val hasCandleLighting: Boolean = candleLightingTime != null,
+    /** Havdalah is made this evening, even when [havdalahTime] can't be computed. */
+    val hasHavdalah: Boolean = havdalahTime != null
 ) {
     /** Set only on days whose evening begins Shabbat or Yom Tov. */
     val showCandleLighting: Boolean
-        get() = candleLightingTime != null
+        get() = hasCandleLighting
 
     /** Set only on the last of consecutive Shabbat / Yom Tov days. */
     val showHavdalah: Boolean
-        get() = havdalahTime != null
+        get() = hasHavdalah
 }
 
 /**

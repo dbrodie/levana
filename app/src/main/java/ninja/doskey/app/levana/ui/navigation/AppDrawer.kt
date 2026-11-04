@@ -54,6 +54,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.UserPreferences
+import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.domain.model.displayCity
 
 private data class DrawerNavItem(
@@ -84,6 +85,7 @@ internal fun LevanaDrawerContent(
 ) {
     // The drawer's selected-city picker; only the Zmanim screen and day panel use the city
     val locationName = prefs.displayCity.name
+    val incalculableTimes = ZmanimRepository.hasIncalculableTimes(prefs.displayCity.latitude)
     val calendarNavItems = listOf(
         DrawerNavItem(stringResource(R.string.nav_month), Icons.Filled.CalendarViewMonth, CalendarRoute),
         DrawerNavItem(stringResource(R.string.nav_agenda), Icons.Filled.ViewAgenda, AgendaRoute),
@@ -134,6 +136,11 @@ internal fun LevanaDrawerContent(
                         Text(locationName, style = MaterialTheme.typography.titleMedium,
                             maxLines = 2, overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        if (incalculableTimes) {
+                            Text(stringResource(R.string.city_incalculable_times),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
                     }
                     Icon(if (citiesExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                         contentDescription = stringResource(R.string.design_switch_city))

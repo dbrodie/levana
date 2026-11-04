@@ -9,6 +9,7 @@ import java.time.LocalDate
 
 data class SettingsState(
     val currentLocationName: String = "",
+    val currentLocationLatitude: Double = 0.0,
     val savedLocations: List<SavedLocation> = emptyList(),
     val activeLocationId: String? = null,
     val israelMode: IsraelMode = IsraelMode.AUTO,

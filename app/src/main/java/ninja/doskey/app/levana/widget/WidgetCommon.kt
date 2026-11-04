@@ -13,6 +13,7 @@ import java.time.ZonedDateTime
 import java.util.Locale
 import ninja.doskey.app.levana.MainActivity
 import ninja.doskey.app.levana.notifications.NotificationPoster
+import ninja.doskey.app.levana.ui.MISSING_TIME
 import ninja.doskey.app.levana.ui.formatClockTime
 
 /** The app language, which the widgets follow. */
@@ -48,7 +49,7 @@ internal fun openZmanim(context: Context, date: LocalDate): Action =
     )
 
 /** Shown for a time that can't be computed. */
-internal const val NO_TIME = "—"
+internal const val NO_TIME = MISSING_TIME
 
 /** Text alignment that keeps a mirrored row's text against its edge. */
 internal fun textAlign(mirror: Boolean) = if (mirror) TextAlign.End else TextAlign.Start

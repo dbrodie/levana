@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
+import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.targetedLabel
 import ninja.doskey.app.levana.domain.model.SavedLocation
@@ -63,10 +64,16 @@ fun LocationsSettingsScreen(
         }
     }
 
+    // The selected city, as UserPreferences.displayCity: the active saved city, else the current location
+    val selected = state.savedLocations.find { it.id == state.activeLocationId }
     LocationsSettingsContent(
         currentLocationName = state.currentLocationName,
         hasLocationPermission = hasLocationPermission,
         savedLocations = state.savedLocations,
+        incalculableTimesCityId = when {
+            selected == null -> CURRENT_LOCATION_ID.takeIf { ZmanimRepository.hasIncalculableTimes(state.currentLocationLatitude) }
+            else -> selected.id.takeIf { ZmanimRepository.hasIncalculableTimes(selected.location.latitude) }
+        },
         onRequestPermission = { permissionLauncher.launch(LocationService.PERMISSIONS) },
         onDelete = { id -> scope.launch { preferencesRepository.removeSavedLocation(id) } },
         onAddLocation = onAddLocation,
@@ -74,6 +81,14 @@ fun LocationsSettingsScreen(
     )
 }
 
+/** Stands for the current location in [LocationsSettingsContent]'s incalculableTimesCityId. */
+internal const val CURRENT_LOCATION_ID = "current"
+
+/**
+ * The Cities settings. [incalculableTimesCityId] is the selected city's id, or
+ * [CURRENT_LOCATION_ID], when some of its times can't be calculated on some days; that row
+ * carries the note.
+ */
 @Composable
 internal fun LocationsSettingsContent(
     currentLocationName: String,
@@ -82,8 +97,10 @@ internal fun LocationsSettingsContent(
     onRequestPermission: () -> Unit,
     onDelete: (String) -> Unit,
     onAddLocation: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    incalculableTimesCityId: String? = null
 ) {
+    val incalculableNote = stringResource(R.string.city_incalculable_times)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -96,8 +113,11 @@ internal fun LocationsSettingsContent(
         SettingsGroup(stringResource(R.string.settings_group_current_location)) {
         ListItem(
             headlineContent = { Text(currentLocationName) },
-            supportingContent = if (hasLocationPermission) null else {
-                { Text(stringResource(R.string.location_permission_needed)) }
+            supportingContent = listOfNotNull(
+                stringResource(R.string.location_permission_needed).takeUnless { hasLocationPermission },
+                incalculableNote.takeIf { incalculableTimesCityId == CURRENT_LOCATION_ID }
+            ).takeIf { it.isNotEmpty() }?.let { lines ->
+                { Column { lines.forEach { Text(it) } } }
             },
             leadingContent = {
                 Icon(Icons.Filled.GpsFixed, contentDescription = null)
@@ -112,9 +132,12 @@ internal fun LocationsSettingsContent(
             savedLocations.forEach { saved ->
                 ListItem(
                     headlineContent = { Text(saved.location.name) },
-                    supportingContent = if (saved.location.country.isNotEmpty()) {
-                        { Text(saved.location.country) }
-                    } else null,
+                    supportingContent = listOfNotNull(
+                        saved.location.country.takeIf { it.isNotEmpty() },
+                        incalculableNote.takeIf { incalculableTimesCityId == saved.id }
+                    ).takeIf { it.isNotEmpty() }?.let { lines ->
+                        { Column { lines.forEach { Text(it) } } }
+                    },
                     leadingContent = {
                         Icon(Icons.Outlined.LocationOn, contentDescription = null)
                     },

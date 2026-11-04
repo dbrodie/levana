@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.domain.model.ZmanCategory
 import ninja.doskey.app.levana.domain.model.ZmanTime
+import ninja.doskey.app.levana.ui.MISSING_TIME
 import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.ui.daydetail.CityClockLabel
@@ -95,7 +96,7 @@ private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, use24Hour:
                         Text(name.secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Text(zman.time?.let { formatClockTime(it, use24Hour, hebrewUi) } ?: "—", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(zman.time?.let { formatClockTime(it, use24Hour, hebrewUi) } ?: MISSING_TIME, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

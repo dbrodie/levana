@@ -113,6 +113,7 @@ class SettingsViewModel(
                 val device = deviceContext.now(prefs)
                 _state.value = _state.value.copy(
                     currentLocationName = prefs.currentLocation.name,
+                    currentLocationLatitude = prefs.currentLocation.latitude,
                     savedLocations = prefs.savedLocations,
                     activeLocationId = prefs.activeLocationId,
                     israelMode = prefs.israelMode,

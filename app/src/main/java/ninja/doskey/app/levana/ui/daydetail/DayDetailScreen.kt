@@ -54,6 +54,7 @@ import ninja.doskey.app.levana.ui.birthday.rememberContactPhoto
 import ninja.doskey.app.levana.domain.model.CalendarEvent
 import ninja.doskey.app.levana.ui.events.occurrenceTitle
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.MISSING_TIME
 import ninja.doskey.app.levana.ui.formatClockTime
 import ninja.doskey.app.levana.ui.moladMonthName
 import ninja.doskey.app.levana.ui.moladTimeText
@@ -62,6 +63,7 @@ import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.Molad
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import ninja.doskey.app.levana.domain.model.ZmanName
+import ninja.doskey.app.levana.domain.model.ShabbatInfo
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import ninja.doskey.app.levana.domain.model.displayName
 import ninja.doskey.app.levana.data.ZmanimRepository
@@ -100,7 +102,7 @@ fun DayDetailContent(
                 ) {
                     DaySheetBadges(dayInfo)
                     state.otherClockCityName?.let { CityClockLabel(it, Modifier.padding(bottom = 8.dp)) }
-                    QuickZmanimCards(state.allZmanim, dayInfo.shabbatInfo?.takeIf { it.showCandleLighting }?.candleLightingTime)
+                    QuickZmanimCards(state.allZmanim, dayInfo.shabbatInfo?.takeIf { it.showCandleLighting })
                     Spacer(modifier = Modifier.height(24.dp))
                     HalachicTimesSection(
                         times = state.halachicTimes,
@@ -198,7 +200,7 @@ private fun DaySheetBadges(dayInfo: DayInfo) {
 }
 
 @Composable
-private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) {
+private fun QuickZmanimCards(times: List<ZmanTime>, candles: ShabbatInfo?) {
     val context = LocalContext.current
     val time = clockTimeFormat(context)
     // Labels are the short NETZ / SHKIA / TZEIT strings; times are looked up by zman key
@@ -208,13 +210,13 @@ private fun QuickZmanimCards(times: List<ZmanTime>, candleLighting: LocalTime?) 
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        QuickZmanCard(stringResource(R.string.sheet_netz), sunrise?.let(time) ?: "--:--", false, Modifier.weight(1f))
-        QuickZmanCard(stringResource(R.string.sheet_shkia), sunset?.let(time) ?: "--:--", false, Modifier.weight(1f))
+        QuickZmanCard(stringResource(R.string.sheet_netz), sunrise?.let(time) ?: MISSING_TIME, false, Modifier.weight(1f))
+        QuickZmanCard(stringResource(R.string.sheet_shkia), sunset?.let(time) ?: MISSING_TIME, false, Modifier.weight(1f))
         QuickZmanCard(
-            stringResource(if (candleLighting != null) R.string.sheet_candles else R.string.sheet_tzeit),
-            candleLighting?.let(time)
-                ?: times.firstOrNull { it.name == ZmanimRepository.NIGHTFALL.english }?.time?.let(time)
-                ?: "--:--",
+            stringResource(if (candles != null) R.string.sheet_candles else R.string.sheet_tzeit),
+            (if (candles != null) candles.candleLightingTime
+                else times.firstOrNull { it.name == ZmanimRepository.NIGHTFALL.english }?.time)
+                ?.let(time) ?: MISSING_TIME,
             true,
             Modifier.weight(1f)
         )
@@ -291,7 +293,7 @@ private fun HalachicTimesSection(
                             )
                         }
                         Text(
-                            text = zman.time?.let(time) ?: "--:--",
+                            text = zman.time?.let(time) ?: MISSING_TIME,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -408,7 +410,7 @@ private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = time?.let(clock) ?: "--:--",
+                text = time?.let(clock) ?: MISSING_TIME,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
