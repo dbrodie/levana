@@ -3,11 +3,11 @@ id: TASK-57.31
 title: >-
   Explain zmanim, candle lighting and havdalah that can't be computed at high
   latitudes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T14:27:00Z'
-updated_date: '2026-11-04T14:17:00Z'
+updated_date: '2026-11-04T16:34:00Z'
 labels:
   - design-review
 dependencies: []
