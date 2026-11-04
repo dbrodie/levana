@@ -1,10 +1,11 @@
 ---
 id: TASK-64
 title: Fix the Play listing upload and decouple the reproducibility check from it
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-03T22:55:00Z'
-updated_date: '2026-11-04T13:45:00Z'
+updated_date: '2026-11-04T13:49:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -30,6 +31,22 @@ Keep the security model: secrets only in the release environment, which only `v*
 - [ ] #2 A documented local script uploads the en-US listing with fastlane supply: dry-run by default, explicit confirmed upload, credentials from a path outside the repo, fastlane pinned, the production-track release lookup fixed per current docs
 - [ ] #3 No real listing upload performed in this task; the first upload is discussed with the owner afterwards
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. release.yml: delete the store-listing job; build-release unchanged (changelog -> GitHub notes + Play What's new). verify-release.yml already gates on the Release run's conclusion == success, which now reflects only build-release; update its comment.
+2. scripts/upload-store-listing.sh wrapping fastlane supply 2.241.2 (latest; supply/uploader.rb identical on master):
+   - Root cause (read from supply source): perform_upload_meta always calls fetch_track_and_release!(track, version_code) when any metadata/images upload is on, even with skip_upload_changelogs; there is no metadata-only mode that skips it. Fix: --track internal + --version_code of a release on that track (default: code of the newest vX.Y.Z tag, overridable).
+   - Stage only en-US minus changelogs in a temp dir; skip APK/AAB/changelogs; sync_image_upload.
+   - Dry run (validate_only) by default; --upload requires a typed confirmation from the terminal and a committed listing.
+   - Credentials: PLAY_SERVICE_ACCOUNT_JSON_PATH (file outside the repo), passed as json_key path; never read or printed.
+   - Pin: exact fastlane version invoked via RubyGems version selector (fastlane _2.241.2_); fastlane needs Ruby >= 3.2. No Gemfile (a lockfile can't be produced here: system Ruby is 2.6).
+   - Local summary: files, length limits, diff since store-listing-published.
+3. store-listing-published tag: keep as the record of the last uploaded listing; the script shows the diff since it and prints the commands to move it after a successful upload. No tag changes in this task.
+4. Docs: specs/STORE_LISTING.md, specs/rfes/release-process.md, others mentioning the job.
+5. Verify: actionlint, shellcheck, run script without credentials (help, bad args, missing creds).
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

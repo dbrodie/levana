@@ -69,22 +69,29 @@ but not sent to Play.
 
 ### Store listing upload
 
-After the build, the `store-listing` job uploads the Play listing (text and images from
-`fastlane/metadata/android/en-US/`) with fastlane `supply`. It skips the AAB, the APK and
-the changelogs. It runs only when the listing changed since the commit tagged
-`store-listing-published`, the last successful upload. Changes under `changelogs/` don't
-count. After uploading, it moves that tag to the released commit. Without the tag the job
-does nothing, so the first upload is armed by hand once the owner has approved the listing:
+Releases never touch the Play listing; the Release workflow uploads only the AAB and its
+"What's new". The owner uploads the listing (text and images from
+`fastlane/metadata/android/en-US/`, not the changelogs) by hand from a checkout of `master`:
 
 ```bash
-git tag store-listing-published <a commit before the approved listing>   # e.g. v0.4.3
-git push origin store-listing-published
+PLAY_SERVICE_ACCOUNT_JSON_PATH=~/secrets/levana-play.json scripts/upload-store-listing.sh           # dry run
+PLAY_SERVICE_ACCOUNT_JSON_PATH=~/secrets/levana-play.json scripts/upload-store-listing.sh --upload  # publish
 ```
 
-The job uses the `PLAY_SERVICE_ACCOUNT_JSON` secret. The service account needs permission to
-edit the store listing (TASK-58). A failure here doesn't affect the APK, the GitHub release
-or the AAB upload. Fix the cause and re-run the job; the listing is uploaded on the next
-tag otherwise.
+The script wraps fastlane `supply` (pinned version, Ruby >= 3.2, `gem install fastlane -v <version>`;
+see the script). The default is a dry run: Google Play validates the edit and nothing is
+published. `--upload` asks for a typed confirmation and refuses uncommitted listing changes.
+The service-account JSON key stays outside the repo; the account needs permission to edit the
+store listing (TASK-58).
+
+supply looks up a release on a track even when it uploads only the listing, so the script
+passes the `internal` track and the newest release tag's versionCode (`--version-code`
+overrides it). Without them supply defaults to `production`, which has no release, and fails
+with "Could not find release for version code ''" (v0.4.4).
+
+The tag `store-listing-published` marks the commit of the last uploaded listing. The script
+shows what changed since it, and after a successful upload prints the commands to move it.
+A pending listing change is therefore `git diff store-listing-published -- fastlane/metadata/android/en-US`.
 
 ## Reproducible Build Check
 
@@ -109,14 +116,15 @@ manual verification and key backup: `docs/fdroid/README.md`.
 F-Droid reads from the tagged source: `title.txt` (≤ 50 chars), `short_description.txt`
 (≤ 80), `full_description.txt` (≤ 4000), `images/icon.png`, `images/featureGraphic.png`,
 `images/phoneScreenshots/` and `changelogs/`. English only. It is the single source
-for both stores: Play's listing is uploaded from it (see above). What the screenshots show,
+for both stores: Play's listing is uploaded from it by hand (see above). What the screenshots show,
 how to regenerate them and the approval rules are in `specs/STORE_LISTING.md`.
 
 ## Files Changed
 
 - `app/build.gradle.kts` — version from env vars; release signing config
 - `.gitignore` — ignore `keystore.properties` and `*.keystore`
-- `.github/workflows/release.yml` — CI workflow (changelog and certificate checks, Play "What's new", store listing upload)
+- `.github/workflows/release.yml` — CI workflow (changelog and certificate checks, Play "What's new")
+- `scripts/upload-store-listing.sh` — manual Play listing upload
 - `.github/workflows/verify-release.yml` — secret-free reproducible-build check
 - `docs/fdroid/README.md` — reproducible build, manual verification, key backup
 - `fastlane/metadata/android/en-US/` — store metadata and per-version changelogs
