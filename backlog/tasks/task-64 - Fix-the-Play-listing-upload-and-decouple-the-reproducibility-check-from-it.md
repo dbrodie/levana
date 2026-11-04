@@ -4,6 +4,7 @@ title: Fix the Play listing upload and decouple the reproducibility check from i
 status: To Do
 assignee: []
 created_date: '2026-11-03T22:55:00Z'
+updated_date: '2026-11-04T10:16:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -29,3 +30,9 @@ Keep the security model: secrets only in the release environment, which only `v*
 - [ ] #2 verify-release runs whenever the APK release job succeeded, even if the listing upload fails; a listing failure is visible
 - [ ] #3 The listing can be uploaded or retried on demand without a new release, within the release environment's protections (documented)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decision 2026-11-04: CI keeps uploading releases to the internal track only. Promotion to closed and, later, production is done manually in Play Console; no promote job. Note: the store listing (text, screenshots, feature graphic) is app-wide, not per track, so the listing upload doesn't need to follow promotion. Release notes ('What's new') travel with the release when it's promoted in the Console. The SUPPLY_TRACK/VERSION_CODE setting in this task only satisfies fastlane's release lookup.
+<!-- SECTION:NOTES:END -->
