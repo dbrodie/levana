@@ -4,6 +4,7 @@
     <string name="design_active_city">ACTIVE CITY</string>
     <string name="design_switch_city">Switch city</string>
     <string name="design_manage_cities">Manage cities</string>
+    <string name="city_incalculable_times">Some times can’t be calculated at this location on some days</string>
     <string name="design_halachic_times">Halachic times</string>
     <string name="design_developer_settings">Developer settings</string>
     <string name="design_about">About</string>

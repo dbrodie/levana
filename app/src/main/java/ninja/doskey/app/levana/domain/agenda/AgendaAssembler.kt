@@ -10,6 +10,7 @@ import ninja.doskey.app.levana.domain.model.DayInfo
 import ninja.doskey.app.levana.domain.model.EventOccurrence
 import ninja.doskey.app.levana.domain.model.ShabbatInfo
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
+import java.time.LocalTime
 
 /**
  * Builds one agenda day from what the day panel already reads for that day: its [DayInfo],
@@ -31,12 +32,14 @@ object AgendaAssembler {
             dayInfo.holidays.forEach { holiday ->
                 add(AgendaItem.HolidayItem(holiday, roshChodeshOf(dayInfo.hebrewDay).takeIf { holiday == ROSH_CHODESH }))
             }
-            shabbatInfo.candleLightingTime?.let { add(AgendaItem.CandleLighting(it)) }
+            // Kept with a missing time when it can't be computed (high latitudes)
+            if (shabbatInfo.showCandleLighting) add(AgendaItem.CandleLighting(shabbatInfo.candleLightingTime))
             val havdalah = shabbatInfo.havdalahTime
             val parsha = dayInfo.parsha
             if (parsha != null) {
-                add(AgendaItem.Shabbat(parsha, dayInfo.parshaHebrew, dayInfo.specialShabbat, havdalah, dayInfo.molad))
-            } else if (havdalah != null) {
+                add(AgendaItem.Shabbat(parsha, dayInfo.parshaHebrew, dayInfo.specialShabbat, havdalah, dayInfo.molad,
+                    hasHavdalah = shabbatInfo.showHavdalah))
+            } else if (shabbatInfo.showHavdalah) {
                 add(AgendaItem.Havdalah(havdalah))
             }
             events.forEach { add(AgendaItem.PersonalEventItem(it.event, it.label)) }
@@ -52,17 +55,21 @@ object AgendaAssembler {
 
     /**
      * All-day entries first (holidays, Shabbat, yahrzeits, birthdays, events, all-day device
-     * events), then timed entries by time; ties by kind, then title. The holiday order of the
-     * day (Yom Tov before Rosh Chodesh) is kept.
+     * events), then timed entries by time, with a candle lighting or havdalah whose time
+     * can't be computed last; ties by kind, then title. The holiday order of the day (Yom Tov
+     * before Rosh Chodesh) is kept.
      */
     fun order(items: List<AgendaItem>): List<AgendaItem> =
         items.withIndex().sortedWith(
-            compareBy<IndexedValue<AgendaItem>> { it.value.time != null }
-                .thenBy { it.value.time }
+            compareBy<IndexedValue<AgendaItem>> { isTimed(it.value) }
+                .thenBy { it.value.time ?: LocalTime.MAX }
                 .thenBy { rank(it.value) }
                 .thenBy(String.CASE_INSENSITIVE_ORDER) { title(it.value) }
                 .thenBy { it.index }
         ).map { it.value }
+
+    private fun isTimed(item: AgendaItem): Boolean =
+        item.time != null || item is AgendaItem.CandleLighting || item is AgendaItem.Havdalah
 
     private val ROSH_CHODESH = HolidayMapper.mapHoliday(JewishCalendar.ROSH_CHODESH)
 

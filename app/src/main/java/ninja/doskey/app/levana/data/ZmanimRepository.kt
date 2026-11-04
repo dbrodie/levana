@@ -44,8 +44,9 @@ class ZmanimRepository {
             location
         )
 
-        val havdalahTime = if (isHolyToday && !isHolyTomorrow) {
-            getTzaitTime(date, location)
+        val hasHavdalah = isHolyToday && !isHolyTomorrow
+        val havdalahTime = if (hasHavdalah) {
+            havdalah(date, location, inIsrael)?.let { toLocalTime(it, location) }
         } else {
             null
         }
@@ -56,7 +57,9 @@ class ZmanimRepository {
             isErevShabbat = date.dayOfWeek == DayOfWeek.FRIDAY,
             isShabbat = isShabbat,
             isErevYomTov = tomorrow.isYomTovAssurBemelacha,
-            isYomTov = isYomTov
+            isYomTov = isYomTov,
+            hasCandleLighting = isHolyTomorrow,
+            hasHavdalah = hasHavdalah
         )
     }
 
@@ -92,13 +95,33 @@ class ZmanimRepository {
         !isHolyTomorrow -> null
         // Lighting on Shabbat, or from Yom Tov into Yom Tov, waits for nightfall
         isHolyToday && date.plusDays(1).dayOfWeek != DayOfWeek.SATURDAY ->
-            createCalendar(date, location).tzais
+            nightfallAfterSunset(createCalendar(date, location))
         else -> {
             val czc = createCalendar(date, location)
             czc.candleLightingOffset = candleLightingOffset
             czc.candleLighting
         }
     }
+
+    /**
+     * Havdalah on the evening of [lastDay], the last of consecutive holy days. Null when it
+     * can't be computed: no nightfall after sunset that day (white nights, polar day/night),
+     * or no sunset on the evening the holy days began (polar), when candle lighting is missing
+     * too. In the polar night the sun still crosses 8.5° below the horizon around midday;
+     * that crossing is never taken as havdalah.
+     */
+    private fun havdalah(lastDay: LocalDate, location: Location, inIsrael: Boolean): Date? {
+        var lightingDay = lastDay.minusDays(1)
+        while (createJewishCalendar(lightingDay, inIsrael).isAssurBemelacha) {
+            lightingDay = lightingDay.minusDays(1)
+        }
+        if (createCalendar(lightingDay, location).seaLevelSunset == null) return null
+        return nightfallAfterSunset(createCalendar(lastDay, location))
+    }
+
+    /** Nightfall (8.5°) only on a day with a sunset; never the polar night's midday crossing. */
+    private fun nightfallAfterSunset(czc: ComplexZmanimCalendar): Date? =
+        if (czc.seaLevelSunset == null) null else czc.tzais
 
     /**
      * When the holy days that begin on the evening of [date] end: the havdalah of the last
@@ -122,7 +145,7 @@ class ZmanimRepository {
             day = day.plusDays(1)
             jc = next
         }
-        val havdalah = getTzaitInstant(day, location)?.atZone(ZoneId.of(location.timezoneId))
+        val havdalah = havdalah(day, location, inIsrael)?.toInstant()?.atZone(ZoneId.of(location.timezoneId))
         return ObservanceEnd(
             date = havdalah?.toLocalDate() ?: day,
             time = havdalah?.toLocalTime(),
@@ -277,6 +300,20 @@ class ZmanimRepository {
         val NIGHTFALL = ZmanName("Nightfall", "צאת הכוכבים")
         val HAVDALAH = ZmanName("Havdalah", "הבדלה")
         val CHATZOT_HALAYLAH = ZmanName("Chatzot HaLaylah", "חצות הלילה")
+
+        /**
+         * Latitude beyond which some day of the year has no sunrise, sunset, candle lighting or
+         * nightfall: the sun's lowest point at the summer solstice, |latitude| + 23.44° − 90°,
+         * stays above the 8.5° nightfall depression (≈ 58.06°), and from ≈ 65.7° there are
+         * days without sunrise or sunset. Below it only the deeper Alot (16.1°) and
+         * Misheyakir (11°) can be missing, which isn't flagged. Validated against a full-year
+         * calculation in ZmanimHighLatitudeTest.
+         */
+        const val INCALCULABLE_TIMES_LATITUDE = 90.0 - 8.5 - 23.44
+
+        /** Whether some times can't be calculated at [latitude] on some days of the year. */
+        fun hasIncalculableTimes(latitude: Double): Boolean =
+            kotlin.math.abs(latitude) > INCALCULABLE_TIMES_LATITUDE
 
         /**
          * Every zman name, in display order. The single source for zman names: the zmanim

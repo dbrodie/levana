@@ -7,6 +7,9 @@ import java.util.Locale
 private val TIME_12H = DateTimeFormatter.ofPattern("h:mm a")
 private val TIME_24H = DateTimeFormatter.ofPattern("HH:mm")
 
+/** Shown wherever a time can't be computed (e.g. no nightfall in a white night), on every screen and widget. */
+const val MISSING_TIME = "--:--"
+
 private const val FIRST_STRONG_ISOLATE = '\u2068'
 private const val POP_DIRECTIONAL_ISOLATE = '\u2069'
 
