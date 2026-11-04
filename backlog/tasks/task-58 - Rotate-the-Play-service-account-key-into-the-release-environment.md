@@ -4,7 +4,7 @@ title: Rotate the Play service-account key into the release environment
 status: To Do
 assignee: []
 created_date: '2026-11-01T14:36:00Z'
-updated_date: '2026-11-03T10:42:00Z'
+updated_date: '2026-11-04T13:52:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -42,4 +42,6 @@ Also confirm the service account has only the Play permissions the upload needs 
 - **For now, both use the existing repo-level `PLAY_SERVICE_ACCOUNT_JSON`.** The rotation is not a prerequisite.
 - When rotating: in addition to releasing to testing tracks, the service account needs permission to **edit the store listing** (Play Console → Users and permissions → the service account → app permissions, the store-presence/listing permission). Otherwise the listing job fails while the AAB upload still succeeds. If the current account lacks it, the first listing upload after TASK-55 will show it; grant it then.
 - When the secret moves to the `release` environment, the listing job must run in that environment too (it runs in release.yml on tags, so `environment: release` works).
+
+2026-11-04: TASK-64 removed the CI store-listing job. The Play listing is now uploaded by hand with scripts/upload-store-listing.sh, which reads a local key via PLAY_SERVICE_ACCOUNT_JSON_PATH. The new service-account key is needed both locally (for that script) and as the PLAY_SERVICE_ACCOUNT_JSON secret (for the release AAB upload).
 <!-- SECTION:NOTES:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-64
 title: Fix the Play listing upload and decouple the reproducibility check from it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-03T22:55:00Z'
-updated_date: '2026-11-04T13:51:00Z'
+updated_date: '2026-11-04T13:52:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -83,4 +83,6 @@ Owner decision 2026-11-04: CI keeps uploading releases to the internal track onl
 - Script without credentials: --help (rc 0); unknown arg, --version-code without value, non-numeric code: usage/error, rc 1. No PLAY_SERVICE_ACCOUNT_JSON_PATH: local summary (versionCode 404, 18 files changed since store-listing-published) then the helpful error, rc 1. Nonexistent path, key inside the repo, fastlane not installed: each a clear error.
 - With stub gem/fastlane on PATH (no network): dry run passes SUPPLY_TRACK=internal, VERSION_CODE=404, VALIDATE_ONLY=true, skip APK/AAB/changelogs, staged dir has only en-US with txt + images. --upload via expect: answer 'nope' -> 'not confirmed', rc 1; 'upload' -> VALIDATE_ONLY=false, prints the tag commands.
 - **Limitations:** no real supply run (no fastlane/Ruby 3.2 here, no local key; real upload forbidden). The release lookup fix is verified against the source, not against Play; the owner's first dry run is the real check. Assumes the internal track's current release has the newest tag's versionCode (true while every tag uploads to internal); otherwise pass --version-code.
+
+Coordinator: merged to master (merge commit e40d9ae) and pushed. actionlint and shellcheck are clean. A credential-less run of the script shows the local summary (versionCode 404 on internal; listing changed since store-listing-published = 39e1fb8) and then the missing-key error. No real upload yet; the first upload will be discussed with the owner.
 <!-- SECTION:NOTES:END -->
