@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-02T14:27:00Z'
-updated_date: '2026-11-03T22:59:00Z'
+updated_date: '2026-11-04T13:38:00Z'
 labels:
   - design-review
 dependencies: []
@@ -19,20 +19,30 @@ ordinal: 101000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Found in TASK-57.23 (ST1 'zmanim unavailable'). No crash or ANR anywhere at high latitude, but the missing times are unexplained:
-- St. Petersburg (59.9°N), 21 Jun 2027: Nightfall shows '--:--' in the day sheet; Alot HaShachar and Misheyakir show '—' in More halachic times (two different placeholders). Evidence: /Users/daniel/.paseo/evidence/task-57.23/25-stpete-june21-zmanim.png, /Users/daniel/.paseo/evidence/task-57.23/26-stpete-june21-more.png, Hebrew /Users/daniel/.paseo/evidence/task-57.23/79-he-stpete-june21-zmanim.png
-- Agenda, St. Petersburg late June: Shabbat cards have no Havdalah line at all (silently dropped). Evidence: /Users/daniel/.paseo/evidence/task-57.23/27-stpete-agenda-june.png
-- GPS at Longyearbyen (78.2°N), midnight sun (21 Jun 2027): sunrise, sunset, nightfall all '--:--', most of More halachic times '—'. Evidence: /Users/daniel/.paseo/evidence/task-57.23/29-longyearbyen-jun21-2027.png, /Users/daniel/.paseo/evidence/task-57.23/30-longyearbyen-june-more.png
-- Longyearbyen, polar night (Nov 2026): Fridays have no candle-lighting entry in Agenda (Month still shows a 'Candles' chip), no candle-lighting reminder is scheduled, widgets show 'Candle Lighting Fri —' and Sunrise/Sunset '—'. Evidence: /Users/daniel/.paseo/evidence/task-57.23/31-longyearbyen-agenda-nov2026.png, /Users/daniel/.paseo/evidence/task-57.23/40-home-widget.png, /Users/daniel/.paseo/evidence/task-57.23/41-home-widgets.png, /Users/daniel/.paseo/evidence/task-57.23/45-after-crash-relaunch.png
+At high latitudes some zmanim can't be computed: in white nights (e.g. St. Petersburg in June) the sun never reaches the depression for nightfall/havdalah (8.5°), Misheyakir (11°) or Alot (16.1°); in the polar day/night (e.g. Longyearbyen, Tromsø) there is no sunrise or sunset, so candle lighting and every sunrise/sunset-based time is missing. Today the app shows two different placeholders ("--:--" and "—"), silently drops Havdalah from the Agenda, and in the polar night shows a Havdalah around midday with no candle lighting. Research (2026-11-04, see Notes and /Users/daniel/.paseo/evidence/task-57.31/high-latitude-zmanim-research.md) found no halachic consensus and no product that substitutes a time.
 
-Needs: one placeholder, and a short explanation where a time is missing (e.g. 'Not reached today at this latitude') plus guidance for Shabbat times (which opinion to use is a halachic decision — see TASK-57.7). Design follow-up; the halachic fallback rules belong in TASK-57.7.
+Agreed design (owner, 2026-11-04) — deliberately minimal, this is an edge case affecting few users:
+- The app does not pick any halachic substitute (no solar-midnight fallback, no polar method). A time that can't be computed is shown as missing.
+- One placeholder everywhere: "--:--" (replace the "—" uses, e.g. ZmanimScreen, WidgetCommon.NO_TIME), in the day sheet, Zmanim screen, Agenda, widgets.
+- Don't drop lines: the Agenda/Shabbat card keeps its Candle lighting and Havdalah lines with "--:--" instead of omitting them.
+- Polar day/night correctness: when there is no sunset on the lighting day, candle lighting AND havdalah are both "--:--" (don't derive a midday havdalah from the 8.5° crossing). Reminders for a missing time are simply not scheduled (no crash).
+- One label, on the selected city: where the city is chosen/shown (drawer city card, and the Cities settings row), show a short note "Some times can't be calculated at this location on some days" (Hebrew equivalent). Show it when, for that city's coordinates, sunrise, sunset, candle lighting or nightfall/havdalah is missing on at least one day of the year (roughly 58°+ N/S: St. Petersburg, Helsinki, Stockholm, Oslo, Reykjavik, polar). Alot/Misheyakir-only gaps (London, Paris, Berlin in June) do not trigger the label; they just show "--:--".
+- No per-time explanations, banners, settings or new screens. Fixed-minute havdalah options belong to TASK-57.7.
+- Figma: add the city note to the drawer city card frame (light, dark, Hebrew) and use "--:--" in any frame that shows a missing time. Keep it to that.
+
+Original finding details (TASK-57.23 evidence):
+- St. Petersburg (59.9°N), 21 Jun 2027: Nightfall "--:--" in the day sheet; Alot HaShachar and Misheyakir "—" in More halachic times. Evidence: /Users/daniel/.paseo/evidence/task-57.23/25-stpete-june21-zmanim.png, 26-stpete-june21-more.png, 79-he-stpete-june21-zmanim.png
+- Agenda, St. Petersburg late June: Shabbat cards have no Havdalah line. Evidence: 27-stpete-agenda-june.png
+- Longyearbyen (78.2°N) midnight sun: sunrise, sunset, nightfall "--:--", most halachic times "—". Evidence: 29-longyearbyen-jun21-2027.png, 30-longyearbyen-june-more.png
+- Longyearbyen polar night (Nov 2026): no candle-lighting entry in Agenda, havdalah around midday, widgets "Candle Lighting Fri —". Evidence: 31-longyearbyen-agenda-nov2026.png, 40-home-widget.png, 41-home-widgets.png
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Missing zmanim use one consistent placeholder with an explanation the user can reach
-- [ ] #2 Agenda/Shabbat cards and widgets say when candle lighting or havdalah can't be computed instead of omitting them
-- [ ] #3 Design recorded before implementation
+- [ ] #1 Every time that can't be computed shows "--:--" (one placeholder) in the day sheet, Zmanim screen, Agenda and widgets
+- [ ] #2 Agenda/Shabbat cards keep the Candle lighting and Havdalah lines with "--:--" instead of dropping them; with no sunset (polar) both are "--:--" and no midday havdalah is shown
+- [ ] #3 The selected city shows "Some times can't be calculated at this location on some days" (English and Hebrew) in the drawer and Cities settings when sunrise, sunset, candle lighting or nightfall is missing on some day of the year, and not for cities where only Alot/Misheyakir are missing
+- [ ] #4 Unit tests pin St. Petersburg (white night), Longyearbyen (polar night and midnight sun) and London (no label); Figma drawer city card and placeholder updated
 <!-- AC:END -->
 
 ## Implementation Notes
