@@ -6,7 +6,7 @@ How Levana presents itself on Google Play, F-Droid and GitHub, and how that stay
 
 ## Store text
 
-`fastlane/metadata/android/en-US/` is the single source for both stores. Play's listing is uploaded from it, and F-Droid reads it from the tagged source. English only.
+`fastlane/metadata/android/en-US/` is the single source for both stores. Play's listing is uploaded from it by hand (`scripts/upload-store-listing.sh`), and F-Droid reads it from the tagged source. English only.
 
 | File | Play limit | F-Droid limit |
 |---|---|---|
@@ -80,4 +80,4 @@ It doesn't commit any `fastlane/` change.
 3. Asks the owner to approve the changelog, the before/after images and the text diff, in one message.
 4. Commits what was approved and restores the rest, then follows `specs/rfes/release-process.md` to tag.
 
-CI then puts the changelog in the GitHub release notes and Play "What's new". It uploads the listing to Play only if `fastlane/` (other than `changelogs/`) changed since the last upload; the tag `store-listing-published` marks that commit.
+CI then puts the changelog in the GitHub release notes and Play "What's new". It never uploads the listing. When the approved listing (anything under `en-US/` other than `changelogs/`) changed since the tag `store-listing-published`, the coordinator tells the owner, who uploads it with `scripts/upload-store-listing.sh` (dry run first, then `--upload`) and moves the tag; see `specs/rfes/release-process.md`, "Store listing upload".

@@ -29,7 +29,8 @@ env:
 jobs:
   verify:
     name: Rebuild and compare
-    # Only releases from a tag push; this workflow never reads secrets
+    # Only releases from a tag push; this workflow never reads secrets. The Release run has
+    # only the APK job (the Play listing is uploaded by hand), so its conclusion is that job's.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
