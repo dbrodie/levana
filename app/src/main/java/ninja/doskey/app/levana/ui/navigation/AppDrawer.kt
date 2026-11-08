@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.navigation
 
+import ninja.doskey.app.levana.ui.placeName
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -84,7 +85,7 @@ internal fun LevanaDrawerContent(
     onNavigateTopLevel: (route: Any) -> Unit,
 ) {
     // The drawer's selected-city picker; only the Zmanim screen and day panel use the city
-    val locationName = prefs.displayCity.name
+    val locationName = placeName(prefs.displayCity.name)
     val incalculableTimes = ZmanimRepository.hasIncalculableTimes(prefs.displayCity.latitude)
     val calendarNavItems = listOf(
         DrawerNavItem(stringResource(R.string.nav_month), Icons.Filled.CalendarViewMonth, CalendarRoute),
@@ -156,14 +157,14 @@ internal fun LevanaDrawerContent(
                         }
                     }
                     NavigationDrawerItem(
-                        label = { Text(prefs.currentLocation.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                        label = { Text(placeName(prefs.currentLocation.name), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                         icon = { Icon(Icons.Filled.GpsFixed, contentDescription = null) },
                         selected = prefs.savedLocations.none { it.id == prefs.activeLocationId },
                         onClick = { select(null) },
                     )
                     prefs.savedLocations.forEach { saved ->
                         NavigationDrawerItem(
-                            label = { Text(saved.location.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                            label = { Text(placeName(saved.location.name), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                             icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
                             selected = saved.id == prefs.activeLocationId,
                             onClick = { select(saved.id) },

@@ -32,7 +32,7 @@ class HebrewDateTextTest {
         val date = JewishDate(5787, JewishDate.CHESHVAN, 18)
         assertEquals("י״ח חשון תשפ״ז", HebrewDateText.hebrewDate(date))
         assertEquals("י״ח חשון תשפ״ז", HebrewDateText.date(date, hebrew = true))
-        assertEquals("18 Cheshvan, 5787", HebrewDateText.date(date, hebrew = false))
+        assertEquals("18 Cheshvan 5787", HebrewDateText.date(date, hebrew = false))
     }
 
     @Test

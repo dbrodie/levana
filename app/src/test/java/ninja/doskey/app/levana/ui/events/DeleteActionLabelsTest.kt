@@ -103,11 +103,11 @@ class DeleteActionLabelsTest {
 
         compose.onNodeWithContentDescription("Remove Hebrew birthday for Sarah").performClick()
         // Existing dialog wording is unchanged.
-        compose.onNodeWithText("Remove Birthday").assertExists()
+        compose.onNodeWithText("Remove birthday").assertExists()
         compose.onNodeWithText("Remove Hebrew birthday for Sarah?").assertExists()
         compose.onNodeWithText("Cancel").performClick()
         assertTrue(deleted.isEmpty())
-        compose.onAllNodes(hasText("Remove Birthday")).assertCountEquals(0)
+        compose.onAllNodes(hasText("Remove birthday")).assertCountEquals(0)
 
         compose.onNodeWithContentDescription("Remove Hebrew birthday for Sarah").performClick()
         compose.onNodeWithText("Remove").performClick()
@@ -153,7 +153,7 @@ class DeleteActionLabelsTest {
         showEvents()
 
         compose.onNodeWithContentDescription("Delete event 100% \"Siyum\" %1\$s").performClick()
-        compose.onNodeWithText("Delete Event").assertExists()
+        compose.onNodeWithText("Delete event").assertExists()
         compose.onNodeWithText("Delete \"100% \"Siyum\" %1\$s\"?").assertExists()
         compose.onNodeWithText("Cancel").performClick()
         assertTrue(deleted.isEmpty())

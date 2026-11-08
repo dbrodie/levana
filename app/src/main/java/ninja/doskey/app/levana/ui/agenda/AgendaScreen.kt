@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.agenda
 
+import ninja.doskey.app.levana.ui.placeName
 import android.content.Context
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
@@ -685,7 +686,7 @@ private fun cardContent(item: AgendaItem, otherClockCityName: String?, use24Hour
     fun time(t: LocalTime) = formatClockTime(t, clock24, hebrewUi)
     fun timeOrMissing(t: LocalTime?) = t?.let(::time) ?: MISSING_TIME
     // Candle lighting and havdalah are the selected city's; label its clock when it differs
-    val cityClock = otherClockCityName?.let { stringResource(R.string.zmanim_city_clock, it) }
+    val cityClock = otherClockCityName?.let { stringResource(R.string.zmanim_city_clock, placeName(it)) }
     fun describe(vararg parts: String?) = parts.filterNot { it.isNullOrBlank() }.joinToString(", ")
     return when (item) {
         is AgendaItem.HolidayItem -> {

@@ -28,7 +28,7 @@ internal fun SettingsGroup(label: String, content: @Composable () -> Unit) {
     ) {
         Column(Modifier.padding(vertical = 4.dp)) {
             Text(
-                text = label.uppercase(),
+                text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,

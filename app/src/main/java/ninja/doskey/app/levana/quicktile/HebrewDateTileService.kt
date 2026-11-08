@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.quicktile
 
-import android.app.LocaleManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
@@ -40,9 +39,8 @@ class HebrewDateTileService : TileService() {
             val today = deviceContext.today()
             val jc = JewishCalendar(GregorianCalendar(today.year, today.monthValue - 1, today.dayOfMonth))
 
-            val localeManager = getSystemService(LocaleManager::class.java)
-            val locales = localeManager.applicationLocales
-            val isHebrew = !locales.isEmpty && locales[0]?.language.let { it == "iw" || it == "he" }
+            // Effective resources include both an app override and the system-language fallback.
+            val isHebrew = resources.configuration.locales[0].language in setOf("he", "iw")
 
             val hebrewDate = HebrewDateText.date(jc, isHebrew)
 

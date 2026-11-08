@@ -82,7 +82,7 @@ class CurrentLocationZoneTest {
 
         // Ukiah's sunrise on 30 Oct is 7:38 AM on the California clock, not 4:38 PM (Jerusalem)
         val sunrise = ZmanimRepository().getZmanim(LocalDate.of(2026, 10, 30), prefs.displayCity)
-            .single { it.name == "Sunrise" }.time!!
+            .single { it.name == "Netz hachama" }.time!!
         assertEquals(7, sunrise.hour)
     }
 
@@ -102,7 +102,7 @@ class CurrentLocationZoneTest {
 
     @Test
     fun theTodayWidgetFollowsAZoneChangeToKiritimati() = runBlocking {
-        // TASK-9.2/9.3 evidence: the widget showed "Sunrise 7:38 AM" on the old California clock
+        // TASK-9.2/9.3 evidence: the widget showed "Netz hachama 7:38 AM" on the old California clock
         repository.updateCurrentLocation(ukiahInJerusalem.copy(timezoneId = la.id))
         setDeviceZone(kiritimati)
 
@@ -111,7 +111,7 @@ class CurrentLocationZoneTest {
 
         assertEquals(LocalDate.of(2026, 10, 30), snapshot.today)
         val next = snapshot.nextZman!!
-        assertEquals("Sunrise", next.name)
+        assertEquals("Netz hachama", next.name)
         assertEquals(kiritimati, next.at.zone)
         // Friday's 7:38 AM sunrise in California is Saturday 4:38 AM on the device clock
         assertEquals(LocalDate.of(2026, 10, 31), next.at.toLocalDate())

@@ -51,11 +51,11 @@ class SavedLocationDeleteLabelTest {
     fun deleteButtonsNameTheirLocationAndTargetIt() {
         show()
 
-        compose.onNodeWithContentDescription("Delete saved location Jerusalem").assert(isButton())
+        compose.onNodeWithContentDescription("Delete saved city Jerusalem").assert(isButton())
         compose.onAllNodesWithContentDescription("Delete").assertCountEquals(0)
-        compose.onAllNodes(hasText("Delete saved location Jerusalem")).assertCountEquals(0)
+        compose.onAllNodes(hasText("Delete saved city Jerusalem")).assertCountEquals(0)
 
-        compose.onNodeWithContentDescription("Delete saved location New York").performClick()
+        compose.onNodeWithContentDescription("Delete saved city New York").performClick()
         assertEquals(listOf("ny-id"), deleted)
     }
 
@@ -70,7 +70,7 @@ class SavedLocationDeleteLabelTest {
     @Config(qualifiers = "iw")
     fun hebrewLabel() {
         show()
-        compose.onNodeWithContentDescription("מחיקת המיקום השמור Jerusalem").assert(isButton()).performClick()
+        compose.onNodeWithContentDescription("מחיקת העיר השמורה ירושלים").assert(isButton()).performClick()
         assertEquals(listOf("jlm-id"), deleted)
     }
 

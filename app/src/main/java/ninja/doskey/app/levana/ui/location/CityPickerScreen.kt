@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.location
 
+import ninja.doskey.app.levana.ui.placeName
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,8 +97,8 @@ fun CityPickerScreen(
                         }
                     ) {
                         ListItem(
-                            headlineContent = { Text(city.name, style = MaterialTheme.typography.titleSmall) },
-                            supportingContent = { Text(city.country, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            headlineContent = { Text(placeName(city.name), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(placeName(city.country), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         )
                     }
                 }

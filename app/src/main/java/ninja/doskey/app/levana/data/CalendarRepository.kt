@@ -120,6 +120,7 @@ class CalendarRepository {
             parsha = parsha,
             parshaHebrew = parshaHebrew,
             specialShabbat = specialShabbat,
+            specialShabbatHebrew = specialShabbat?.let { "שבת ${HebrewDateText.specialParsha(jewishCalendar)}" },
             molad = molad,
             omerDay = omerDay
         )

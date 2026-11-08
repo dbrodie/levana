@@ -3,7 +3,7 @@
     <string name="nav_month">Month</string>
     <string name="nav_agenda">Agenda</string>
     <string name="agenda_search">Search</string>
-    <string name="agenda_search_hint">Search events, holidays, parashot</string>
+    <string name="agenda_search_hint">Search events, holidays, Torah readings</string>
     <string name="agenda_search_close">Close search</string>
     <string name="agenda_search_clear">Clear search</string>
     <string name="agenda_search_prompt">Searches the past and next 12 months</string>

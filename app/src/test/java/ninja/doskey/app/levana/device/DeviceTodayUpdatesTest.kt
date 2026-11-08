@@ -87,7 +87,7 @@ class DeviceTodayUpdatesTest {
     @Test
     fun unchangedDatesAreNotRepeated() = collect { seen ->
         signals.emit(Unit)
-        prefs.value = prefs.value.copy(selectedZmanim = setOf("Sunrise"))
+        prefs.value = prefs.value.copy(selectedZmanim = setOf("Netz hachama"))
         kotlinx.coroutines.delay(200)
         assertEquals(listOf(day), seen)
     }

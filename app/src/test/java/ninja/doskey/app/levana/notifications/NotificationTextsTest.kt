@@ -67,18 +67,18 @@ class NotificationTextsTest {
     @Test
     fun candleLightingEnglish() {
         val withEnd = candleLightingNotificationText(english(), friday, candles, shabbatEnd)
-        assertEquals("Candle Lighting", withEnd.title)
-        assertEquals("Candle Lighting at 6:06 PM · Shabbat ends 7:12 PM", withEnd.body)
+        assertEquals("Candle lighting", withEnd.title)
+        assertEquals("Candle lighting at 6:06 PM · Shabbat ends 7:12 PM", withEnd.body)
         assertEquals(
-            "Candle Lighting at 6:06 PM",
+            "Candle lighting at 6:06 PM",
             candleLightingNotificationText(english(), friday, candles, null).body
         )
         assertEquals(
-            "Candle Lighting at 6:06 PM · Yom Tov ends 7:12 PM",
+            "Candle lighting at 6:06 PM · Yom Tov ends 7:12 PM",
             candleLightingNotificationText(english(), friday, candles, yomTovEndNextDay).body
         )
         assertEquals(
-            "Candle Lighting at 6:06 PM · Yom Tov ends Sunday 7:12 PM",
+            "Candle lighting at 6:06 PM · Yom Tov ends Sunday 7:12 PM",
             candleLightingNotificationText(english(), friday, candles, yomTovEndSunday).body
         )
     }
@@ -122,7 +122,7 @@ class NotificationTextsTest {
     @Test
     fun fastEnglish() {
         val text = fastNotificationText(english(), gedaliah, LocalTime.of(5, 2), havdalah)
-        assertEquals("Fast Day", text.title)
+        assertEquals("Fast day", text.title)
         assertEquals("Tzom Gedaliah · Begins 5:02 AM · Ends 7:12 PM", text.body)
         assertEquals("Tzom Gedaliah", fastNotificationText(english(), gedaliah, null, null).body)
     }
@@ -140,7 +140,7 @@ class NotificationTextsTest {
         val delayed = OccurrenceLabel.DelayedFrom30(HebrewMonth.CHESHVAN)
         val en = english()
         val enText = personalEventNotificationText(en, occurrenceTitle(en, "Anniversary", delayed))
-        assertEquals("Personal Event", enText.title)
+        assertEquals("Personal event", enText.title)
         assertEquals("Today is Anniversary (delayed from 30 Cheshvan)", enText.body)
 
         val iw = hebrew()
@@ -152,7 +152,7 @@ class NotificationTextsTest {
     @Test
     fun omerEnglish() {
         val context = english()
-        assertEquals("Sefirat HaOmer", omerNotificationText(context, 5, tonight = true).title)
+        assertEquals("Sefirat haomer", omerNotificationText(context, 5, tonight = true).title)
         assertEquals("Tonight is day 5 of the Omer", omerNotificationText(context, 5, true).body)
         assertEquals("Tonight is day 7 of the Omer (1 week)", omerNotificationText(context, 7, true).body)
         assertEquals(
@@ -186,7 +186,7 @@ class NotificationTextsTest {
     @Test
     fun updateNotice() {
         val en = updateAvailableNotificationText(english(), "1.4.0")
-        assertEquals("Update Available", en.title)
+        assertEquals("Update available", en.title)
         assertEquals("Levana v1.4.0 is available — tap to download", en.body)
 
         val iw = updateAvailableNotificationText(hebrew(), "1.4.0")
@@ -200,10 +200,10 @@ class NotificationTextsTest {
 
         NotificationChannels.createAll(app)
         val en = manager.getNotificationChannel(NotificationChannels.CANDLE_LIGHTING)
-        assertEquals("Candle Lighting", en.name)
+        assertEquals("Candle lighting", en.name)
         assertEquals("Candle lighting time reminders", en.description)
         assertEquals(
-            "App Updates",
+            "App updates",
             manager.getNotificationChannel(NotificationChannels.UPDATE_AVAILABLE).name
         )
 

@@ -36,7 +36,7 @@ class TodayWidgetSnapshotsTest {
     fun `next zman is the next selected time later today`() {
         val today = LocalDate.of(2026, 10, 29)
         val next = snapshots.nextZman(jerusalem, jerusalem.currentLocation, today, at(today, "12:00", jerusalem))
-        assertEquals("Sunset", next?.name)
+        assertEquals("Shkia", next?.name)
         assertEquals(today, next?.at?.toLocalDate())
     }
 
@@ -44,7 +44,7 @@ class TodayWidgetSnapshotsTest {
     fun `next zman rolls to tomorrow's first selected time after the last one passes`() {
         val today = LocalDate.of(2026, 10, 29)
         val next = snapshots.nextZman(jerusalem, jerusalem.currentLocation, today, at(today, "23:00", jerusalem))
-        assertEquals("Sunrise", next?.name)
+        assertEquals("Netz hachama", next?.name)
         assertEquals(today.plusDays(1), next?.at?.toLocalDate())
     }
 
@@ -58,7 +58,7 @@ class TodayWidgetSnapshotsTest {
     @Test
     fun `no next zman when the selected zman does not occur at high latitude`() {
         val today = LocalDate.of(2026, 6, 21)
-        val prefs = tromso.copy(selectedZmanim = setOf("Sunset"))
+        val prefs = tromso.copy(selectedZmanim = setOf("Shkia"))
         assertNull(snapshots.nextZman(prefs, prefs.currentLocation, today, at(today, "12:00", prefs)))
     }
 

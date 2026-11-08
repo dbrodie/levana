@@ -50,7 +50,7 @@ class CalendarHeaderFormatterTest {
         // Regular year: plain Adar
         val march2026 = repository.getMonthDays(YearMonth.of(2026, 3))
         assertEquals(
-            "Adar–Nissan 5786",
+            "Adar–Nisan 5786",
             CalendarHeaderFormatter.hebrewMonthRange(march2026, english)
         )
     }

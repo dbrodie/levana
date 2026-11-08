@@ -25,7 +25,7 @@ class SettingsScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         preferences.saveNotifyOmerMorning(true)
     }
 
-    private fun group(id: Int) = node(string(id).uppercase())
+    private fun group(id: Int) = node(string(id))
 
     @Test
     fun main() {
@@ -79,7 +79,7 @@ class SettingsScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
     fun developer() {
         openSettings()
         clickable(string(R.string.settings_developer_settings)).performScrollTo().performClick()
-        awaitText("Date Override")
+        awaitText(string(R.string.dev_date_override))
         // Not captured: its date dialog is GoToDateDialog (ui.calendar, outside this split),
         // which never idles under Robolectric
         capture("settings_developer")
@@ -97,7 +97,7 @@ class SettingsScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
     fun locationsAndCityPicker() {
         openSettings()
         clickable(string(R.string.settings_location_label)).performClick()
-        awaitText(NEW_YORK.name)
+        awaitText(string(R.string.place_new_york))
         capture("settings_locations")
         clickable(string(R.string.location_add)).performClick()
         compose.waitForIdle()

@@ -11,22 +11,22 @@ import java.time.LocalDate
 class ZmanNamesTest {
 
     @Test
-    fun `Hebrew UI shows the Hebrew name first and English under it`() {
+    fun `Hebrew UI shows only the Hebrew name`() {
         assertEquals(
-            ZmanDisplayName("עלות השחר", "Alot HaShachar"),
-            zmanDisplayName("Alot HaShachar", "עלות השחר", hebrewUi = true)
+            ZmanDisplayName("עלות השחר", ""),
+            zmanDisplayName("Alot hashachar", "עלות השחר", hebrewUi = true)
         )
         assertEquals(
-            ZmanDisplayName("הדלקת נרות", "Candle Lighting"),
+            ZmanDisplayName("הדלקת נרות", ""),
             ZmanimRepository.CANDLE_LIGHTING.displayName(hebrewUi = true)
         )
     }
 
     @Test
-    fun `English UI is unchanged, English first and Hebrew under it`() {
+    fun `English UI shows transliteration with Hebrew under it`() {
         assertEquals(
-            ZmanDisplayName("Alot HaShachar", "עלות השחר"),
-            zmanDisplayName("Alot HaShachar", "עלות השחר", hebrewUi = false)
+            ZmanDisplayName("Alot hashachar", "עלות השחר"),
+            zmanDisplayName("Alot hashachar", "עלות השחר", hebrewUi = false)
         )
         assertEquals(
             ZmanDisplayName("Havdalah", "הבדלה"),
@@ -46,7 +46,7 @@ class ZmanNamesTest {
         assertEquals(names.toSet(), shown)
         assertEquals(names.map { it.first }.filter { it != "Havdalah" }, friday.map { it.name })
 
-        val zman = shabbat.first { it.name == "Sunrise" }
-        assertEquals(ZmanDisplayName("הנץ החמה", "Sunrise"), zman.displayName(hebrewUi = true))
+        val zman = shabbat.first { it.name == "Netz hachama" }
+        assertEquals(ZmanDisplayName("הנץ החמה", ""), zman.displayName(hebrewUi = true))
     }
 }

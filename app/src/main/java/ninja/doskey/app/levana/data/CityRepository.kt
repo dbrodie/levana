@@ -10,6 +10,11 @@ import kotlinx.serialization.json.Json
 class CityRepository(private val context: Context) {
 
     private val cities: List<Location> by lazy { loadCities() }
+    private val hebrewContext: Context by lazy {
+        val config = android.content.res.Configuration(context.resources.configuration)
+        config.setLocale(java.util.Locale.forLanguageTag("he"))
+        context.createConfigurationContext(config)
+    }
 
     fun getAllCities(): List<Location> = cities
 
@@ -18,7 +23,9 @@ class CityRepository(private val context: Context) {
         val lower = query.lowercase()
         return cities.filter { city ->
             city.name.lowercase().contains(lower) ||
-                city.country.lowercase().contains(lower)
+                city.country.lowercase().contains(lower) ||
+                PlaceNames.display(hebrewContext, city.name).contains(query) ||
+                PlaceNames.display(hebrewContext, city.country).contains(query)
         }
     }
 

@@ -35,7 +35,7 @@ class AlarmSettingsTest {
         set { it.copy(dynamicHolidayTheme = false) }
         set { it.copy(notifyHolidays = true, holidayNotifyDaysBefore = 3) }
         set { it.copy(notifyFasts = true, notifyPersonalEvents = true) }
-        set { it.copy(selectedZmanim = setOf("Sunrise")) }
+        set { it.copy(selectedZmanim = setOf("Netz hachama")) }
         assertEquals("unrelated changes", 0, rebuilds)
 
         set { it.copy(notifyCandleLighting = true) }

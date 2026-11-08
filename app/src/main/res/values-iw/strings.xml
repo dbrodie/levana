@@ -5,13 +5,13 @@
 
     <!-- Bottom navigation -->
     <string name="nav_calendar">לוח שנה</string>
-    <string name="nav_zmanim">זמנים</string>
+    <string name="nav_zmanim">זמני היום</string>
     <string name="nav_settings">הגדרות</string>
 
     <!-- Calendar -->
     <string name="previous_month">חודש קודם</string>
     <string name="next_month">חודש הבא</string>
-    <string name="show_zmanim">הצג זמנים</string>
+    <string name="show_zmanim">הצג זמני היום</string>
 
     <!-- Day detail -->
     <string name="holidays">חגים</string>
@@ -23,12 +23,12 @@
     <string name="havdalah_hebrew">הבדלה</string>
 
     <!-- Settings -->
-    <string name="settings_location">מיקום</string>
+    <string name="settings_location">ערים</string>
     <string name="settings_change">שנה</string>
     <string name="settings_israel_diaspora">ארץ ישראל / חו״ל</string>
     <string name="settings_israel_desc">משפיע על יום טוב שני ופרשיות</string>
     <string name="settings_in_israel">בארץ ישראל</string>
-    <string name="settings_modern_israeli">חגים ישראליים מודרניים</string>
+    <string name="settings_modern_israeli">מועדים לאומיים</string>
     <string name="settings_modern_israeli_desc">יום השואה, יום הזיכרון, יום העצמאות, יום ירושלים</string>
     <string name="settings_show_on_calendar">הצג בלוח השנה</string>
     <string name="settings_hebrew_primary">מצב עברי ראשי</string>
@@ -68,7 +68,7 @@
     <string name="widget_next_zman_none">הזמן הבא</string>
     <string name="widget_month_name">לבנה · חודש</string>
     <string name="widget_month_description">לוח חודש עברי עם חגים</string>
-    <string name="widget_zmanim_name">לבנה · זמנים</string>
+    <string name="widget_zmanim_name">לבנה · זמני היום</string>
     <string name="widget_zmanim_description">הזמנים הנבחרים של היום, והזמן הבא מודגש</string>
     <string name="widget_zmanim_empty">לא נבחרו זמנים</string>
     <string name="widget_zman_next">%1$s, %2$s, הבא</string>

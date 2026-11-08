@@ -86,14 +86,14 @@ private fun ZmanGroup(category: ZmanCategory, zmanim: List<ZmanTime>, use24Hour:
     val hebrewUi = LocalConfiguration.current.locales[0].language in setOf("he", "iw")
     Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-            Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 10.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 10.dp))
             zmanim.forEachIndexed { index, zman ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.fillMaxWidth().padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
                     val name = zman.displayName(hebrewUi)
                     Column(Modifier.weight(1f)) {
                         Text(name.primary, style = MaterialTheme.typography.bodyLarge)
-                        Text(name.secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (name.secondary.isNotEmpty()) Text(name.secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(zman.time?.let { formatClockTime(it, use24Hour, hebrewUi) } ?: MISSING_TIME, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

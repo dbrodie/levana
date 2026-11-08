@@ -68,7 +68,7 @@ class DailyCategorySettingsTest {
                 showDeveloperSettings = false,
                 dynamicHolidayTheme = false,
                 calendarHebrewMode = true,
-                selectedZmanim = setOf("Sunrise"),
+                selectedZmanim = setOf("Netz hachama"),
                 notifyCandleLighting = true,
                 candleLightingHoursBefore = 5,
                 notifyOmer = true,

@@ -153,7 +153,7 @@ class StoreScreenshotTest(private val shot: Shot) : ScreenshotTest(shot.variant)
                 launchCalendar()
                 openDrawer()
                 compose.onNodeWithContentDescription(string(R.string.design_switch_city)).performClick()
-                awaitText("London")
+                awaitText(string(R.string.place_london))
             }
         }
         val path = "$STORE_DIR/${shot.fileName}"

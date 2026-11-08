@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.widget
 
+import ninja.doskey.app.levana.data.PlaceNames
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -206,7 +207,7 @@ private fun DateBlock(
             val date = @Composable { Text(text = gregorian, maxLines = 1, style = secondaryStyle) }
             val location = @Composable {
                 Text(
-                    text = " · ${snapshot.locationName}",
+                    text = " · ${PlaceNames.display(LocalContext.current, snapshot.locationName)}",
                     maxLines = 1,
                     style = secondaryStyle.copy(textAlign = textAlign(mirror)),
                     modifier = GlanceModifier.defaultWeight(),

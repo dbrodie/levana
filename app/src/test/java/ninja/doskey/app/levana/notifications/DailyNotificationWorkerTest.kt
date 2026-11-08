@@ -226,7 +226,7 @@ class DailyNotificationWorkerTest {
             saveShowDeveloperSettings(false)
             saveDynamicHolidayTheme(false)
             saveCalendarHebrewMode(true)
-            saveSelectedZmanim(setOf("Sunrise"))
+            saveSelectedZmanim(setOf("Netz hachama"))
             saveNotifyCandleLighting(true)
             saveNotifyCandleLighting(false)
         }

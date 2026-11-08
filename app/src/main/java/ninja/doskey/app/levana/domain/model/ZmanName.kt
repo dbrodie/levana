@@ -11,9 +11,9 @@ data class ZmanName(val english: String, val hebrew: String)
 /** A zman name as shown: [primary] is the main line, [secondary] the smaller line under it. */
 data class ZmanDisplayName(val primary: String, val secondary: String)
 
-/** Hebrew first in Hebrew, English first otherwise. */
+/** Hebrew only in Hebrew UI; transliteration with Hebrew secondary otherwise. */
 fun zmanDisplayName(english: String, hebrew: String, hebrewUi: Boolean): ZmanDisplayName =
-    if (hebrewUi) ZmanDisplayName(hebrew, english) else ZmanDisplayName(english, hebrew)
+    if (hebrewUi) ZmanDisplayName(hebrew, "") else ZmanDisplayName(english, hebrew)
 
 fun ZmanName.displayName(hebrewUi: Boolean): ZmanDisplayName =
     zmanDisplayName(english, hebrew, hebrewUi)

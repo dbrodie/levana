@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="design_my_events">האירועים שלי</string>
-    <string name="design_active_city">עיר פעילה</string>
+    <string name="design_active_city">העיר הנבחרת</string>
     <string name="design_switch_city">החלפת עיר</string>
     <string name="design_manage_cities">ניהול ערים</string>
     <string name="city_incalculable_times">בחלק מהימים לא ניתן לחשב חלק מהזמנים במיקום זה</string>

@@ -25,19 +25,19 @@ class ZmanimRepositoryTest {
 
         assertEquals(
             calendar.seaLevelSunrise.toLocalTime(location.timezoneId),
-            zmanim.single { it.name == "Sunrise" }.time
+            zmanim.single { it.name == "Netz hachama" }.time
         )
         assertEquals(
             calendar.seaLevelSunset.toLocalTime(location.timezoneId),
-            zmanim.single { it.name == "Sunset" }.time
+            zmanim.single { it.name == "Shkia" }.time
         )
         assertNotEquals(
             calendar.sunrise.toLocalTime(location.timezoneId),
-            zmanim.single { it.name == "Sunrise" }.time
+            zmanim.single { it.name == "Netz hachama" }.time
         )
         assertNotEquals(
             calendar.sunset.toLocalTime(location.timezoneId),
-            zmanim.single { it.name == "Sunset" }.time
+            zmanim.single { it.name == "Shkia" }.time
         )
     }
 
@@ -89,10 +89,10 @@ class ZmanimRepositoryTest {
     @Test
     fun `a saved selection of the renamed Sof Zman Tefillah keeps the GRA opinion`() {
         assertEquals(
-            setOf("Sunrise", ZmanimRepository.SOF_ZMAN_TEFILLAH_GRA.english),
-            parseSelectedZmanim(setOf("Sunrise", "Sof Zman Tefillah"))
+            setOf("Netz hachama", ZmanimRepository.SOF_ZMAN_TEFILLAH_GRA.english),
+            parseSelectedZmanim(setOf("Netz hachama", "Sof Zman Tefillah"))
         )
-        assertEquals(setOf("Sunrise", "Sunset", "Nightfall"), parseSelectedZmanim(null))
+        assertEquals(setOf("Netz hachama", "Shkia", "Tzeit hakochavim"), parseSelectedZmanim(null))
     }
 
     private fun calendarFor(location: Location, date: LocalDate): ComplexZmanimCalendar {

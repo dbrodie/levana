@@ -108,12 +108,12 @@ class PostMidnightHavdalahTest {
     fun `wording names the civil day of a post-midnight end`() {
         val end = ObservanceEnd(LocalDate.of(2026, 7, 19), LocalTime.of(0, 13), false, lastDay = LocalDate.of(2026, 7, 18))
         val english = candleLightingNotificationText(app.withAppLocale(), friday, LocalTime.of(21, 40), end)
-        assertEquals("Candle Lighting at 9:40 PM · Shabbat ends Sunday 12:13 AM", english.body)
+        assertEquals("Candle lighting at 9:40 PM · Shabbat ends Sunday 12:13 AM", english.body)
 
         // Ordinary next-day end: time only
         val ordinary = ObservanceEnd(friday.plusDays(1), LocalTime.of(22, 50), false)
         assertEquals(
-            "Candle Lighting at 9:40 PM · Shabbat ends 10:50 PM",
+            "Candle lighting at 9:40 PM · Shabbat ends 10:50 PM",
             candleLightingNotificationText(app.withAppLocale(), friday, LocalTime.of(21, 40), ordinary).body
         )
 
@@ -165,7 +165,7 @@ class PostMidnightHavdalahTest {
         assertTrue(deliverIfEnabled(app, legacy, UserPreferences(notifyCandleLighting = true)))
         val body = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.single()
             .extras.getCharSequence("android.text").toString()
-        assertEquals("Candle Lighting at 9:40 PM · Shabbat ends 10:50 PM", body)
+        assertEquals("Candle lighting at 9:40 PM · Shabbat ends 10:50 PM", body)
     }
 
     private fun testRegistry() = ScheduledAlarmRegistry(testDataStore())

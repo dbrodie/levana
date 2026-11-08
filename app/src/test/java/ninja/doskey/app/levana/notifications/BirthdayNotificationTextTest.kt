@@ -33,13 +33,13 @@ class BirthdayNotificationTextTest {
     @Test
     fun englishUnchanged() {
         val plain = birthdayNotificationText(context, "Dani", null)
-        assertEquals("Personal Event", plain.title)
-        assertEquals("Today is Dani's Hebrew Birthday", plain.body)
+        assertEquals("Personal event", plain.title)
+        assertEquals("Today is Dani's Hebrew birthday", plain.body)
 
         val labelled = birthdayNotificationText(context, "Dani", delayed)
-        assertEquals("Personal Event", labelled.title)
-        assertEquals("Today is Dani's Hebrew Birthday (delayed from 30 Cheshvan)", labelled.body)
-        assertEquals("Dani's Hebrew Birthday (delayed from 30 Cheshvan)", labelled.eventTitle)
+        assertEquals("Personal event", labelled.title)
+        assertEquals("Today is Dani's Hebrew birthday (delayed from 30 Cheshvan)", labelled.body)
+        assertEquals("Dani's Hebrew birthday (delayed from 30 Cheshvan)", labelled.eventTitle)
     }
 
     @Test
@@ -69,7 +69,7 @@ class BirthdayNotificationTextTest {
     fun systemDefaultKeepsDeviceLanguage() {
         assertSame(context, context.withAppLocale())
         val text = birthdayNotificationText(context.withAppLocale(), "Dani", delayed)
-        assertEquals("Today is Dani's Hebrew Birthday (delayed from 30 Cheshvan)", text.body)
+        assertEquals("Today is Dani's Hebrew birthday (delayed from 30 Cheshvan)", text.body)
     }
 
     @Test
