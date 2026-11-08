@@ -1,6 +1,6 @@
 # F-Droid compliance report: Levana (`ninja.doskey.app.levana`)
 
-State on 2026-11-04, for the fdroiddata submission (TASK-53.6). The build and recipe are
+State on 2026-11-08, for the fdroiddata submission (TASK-53.6) of v0.4.4. The build and recipe are
 described in [README.md](README.md), and the recipe is [ninja.doskey.app.levana.yml](ninja.doskey.app.levana.yml).
 
 ## Summary
@@ -54,7 +54,7 @@ None apply. Checked against fdroiddata's `config/antiFeatures.yml`:
 |---|---|
 | Ads | none |
 | Tracking | none. There are no analytics. Crash reports use ACRA in dialog + email mode: after a crash, the app asks the user, and a report is only sent if the user confirms and sends the prepared email themselves. The report has the version, Android version, device model, crash date and stack trace; no logcat and no app data. |
-| NonFreeNet | none. The app works fully offline. The only network use is the update check below. |
+| NonFreeNet | none. The app works fully offline. It makes one network request itself, the update check below; the location name comes from the platform geocoder (below). |
 | NonFreeDep / NonFreeAdd / UpstreamNonFree | none. The same source and the same APK go to every channel. |
 | NonFreeAssets | none |
 | KnownVuln | none known |
@@ -71,6 +71,12 @@ service, and the check is not required for any feature, so we don't expect an an
 for it. Gap: other F-Droid clients (for example F-Droid Basic, `org.fdroid.basic`, or Droid-ify)
 aren't recognised yet, so those installs still run the GitHub check. TASK-63 tracks this.
 
+**Location name:** when the user picks *Current location*, the app asks the platform
+`android.location.Geocoder` for the place name (`ReverseGeocoder.kt`). The app opens no
+connection for this; the device's geocoding provider, if one is installed, does the lookup. If
+there is no provider, or no answer within 5 seconds, the app shows "Current Location". Zmanim
+only use the coordinates, so nothing depends on the lookup.
+
 **Permissions** (all used only on the device):
 - `ACCESS_FINE/COARSE_LOCATION` for zmanim at the current location;
 - `READ_CALENDAR` to show device calendar events;
@@ -80,37 +86,38 @@ aren't recognised yet, so those installs still run the GitHub check. TASK-63 tra
 
 ## Test results
 
-Run on 2026-11-03 (recipe checks repeated on 2026-11-04 after the TASK-55 merge) against a local fdroiddata checkout (master `80bcda3e`) with fdroidserver master
-`cdfdce83` (newer than the commit fdroiddata's CI pins, `a35fdfdd`, which is what that CI pulls
-forward to). Each job was run the way fdroiddata's `.gitlab-ci.yml` runs it.
+Recipe for v0.4.4 / 404, run on 2026-11-08 (TASK-53.6) against a fresh local fdroiddata checkout
+(master `bd34407b`) with fdroidserver master `cdfdce83` (fdroiddata's CI pins `a35fdfdd` and pulls
+forward to master, which was `cdfdce83`). Each job was run the way fdroiddata's `.gitlab-ci.yml`
+runs it.
 
 | Check | Result |
 |---|---|
 | `fdroid readmeta` | pass |
 | `fdroid rewritemeta` | pass, no changes |
 | `fdroid lint` | pass, no warnings |
+| `tools/rewrite-git-redirects.py` (*git redirect* job) | pass, no changes |
 | JSON schema (`check-jsonschema` with `schemas/metadata.json`) | pass |
-| `tools/check-keyalias-collision.py`, `check-metadata-summary-whitespace.py`, `check-for-unattached-signatures.py` | pass |
-| `fdroid checkupdates --auto`, with `fdroid-version.txt` for 0.4.3 | up to date, recipe unchanged |
-| `fdroid checkupdates --auto`, with `fdroid-version.txt` for a later 0.4.4 | adds the 0.4.4 / 404 build with `commit: v0.4.4` |
-| `fdroid checkupdates`, real URL | fails with HTTP 404: v0.4.3 has no `fdroid-version.txt` yet (see below) |
-| `fdroid build --test --refresh-scanner --on-server --no-tarball ninja.doskey.app.levana:403` | pass: *compared built binary to supplied reference binary successfully*; *supplied reference binary has allowed signer ab02841e…5117* |
-| `apksigcopier compare --unsigned` of `levana-v0.4.3.apk` against F-Droid's build | exit 0 |
+| `tools/check-exif-in-images.sh`, `check-localized-metadata.py`, `check-keyalias-collision.py`, `check-metadata-summary-whitespace.py`, `check-for-unattached-signatures.py`, `make-summary-translatable.py` | pass, no findings |
+| `fdroid checkupdates --auto`, real `fdroid-version.txt` URL | up to date at 0.4.4 / 404, recipe unchanged |
+| `fdroid build --test --refresh-scanner --on-server --no-tarball ninja.doskey.app.levana:404` | pass: *compared built binary to supplied reference binary successfully*; *supplied reference binary has allowed signer ab02841e…5117* |
+| `apksigcopier compare --unsigned` of `levana-v0.4.4.apk` against F-Droid's build | exit 0; both APKs `ninja.doskey.app.levana` 404 / 0.4.4 |
 
 The F-Droid build was made by OpenJDK 21.0.13 (Debian 13, as on F-Droid's buildserver). The
 GitHub APK was made by Temurin 17.0.21. The two match. The scanner found nothing apart from the
-Gradle wrapper jar, which it always deletes.
-
-The `checkupdates` runs with a given `fdroid-version.txt` replaced the download with the file's
-expected content, since the asset isn't published yet.
+Gradle wrapper jar, which it always deletes. v0.4.4 built without any `prebuild`, so the
+`findByName` fix works with F-Droid's signing-config removal.
 
 The build ran in an arm64 Debian 13 container set up like F-Droid's
 `buildserver-trixie` image, not in that amd64 image itself: under emulation on Apple silicon,
 Gradle was too slow to finish. The MR's GitLab CI pipeline will run the real image.
 
+The v0.4.3 recipe passed the same checks on 2026-11-03/04 (TASK-53.5), with a `prebuild` for the
+`getByName` signing config.
+
 ### Store metadata (`fastlane/metadata/android/en-US/`)
 
-The owner approved the listing in TASK-55 (2026-11-03). It was checked on 2026-11-04 against
+The owner approved the listing in TASK-55 (2026-11-03). The v0.4.4 tag's copy was checked on 2026-11-08 against
 fdroidserver's own reader (`fdroid update`'s `insert_localized_app_metadata`, with F-Droid's
 `char_limits`). Nothing is truncated:
 
@@ -119,7 +126,7 @@ fdroidserver's own reader (`fdroid update`'s `insert_localized_app_metadata`, wi
 | `title.txt` | 23 | 50 |
 | `short_description.txt` | 70 | 80 |
 | `full_description.txt` | 671 | 4000 |
-| `changelogs/401.txt`, `402.txt`, `403.txt` | 471, 360, 417 | 500 |
+| `changelogs/401.txt` … `404.txt` | 471, 360, 417, 432 | 500 |
 
 The images follow F-Droid's layout:
 - `images/icon.png`, 512×512;
@@ -129,15 +136,11 @@ The images follow F-Droid's layout:
 
 ## Remaining blockers and owner actions
 
-1. **Publish `fdroid-version.txt`** for the current release. Without it, F-Droid's update check
-   fails with HTTP 404. After this change is merged, either make a new release, or run
-   *Verify reproducible release* manually for `v0.4.3` (it uploads the file when it passes).
-2. **Submit with the first release that contains the `findByName` fix**, and drop the recipe's
-   `prebuild` line. v0.4.3 needs that line; see
-   [README.md](README.md#f-droid-removes-signing-configs-before-building). There is a second
-   reason: F-Droid shows the listing from `fastlane/` in the checkout of the built commit. The
-   v0.4.3 tag still has the draft text and screenshots from before TASK-55, while the next
-   tag will have the approved ones.
-3. **Submit the merge request** to https://gitlab.com/fdroid/fdroiddata (TASK-53.6, owner
-   authorization required). Its pipeline must pass `fdroid build` on the real buildserver image.
-4. Follow-up, not blocking: TASK-63 (update check with other F-Droid clients).
+1. **Submit the merge request** to https://gitlab.com/fdroid/fdroiddata (TASK-53.6, owner
+   authorization required): a GitLab account, a public fork, and the branch with
+   `metadata/ninja.doskey.app.levana.yml`. Its pipeline must pass `fdroid build` on the real
+   buildserver image. If a newer release exists by then, replace the build entry with it.
+2. Follow-up, not blocking: TASK-63 (update check with other F-Droid clients).
+
+`fdroid-version.txt` is published for v0.4.4, and v0.4.4 has both the `findByName` fix and the
+approved listing, so those earlier blockers are resolved.
