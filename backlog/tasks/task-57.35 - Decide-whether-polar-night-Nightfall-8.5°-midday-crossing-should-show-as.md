@@ -3,10 +3,11 @@ id: TASK-57.35
 title: >-
   Decide whether polar-night Nightfall (8.5° midday crossing) should show as
   --:--
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-04T14:16:00Z'
-updated_date: '2026-11-08T09:25:00Z'
+updated_date: '2026-11-08T09:26:00Z'
 labels:
   - design-review
 dependencies: []
@@ -33,3 +34,19 @@ Decision (owner, 2026-11-08): follow TASK-57.31's rule — the app picks no subs
 - [ ] #2 Fast end and the Omer nightfall reminder use no polar crossing: the fast end shows "--:--" and the reminder is not scheduled, without crashing
 - [ ] #3 Unit tests pin Longyearbyen polar night (Nov 2026) and midnight sun (Jun 2027), and St. Petersburg and Jerusalem are unchanged
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Consumers of tzais / alos / misheyakir (all go through ZmanimRepository; no other KosherJava calls in app/src/main):
+- getZmanim (Alot, Misheyakir, Nightfall rows) → DayDetailViewModel (day sheet rows + TZEIT quick card, DayDetailScreen:218), ZmanimViewModel (Zmanim screen), WidgetZmanim.selectedZmanimOn/nextSelectedZman → Today widget "Next: …" and Zmanim widget rows.
+- getTzaitTime (tests only), getTzaitInstant → ReminderAlarmPlan Omer nightfall reminder (previous evening + window).
+- getFastTimes (start = alos for minor fasts, end = tzais) → DailyNotificationWorker.handleFasts → fast notification (omits a null time).
+- nightfallAfterSunset (candle lighting at nightfall, havdalah) → getShabbatInfo / getCandleLightingInstant / getObservanceEnd → Agenda, widgets, candle/havdalah reminders (already null on no-sunset days via 57.31).
+
+Plan:
+1. ZmanimRepository: one private rule — a "polar day" is a date with no sea-level sunrise and/or no sea-level sunset; on it the depression-angle twilight times (alos 16.1°, misheyakir 11°, tzais 8.5°) are null. Private extension accessors alot/misheyakir/nightfall on ComplexZmanimCalendar used by getZmanim, getTzaitTime, getTzaitInstant, getFastTimes and the existing nightfallAfterSunset (replaced). Chatzot / Chatzot HaLaylah untouched. No solar-dip / isAssurBemlacha calls.
+2. No UI changes: screens/widgets already render null as MISSING_TIME; Omer planner skips a null tzait; fast notification omits null times.
+3. Tests (ZmanimHighLatitudeTest): Longyearbyen Sat 2026-11-21 polar night (Alot/Misheyakir/Nightfall null although KosherJava has crossings; Chatzot/Chatzot HaLaylah present; getTzaitTime/Instant null); midnight sun Jun 2027; Tromsø 10 Tevet 5787 (2026-12-20) fast start/end null; Omer nightfall reminder in the Antarctic polar night (McMurdo, May 2027) not scheduled, no crash; Today widget next zman skips Nightfall; St. Petersburg June and Jerusalem unchanged (white night/normal values still from KosherJava).
+4. Verify: assembleDebug testDebugUnitTest lintDebug verifyRoborazziDebug; emulator check (Longyearbyen GPS fix + date override) of day sheet, Zmanim screen, Agenda, Today widget, EN+HE; Jerusalem spot-check. Evidence in /Users/daniel/.paseo/evidence/task-57.35/.
+<!-- SECTION:PLAN:END -->
