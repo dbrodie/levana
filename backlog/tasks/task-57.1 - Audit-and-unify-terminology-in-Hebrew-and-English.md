@@ -1,11 +1,11 @@
 ---
 id: TASK-57.1
 title: Audit and unify terminology in Hebrew and English
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-08T15:50:00Z'
+updated_date: '2026-11-08T15:57:00Z'
 labels:
   - design-review
   - store-listing
@@ -69,10 +69,12 @@ Verification: required assembleDebug, testDebugUnitTest and lintDebug plus recor
 Tested commit: 7665f400cc32d1959b5981c2f55edb65308bd9b1. From worktree root with .env loaded in the same command, assembleDebug + testDebugUnitTest + lintDebug + verifyRoborazziDebug passed in 2m38s. 1254 tests, zero failures/errors, 8 opt-in tests skipped. Lint: zero errors, 83 warnings. Evidence: /tmp/levana-emu-v2943nak/artifacts/commit-verification.log, test-results/, lint-results-debug.txt; final-he-cities.png/xml confirms localized saved city and delete accessibility label; final-he-tile.png/xml and final-en-tile-verified.png/xml confirm Hebrew-letter and comma-free English dates. EN/HE light/dark time-screen captures are en-times, en-times-dark, he-times-light, he-times-dark. final-runtime-errors.log is empty. Owned emulator stopped. Limitations: no timed notification delivery or home-screen widget placement exercised manually (shared formatter/repository and notification/widget tests passed); system-default Hebrew tile fallback is code-reviewed, explicit HE/EN app languages checked on device. Existing layout, bidi/time-format follow-ups and current-location fallback behavior remain with dedicated tasks. No fastlane changes, merge, push or Done transition. This notes-only follow-up commit does not alter the tested implementation.
 
 Coordinator reviewed implementation, compatibility mapping, glossary and verification log; merged cleanly at cba5e0e. Added specs/LANGUAGE_RULES.md as concise policy and specs/SPELLINGS.md with canonical time, month, holiday and complete Torah-reading spellings and links to bilingual place-name inventory. Combined master checks underway; prior runtime evidence and limitations retained.
+
+Coordinator completion: reviewed and merged task plus concurrent origin/master changes; adjusted polar-time test fixture to canonical names. Tested commit d7dcefef232b8f4d4efea77856214e50cd13cc86: env-loaded assembleDebug, testDebugUnitTest, lintDebug and verifyRoborazziDebug PASS; 1260 tests, 0 failures/errors, 8 opt-in skips. Log /tmp/task-57.1-master-final-verification.log. Push to origin/master confirmed at d7dcefe. Prior runtime evidence and manual-widget/timed-delivery limitations remain as documented. Language rules and full canonical naming inventory saved in specs/LANGUAGE_RULES.md and specs/SPELLINGS.md.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented and verified the owner-approved EN/HE terminology policy across app, widgets, tile, notifications and Figma. Includes compatibility mapping for old time selections, consistent Torah/month names and date formatting, Hebrew-only secondary-label policy, and bundled city/country localization with bilingual search. Build, 1254-test suite, lint and Roborazzi verification pass on 7665f40. Evidence and limitations are recorded above. Ready for coordinator review/integration; retained In Progress with store-listing label.
+Unified app and Figma terminology under owner-approved policy, preserved stored time selections and localized Hebrew places. Added concise language rules and spelling inventory. Integrated and pushed to master; all combined build, unit, lint and snapshot checks pass. Store-listing refresh remains release work; manual widget placement and timed notification delivery were not exercised.
 <!-- SECTION:FINAL_SUMMARY:END -->
