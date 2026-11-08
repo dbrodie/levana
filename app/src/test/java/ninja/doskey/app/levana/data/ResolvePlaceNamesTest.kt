@@ -51,6 +51,11 @@ class ResolvePlaceNamesTest {
     }
 
     @Test
+    fun `Hebrew prefers a Hebrew name over an earlier Latin one`() {
+        assertEquals("ניו יורק", pickPlaceName(listOf("New York", "ניו יורק"), PlaceNameLanguage.HEBREW))
+    }
+
+    @Test
     fun `only names in another script leave the language out`() {
         assertEquals(emptyMap<String, String>(), resolve { _, _, _ -> listOf("القدس", "Москва") })
     }

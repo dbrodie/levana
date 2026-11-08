@@ -63,20 +63,21 @@ enum class PlaceNameLanguage(val key: String, val locale: Locale) {
 
 /**
  * The first of [candidates] written in a script that fits [language], or null. English takes
- * Latin; Hebrew takes Hebrew or Latin, as the city list is in English in the Hebrew UI too.
- * Digits, spaces and punctuation are ignored.
+ * Latin; Hebrew prefers Hebrew, then Latin, as the city list is in English in the Hebrew UI
+ * too. Digits, spaces and punctuation are ignored.
  */
 fun pickPlaceName(candidates: List<String>, language: PlaceNameLanguage): String? {
-    val scripts = when (language) {
-        PlaceNameLanguage.ENGLISH -> setOf(Character.UnicodeScript.LATIN)
-        PlaceNameLanguage.HEBREW -> setOf(Character.UnicodeScript.LATIN, Character.UnicodeScript.HEBREW)
+    val preferred = when (language) {
+        PlaceNameLanguage.ENGLISH -> listOf(Character.UnicodeScript.LATIN)
+        PlaceNameLanguage.HEBREW -> listOf(Character.UnicodeScript.HEBREW, Character.UnicodeScript.LATIN)
     }
-    return candidates.map { it.trim() }.firstOrNull { it.isNotEmpty() && fitsScripts(it, scripts) }
+    val names = candidates.map { it.trim() }.filter { it.isNotEmpty() }
+    return preferred.firstNotNullOfOrNull { script -> names.firstOrNull { fitsScript(it, script) } }
 }
 
-private fun fitsScripts(name: String, scripts: Set<Character.UnicodeScript>): Boolean {
+private fun fitsScript(name: String, script: Character.UnicodeScript): Boolean {
     val letters = name.codePoints().filter { Character.isLetter(it) }.toArray()
-    return letters.isNotEmpty() && letters.all { Character.UnicodeScript.of(it) in scripts }
+    return letters.isNotEmpty() && letters.all { Character.UnicodeScript.of(it) == script }
 }
 
 /**
