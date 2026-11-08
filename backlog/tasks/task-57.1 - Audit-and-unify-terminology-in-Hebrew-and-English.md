@@ -1,11 +1,14 @@
 ---
 id: TASK-57.1
 title: Audit and unify terminology in Hebrew and English
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-11-01T11:34:00Z'
+updated_date: '2026-11-08T13:04:00Z'
 labels:
   - design-review
+  - store-listing
 dependencies: []
 references:
   - specs/reviews/2026-11-01-figma-design-review.md
@@ -39,7 +42,25 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A written terminology policy and glossary (EN + HE) is recorded in the specs
-- [ ] #2 All strings, widgets, tile and notifications follow it
-- [ ] #3 Figma screens updated to match
+- [x] #1 A written terminology policy and glossary (EN + HE) is recorded in the specs
+- [x] #2 All strings, widgets, tile and notifications follow it
+- [x] #3 Figma screens updated to match
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Audit resources, calendar formatters, location names and all presentation surfaces; record EN/HE terminology policy and glossary in specs. 2. Load required Figma guidance, inspect and update existing frames to the policy before app edits. 3. Apply shared naming and formatting consistently across app, widgets, tile and notifications; audit store text without changing fastlane. 4. Run required build, unit tests and lint, then verify light/dark/Hebrew on a dedicated emulator using android-debug. 5. Record evidence and tested commit, commit changes and hand off to coordinator without merging or marking Done.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Terminology policy recorded in specs/TERMINOLOGY.md before implementation. Retain Hebrew יארצייט for precise Orthodox usage; reject X8 as instructed. Use consistent English solar names, sentence-case ritual transliterations and Hebrew-only Hebrew rows. Store listing: screenshots 1–8 and walkthrough wording affected; audit only, no fastlane changes.
+
+Owner reviewed online naming comparison and approved: Halachic times for feature/navigation; transliterated individual zman names using Israeli/Sephardi forms; compact Netz/Shkia/Tzeit; Candle lighting remains English. Supersedes the initial English solar-name proposal. Continue audit and align Figma/app to this decision.
+
+Implemented the owner-approved glossary in specs/TERMINOLOGY.md and linked it from project/Figma specs. Figma Components, Light, Dark, Hebrew, Onboarding and Widgets pages updated in session e8ece6ba-7faa-4a6b-a023-19f02a0a070f (file E1IFrxKcldXbXnvXy5Nzhd). Visually reviewed nodes 13:236, 44:1931, 21:660, 50:1302, 52:75 and 54:74. Hebrew rows omit English secondary labels; city/country resources cover the bundled gazetteer and bilingual search. Old selected-time keys migrate through RENAMED_ZMAN_KEYS. Torah reading is the feature/category; named readings retain Parashat and one Israeli/Sephardi spelling map. Date formatting uses Nisan/Tevet and omits the English month/year comma. X8 behavior remains unchanged. Store listing: screenshots 1–8 and walkthrough wording need release refresh; fastlane audited only and untouched.
+
+Verification: required assembleDebug, testDebugUnitTest and lintDebug plus recordRoborazziDebug passed (1254 tests, 0 failures/errors, 8 opt-in tests skipped), log /tmp/task-57.1-checks-pass.log. Reviewed representative updated EN/HE time settings, walkthrough and settings baselines. Dedicated android-debug session /tmp/levana-emu-v2943nak (emulator-5554); screenshots and UI XML under artifacts cover EN light/dark times, HE light/dark times, day sheet, drawer, Hebrew city picker and persisted Tel Aviv, final city accessibility labels, and Hebrew QS tile semantics. Initial full run had 11 old-copy assertions; corrected all and reran successfully. Runtime screenshot artifacts remain outside the worktree.
+<!-- SECTION:NOTES:END -->

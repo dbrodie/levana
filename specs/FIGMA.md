@@ -2,6 +2,8 @@
 
 Design source for the UI: [Levana — Android App UI](https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd). Design UI changes in Figma first, then implement them in Compose.
 
+Copy on all pages follows [Terminology and formatting](TERMINOLOGY.md), including full and compact halachic time names and Hebrew-only labels in Hebrew screens.
+
 ## File layout
 
 - **Foundations / variables**: tokens. Each variable's Android code syntax names its theme value (e.g. `MaterialTheme.colorScheme.primary`).

@@ -109,7 +109,7 @@ class AgendaScreenshotTest(private val variant: Variant) : ScreenshotTest(varian
         // Chodesh Teves) at the top, by its list key so the position is exact
         val kislev30 = JewishDate(5787, JewishDate.KISLEV, 30).localDate
         compose.onAllNodes(hasScrollToKeyAction())[0].performScrollToKey("day-${kislev30.toEpochDay()}")
-        awaitText(if (hebrew) "ראש חודש טבת" else "Rosh Chodesh Teves", partial = true)
+        awaitText(if (hebrew) "ראש חודש טבת" else "Rosh Chodesh Tevet", partial = true)
         capture("app_agenda_month_header")
 
         openDrawer()

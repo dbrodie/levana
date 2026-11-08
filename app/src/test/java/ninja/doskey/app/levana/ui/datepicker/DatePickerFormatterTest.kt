@@ -75,7 +75,7 @@ class DatePickerFormatterTest {
         val purim = JewishDate(5787, JewishDate.ADAR_II, 14).localDate
         val day = repository.getMonthDays(YearMonth.from(purim)).first { it.gregorianDate == purim }
         assertEquals(
-            "Tuesday, March 23, 2027, 14 Adar II, 5787, Purim, Today",
+            "Tuesday, March 23, 2027, 14 Adar II 5787, Purim, Today",
             DatePickerFormatter.dayDescription(day, english, today = "Today")
         )
         assertEquals("Purim", DatePickerFormatter.holidayName(day, english))

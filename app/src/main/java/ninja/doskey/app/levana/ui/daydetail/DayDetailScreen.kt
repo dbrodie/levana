@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.daydetail
 
+import ninja.doskey.app.levana.ui.placeName
 import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.foundation.Image
@@ -114,7 +115,7 @@ fun DayDetailContent(
                         ParshaSection(
                             dayInfo.parsha,
                             dayInfo.parshaHebrew,
-                            dayInfo.specialShabbat
+                            if (isHebrewUi()) dayInfo.specialShabbatHebrew else dayInfo.specialShabbat
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -165,7 +166,7 @@ fun DayDetailContent(
 @Composable
 fun CityClockLabel(cityName: String, modifier: Modifier = Modifier) {
     Text(
-        text = stringResource(R.string.zmanim_city_clock, cityName),
+        text = stringResource(R.string.zmanim_city_clock, placeName(cityName)),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.fillMaxWidth()
@@ -286,7 +287,7 @@ private fun HalachicTimesSection(
                                 text = name.primary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Text(
+                            if (name.secondary.isNotEmpty()) Text(
                                 text = name.secondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -337,7 +338,7 @@ private fun ParshaSection(parsha: String, parshaHebrew: String?, specialShabbat:
                 text = if (isHebrewUi()) parshaHebrew ?: parsha else parsha,
                 style = MaterialTheme.typography.bodyLarge
             )
-            if (parshaHebrew != null) {
+            if (parshaHebrew != null && !isHebrewUi()) {
                 Text(
                     text = if (isHebrewUi()) parsha else parshaHebrew,
                     style = MaterialTheme.typography.bodyMedium,
@@ -403,7 +404,7 @@ private fun ShabbatTimeCard(zmanName: ZmanName, time: LocalTime?) {
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
-            Text(
+            if (name.secondary.isNotEmpty()) Text(
                 text = name.secondary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

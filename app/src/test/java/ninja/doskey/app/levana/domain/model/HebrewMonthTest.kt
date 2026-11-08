@@ -1,6 +1,5 @@
 package ninja.doskey.app.levana.domain.model
 
-import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -32,18 +31,17 @@ class HebrewMonthTest {
 
     /**
      * The quick tile and HebrewDay.transliterated get whole English dates from
-     * KosherJava; the shared names must be the same ones.
+     * the shared formatter; the names must be the same ones.
      */
     @Test
-    fun namesMatchKosherJavaTransliteration() {
-        val formatter = HebrewDateFormatter().apply { isHebrewFormat = false }
+    fun namesMatchSharedDateFormatter() {
         // 5786 is a regular year, 5787 a leap year
         for (year in listOf(5786, 5787)) {
             val isLeap = JewishDate(year, JewishDate.TISHREI, 1).isJewishLeapYear
             val lastMonth = if (isLeap) JewishDate.ADAR_II else JewishDate.ADAR
             for (month in JewishDate.NISSAN..lastMonth) {
                 assertEquals(
-                    formatter.formatMonth(JewishDate(year, month, 1)),
+                    HebrewDateText.transliteratedMonth(JewishDate(year, month, 1)),
                     HebrewMonth.englishName(month, isLeap)
                 )
             }

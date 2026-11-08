@@ -12,7 +12,13 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 object HebrewDateText {
 
     private val hebrew = HebrewDateFormatter().apply { isHebrewFormat = true }
-    private val transliterated = HebrewDateFormatter().apply { isHebrewFormat = false }
+    private val transliterated = HebrewDateFormatter().apply {
+        isHebrewFormat = false
+        // Override the library's Ashkenazi spellings, including combined readings.
+        transliteratedParshiosList = java.util.EnumMap<JewishCalendar.Parsha, String>(JewishCalendar.Parsha::class.java).apply {
+            putAll(ParashaNames.english)
+        }
+    }
 
     /** [number] in Hebrew letters, e.g. "י״ח" or "תשפ״ז"; KosherJava accepts 0–9999. */
     fun hebrewNumber(number: Int): String = hebrew.formatHebrewNumber(number)
@@ -24,13 +30,13 @@ object HebrewDateText {
     fun hebrewMonth(date: JewishDate): String = hebrew.formatMonth(date)
 
     /** The month of [date] transliterated, e.g. "Cheshvan", "Adar II". */
-    fun transliteratedMonth(date: JewishDate): String = transliterated.formatMonth(date)
+    fun transliteratedMonth(date: JewishDate): String = HebrewMonth.englishName(date.jewishMonth, date.isJewishLeapYear)
 
     /** A whole date in Hebrew letters, e.g. "י״ח חשון תשפ״ז". */
     fun hebrewDate(date: JewishDate): String = hebrew.format(date)
 
-    /** A whole date transliterated, e.g. "18 Cheshvan, 5787". */
-    fun transliteratedDate(date: JewishDate): String = transliterated.format(date)
+    /** A whole date transliterated, e.g. "18 Cheshvan 5787". */
+    fun transliteratedDate(date: JewishDate): String = "${date.jewishDayOfMonth} ${transliteratedMonth(date)} ${date.jewishYear}"
 
     /** A whole date in Hebrew letters when [hebrew], else transliterated. */
     fun date(date: JewishDate, hebrew: Boolean): String =
@@ -39,6 +45,8 @@ object HebrewDateText {
     /** The parasha read on [calendar]'s day, in Hebrew when [hebrew], else transliterated. */
     fun parsha(calendar: JewishCalendar, hebrew: Boolean): String =
         (if (hebrew) this.hebrew else transliterated).formatParsha(calendar)
+
+    fun specialParsha(calendar: JewishCalendar): String = hebrew.formatSpecialParsha(calendar)
 
     /** The Omer count of [calendar]'s day in Hebrew, e.g. "ל״ג בעומר". */
     fun hebrewOmer(calendar: JewishCalendar): String = hebrew.formatOmer(calendar)

@@ -190,7 +190,7 @@ class CalendarSelectionScreenTest {
     @Test
     fun withoutPermissionShowsGrantButtonAndNoRows() {
         setContent(hasPermission = false)
-        compose.onNodeWithText("Grant Permission").assertExists()
+        compose.onNodeWithText("Grant permission").assertExists()
         compose.onAllNodes(isToggleable()).assertCountEquals(0)
         assertTrue(intents.isEmpty())
     }

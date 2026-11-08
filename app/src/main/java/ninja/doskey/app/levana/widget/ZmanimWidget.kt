@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.widget
 
+import ninja.doskey.app.levana.data.PlaceNames
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -151,7 +152,7 @@ private fun Header(snapshot: ZmanimWidgetSnapshot, hebrewUi: Boolean, mirror: Bo
         // When space runs out, the location is cut short rather than the date
         val location = @Composable {
             Text(
-                text = if (mirror) "${snapshot.locationName} · " else " · ${snapshot.locationName}",
+                text = if (mirror) "${PlaceNames.display(LocalContext.current, snapshot.locationName)} · " else " · ${PlaceNames.display(LocalContext.current, snapshot.locationName)}",
                 maxLines = 1,
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, textAlign = textAlign(mirror)),
                 modifier = GlanceModifier.defaultWeight(),

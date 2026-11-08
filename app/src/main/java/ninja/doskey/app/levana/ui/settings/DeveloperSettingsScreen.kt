@@ -61,15 +61,15 @@ fun DeveloperSettingsScreen(
 
     Column(modifier = modifier.verticalScroll(rememberScrollState()).contentWidth()) {
         ListItem(
-            headlineContent = { Text("Date Override") },
+            headlineContent = { Text(stringResource(R.string.dev_date_override)) },
             supportingContent = {
                 Text(
                     state.overriddenDeviceDate?.let { date ->
                         val jd = JewishDate(
                             GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth)
                         )
-                        "${jd.jewishDayOfMonth}/${jd.jewishMonth}/${jd.jewishYear} (Hebrew)"
-                    } ?: "Not set"
+                        ninja.doskey.app.levana.domain.model.HebrewDateText.date(jd, context.resources.configuration.locales[0].language in setOf("he", "iw"))
+                    } ?: stringResource(R.string.not_set)
                 )
             },
             leadingContent = {
@@ -81,7 +81,7 @@ fun DeveloperSettingsScreen(
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Force Holiday Theme",
+                text = stringResource(R.string.dev_force_holiday_theme),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium
             )
@@ -94,22 +94,22 @@ fun DeveloperSettingsScreen(
         }
 
         ListItem(
-            headlineContent = { Text("Reset walkthrough") },
-            supportingContent = { Text("Show every walkthrough screen again on the next launch") },
+            headlineContent = { Text(stringResource(R.string.dev_reset_walkthrough)) },
+            supportingContent = { Text(stringResource(R.string.dev_reset_walkthrough_description)) },
             leadingContent = {
                 Icon(Icons.Outlined.RestartAlt, contentDescription = null)
             },
             modifier = Modifier.clickable {
                 scope.launch {
                     preferencesRepository.resetWalkthroughSeen()
-                    Toast.makeText(context, "Walkthrough reset", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.dev_walkthrough_reset), Toast.LENGTH_SHORT).show()
                 }
             }
         )
 
         ListItem(
-            headlineContent = { Text("Test crash") },
-            supportingContent = { Text("Crash the app to check the crash report dialog") },
+            headlineContent = { Text(stringResource(R.string.dev_test_crash)) },
+            supportingContent = { Text(stringResource(R.string.dev_test_crash_description)) },
             leadingContent = {
                 Icon(Icons.Outlined.BugReport, contentDescription = null)
             },

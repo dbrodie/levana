@@ -4,8 +4,7 @@ import com.kosherjava.zmanim.hebrewcalendar.JewishDate
 
 /**
  * [englishName] is the single source of English Hebrew-month names for the
- * app's own UI. It matches KosherJava's transliterated formatter, which
- * produces the full English date strings (see HebrewMonthTest).
+ * app's own UI and HebrewDateText full English dates (see HebrewMonthTest).
  *
  * [hebrewName] is the single source of Hebrew month names for the app's own
  * UI. It comes from KosherJava's Hebrew formatter, which produces the full
@@ -15,12 +14,12 @@ enum class HebrewMonth(val jewishDateValue: Int, val englishName: String) {
     TISHREI(JewishDate.TISHREI, "Tishrei"),
     CHESHVAN(JewishDate.CHESHVAN, "Cheshvan"),
     KISLEV(JewishDate.KISLEV, "Kislev"),
-    TEVES(JewishDate.TEVES, "Teves"),
+    TEVES(JewishDate.TEVES, "Tevet"),
     SHEVAT(JewishDate.SHEVAT, "Shevat"),
     ADAR(JewishDate.ADAR, "Adar"),
     ADAR_I(JewishDate.ADAR, "Adar I"),
     ADAR_II(JewishDate.ADAR_II, "Adar II"),
-    NISSAN(JewishDate.NISSAN, "Nissan"),
+    NISSAN(JewishDate.NISSAN, "Nisan"),
     IYAR(JewishDate.IYAR, "Iyar"),
     SIVAN(JewishDate.SIVAN, "Sivan"),
     TAMMUZ(JewishDate.TAMMUZ, "Tammuz"),

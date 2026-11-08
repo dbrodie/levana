@@ -233,7 +233,7 @@ class FoldContinuityTest(private val device: Device) : ScreenshotTest(Variant.EN
         // On a phone-sized window the times are in the sheet; beside the grid they show already
         if (!twoPanes) compose.onNode(hasContentDescription(string(R.string.sheet_expand))).performClick()
         clickable(string(R.string.sheet_more_times)).performScrollTo().performClick()
-        await(hasText(string(R.string.zmanim_category_morning).uppercase()))
+        await(hasText(string(R.string.zmanim_category_morning)))
         // The first rows, which every size shows; their times are that day's
         val zmanim = shownTexts().take(ZMANIM_ROWS)
 

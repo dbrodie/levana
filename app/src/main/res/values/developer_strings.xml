@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_date_override">Date override</string>
+    <string name="dev_force_holiday_theme">Force holiday theme</string>
+    <string name="dev_reset_walkthrough">Reset walkthrough</string>
+    <string name="dev_reset_walkthrough_description">Show every walkthrough screen again on the next launch</string>
+    <string name="dev_walkthrough_reset">Walkthrough reset</string>
+    <string name="dev_test_crash">Test crash</string>
+    <string name="dev_test_crash_description">Crash the app to check the crash report dialog</string>
+</resources>

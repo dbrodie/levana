@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="design_my_events">My events</string>
-    <string name="design_active_city">ACTIVE CITY</string>
+    <string name="design_active_city">Selected city</string>
     <string name="design_switch_city">Switch city</string>
     <string name="design_manage_cities">Manage cities</string>
     <string name="city_incalculable_times">Some times can’t be calculated at this location on some days</string>

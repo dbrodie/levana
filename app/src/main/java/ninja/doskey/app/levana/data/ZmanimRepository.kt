@@ -284,22 +284,22 @@ class ZmanimRepository {
         ZmanTime(name.english, name.hebrew, time, category)
 
     companion object {
-        val ALOT_HASHACHAR = ZmanName("Alot HaShachar", "עלות השחר")
+        val ALOT_HASHACHAR = ZmanName("Alot hashachar", "עלות השחר")
         val MISHEYAKIR = ZmanName("Misheyakir", "משיכיר")
-        val SUNRISE = ZmanName("Sunrise", "הנץ החמה")
-        val SOF_ZMAN_SHEMA_MGA = ZmanName("Sof Zman Shema (MGA)", "סוף זמן שמע (מג״א)")
-        val SOF_ZMAN_SHEMA_GRA = ZmanName("Sof Zman Shema (GRA)", "סוף זמן שמע (גר״א)")
-        val SOF_ZMAN_TEFILLAH_MGA = ZmanName("Sof Zman Tefillah (MGA)", "סוף זמן תפילה (מג״א)")
-        val SOF_ZMAN_TEFILLAH_GRA = ZmanName("Sof Zman Tefillah (GRA)", "סוף זמן תפילה (גר״א)")
-        val CHATZOT = ZmanName("Chatzot", "חצות היום")
-        val MINCHA_GEDOLAH = ZmanName("Mincha Gedolah", "מנחה גדולה")
-        val MINCHA_KETANAH = ZmanName("Mincha Ketanah", "מנחה קטנה")
-        val PLAG_HAMINCHA = ZmanName("Plag HaMincha", "פלג המנחה")
-        val CANDLE_LIGHTING = ZmanName("Candle Lighting", "הדלקת נרות")
-        val SUNSET = ZmanName("Sunset", "שקיעה")
-        val NIGHTFALL = ZmanName("Nightfall", "צאת הכוכבים")
+        val SUNRISE = ZmanName("Netz hachama", "הנץ החמה")
+        val SOF_ZMAN_SHEMA_MGA = ZmanName("Sof zman Shema (MGA)", "סוף זמן שמע (מג״א)")
+        val SOF_ZMAN_SHEMA_GRA = ZmanName("Sof zman Shema (GRA)", "סוף זמן שמע (גר״א)")
+        val SOF_ZMAN_TEFILLAH_MGA = ZmanName("Sof zman tefillah (MGA)", "סוף זמן תפילה (מג״א)")
+        val SOF_ZMAN_TEFILLAH_GRA = ZmanName("Sof zman tefillah (GRA)", "סוף זמן תפילה (גר״א)")
+        val CHATZOT = ZmanName("Chatzot hayom", "חצות היום")
+        val MINCHA_GEDOLAH = ZmanName("Mincha gedolah", "מנחה גדולה")
+        val MINCHA_KETANAH = ZmanName("Mincha ketanah", "מנחה קטנה")
+        val PLAG_HAMINCHA = ZmanName("Plag hamincha", "פלג המנחה")
+        val CANDLE_LIGHTING = ZmanName("Candle lighting", "הדלקת נרות")
+        val SUNSET = ZmanName("Shkia", "שקיעה")
+        val NIGHTFALL = ZmanName("Tzeit hakochavim", "צאת הכוכבים")
         val HAVDALAH = ZmanName("Havdalah", "הבדלה")
-        val CHATZOT_HALAYLAH = ZmanName("Chatzot HaLaylah", "חצות הלילה")
+        val CHATZOT_HALAYLAH = ZmanName("Chatzot halaylah", "חצות הלילה")
 
         /**
          * Latitude beyond which some day of the year has no sunrise, sunset, candle lighting or
@@ -331,7 +331,21 @@ class ZmanimRepository {
          * current English name, so a saved selection keeps working after a rename.
          */
         val RENAMED_ZMAN_KEYS: Map<String, String> = mapOf(
-            "Sof Zman Tefillah" to SOF_ZMAN_TEFILLAH_GRA.english
+            "Sof Zman Tefillah" to SOF_ZMAN_TEFILLAH_GRA.english,
+            "Alot HaShachar" to "Alot hashachar",
+            "Sunrise" to "Netz hachama",
+            "Sof Zman Shema (MGA)" to "Sof zman Shema (MGA)",
+            "Sof Zman Shema (GRA)" to "Sof zman Shema (GRA)",
+            "Sof Zman Tefillah (MGA)" to "Sof zman tefillah (MGA)",
+            "Sof Zman Tefillah (GRA)" to "Sof zman tefillah (GRA)",
+            "Chatzot" to "Chatzot hayom",
+            "Mincha Gedolah" to "Mincha gedolah",
+            "Mincha Ketanah" to "Mincha ketanah",
+            "Plag HaMincha" to "Plag hamincha",
+            "Candle Lighting" to "Candle lighting",
+            "Sunset" to "Shkia",
+            "Nightfall" to "Tzeit hakochavim",
+            "Chatzot HaLaylah" to "Chatzot halaylah"
         )
     }
 }

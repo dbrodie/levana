@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_date_override">תאריך לבדיקה</string>
+    <string name="dev_force_holiday_theme">בחירת צבעי חג לבדיקה</string>
+    <string name="dev_reset_walkthrough">איפוס סיור ההיכרות</string>
+    <string name="dev_reset_walkthrough_description">הצגת כל מסכי סיור ההיכרות בפתיחה הבאה</string>
+    <string name="dev_walkthrough_reset">סיור ההיכרות אופס</string>
+    <string name="dev_test_crash">קריסה לבדיקה</string>
+    <string name="dev_test_crash_description">הפעלת קריסה לבדיקת חלונית דיווח הקריסה</string>
+</resources>

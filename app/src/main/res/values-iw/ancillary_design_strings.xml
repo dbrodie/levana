@@ -14,18 +14,18 @@
     <string name="settings_group_preferences">העדפות לוח שנה</string>
     <string name="settings_group_yahrzeit">הגדרות יארצייט</string>
     <string name="settings_group_appearance">מראה</string>
-    <string name="settings_group_halachic_times">זמנים הלכתיים</string>
+    <string name="settings_group_halachic_times">זמני היום</string>
     <string name="settings_group_notifications">התראות</string>
     <string name="settings_group_developer">מפתחים</string>
     <string name="settings_group_about">אודות</string>
-    <string name="settings_group_current_location">מיקום נוכחי</string>
-    <string name="settings_group_saved_locations">מיקומים שמורים</string>
-    <string name="settings_group_locations">מיקומים</string>
-    <string name="settings_location_label">מיקום</string>
+    <string name="settings_group_current_location">המיקום הנוכחי</string>
+    <string name="settings_group_saved_locations">ערים שמורות</string>
+    <string name="settings_group_locations">ערים</string>
+    <string name="settings_location_label">ערים</string>
     <string name="settings_system_calendars_label">לוחות שנה במכשיר</string>
     <string name="settings_israel_diaspora_label">ארץ ישראל / חו״ל</string>
     <string name="settings_israel_diaspora_description">משפיע על יום טוב שני ועל קריאת הפרשה</string>
-    <string name="settings_modern_holidays_label">חגים ישראליים מודרניים</string>
+    <string name="settings_modern_holidays_label">מועדים לאומיים</string>
     <string name="settings_modern_holidays_description">יום השואה, יום הזיכרון, יום העצמאות ויום ירושלים</string>
     <string name="settings_candle_offset_label">הקדמת הדלקת נרות</string>
     <string name="settings_candle_offset_description">%1$d דקות לפני השקיעה</string>
@@ -50,7 +50,7 @@
     <string name="event_save">שמירה</string>
     <string name="event_update">עדכון</string>
     <string name="location_permission_needed">לפי אזור הזמן שלכם. הקישו כדי לאפשר גישה למיקום.</string>
-    <string name="location_add">הוספת מיקום</string>
+    <string name="location_add">הוספת עיר</string>
     <string name="location_delete">מחיקה</string>
     <string name="city_search_placeholder">חיפוש ערים…</string>
 </resources>

@@ -23,12 +23,12 @@ class ZmanimWidgetSnapshotsTest {
     private val jerusalem = UserPreferences(
         currentLocation = Location.JERUSALEM,
         isInIsrael = true,
-        selectedZmanim = setOf("Alot HaShachar", "Sunrise", "Chatzot", "Sunset", "Nightfall", "Chatzot HaLaylah"),
+        selectedZmanim = setOf("Alot hashachar", "Netz hachama", "Chatzot hayom", "Shkia", "Tzeit hakochavim", "Chatzot halaylah"),
     )
     private val newYork = Location(40.7128, -74.006, 10.0, "America/New_York", "New York")
     private val tromso = UserPreferences(
         currentLocation = Location(69.6492, 18.9553, 0.0, "Europe/Oslo", "Tromsø"),
-        selectedZmanim = setOf("Sunrise", "Chatzot", "Sunset"),
+        selectedZmanim = setOf("Netz hachama", "Chatzot hayom", "Shkia"),
     )
 
     private fun at(date: LocalDate, time: String, zone: ZoneId = jerusalemZone): Instant =
@@ -44,7 +44,7 @@ class ZmanimWidgetSnapshotsTest {
         val today = LocalDate.of(2026, 10, 29)
         val snapshot = snapshots.build(jerusalem, device(at(today, "11:00"), jerusalem))
         assertEquals(
-            listOf("Alot HaShachar", "Sunrise", "Chatzot", "Sunset", "Nightfall", "Chatzot HaLaylah"),
+            listOf("Alot hashachar", "Netz hachama", "Chatzot hayom", "Shkia", "Tzeit hakochavim", "Chatzot halaylah"),
             snapshot.rows.map { it.name },
         )
         assertEquals(
@@ -77,17 +77,17 @@ class ZmanimWidgetSnapshotsTest {
         // In Jerusalem in July, Chatzot HaLaylah is about 00:45 on the next civil day
         val today = LocalDate.of(2026, 7, 15)
         val snapshot = snapshots.build(jerusalem, device(at(today, "23:30"), jerusalem))
-        val midnight = snapshot.rows.single { it.name == "Chatzot HaLaylah" }
+        val midnight = snapshot.rows.single { it.name == "Chatzot halaylah" }
         assertEquals(today.plusDays(1), midnight.at!!.toLocalDate())
         assertEquals(ZmanState.NEXT, midnight.state)
-        assertEquals(ZmanState.PAST, snapshot.state("Nightfall"))
+        assertEquals(ZmanState.PAST, snapshot.state("Tzeit hakochavim"))
         // It is after the device's midnight, so the widget refreshes at midnight first
         assertEquals(today.plusDays(1).atStartOfDay(jerusalemZone).toInstant(), snapshot.refreshAt)
     }
 
     @Test
     fun `when every zman has passed, nothing is highlighted and the refresh is at midnight`() {
-        val prefs = jerusalem.copy(selectedZmanim = setOf("Sunrise", "Sunset"))
+        val prefs = jerusalem.copy(selectedZmanim = setOf("Netz hachama", "Shkia"))
         val today = LocalDate.of(2026, 10, 29)
         val snapshot = snapshots.build(prefs, device(at(today, "22:00"), prefs))
         assertTrue(snapshot.rows.all { it.state == ZmanState.PAST })
@@ -108,12 +108,12 @@ class ZmanimWidgetSnapshotsTest {
         val oslo = ZoneId.of("Europe/Oslo")
         val today = LocalDate.of(2026, 6, 21)
         val snapshot = snapshots.build(tromso, device(at(today, "15:00", oslo), tromso, oslo))
-        assertEquals(listOf("Sunrise", "Chatzot", "Sunset"), snapshot.rows.map { it.name })
-        assertNull(snapshot.rows.single { it.name == "Sunrise" }.at)
-        assertNull(snapshot.rows.single { it.name == "Sunset" }.at)
-        assertEquals(ZmanState.UPCOMING, snapshot.state("Sunrise"))
-        assertEquals(ZmanState.UPCOMING, snapshot.state("Sunset"))
-        assertEquals(ZmanState.PAST, snapshot.state("Chatzot"))
+        assertEquals(listOf("Netz hachama", "Chatzot hayom", "Shkia"), snapshot.rows.map { it.name })
+        assertNull(snapshot.rows.single { it.name == "Netz hachama" }.at)
+        assertNull(snapshot.rows.single { it.name == "Shkia" }.at)
+        assertEquals(ZmanState.UPCOMING, snapshot.state("Netz hachama"))
+        assertEquals(ZmanState.UPCOMING, snapshot.state("Shkia"))
+        assertEquals(ZmanState.PAST, snapshot.state("Chatzot hayom"))
     }
 
     @Test
@@ -124,7 +124,7 @@ class ZmanimWidgetSnapshotsTest {
         val snapshot = snapshots.build(jerusalem, device(at(override, "11:00"), jerusalem, shift = shift))
         assertEquals(override, snapshot.today)
         val chatzot = snapshot.rows.single { it.state == ZmanState.NEXT }
-        assertEquals("Chatzot", chatzot.name)
+        assertEquals("Chatzot hayom", chatzot.name)
         assertEquals(override, chatzot.at!!.toLocalDate())
         // The as-if Chatzot is set on the real clock, at the same time of day on the real date
         assertEquals(chatzot.at!!.minusDays(shift).toInstant(), snapshot.refreshAt)

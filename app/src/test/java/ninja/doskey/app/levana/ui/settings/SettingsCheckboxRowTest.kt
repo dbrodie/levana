@@ -221,7 +221,7 @@ class SettingsCheckboxRowTest {
     }
 
     private companion object {
-        const val TITLE = "Sunrise"
+        const val TITLE = "Netz hachama"
         const val DESCRIPTION = "Netz"
         const val LEADING = "Dot"
     }

@@ -39,7 +39,7 @@ class WidgetThemeTest {
     fun `widget settings ignore unrelated preference changes`() {
         val base = UserPreferences()
         assertEquals(base.widgetSettings(), base.copy(notifyOmer = true).widgetSettings())
-        assert(base.widgetSettings() != base.copy(selectedZmanim = setOf("Sunrise")).widgetSettings())
+        assert(base.widgetSettings() != base.copy(selectedZmanim = setOf("Netz hachama")).widgetSettings())
         // The widget shows the device position (TASK-5): selecting a city changes nothing
         val newYork = ninja.doskey.app.levana.domain.model.Location(40.7128, -74.006, 0.0, "America/New_York", "New York")
         val nySelected = base.copy(

@@ -38,7 +38,7 @@ class AppShellScreenshotTest(variant: Variant) : ScreenshotTest(variant) {
         capture("app_drawer")
 
         compose.onNodeWithContentDescription(string(R.string.design_switch_city)).performClick()
-        awaitText("London")
+        awaitText(string(R.string.place_london))
         capture("app_drawer_cities")
     }
 

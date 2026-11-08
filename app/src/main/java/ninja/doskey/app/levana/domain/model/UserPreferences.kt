@@ -42,7 +42,7 @@ data class UserPreferences(
     val notifyOmerTzait: Boolean = true,
     val notifyOmerMorning: Boolean = false,
     val notifyOmerMorningTime: Int = 420,
-    val selectedZmanim: Set<String> = setOf("Sunrise", "Sunset", "Nightfall"),
+    val selectedZmanim: Set<String> = setOf("Netz hachama", "Shkia", "Tzeit hakochavim"),
     val yahrzeitRules: YahrzeitRules = YahrzeitRules()
 )
 

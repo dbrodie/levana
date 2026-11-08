@@ -9,7 +9,7 @@
     <string name="event_edit_title">Edit your event</string>
     <string name="event_loading">Loading event…</string>
     <string name="event_date_hint">Choose the Hebrew date for this event.</string>
-    <string name="zmanim_selection_hint">Choose which zmanim appear in the day panel.</string>
+    <string name="zmanim_selection_hint">Choose which halachic times appear in the day panel.</string>
     <string name="settings_group_calendar">Calendar</string>
     <string name="settings_group_preferences">Calendar preferences</string>
     <string name="settings_group_yahrzeit">Yahrzeit settings</string>
@@ -19,12 +19,12 @@
     <string name="settings_group_developer">Developer</string>
     <string name="settings_group_about">About</string>
     <string name="settings_group_current_location">Current location</string>
-    <string name="settings_group_saved_locations">Saved locations</string>
-    <string name="settings_group_locations">Locations</string>
-    <string name="settings_location_label">Location</string>
+    <string name="settings_group_saved_locations">Saved cities</string>
+    <string name="settings_group_locations">Cities</string>
+    <string name="settings_location_label">Cities</string>
     <string name="settings_system_calendars_label">System calendars</string>
     <string name="settings_israel_diaspora_label">Israel / Diaspora</string>
-    <string name="settings_israel_diaspora_description">Affects second day Yom Tov and parsha readings</string>
+    <string name="settings_israel_diaspora_description">Affects second day Yom Tov and Torah readings</string>
     <string name="settings_modern_holidays_label">Modern Israeli holidays</string>
     <string name="settings_modern_holidays_description">Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim</string>
     <string name="settings_candle_offset_label">Candle lighting offset</string>
@@ -50,7 +50,7 @@
     <string name="event_save">Save</string>
     <string name="event_update">Update</string>
     <string name="location_permission_needed">Based on your time zone. Tap to allow location access.</string>
-    <string name="location_add">Add location</string>
+    <string name="location_add">Add city</string>
     <string name="location_delete">Delete</string>
     <string name="city_search_placeholder">Search cities…</string>
 </resources>

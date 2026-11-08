@@ -499,7 +499,7 @@ internal object IsraelModeMigration : DataMigration<Preferences> {
 /** Saved zman keys, with renamed zmanim mapped to their current names. */
 internal fun parseSelectedZmanim(saved: Set<String>?): Set<String> =
     saved?.mapTo(mutableSetOf()) { ZmanimRepository.RENAMED_ZMAN_KEYS[it] ?: it }
-        ?: setOf("Sunrise", "Sunset", "Nightfall")
+        ?: setOf("Netz hachama", "Shkia", "Tzeit hakochavim")
 
 /** The stored theme mode; a missing or unrecognised value follows the system. */
 internal fun parseThemeMode(value: String?): ThemeMode =

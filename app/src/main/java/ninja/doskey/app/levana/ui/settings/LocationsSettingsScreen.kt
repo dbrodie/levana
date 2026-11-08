@@ -1,5 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
+import ninja.doskey.app.levana.ui.placeName
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +113,7 @@ internal fun LocationsSettingsContent(
     ) {
         SettingsGroup(stringResource(R.string.settings_group_current_location)) {
         ListItem(
-            headlineContent = { Text(currentLocationName) },
+            headlineContent = { Text(placeName(currentLocationName)) },
             supportingContent = listOfNotNull(
                 stringResource(R.string.location_permission_needed).takeUnless { hasLocationPermission },
                 incalculableNote.takeIf { incalculableTimesCityId == CURRENT_LOCATION_ID }
@@ -131,9 +132,9 @@ internal fun LocationsSettingsContent(
             SettingsGroup(stringResource(R.string.settings_group_saved_locations)) {
             savedLocations.forEach { saved ->
                 ListItem(
-                    headlineContent = { Text(saved.location.name) },
+                    headlineContent = { Text(placeName(saved.location.name)) },
                     supportingContent = listOfNotNull(
-                        saved.location.country.takeIf { it.isNotEmpty() },
+                        placeName(saved.location.country).takeIf { it.isNotEmpty() },
                         incalculableNote.takeIf { incalculableTimesCityId == saved.id }
                     ).takeIf { it.isNotEmpty() }?.let { lines ->
                         { Column { lines.forEach { Text(it) } } }
@@ -147,7 +148,7 @@ internal fun LocationsSettingsContent(
                                 Icons.Outlined.Delete,
                                 contentDescription = targetedLabel(
                                     R.string.a11y_delete_saved_location,
-                                    saved.location.name,
+                                    placeName(saved.location.name),
                                     R.string.location_delete
                                 )
                             )

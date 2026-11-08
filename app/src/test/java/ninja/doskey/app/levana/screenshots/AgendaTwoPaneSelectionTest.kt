@@ -108,7 +108,7 @@ class AgendaTwoPaneSelectionTest : ScreenshotTest(Variant.EN_LIGHT, FoldableSize
 
         // Friday's candle lighting: that day's Zmanim
         card(string(R.string.agenda_candle_lighting)).performClick()
-        await(hasText(string(R.string.zmanim_category_morning).uppercase()))
+        await(hasText(string(R.string.zmanim_category_morning)))
         back()
         assertSelected("November 21, 2026")
         assertEquals(0, compose.onAllNodes(day("November 20, 2026") and isSelected()).fetchSemanticsNodes().size)

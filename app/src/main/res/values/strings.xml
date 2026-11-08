@@ -1,51 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Levana</string>
-    <string name="welcome_message">Hebrew Calendar</string>
+    <string name="welcome_message">Hebrew calendar</string>
 
     <!-- Bottom navigation -->
     <string name="nav_calendar">Calendar</string>
-    <string name="nav_zmanim">Zmanim</string>
+    <string name="nav_zmanim">Halachic times</string>
     <string name="nav_settings">Settings</string>
 
     <!-- Calendar -->
     <string name="previous_month">Previous month</string>
     <string name="next_month">Next month</string>
-    <string name="show_zmanim">Show Zmanim</string>
+    <string name="show_zmanim">Show halachic times</string>
 
     <!-- Day detail -->
     <string name="holidays">Holidays</string>
-    <string name="parsha">Parsha</string>
-    <string name="sefirat_haomer">Sefirat HaOmer</string>
-    <string name="candle_lighting">Candle Lighting</string>
+    <string name="parsha">Torah reading</string>
+    <string name="sefirat_haomer">Sefirat haomer</string>
+    <string name="candle_lighting">Candle lighting</string>
     <string name="candle_lighting_hebrew">הדלקת נרות</string>
     <string name="havdalah">Havdalah</string>
     <string name="havdalah_hebrew">הבדלה</string>
 
     <!-- Settings -->
-    <string name="settings_location">Location</string>
+    <string name="settings_location">Cities</string>
     <string name="settings_change">Change</string>
     <string name="settings_israel_diaspora">Israel / Diaspora</string>
-    <string name="settings_israel_desc">Affects second day Yom Tov and parsha readings</string>
+    <string name="settings_israel_desc">Affects second day Yom Tov and Torah readings</string>
     <string name="settings_in_israel">In Israel</string>
-    <string name="settings_modern_israeli">Modern Israeli Holidays</string>
+    <string name="settings_modern_israeli">Modern Israeli holidays</string>
     <string name="settings_modern_israeli_desc">Yom HaShoah, Yom HaZikaron, Yom HaAtzmaut, Yom Yerushalayim</string>
     <string name="settings_show_on_calendar">Show on calendar</string>
-    <string name="settings_hebrew_primary">Hebrew-Primary Mode</string>
+    <string name="settings_hebrew_primary">Hebrew-primary mode</string>
     <string name="settings_hebrew_primary_desc">Calendar organized by Hebrew months</string>
     <string name="settings_enable_hebrew">Enable Hebrew-primary</string>
-    <string name="settings_candle_lighting">Candle Lighting</string>
+    <string name="settings_candle_lighting">Candle lighting</string>
     <string name="settings_candle_lighting_desc">Minutes before sunset</string>
 
     <!-- Quick Settings tile -->
-    <string name="tile_name">Hebrew Date</string>
+    <string name="tile_name">Hebrew date</string>
 
     <!-- General -->
     <string name="back">Back</string>
     <string name="change_location">Change location</string>
     <string name="not_set">Not set</string>
 
-    <!-- Developer settings: Force Holiday Theme options -->
+    <!-- Developer settings: Force holiday theme options -->
     <string name="holiday_theme_none">None</string>
     <string name="holiday_theme_chanukah">Chanukah</string>
     <string name="holiday_theme_sukkot">Sukkot</string>
@@ -63,14 +63,14 @@
     <string name="zmanim_category_evening">Evening</string>
     <string name="zmanim_category_night">Night</string>
     <string name="widget_today_name">Levana · Today</string>
-    <string name="widget_today_description">Hebrew date, next zman and Shabbat times</string>
+    <string name="widget_today_description">Hebrew date, next time and Shabbat times</string>
     <string name="widget_next_zman">Next: %1$s</string>
-    <string name="widget_next_zman_none">Next zman</string>
+    <string name="widget_next_zman_none">Next time</string>
     <string name="widget_month_name">Levana · Month</string>
     <string name="widget_month_description">Hebrew month calendar with holidays</string>
-    <string name="widget_zmanim_name">Levana · Zmanim</string>
-    <string name="widget_zmanim_description">Today\'s selected zmanim, with the next one highlighted</string>
-    <string name="widget_zmanim_empty">No zmanim selected</string>
+    <string name="widget_zmanim_name">Levana · Halachic times</string>
+    <string name="widget_zmanim_description">Today\'s selected halachic times, with the next one highlighted</string>
+    <string name="widget_zmanim_empty">No halachic times selected</string>
     <string name="widget_zman_next">%1$s, %2$s, next</string>
     <string name="widget_zman_past">%1$s, %2$s, passed</string>
 </resources>

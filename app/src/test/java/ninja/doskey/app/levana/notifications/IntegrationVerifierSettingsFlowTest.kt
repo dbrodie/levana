@@ -46,7 +46,7 @@ class IntegrationVerifierSettingsFlowTest {
         // Preferences persist across tests in one JVM: start from a known baseline
         runBlocking {
             prefs.saveDynamicHolidayTheme(true)
-            prefs.saveSelectedZmanim(setOf("Sunrise", "Sunset", "Nightfall"))
+            prefs.saveSelectedZmanim(setOf("Netz hachama", "Shkia", "Tzeit hakochavim"))
             prefs.saveNotifyHolidays(false)
             prefs.saveHolidayNotifyDaysBefore(1)
             prefs.saveNotifyFasts(false)
@@ -79,7 +79,7 @@ class IntegrationVerifierSettingsFlowTest {
         }
         try {
             step(emptyList()) { prefs.saveDynamicHolidayTheme(false) }
-            step(emptyList()) { prefs.saveSelectedZmanim(setOf("Sunrise")) }
+            step(emptyList()) { prefs.saveSelectedZmanim(setOf("Netz hachama")) }
             step(listOf("refresh:[HOLIDAYS]")) { prefs.saveNotifyHolidays(true) }
             step(listOf("rebuild")) { prefs.saveCandleLightingOffset(40.0) }
             step(listOf("rebuild")) { prefs.saveNotifyOmer(true) }

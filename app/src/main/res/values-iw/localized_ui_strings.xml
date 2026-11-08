@@ -49,7 +49,7 @@
     <!-- Manual location -->
 
     <!-- Settings -->
-    <string name="settings_halachic_times_title">זמנים הלכתיים</string>
+    <string name="settings_halachic_times_title">זמני היום</string>
     <string name="settings_halachic_times_count">%1$d מוצגים בחלונית היום</string>
     <string name="settings_developer_settings">הגדרות מפתחים</string>
     <string name="settings_about">אודות</string>
