@@ -3,11 +3,11 @@ id: TASK-57.35
 title: >-
   Decide whether polar-night Nightfall (8.5° midday crossing) should show as
   --:--
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T14:16:00Z'
-updated_date: '2026-11-08T09:41:00Z'
+updated_date: '2026-11-08T11:33:00Z'
 labels:
   - design-review
 dependencies: []
