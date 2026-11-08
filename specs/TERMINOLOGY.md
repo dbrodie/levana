@@ -1,5 +1,7 @@
 # Terminology and formatting
 
+Quick reference: [English versus transliteration](LANGUAGE_RULES.md) · [App spellings](SPELLINGS.md).
+
 TASK-57.1 policy, 2026-11-08. Applies to app screens, accessibility labels, walkthroughs, widgets, Quick Settings, notifications and future store copy. Resource identifiers and stored values are implementation details, not editorial vocabulary.
 
 ## Language and naming

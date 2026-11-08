@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-08T13:07:00Z'
+updated_date: '2026-11-08T15:50:00Z'
 labels:
   - design-review
   - store-listing
@@ -51,6 +51,8 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 
 <!-- SECTION:PLAN:BEGIN -->
 1. Audit resources, calendar formatters, location names and all presentation surfaces; record EN/HE terminology policy and glossary in specs. 2. Load required Figma guidance, inspect and update existing frames to the policy before app edits. 3. Apply shared naming and formatting consistently across app, widgets, tile and notifications; audit store text without changing fastlane. 4. Run required build, unit tests and lint, then verify light/dark/Hebrew on a dedicated emulator using android-debug. 5. Record evidence and tested commit, commit changes and hand off to coordinator without merging or marking Done.
+
+6. Coordinator: review and integrate; add concise English/transliteration rules and a canonical spelling inventory; verify combined master, push, mark Done, push status and clean up.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -65,6 +67,8 @@ Implemented the owner-approved glossary in specs/TERMINOLOGY.md and linked it fr
 Verification: required assembleDebug, testDebugUnitTest and lintDebug plus recordRoborazziDebug passed (1254 tests, 0 failures/errors, 8 opt-in tests skipped), log /tmp/task-57.1-checks-pass.log. Reviewed representative updated EN/HE time settings, walkthrough and settings baselines. Dedicated android-debug session /tmp/levana-emu-v2943nak (emulator-5554); screenshots and UI XML under artifacts cover EN light/dark times, HE light/dark times, day sheet, drawer, Hebrew city picker and persisted Tel Aviv, final city accessibility labels, and Hebrew QS tile semantics. Initial full run had 11 old-copy assertions; corrected all and reran successfully. Runtime screenshot artifacts remain outside the worktree.
 
 Tested commit: 7665f400cc32d1959b5981c2f55edb65308bd9b1. From worktree root with .env loaded in the same command, assembleDebug + testDebugUnitTest + lintDebug + verifyRoborazziDebug passed in 2m38s. 1254 tests, zero failures/errors, 8 opt-in tests skipped. Lint: zero errors, 83 warnings. Evidence: /tmp/levana-emu-v2943nak/artifacts/commit-verification.log, test-results/, lint-results-debug.txt; final-he-cities.png/xml confirms localized saved city and delete accessibility label; final-he-tile.png/xml and final-en-tile-verified.png/xml confirm Hebrew-letter and comma-free English dates. EN/HE light/dark time-screen captures are en-times, en-times-dark, he-times-light, he-times-dark. final-runtime-errors.log is empty. Owned emulator stopped. Limitations: no timed notification delivery or home-screen widget placement exercised manually (shared formatter/repository and notification/widget tests passed); system-default Hebrew tile fallback is code-reviewed, explicit HE/EN app languages checked on device. Existing layout, bidi/time-format follow-ups and current-location fallback behavior remain with dedicated tasks. No fastlane changes, merge, push or Done transition. This notes-only follow-up commit does not alter the tested implementation.
+
+Coordinator reviewed implementation, compatibility mapping, glossary and verification log; merged cleanly at cba5e0e. Added specs/LANGUAGE_RULES.md as concise policy and specs/SPELLINGS.md with canonical time, month, holiday and complete Torah-reading spellings and links to bilingual place-name inventory. Combined master checks underway; prior runtime evidence and limitations retained.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
