@@ -187,7 +187,7 @@ class ZmanimHighLatitudeTest {
     fun `widget next zman skips the polar night's nightfall`() {
         val zone = ZoneId.of(longyearbyen.timezoneId)
         val morning = ZonedDateTime.of(polarShabbat, LocalTime.of(6, 0), zone).toInstant()
-        val prefs = UserPreferences(selectedZmanim = setOf("Sunrise", "Sunset", "Nightfall"))
+        val prefs = UserPreferences(selectedZmanim = setOf("Netz hachama", "Shkia", "Tzeit hakochavim"))
         assertNull(repo.nextSelectedZman(prefs, longyearbyen, polarShabbat, morning))
 
         val withChatzot = prefs.copy(selectedZmanim = prefs.selectedZmanim + ZmanimRepository.CHATZOT.english)
