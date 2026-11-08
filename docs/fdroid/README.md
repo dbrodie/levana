@@ -39,7 +39,7 @@ same APK (see [Pinned toolchain](#pinned-toolchain)), so the recipe doesn't inst
 F-Droid's update check (`fdroid checkupdates`) has to find both the versionName and the
 versionCode. The versionCode exists only as `major*10000 + minor*100 + patch` computed from the
 tag, and fdroidserver can't calculate it: its `Tags` mode can only cut one contiguous number out
-of the tag name, and `403` is not in `v0.4.3`. So the recipe uses `UpdateCheckMode: HTTP`, a common
+of the tag name, and `404` is not in `v0.4.4`. So the recipe uses `UpdateCheckMode: HTTP`, a common
 pattern in fdroiddata:
 
 ```yaml
@@ -48,7 +48,7 @@ UpdateCheckMode: HTTP
 UpdateCheckData: https://github.com/dbrodie/levana/releases/latest/download/fdroid-version.txt|versionCode=(\d+)|.|versionName=([\d.]+)
 ```
 
-`fdroid-version.txt` is a release asset (`versionCode=403` / `versionName=0.4.3`). It's uploaded by
+`fdroid-version.txt` is a release asset (`versionCode=404` / `versionName=0.4.4`). It's uploaded by
 `verify-release.yml` only after the reproducibility check passes, so F-Droid only sees a version
 that it can rebuild. Nothing about releasing changes: the tag stays the only version source, and
 no version file is committed. When F-Droid sees a new version, it adds a build entry for
@@ -59,13 +59,11 @@ no version file is committed. When F-Droid sees a new version, it adds a build e
 Before it builds, fdroidserver deletes every `signingConfigs { … }` block from `build.gradle.kts`
 (`remove_signing_keys`). So the build script must not rely on that block. `app/build.gradle.kts`
 uses `signingConfigs.findByName("release")`, which then returns null, and the APK stays
-unsigned. Up to v0.4.3, it used `getByName`, which fails once the block is gone. That's why the
-recipe's v0.4.3 entry has a `prebuild` that creates an empty `release` config. It doesn't change
-the APK. Builds from the first tag with `findByName` don't need it. `checkupdates` copies the
-previous entry's fields into new entries, and there the `sed` matches nothing, so it's harmless.
-Still, it's best to submit the recipe with the first release that has `findByName`, and drop
-the `prebuild` line. That release is also the first tag with the owner-approved store listing
-(TASK-55), which F-Droid reads from the built commit's `fastlane/` directory.
+unsigned. Up to v0.4.3, it used `getByName`, which fails once the block is gone, so a v0.4.3
+build would need a `prebuild` that creates an empty `release` config. v0.4.4 is the first tag with
+`findByName`, so the recipe starts at v0.4.4 and has no `prebuild`. v0.4.4 is also the first tag
+with the owner-approved store listing (TASK-55), which F-Droid reads from the built commit's
+`fastlane/` directory.
 
 ## Release flow with F-Droid
 
@@ -119,7 +117,7 @@ A pass ends with `compared built binary to supplied reference binary successfull
 silicon, Gradle under qemu emulation is too slow (lint alone ran for hours). TASK-53.5 instead used
 an arm64 Debian 13 container set up the same way (same OpenJDK 21 package, SDK licences,
 `gradlew-fdroid` and `bsenv.sh` from the official image). The scripts and logs are listed in
-TASK-53.5's notes.
+the notes of TASK-53.5 and TASK-53.6.
 
 ## How the build is made reproducible
 
@@ -159,7 +157,8 @@ Keep the release JDK and the rebuild JDK on the same 17.0.x release, and update 
 together. In testing, the output didn't depend on the JDK: Temurin 17.0.21 and JetBrains Runtime
 21.0.9 produced byte-identical APKs, because Kotlin targets JVM 17 and D8/R8 produce the dex.
 F-Droid's buildserver (Debian 13) builds with OpenJDK 21. `fdroid build` with OpenJDK 21.0.13
-reproduced the v0.4.3 release APK (TASK-53.5), so the recipe uses that JDK and doesn't install one.
+reproduced the v0.4.3 (TASK-53.5) and v0.4.4 (TASK-53.6) release APKs, so the recipe uses that JDK
+and doesn't install one.
 
 Gradle dependency verification (`verification-metadata.xml`) is not used. It would protect
 against a tampered repository artifact, not against nondeterminism, which the fixed versions and
@@ -169,7 +168,7 @@ Robolectric change. Revisit this if supply-chain integrity becomes a goal of its
 ## The CI check (`verify-release.yml`)
 
 - Runs automatically after each successful tag-triggered **Release** run (`workflow_run`), and on
-  demand from the Actions tab (**Run workflow**, enter a tag such as `v0.4.3`).
+  demand from the Actions tab (**Run workflow**, enter a tag such as `v0.4.4`).
 - Uses no secrets. The `verify` job has a read-only token: it checks out the exact tag, sets up
   Temurin 17.0.21+9 with no Gradle cache, and builds `assembleRelease` without a keystore.
 - Downloads `levana-v<ver>.apk` from that tag's GitHub Release, then checks:
@@ -192,7 +191,7 @@ Requirements: git, Temurin (or any OpenJDK) **17.0.21**, the Android SDK with bu
 and platform 36, and Python 3. Nothing else from us, and no secrets.
 
 ```bash
-TAG=v0.4.3                       # the release to check
+TAG=v0.4.4                       # the release to check
 git clone https://github.com/dbrodie/levana.git && cd levana
 git checkout "$TAG"
 export JAVA_HOME=/path/to/jdk-17.0.21 ANDROID_HOME=/path/to/android-sdk

@@ -95,7 +95,7 @@ class ZmanimRepository {
         !isHolyTomorrow -> null
         // Lighting on Shabbat, or from Yom Tov into Yom Tov, waits for nightfall
         isHolyToday && date.plusDays(1).dayOfWeek != DayOfWeek.SATURDAY ->
-            nightfallAfterSunset(createCalendar(date, location))
+            createCalendar(date, location).nightfall
         else -> {
             val czc = createCalendar(date, location)
             czc.candleLightingOffset = candleLightingOffset
@@ -116,12 +116,27 @@ class ZmanimRepository {
             lightingDay = lightingDay.minusDays(1)
         }
         if (createCalendar(lightingDay, location).seaLevelSunset == null) return null
-        return nightfallAfterSunset(createCalendar(lastDay, location))
+        return createCalendar(lastDay, location).nightfall
     }
 
-    /** Nightfall (8.5°) only on a day with a sunset; never the polar night's midday crossing. */
-    private fun nightfallAfterSunset(czc: ComplexZmanimCalendar): Date? =
-        if (czc.seaLevelSunset == null) null else czc.tzais
+    /**
+     * A polar day has no sunrise and/or no sunset. In the polar night the sun still crosses
+     * 16.1°, 11° and 8.5° below the horizon around midday, but those crossings aren't dawn
+     * or nightfall, so on a polar day Alot, Misheyakir and Nightfall are null for every
+     * consumer (zmanim lists, widgets, fasts, reminders). White nights are already null
+     * where the depression isn't reached.
+     */
+    private val ComplexZmanimCalendar.isPolarDay: Boolean
+        get() = seaLevelSunrise == null || seaLevelSunset == null
+
+    private val ComplexZmanimCalendar.alot: Date?
+        get() = if (isPolarDay) null else alosHashachar
+
+    private val ComplexZmanimCalendar.misheyakir: Date?
+        get() = if (isPolarDay) null else misheyakir11Degrees
+
+    private val ComplexZmanimCalendar.nightfall: Date?
+        get() = if (isPolarDay) null else tzais
 
     /**
      * When the holy days that begin on the evening of [date] end: the havdalah of the last
@@ -172,8 +187,8 @@ class ZmanimRepository {
         // sunrise + day/4, so Tefillah (MGA) comes first when the day is shorter than 4.8
         // hours (polar winter, roughly north of 60°). That order is accepted, not sorted.
         return buildList {
-            add(zman(ALOT_HASHACHAR, czc.alosHashachar, ZmanCategory.MORNING, location))
-            add(zman(MISHEYAKIR, czc.misheyakir11Degrees, ZmanCategory.MORNING, location))
+            add(zman(ALOT_HASHACHAR, czc.alot, ZmanCategory.MORNING, location))
+            add(zman(MISHEYAKIR, czc.misheyakir, ZmanCategory.MORNING, location))
             add(zman(SUNRISE, czc.seaLevelSunrise, ZmanCategory.MORNING, location))
             add(zman(SOF_ZMAN_SHEMA_MGA, czc.sofZmanShmaMGA, ZmanCategory.MORNING, location))
             add(zman(SOF_ZMAN_SHEMA_GRA, czc.sofZmanShmaGRA, ZmanCategory.MORNING, location))
@@ -187,7 +202,7 @@ class ZmanimRepository {
                 add(zmanTime(CANDLE_LIGHTING, shabbatInfo.candleLightingTime, ZmanCategory.EVENING))
             }
             add(zman(SUNSET, czc.seaLevelSunset, ZmanCategory.EVENING, location))
-            add(zman(NIGHTFALL, czc.tzais, ZmanCategory.EVENING, location))
+            add(zman(NIGHTFALL, czc.nightfall, ZmanCategory.EVENING, location))
             if (shabbatInfo.showHavdalah) {
                 add(zmanTime(HAVDALAH, shabbatInfo.havdalahTime, ZmanCategory.EVENING))
             }
@@ -202,7 +217,7 @@ class ZmanimRepository {
 
     fun getTzaitTime(date: LocalDate, location: Location): LocalTime? {
         val czc = createCalendar(date, location)
-        return toLocalTime(czc.tzais, location)
+        return toLocalTime(czc.nightfall, location)
     }
 
     /**
@@ -210,7 +225,7 @@ class ZmanimRepository {
      * after the following civil midnight, which [getTzaitTime] does not show.
      */
     fun getTzaitInstant(date: LocalDate, location: Location): Instant? =
-        createCalendar(date, location).tzais?.toInstant()
+        createCalendar(date, location).nightfall?.toInstant()
 
     fun getFastTimes(date: LocalDate, location: Location): Pair<LocalTime?, LocalTime?>? {
         val jc = createJewishCalendar(date)
@@ -234,10 +249,10 @@ class ZmanimRepository {
             toLocalTime(prevCzc.sunset, location)
         } else {
             // Minor fasts start at dawn (alot hashachar)
-            toLocalTime(czc.alosHashachar, location)
+            toLocalTime(czc.alot, location)
         }
 
-        val endTime = toLocalTime(czc.tzais, location)
+        val endTime = toLocalTime(czc.nightfall, location)
 
         return Pair(startTime, endTime)
     }

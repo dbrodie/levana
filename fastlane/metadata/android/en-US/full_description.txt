@@ -10,3 +10,4 @@ Levana is a Hebrew calendar for Orthodox Jewish users in Israel and the Diaspora
 • Hebrew or English, light or dark
 
 Free and open source: github.com/dbrodie/levana
+This project uses AI-generated code and assets.
