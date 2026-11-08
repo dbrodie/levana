@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-11-08T12:01:00Z'
+updated_date: '2026-11-08T13:58:00Z'
 labels: []
 dependencies:
   - TASK-53.5
@@ -255,4 +255,10 @@ the Diaspora.
 - `Closes rfp#…` was removed: there is no RFP issue for Levana.
 - If a newer Levana release exists at submission time, replace the build entry with it (full
   commit hash) and set CurrentVersion/CurrentVersionCode, per "Only the latest versions".
+
+## 2026-11-08 submitted (coordinator, owner-authorized)
+- Fork https://gitlab.com/dbrodie/fdroiddata (public), branch ninja.doskey.app.levana, commit 5ad24111 'New app: Levana' on fdroiddata master 5f2bae92; one file, metadata/ninja.doskey.app.levana.yml, byte-identical to docs/fdroid/ninja.doskey.app.levana.yml (the validated v0.4.4 recipe).
+- MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/56365 'New app: Levana'. Description = /tmp/levana-task-53.6-evidence/MR-description.md (owner-revised 'why I wrote this app' paragraph focused on open source and Hebrew-date notifications; adds 'This project uses AI-generated code and assets.').
+- Pipeline: GitLab failed both pipelines with no jobs, 'The pipeline failed due to the user not being verified'. Per the MR template the account was not verified; a note asks maintainers to trigger CI: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/56365#note_4187409460
+- Next: maintainers run the pipeline on the real buildserver image; address review feedback; tick the Docs/Pipeline checkboxes; first publication with our signature (AC #1). If a newer release ships before merge, replace the build entry.
 <!-- SECTION:NOTES:END -->
