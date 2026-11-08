@@ -26,5 +26,5 @@ Found during TASK-57.26 runtime check (evidence: /Users/daniel/.paseo/evidence/t
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-TASK-44 (2026-11-08): in the Hebrew UI the current location is now named in Hebrew when the geocoder has a Hebrew name (e.g. 'ירושלים'), else in English, or the Hebrew fallback 'מיקום נוכחי'. Saved/fallback cities stay English. So the Hebrew Today subtitle can now hold a Hebrew city (no mixed-direction run) or a Latin one (the bug still applies); the fix here is still needed for Latin names.
+TASK-44 (2026-11-08): in the Hebrew UI the current location is now named in Hebrew when the geocoder has a Hebrew name (e.g. 'ירושלים'), else in Latin script, or the Hebrew fallback 'מיקום נוכחי'. The bug still happens with a Hebrew name: the line renders '· ירושלים2026 בנובמבר 8 ,יום ראשון' and '· מיקום נוכחי2026…' (evidence /Users/daniel/.paseo/evidence/task-44/06-he-today-widget-jerusalem.png, 14-he-offline-today-widget-fallback.png). The cause is not only the Latin name; the fix here is still needed.
 <!-- SECTION:NOTES:END -->
