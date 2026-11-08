@@ -26,7 +26,7 @@ class LocationServiceTest {
     private val app: Application = ApplicationProvider.getApplicationContext()
     private val manager = app.getSystemService(LocationManager::class.java)
     private val shadow: ShadowLocationManager = shadowOf(manager)
-    private val service = LocationService(app, geocoder = { _, _ -> "Ukiah" })
+    private val service = LocationService(app, geocoder = { _, _, _ -> listOf("Ukiah") })
 
     @Before
     fun setUp() {
@@ -58,6 +58,7 @@ class LocationServiceTest {
         assertEquals(-123.21, result.longitude, 1e-9)
         assertEquals(190.0, result.elevation, 1e-9)
         assertEquals("Ukiah", result.name)
+        assertEquals(mapOf("en" to "Ukiah", "he" to "Ukiah"), result.localizedNames)
         assertEquals(DeviceContext.realZone().id, result.timezoneId)
     }
 

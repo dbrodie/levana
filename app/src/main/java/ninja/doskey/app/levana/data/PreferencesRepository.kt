@@ -12,7 +12,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.device.localeChanges
 import ninja.doskey.app.levana.device.resolveIsInIsrael
 import ninja.doskey.app.levana.device.systemTimeChanges
 import ninja.doskey.app.levana.domain.model.IsraelMode
@@ -24,12 +26,15 @@ import ninja.doskey.app.levana.domain.model.YahrzeitRules
 import ninja.doskey.app.levana.domain.model.SavedLocation
 import ninja.doskey.app.levana.domain.model.ThemeMode
 import ninja.doskey.app.levana.domain.model.UserPreferences
+import ninja.doskey.app.levana.notifications.isHebrewLanguage
+import ninja.doskey.app.levana.notifications.withAppLocale
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -45,7 +50,9 @@ class PreferencesRepository(
     private val context: Context,
     private val cityRepository: CityRepository,
     /** Re-reads the preferences, so the zone's fallback city follows a time-zone change. */
-    systemTimeChanges: Flow<Unit> = systemTimeChanges(context)
+    systemTimeChanges: Flow<Unit> = systemTimeChanges(context),
+    /** Re-reads the preferences, so the current location's name follows the app language. */
+    localeChanges: Flow<Unit> = localeChanges(context)
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -124,14 +131,14 @@ class PreferencesRepository(
 
     val preferences: Flow<UserPreferences> = combine(
         context.dataStore.data,
-        systemTimeChanges.onStart { emit(Unit) }
+        merge(systemTimeChanges, localeChanges).onStart { emit(Unit) }
     ) { prefs, _ -> prefs }.map { prefs ->
         val savedLocations = decodeSavedLocations(prefs)
         // A fix keeps only its place: it is always in the device's current zone, whatever zone
         // it was stored with, so a zone change re-zones it without waiting for a new fix
         val fix = prefs[Keys.CURRENT_LOCATION]?.let {
             runCatching { json.decodeFromString<Location>(it) }.getOrNull()
-        }?.copy(timezoneId = DeviceContext.realZone().id)
+        }?.let { it.copy(timezoneId = DeviceContext.realZone().id, name = currentLocationName(it)) }
         val currentLocation = fix
             ?: cityRepository.defaultForTimeZone(DeviceContext.realZone(), DeviceContext.realClock().instant())
 
@@ -180,6 +187,17 @@ class PreferencesRepository(
                 prefs[Keys.YAHRZEIT_ADAR_I_30_NISAN_1],
                 prefs[Keys.YAHRZEIT_MISSING_DAY]
             )
+        )
+    }
+
+    /** The fix's name in the app language now, so it is resolved on every read (TASK-44). */
+    private fun currentLocationName(fix: Location): String {
+        val localized = context.withAppLocale()
+        return currentLocationName(
+            fix.localizedNames,
+            fix.name,
+            hebrewUi = localized.isHebrewLanguage(),
+            fallback = localized.getString(R.string.current_location_fallback)
         )
     }
 

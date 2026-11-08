@@ -19,6 +19,8 @@
     <string name="settings_group_developer">מפתחים</string>
     <string name="settings_group_about">אודות</string>
     <string name="settings_group_current_location">מיקום נוכחי</string>
+    <!-- The current location's name when the lookup gave none (offline, no geocoder) -->
+    <string name="current_location_fallback">מיקום נוכחי</string>
     <string name="settings_group_saved_locations">מיקומים שמורים</string>
     <string name="settings_group_locations">מיקומים</string>
     <string name="settings_location_label">מיקום</string>

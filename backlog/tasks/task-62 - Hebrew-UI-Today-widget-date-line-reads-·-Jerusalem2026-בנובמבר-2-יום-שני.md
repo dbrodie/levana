@@ -4,6 +4,7 @@ title: 'Hebrew UI: Today widget date line reads ''· Jerusalem2026 בנובמב�
 status: To Do
 assignee: []
 created_date: '2026-11-02T14:16:00Z'
+updated_date: '2026-11-08T10:07:00Z'
 labels:
   - design-review
 dependencies: []
@@ -21,3 +22,9 @@ Found during TASK-57.26 runtime check (evidence: /Users/daniel/.paseo/evidence/t
 <!-- AC:BEGIN -->
 - [ ] #1 In the Hebrew UI the Today widget subtitle reads date, separator, city in RTL order
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-44 (2026-11-08): in the Hebrew UI the current location is now named in Hebrew when the geocoder has a Hebrew name (e.g. 'ירושלים'), else in English, or the Hebrew fallback 'מיקום נוכחי'. Saved/fallback cities stay English. So the Hebrew Today subtitle can now hold a Hebrew city (no mixed-direction run) or a Latin one (the bug still applies); the fix here is still needed for Latin names.
+<!-- SECTION:NOTES:END -->

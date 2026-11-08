@@ -19,6 +19,8 @@
     <string name="settings_group_developer">Developer</string>
     <string name="settings_group_about">About</string>
     <string name="settings_group_current_location">Current location</string>
+    <!-- The current location's name when the lookup gave none (offline, no geocoder) -->
+    <string name="current_location_fallback">Current Location</string>
     <string name="settings_group_saved_locations">Saved locations</string>
     <string name="settings_group_locations">Locations</string>
     <string name="settings_location_label">Location</string>

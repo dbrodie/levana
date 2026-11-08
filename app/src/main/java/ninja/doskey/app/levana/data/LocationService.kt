@@ -24,20 +24,24 @@ class LocationService(
 
     /**
      * A recent or fresh fix, or null when permission is missing, no provider gives one, or it
-     * takes over 15s (see [LocationFixer]). The fix is named off the main thread; a failed
-     * lookup keeps the coordinates under [FALLBACK_PLACE_NAME].
+     * takes over 15s (see [LocationFixer]). The fix is named in each app language off the main
+     * thread (see [resolvePlaceNames]); a language without a name is shown under the localized
+     * fallback name when read.
      */
     suspend fun getCurrentLocationOrNull(): Location? {
         if (!hasPermission()) return null
         val fix = fixer.fixOrNull() ?: return null
+        val names = resolvePlaceNames(geocoder, fix.latitude, fix.longitude)
         return Location(
             latitude = fix.latitude,
             longitude = fix.longitude,
             elevation = fix.altitude,
             // A fix is in the device zone (TASK-5 case 10); it is re-zoned on every read (TASK-46)
             timezoneId = DeviceContext.realZone().id,
-            name = resolvePlaceName(geocoder, fix.latitude, fix.longitude),
-            country = ""
+            // Replaced by the app language's name on every read (TASK-44)
+            name = names[PlaceNameLanguage.ENGLISH.key].orEmpty(),
+            country = "",
+            localizedNames = names
         )
     }
 
