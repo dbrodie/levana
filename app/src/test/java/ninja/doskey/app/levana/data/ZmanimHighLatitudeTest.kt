@@ -4,6 +4,7 @@ import com.kosherjava.zmanim.ComplexZmanimCalendar
 import com.kosherjava.zmanim.util.GeoLocation
 import ninja.doskey.app.levana.domain.agenda.AgendaAssembler
 import ninja.doskey.app.levana.domain.agenda.AgendaItem
+import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.SystemCalendarEvent
 import ninja.doskey.app.levana.domain.model.UserPreferences
@@ -11,6 +12,7 @@ import ninja.doskey.app.levana.domain.model.ZmanName
 import ninja.doskey.app.levana.domain.model.ZmanTime
 import ninja.doskey.app.levana.notifications.ReminderAlarm
 import ninja.doskey.app.levana.notifications.planReminderAlarms
+import ninja.doskey.app.levana.widget.nextSelectedZman
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -103,7 +105,7 @@ class ZmanimHighLatitudeTest {
     @Test
     fun `polar night has neither candle lighting nor a midday havdalah`() {
         // The sun still crosses 8.5° below the horizon around midday; that isn't havdalah
-        assertNotNull(repo.getTzaitTime(polarShabbat, longyearbyen))
+        assertNotNull(raw(longyearbyen, polarShabbat).tzais)
         assertNull(repo.getSunsetTime(polarFriday, longyearbyen))
 
         val friday = repo.getShabbatInfo(polarFriday, longyearbyen)
@@ -146,6 +148,113 @@ class ZmanimHighLatitudeTest {
         ))
         assertTrue(ordered.first() is AgendaItem.HolidayItem)
         assertTrue(ordered.last() is AgendaItem.CandleLighting)
+    }
+
+    // --- Polar-day twilight (TASK-57.35): no Alot, Misheyakir or Nightfall ----------------
+
+    private val tromso = Location(69.6492, 18.9553, timezoneId = "Europe/Oslo", name = "Tromsø")
+    private val mcMurdo = Location(-77.8419, 166.6863, timezoneId = "Antarctica/McMurdo", name = "McMurdo")
+
+    @Test
+    fun `polar night drops the midday twilight crossings but keeps chatzot`() {
+        val crossings = raw(longyearbyen, polarShabbat)
+        assertNull(crossings.seaLevelSunrise)
+        assertNotNull(crossings.alosHashachar)
+        assertNotNull(crossings.misheyakir11Degrees)
+        assertNotNull(crossings.tzais)
+
+        val zmanim = repo.getZmanim(polarShabbat, longyearbyen)
+        assertNull(zmanim.time(ZmanimRepository.ALOT_HASHACHAR))
+        assertNull(zmanim.time(ZmanimRepository.MISHEYAKIR))
+        assertNull(zmanim.time(ZmanimRepository.NIGHTFALL))
+        assertNotNull(zmanim.time(ZmanimRepository.CHATZOT))
+        assertNotNull(zmanim.time(ZmanimRepository.CHATZOT_HALAYLAH))
+        assertNull(repo.getTzaitTime(polarShabbat, longyearbyen))
+        assertNull(repo.getTzaitInstant(polarShabbat, longyearbyen))
+    }
+
+    @Test
+    fun `midnight sun has no twilight times either`() {
+        val zmanim = repo.getZmanim(LocalDate.of(2027, 6, 21), longyearbyen)
+        assertNull(zmanim.time(ZmanimRepository.ALOT_HASHACHAR))
+        assertNull(zmanim.time(ZmanimRepository.MISHEYAKIR))
+        assertNull(zmanim.time(ZmanimRepository.NIGHTFALL))
+        assertNotNull(zmanim.time(ZmanimRepository.CHATZOT))
+        assertNotNull(zmanim.time(ZmanimRepository.CHATZOT_HALAYLAH))
+    }
+
+    @Test
+    fun `widget next zman skips the polar night's nightfall`() {
+        val zone = ZoneId.of(longyearbyen.timezoneId)
+        val morning = ZonedDateTime.of(polarShabbat, LocalTime.of(6, 0), zone).toInstant()
+        val prefs = UserPreferences(selectedZmanim = setOf("Sunrise", "Sunset", "Nightfall"))
+        assertNull(repo.nextSelectedZman(prefs, longyearbyen, polarShabbat, morning))
+
+        val withChatzot = prefs.copy(selectedZmanim = prefs.selectedZmanim + ZmanimRepository.CHATZOT.english)
+        assertEquals(ZmanimRepository.CHATZOT.english, repo.nextSelectedZman(withChatzot, longyearbyen, polarShabbat, morning)?.name)
+    }
+
+    @Test
+    fun `fast in the polar night has no start or end`() {
+        val tevet10 = LocalDate.of(2026, 12, 20)
+        assertTrue(calendar.getDayInfo(tevet10).holidays.any { it.category == HolidayCategory.FAST })
+        val crossings = raw(tromso, tevet10)
+        assertNull(crossings.seaLevelSunset)
+        assertNotNull(crossings.alosHashachar)
+        assertNotNull(crossings.tzais)
+
+        val (start, end) = requireNotNull(repo.getFastTimes(tevet10, tromso))
+        assertNull(start)
+        assertNull(end)
+    }
+
+    @Test
+    fun `Omer nightfall reminder isn't scheduled in the polar night`() {
+        val date = LocalDate.of(2027, 5, 5) // in the Omer; Antarctic polar night
+        val crossings = raw(mcMurdo, date)
+        assertNull(crossings.seaLevelSunset)
+        assertNotNull(crossings.tzais)
+
+        val zone = ZoneId.of(mcMurdo.timezoneId)
+        val prefs = UserPreferences(notifyOmer = true, notifyOmerTzait = true, notifyOmerMorning = true)
+        val plan = planReminderAlarms(
+            date, ZonedDateTime.of(date, LocalTime.of(5, 0), zone).toInstant(), zone, mcMurdo, prefs, repo, calendar
+        )
+        assertTrue(plan.alarms.none { it is ReminderAlarm.OmerEvening })
+        assertTrue(plan.overdue.none { it is ReminderAlarm.OmerEvening })
+        assertTrue(plan.alarms.any { it is ReminderAlarm.OmerMorning && it.date == date })
+    }
+
+    @Test
+    fun `twilight times are unchanged at normal latitudes and in white nights`() {
+        val june = generateSequence(LocalDate.of(2027, 6, 1)) { it.plusDays(1) }.takeWhile { it.monthValue == 6 }
+        val year = generateSequence(LocalDate.of(2027, 1, 1)) { it.plusDays(1) }.takeWhile { it.year == 2027 }
+        listOf(stPetersburg to june, Location.JERUSALEM to year).forEach { (location, dates) ->
+            dates.forEach { date ->
+                val czc = raw(location, date)
+                val zone = ZoneId.of(location.timezoneId)
+                fun local(d: java.util.Date?) = d?.toInstant()?.atZone(zone)?.toLocalTime()
+                val zmanim = repo.getZmanim(date, location)
+                assertEquals("$date", local(czc.alosHashachar), zmanim.time(ZmanimRepository.ALOT_HASHACHAR))
+                assertEquals("$date", local(czc.misheyakir11Degrees), zmanim.time(ZmanimRepository.MISHEYAKIR))
+                assertEquals("$date", local(czc.tzais), zmanim.time(ZmanimRepository.NIGHTFALL))
+                assertEquals("$date", czc.tzais?.toInstant(), repo.getTzaitInstant(date, location))
+            }
+        }
+        // St. Petersburg's white night is still missing nightfall and Alot, Misheyakir in mid-June
+        assertNull(repo.getTzaitTime(LocalDate.of(2027, 6, 21), stPetersburg))
+        val tammuz17 = LocalDate.of(2027, 7, 22)
+        assertTrue(calendar.getDayInfo(tammuz17, inIsrael = true).holidays.any { it.category == HolidayCategory.FAST })
+        val (start, end) = requireNotNull(repo.getFastTimes(tammuz17, Location.JERUSALEM))
+        assertNotNull(start)
+        assertNotNull(end)
+    }
+
+    /** KosherJava's own values, as the repository computes them before any rule. */
+    private fun raw(location: Location, date: LocalDate): ComplexZmanimCalendar {
+        val tz = TimeZone.getTimeZone(location.timezoneId)
+        return ComplexZmanimCalendar(GeoLocation(location.name, location.latitude, location.longitude, location.elevation, tz))
+            .apply { calendar = GregorianCalendar(date.year, date.monthValue - 1, date.dayOfMonth).also { it.timeZone = tz } }
     }
 
     // --- Midnight sun: Longyearbyen, June 2027 ------------------------------------------
