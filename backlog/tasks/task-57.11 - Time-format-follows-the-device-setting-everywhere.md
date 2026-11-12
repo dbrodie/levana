@@ -4,6 +4,7 @@ title: Time format follows the device setting everywhere
 status: To Do
 assignee: []
 created_date: '2026-11-01T11:34:00Z'
+updated_date: '2026-11-12T22:12:00Z'
 labels:
   - design-review
 dependencies: []
@@ -30,3 +31,9 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 - [ ] #1 All times follow the device 12/24-hour setting
 - [ ] #2 Hebrew UI renders times correctly inside RTL text
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+From TASK-57.26 (2026-11-13): in the Hebrew UI on a 12-hour clock, the candle-lighting notification's second time wraps between '5:18' and 'PM' (order still correct). A no-break space was tried and reverted in 57.26 because it split the AM/PM marker in the Fold cover-screen quick cards at 200% font; a notification-only fix would be needed. Evidence: /Users/daniel/.paseo/evidence/task-57.26/09-he-12h-notification.png
+<!-- SECTION:NOTES:END -->

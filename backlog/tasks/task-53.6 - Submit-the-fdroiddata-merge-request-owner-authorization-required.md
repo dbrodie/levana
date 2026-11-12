@@ -1,11 +1,10 @@
 ---
 id: TASK-53.6
 title: Submit the fdroiddata merge request (owner authorization required)
-status: In Progress
-assignee:
-  - '@claude'
+status: To Do
+assignee: []
 created_date: '2026-10-30T12:25:00Z'
-updated_date: '2026-11-08T13:58:00Z'
+updated_date: '2026-11-12T22:12:00Z'
 labels: []
 dependencies:
   - TASK-53.5
@@ -261,4 +260,10 @@ the Diaspora.
 - MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/56365 'New app: Levana'. Description = /tmp/levana-task-53.6-evidence/MR-description.md (owner-revised 'why I wrote this app' paragraph focused on open source and Hebrew-date notifications; adds 'This project uses AI-generated code and assets.').
 - Pipeline: GitLab failed both pipelines with no jobs, 'The pipeline failed due to the user not being verified'. Per the MR template the account was not verified; a note asks maintainers to trigger CI: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/56365#note_4187409460
 - Next: maintainers run the pipeline on the real buildserver image; address review feedback; tick the Docs/Pipeline checkboxes; first publication with our signature (AC #1). If a newer release ships before merge, replace the build entry.
+
+## 2026-11-13 deferred (coordinator)
+- MR !56365 was closed by the owner on 2026-11-08 without review (its pipeline never ran: unverified GitLab account). Submission is deferred to the future; the task is back in To Do.
+- Nothing more is needed in this repo: the recipe reference copy is docs/fdroid/ninja.doskey.app.levana.yml (validated for v0.4.4), every release publishes fdroid-version.txt (verify-release.yml), and the signingConfigs fix is in.
+- To resubmit: update the build entry to the then-current release (full commit hash, versionName/versionCode, CurrentVersion*) in fdroiddata's metadata/ninja.doskey.app.levana.yml (and refresh the docs copy), revalidate, then reopen !56365 or open a new MR from dbrodie/fdroiddata (branch ninja.doskey.app.levana still exists). The MR text is in these notes and /tmp/levana-task-53.6-evidence/MR-description.md. The pipeline needs a verified GitLab account or a maintainer to trigger it.
+- Cleanup when done: docker image levana-fdroid-buildserver-arm64:53.6, colima profile 'fdroid'.
 <!-- SECTION:NOTES:END -->
