@@ -3,11 +3,11 @@ id: TASK-44
 title: >-
   Current-location name can come back in a foreign language (Arabic for
   Jerusalem)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-29T21:03:00Z'
-updated_date: '2026-11-08T11:33:00Z'
+updated_date: '2026-11-12T22:12:00Z'
 labels: []
 dependencies: []
 priority: low
