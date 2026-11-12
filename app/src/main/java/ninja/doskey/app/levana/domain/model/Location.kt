@@ -9,7 +9,12 @@ data class Location(
     val elevation: Double = 0.0,
     val timezoneId: String,
     val name: String,
-    val country: String = ""
+    val country: String = "",
+    /**
+     * A current-location fix's looked-up names by app language ("en", "he"), empty for a
+     * city. [name] is read through these, see [ninja.doskey.app.levana.data.currentLocationName].
+     */
+    val localizedNames: Map<String, String> = emptyMap()
 ) {
     companion object {
         val JERUSALEM = Location(

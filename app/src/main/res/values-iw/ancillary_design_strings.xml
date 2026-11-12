@@ -18,6 +18,8 @@
     <string name="settings_group_notifications">התראות</string>
     <string name="settings_group_developer">מפתחים</string>
     <string name="settings_group_about">אודות</string>
+    <!-- The current location's name when the lookup gave none (offline, no geocoder) -->
+    <string name="current_location_fallback">מיקום נוכחי</string>
     <string name="settings_group_current_location">המיקום הנוכחי</string>
     <string name="settings_group_saved_locations">ערים שמורות</string>
     <string name="settings_group_locations">ערים</string>
