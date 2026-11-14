@@ -1,11 +1,11 @@
 ---
 id: TASK-62
 title: 'Hebrew UI: Today widget date line reads ''· Jerusalem2026 בנובמבר 2 ,יום שני'''
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T14:16:00Z'
-updated_date: '2026-11-14T21:51:00Z'
+updated_date: '2026-11-14T21:54:00Z'
 labels:
   - design-review
 dependencies: []
