@@ -6,6 +6,7 @@
     <string name="walkthrough_next">הבא</string>
     <string name="walkthrough_get_started">מתחילים</string>
     <string name="walkthrough_got_it">הבנתי</string>
+    <string name="walkthrough_show_more">הצגת עוד</string>
     <string name="walkthrough_not_now">לא עכשיו</string>
     <string name="walkthrough_page_of">עמוד %1$d מתוך %2$d</string>
     <string name="walkthrough_counter">%1$d מתוך %2$d</string>

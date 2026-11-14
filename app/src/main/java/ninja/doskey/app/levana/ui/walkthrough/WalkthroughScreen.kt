@@ -4,6 +4,7 @@ import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,10 +35,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -46,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -54,12 +59,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.location.CityPickerScreen
 import ninja.doskey.app.levana.ui.contentWidth
 import ninja.doskey.app.levana.ui.CappedFontScale
 import ninja.doskey.app.levana.ui.isPermanentlyDenied
 import ninja.doskey.app.levana.ui.openAppSettings
+import kotlin.math.roundToInt
 
 /**
  * The walkthrough with its side effects: the permission dialogs, the permission recheck on
@@ -111,7 +118,8 @@ fun WalkthroughScreen(state: WalkthroughState, onIntent: (WalkthroughIntent) -> 
 
 /**
  * The walkthrough's pages and controls for [state]: Skip at the top end, the pager, and the
- * bottom bar (page indicator, Back, Next / Get started, or a lone Got it).
+ * bottom bar (page indicator, Back, Next / Get started, or a lone Got it). While the page can
+ * still scroll down, Next / Get started / Got it scroll it instead of moving on (TASK-65).
  */
 @Composable
 fun WalkthroughContent(
@@ -126,6 +134,17 @@ fun WalkthroughContent(
     val pagerState = rememberPagerState(initialPage = state.page) { count }
     PagerSync(pagerState, state.page, reducedMotion) { onIntent(WalkthroughIntent.PageShown(it)) }
     val actions = remember(onIntent) { WalkthroughActions(onAddCity = { onIntent(WalkthroughIntent.AddCity) }) }
+    // Each composed page's scroll, by screen id, so the bottom bar can see the current one's
+    val pageScrolls = remember { mutableStateMapOf<String, ScrollState>() }
+    val currentScroll = state.screens.getOrNull(state.page)?.let { pageScrolls[it.id] }
+    val scope = rememberCoroutineScope()
+    val forward: (WalkthroughIntent) -> Unit = { intent ->
+        if (currentScroll?.canScrollForward == true) {
+            scope.launch { currentScroll.showMore(reducedMotion) }
+        } else {
+            onIntent(intent)
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
@@ -147,8 +166,15 @@ fun WalkthroughContent(
                 key = { state.screens[it].id },
             ) { index ->
                 val screen = state.screens[index]
+                // Saved with the pager's item, as before; registered for the bottom bar
+                val scroll = rememberScrollState()
+                DisposableEffect(screen.id, scroll) {
+                    pageScrolls[screen.id] = scroll
+                    onDispose { if (pageScrolls[screen.id] === scroll) pageScrolls.remove(screen.id) }
+                }
                 WalkthroughPage(
                     screen = screen,
+                    scroll = scroll,
                     pageLabel = stringResource(R.string.walkthrough_page_of, index + 1, count),
                     permissionStatus = screen.permission?.let(state::status),
                     permissionBlocked = screen.permission in blockedPermissions,
@@ -162,12 +188,27 @@ fun WalkthroughContent(
                 page = state.page,
                 indicator = state.indicator,
                 isLastPage = state.isLastPage,
+                showsMore = currentScroll?.canScrollForward == true,
                 reducedMotion = reducedMotion,
                 onIntent = onIntent,
+                onForward = forward,
             )
         }
     }
 }
+
+/**
+ * Scrolls down by about a viewport, keeping a little of what was shown for context, or to the
+ * end if that is nearer. Instant under reduced motion.
+ */
+private suspend fun ScrollState.showMore(reducedMotion: Boolean) {
+    val step = (viewportSize * SHOW_MORE_STEP).roundToInt().coerceAtLeast(1)
+    val target = (value + step).coerceAtMost(maxValue)
+    if (reducedMotion) scrollTo(target) else animateScrollTo(target)
+}
+
+/** The part of the viewport one Next scrolls; the rest stays on screen for context. */
+private const val SHOW_MORE_STEP = 0.85f
 
 /**
  * Keeps the pager on [page] (Next and Back) and reports where it settles after a swipe.
@@ -191,6 +232,7 @@ private fun PagerSync(pagerState: PagerState, page: Int, reducedMotion: Boolean,
 @Composable
 private fun WalkthroughPage(
     screen: FeatureScreen,
+    scroll: ScrollState,
     pageLabel: String,
     permissionStatus: PermissionStatus?,
     permissionBlocked: Boolean,
@@ -203,7 +245,7 @@ private fun WalkthroughPage(
         Modifier
             .fillMaxSize()
             .semantics { paneTitle = "$title, $pageLabel" }
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scroll)
             .contentWidth()
             .padding(horizontal = 24.dp),
     ) {
@@ -246,9 +288,20 @@ private fun WalkthroughBottomBar(
     page: Int,
     indicator: PageIndicator,
     isLastPage: Boolean,
+    showsMore: Boolean,
     reducedMotion: Boolean,
     onIntent: (WalkthroughIntent) -> Unit,
+    onForward: (WalkthroughIntent) -> Unit,
 ) {
+    // TalkBack says what the forward button will do: "double tap to show more" while it scrolls
+    val showMoreLabel = stringResource(R.string.walkthrough_show_more)
+    val forwardSemantics = { intent: WalkthroughIntent ->
+        if (showsMore) {
+            Modifier.semantics { onClick(label = showMoreLabel) { onForward(intent); true } }
+        } else {
+            Modifier
+        }
+    }
     Column(
         Modifier.contentWidth().fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -261,10 +314,11 @@ private fun WalkthroughBottomBar(
         if (indicator != PageIndicator.NONE) Spacer(Modifier.height(20.dp))
         if (count == 1) {
             Button(
-                onClick = { onIntent(WalkthroughIntent.Finish) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                onClick = { onForward(WalkthroughIntent.Finish) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).then(forwardSemantics(WalkthroughIntent.Finish)),
             ) { Text(stringResource(R.string.walkthrough_got_it)) }
         } else {
+            val forwardIntent = if (isLastPage) WalkthroughIntent.Finish else WalkthroughIntent.Next
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (page > 0) {
                     TextButton(onClick = { onIntent(WalkthroughIntent.Back) }, modifier = Modifier.heightIn(min = 52.dp)) {
@@ -274,8 +328,8 @@ private fun WalkthroughBottomBar(
                     Spacer(Modifier)
                 }
                 Button(
-                    onClick = { onIntent(if (isLastPage) WalkthroughIntent.Finish else WalkthroughIntent.Next) },
-                    modifier = Modifier.heightIn(min = 52.dp),
+                    onClick = { onForward(forwardIntent) },
+                    modifier = Modifier.heightIn(min = 52.dp).then(forwardSemantics(forwardIntent)),
                 ) {
                     Text(
                         stringResource(if (isLastPage) R.string.walkthrough_get_started else R.string.walkthrough_next),
