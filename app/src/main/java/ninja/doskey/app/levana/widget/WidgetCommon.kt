@@ -54,6 +54,23 @@ internal const val NO_TIME = MISSING_TIME
 /** Text alignment that keeps a mirrored row's text against its edge. */
 internal fun textAlign(mirror: Boolean) = if (mirror) TextAlign.End else TextAlign.Start
 
+private const val LEFT_TO_RIGHT_ISOLATE = '\u2066'
+private const val RIGHT_TO_LEFT_ISOLATE = '\u2067'
+private const val FIRST_STRONG_ISOLATE = '\u2068'
+private const val POP_DIRECTIONAL_ISOLATE = '\u2069'
+
+/**
+ * The " · city" that follows a date on a widget line, as its own text. The widget's text
+ * views lay their paragraph out in the device's direction, which a mirrored widget doesn't
+ * share, so the label is isolated in the app language's direction: the separator always sits
+ * next to the date and the city after it. The city is isolated again, so a name in either
+ * script reads the right way inside it.
+ */
+internal fun widgetLocationSuffix(city: String, hebrewUi: Boolean): String {
+    val direction = if (hebrewUi) RIGHT_TO_LEFT_ISOLATE else LEFT_TO_RIGHT_ISOLATE
+    return "$direction · $FIRST_STRONG_ISOLATE$city$POP_DIRECTIONAL_ISOLATE$POP_DIRECTIONAL_ISOLATE"
+}
+
 /** Formats a time on the device's 12/24-hour clock, isolated in the Hebrew UI. */
 internal fun widgetTimeFormat(context: Context): (ZonedDateTime) -> String {
     val use24Hour = DateFormat.is24HourFormat(context)
