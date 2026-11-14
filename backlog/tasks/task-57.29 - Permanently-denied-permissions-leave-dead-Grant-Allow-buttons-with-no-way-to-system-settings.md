@@ -3,9 +3,11 @@ id: TASK-57.29
 title: >-
   Permanently denied permissions leave dead Grant/Allow buttons with no way to
   system settings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-02T14:27:00Z'
+updated_date: '2026-11-14T21:00:00Z'
 labels:
   - design-review
 dependencies: []
@@ -36,3 +38,15 @@ Fix direction: when the launcher returns denied and shouldShowRequestPermissionR
 - [ ] #2 Returning from system settings with the permission granted updates the screen without a restart
 - [ ] #3 Verified on an emulator in English and Hebrew
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Shared helper ui/PermissionSettings.kt: pure isPermanentlyDenied(results, shouldShowRationale) (denied and no rationale for any requested permission), Context.openAppSettings() (ACTION_APPLICATION_DETAILS_SETTINGS) and openAppNotificationSettings() (ACTION_APP_NOTIFICATION_SETTINGS), and rememberPermissionRequester(permissions, notifications, onResult): request() launches the system dialog, or opens system settings once a request came back permanently denied; blocked flag saved across configuration changes.
+2. Calendar selection (Settings > System calendars and Agenda Choose calendars): PermissionRequest takes blocked; when blocked, short explanation + the same button reads 'Open settings'. Reload on resume while permission is missing.
+3. Birthdays tab + FAB: same button variant; FAB opens settings when blocked. Events already reloads birthdays on resume.
+4. Cities current-location row: supporting text explains and tap opens app settings when blocked; recheck permission on resume and fetch the current location when newly granted.
+5. Notification switches: when blocked, an AlertDialog (Notifications are off / Open settings / Cancel) opens app notification settings; on resume, if granted, the switch the user tried to turn on is turned on.
+6. Walkthrough: when a permission is permanently denied, its Allow button reads 'Open settings' and opens app settings (existing resume refresh updates status).
+7. Strings EN + iw (plural-you Hebrew per current strings). Unit tests for isPermanentlyDenied and settings intents; Roborazzi for the blocked variants (calendar selection, birthdays, cities). Build/test/lint; emulator check EN+HE with pm revoke + USER_FIXED, grant from settings, confirm refresh.
+<!-- SECTION:PLAN:END -->

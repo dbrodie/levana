@@ -1,8 +1,5 @@
 package ninja.doskey.app.levana.ui.navigation
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ninja.doskey.app.levana.data.LocationService
+import ninja.doskey.app.levana.ui.findActivity
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.device.DeviceContext
 import ninja.doskey.app.levana.icon.DateRollover
@@ -105,10 +103,4 @@ internal fun LevanaStartupEffects(
             if (openZmanim) navController.navigate(ZmanimRoute(deepLinkEpochDay))
         }
     }
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
 }

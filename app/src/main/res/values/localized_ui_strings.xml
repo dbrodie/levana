@@ -5,6 +5,11 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_delete">Delete</string>
     <string name="common_grant_permission">Grant permission</string>
+    <string name="common_open_settings">Open settings</string>
+    <string name="permission_blocked_explanation">Permission is turned off. You can allow it in Levana\'s system settings.</string>
+    <string name="location_permission_blocked">Based on your time zone. Tap to allow location access in system settings.</string>
+    <string name="notifications_blocked_title">Notifications are off</string>
+    <string name="notifications_blocked_text">To get reminders, allow Levana\'s notifications in system settings.</string>
 
     <!-- My events -->
     <string name="events_tab_birthdays">Birthdays</string>

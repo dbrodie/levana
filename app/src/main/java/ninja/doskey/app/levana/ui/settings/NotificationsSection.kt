@@ -1,8 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
 import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.clickable
@@ -13,9 +11,11 @@ import androidx.compose.material.icons.outlined.NoFood
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Stars
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import ninja.doskey.app.levana.R
+import ninja.doskey.app.levana.ui.rememberPermissionRequester
 import kotlinx.coroutines.launch
 
 @Composable
@@ -39,25 +42,62 @@ internal fun NotificationsSection(
     // The switch the user tried to turn on while the permission dialog is showing.
     // Saved by name so it survives configuration changes (e.g. rotation).
     var pendingSwitchName by rememberSaveable { mutableStateOf<String?>(null) }
+    // Once the system stops asking: the switch the user tried to turn on, while the dialog
+    // pointing to system settings shows, and then while they are there.
+    var blockedSwitchName by rememberSaveable { mutableStateOf<String?>(null) }
+    var inSystemSettings by rememberSaveable { mutableStateOf(false) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
+    fun isGranted() = androidx.core.content.ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    val permission = rememberPermissionRequester(
+        Manifest.permission.POST_NOTIFICATIONS,
+        notifications = true,
+        onBlocked = { blockedSwitchName = pendingSwitchName }
     ) { granted ->
         notificationPermissionResultIntent(pendingSwitchName, granted)?.let(onIntent)
         pendingSwitchName = null
     }
 
+    // Back from system settings: turn on the switch if notifications are now allowed
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (inSystemSettings) {
+            notificationPermissionResultIntent(blockedSwitchName, isGranted())?.let(onIntent)
+            blockedSwitchName = null
+            inSystemSettings = false
+        }
+    }
+
     fun setNotificationSwitch(switch: NotificationSwitch, enabled: Boolean) {
-        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (!enabled || granted) {
+        if (!enabled || isGranted()) {
             onIntent(switch.intent(enabled))
+        } else if (permission.blocked) {
+            blockedSwitchName = switch.name
         } else {
             pendingSwitchName = switch.name
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            permission.request()
         }
+    }
+
+    if (blockedSwitchName != null && !inSystemSettings) {
+        AlertDialog(
+            onDismissRequest = { blockedSwitchName = null },
+            title = { Text(stringResource(R.string.notifications_blocked_title)) },
+            text = { Text(stringResource(R.string.notifications_blocked_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    inSystemSettings = true
+                    permission.openSettings()
+                }) { Text(stringResource(R.string.common_open_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { blockedSwitchName = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
+        )
     }
 
     // Candle Lighting
