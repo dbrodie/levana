@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-14T21:14:00Z'
+updated_date: '2026-11-14T21:19:00Z'
 labels:
   - calendar
   - day-sheet
@@ -29,9 +30,9 @@ Proposed fix: on Shabbat Mevarchim, the day-sheet badge reads 'Shabbat Mevarchim
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On Shabbat Mevarchim the day sheet's peek shows a 'Shabbat Mevarchim <month>' badge (English and Hebrew) in place of the plain 'Shabbat' badge
-- [ ] #2 Other Shabbatot keep the 'Shabbat' badge
-- [ ] #3 Unit test pins isShabbatMevarchim true for 2026-11-07 (Israel and Diaspora, both grid modes) and false for 2026-11-14
+- [x] #1 On Shabbat Mevarchim the day sheet's peek shows a 'Shabbat Mevarchim <month>' badge (English and Hebrew) in place of the plain 'Shabbat' badge
+- [x] #2 Other Shabbatot keep the 'Shabbat' badge
+- [x] #3 Unit test pins isShabbatMevarchim true for 2026-11-07 (Israel and Diaspora, both grid modes) and false for 2026-11-14
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +43,12 @@ Proposed fix: on Shabbat Mevarchim, the day-sheet badge reads 'Shabbat Mevarchim
 3. Re-record/verify Roborazzi baselines touching a Shabbat Mevarchim day sheet, if any.
 4. Build/test/lint; runtime check on own emulator; record evidence.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Verification (commit 22d5de6): ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug passed; no Roborazzi baseline changed (no snapshot covers a Shabbat Mevarchim day sheet). Runtime on own headless emulator Levana_Agent_Template_API_36_1: /Users/daniel/.paseo/evidence/verify-shabbat-mevarchim/11-fix-he-peek-nov7.png (peek badge 'שבת מברכים חודש כסלו'), 12-fix-en-peek.png ('Shabbat Mevarchim Kislev'); 14 Nov keeps 'Shabbat'. Before-fix evidence 00-10 in the same directory.
+Settings checked: English/Hebrew UI, Gregorian/Hebrew grid mode, Jerusalem (Israel) and an emulator-GPS US city (Diaspora); the marking is identical in all. Unit test covers Israel/Diaspora and both grid modes.
+Limitations: the emulator's system server hangs (repeated ANR dialogs) after moving the clock backwards with cmd alarm set-time while the host was heavily loaded, so the 'today = 7 Nov' screenshots (04, 05, 08) come from the first session only; the later sessions used the real date (14 Nov) and selected 7 Nov. Odd zman times in the 14 Nov sessions are because the emulator's GPS location (US) does not match its Israel time zone (the app shows its time-zone mismatch dialog), which has nothing to do with this change.
+Open for the owner: the grid chip still truncates to 'Chayei S…' on phones (TASK-57.6 trade-off). Store listing: not affected (the badge changes only on Shabbat Mevarchim).
+<!-- SECTION:NOTES:END -->
