@@ -68,7 +68,19 @@ class RoshChodeshMevarchimTest {
         assertFalse(day(LocalDate.of(2026, 10, 31)).isShabbatMevarchim) // 20 Cheshvan
         assertFalse(day(LocalDate.of(2027, 9, 4)).isShabbatMevarchim) // 27 Elul 5787
         assertFalse(day(LocalDate.of(2026, 11, 8)).isShabbatMevarchim) // Sunday
+        assertFalse(day(LocalDate.of(2026, 11, 14)).isShabbatMevarchim) // 4 Kislev
         assertNull(calendar.getDayInfo(LocalDate.of(2027, 9, 4)).molad)
+    }
+
+    @Test
+    fun `Shabbat Mevarchim does not depend on Israel or Diaspora or the grid mode`() {
+        val date = LocalDate.of(2026, 11, 7)
+        for (inIsrael in listOf(true, false)) {
+            assertTrue(calendar.getMonthDays(YearMonth.of(2026, 11), inIsrael).single { it.gregorianDate == date }.isShabbatMevarchim)
+            assertTrue(calendar.getDayInfo(date, inIsrael = inIsrael).molad != null)
+        }
+        val cheshvan = calendar.getHebrewMonthDays(HebrewYearMonth(5787, HebrewMonth.CHESHVAN, HebrewMonth.CHESHVAN.jewishDateValue))
+        assertTrue(cheshvan.single { it.gregorianDate == date }.isShabbatMevarchim)
     }
 
     /**
