@@ -1,6 +1,7 @@
 package ninja.doskey.app.levana.widget
 
 import android.content.Context
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -87,18 +88,7 @@ class MonthWidget : GlanceAppWidget(), KoinComponent {
             val dark = remember(snapshot.holidayTheme, prefs.materialYou, refreshes) {
                 levanaColorScheme(context, darkTheme = true, snapshot.holidayTheme, prefs.materialYou)
             }
-            // Calendar colors Glance's theme lacks, taken from the same schemes
-            val gridColors = remember(light, dark) {
-                MonthGridColors(
-                    markers = HolidayCategory.entries.associateWith {
-                        ColorProvider(day = holidayCategoryColor(it, light), night = holidayCategoryColor(it, dark))
-                    },
-                    shabbat = ColorProvider(day = light.surfaceContainerLow, night = dark.surfaceContainerLow),
-                )
-            }
-            GlanceTheme(colors = remember(light, dark) { ColorProviders(light = light, dark = dark) }) {
-                MonthContent(snapshot, gridColors)
-            }
+            MonthWidgetContent(snapshot, light, dark)
         }
     }
 
@@ -119,7 +109,22 @@ class MonthWidgetReceiver : RefreshingWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = MonthWidget()
 }
 
-private val HEBREW_LOCALE = Locale.forLanguageTag("he")
+/** The widget's content for [snapshot] in the [light] and [dark] color schemes. */
+@Composable
+internal fun MonthWidgetContent(snapshot: MonthWidgetSnapshot, light: ColorScheme, dark: ColorScheme) {
+    // Calendar colors Glance's theme lacks, taken from the same schemes
+    val gridColors = remember(light, dark) {
+        MonthGridColors(
+            markers = HolidayCategory.entries.associateWith {
+                ColorProvider(day = holidayCategoryColor(it, light), night = holidayCategoryColor(it, dark))
+            },
+            shabbat = ColorProvider(day = light.surfaceContainerLow, night = dark.surfaceContainerLow),
+        )
+    }
+    GlanceTheme(colors = remember(light, dark) { ColorProviders(light = light, dark = dark) }) {
+        MonthContent(snapshot, gridColors)
+    }
+}
 
 // Sunday first, as in the calendar grid
 private val DAYS_OF_WEEK = listOf(DayOfWeek.SUNDAY) + DayOfWeek.entries.dropLast(1)
@@ -133,6 +138,10 @@ private fun MonthContent(snapshot: MonthWidgetSnapshot, colors: MonthGridColors)
         LocalSize.current.width >= MonthWidget.FULL.width
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)
     fun <T> inRowOrder(items: List<T>) = if (mirror) items.reversed() else items
+    // In the app language, as in the calendar grid. The calendar's short names don't fit the
+    // compact cells in Hebrew (יום א׳), but its narrow ones (א׳) are as clear; English's
+    // narrow ones (S M T W T F S) are not, so English keeps the short ones.
+    val weekdayStyle = if (locale.isHebrewUi()) java.time.format.TextStyle.NARROW else java.time.format.TextStyle.SHORT
 
     Column(
         modifier = GlanceModifier
@@ -146,8 +155,7 @@ private fun MonthContent(snapshot: MonthWidgetSnapshot, colors: MonthGridColors)
         Row(modifier = GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
             inRowOrder(DAYS_OF_WEEK).forEach { dow ->
                 Text(
-                    // The calendar's Hebrew grid names the days in Hebrew in either language
-                    text = dow.getDisplayName(java.time.format.TextStyle.NARROW, HEBREW_LOCALE),
+                    text = dow.getDisplayName(weekdayStyle, locale),
                     maxLines = 1,
                     style = TextStyle(
                         color = if (dow == DayOfWeek.FRIDAY || dow == DayOfWeek.SATURDAY) {
