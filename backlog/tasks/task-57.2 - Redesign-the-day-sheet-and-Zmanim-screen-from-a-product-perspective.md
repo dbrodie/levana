@@ -4,8 +4,10 @@ title: Redesign the day sheet and Zmanim screen from a product perspective
 status: To Do
 assignee: []
 created_date: '2026-11-01T11:34:00Z'
+updated_date: '2026-11-14T21:30:00Z'
 labels:
   - design-review
+  - store-listing
 dependencies: []
 references:
   - specs/reviews/2026-11-01-figma-design-review.md
@@ -27,11 +29,29 @@ Findings (from specs/reviews/2026-11-01-figma-design-review.md):
 - **Z6** (Medium) — Day sheet quick tiles. The featured (dark) tile is TZEIT — unclear whether "featured" means *next upcoming* (at 9:47 the next would be Shkia) or *most important today*. *Why:* Ambiguous emphasis. *Reviewer suggestion:* Define as "next zman" and relabel ("Next · Shkia 4:50 PM"), or remove emphasis.
 - **Z8** (Medium) — Day sheet. Shabbat day shows no "Shabbat Mevarchim / molad" info, no "Shabbat ends" vs "Tzeit" distinction, no Omer/Chanukah count surface designed anywhere. *Why:* Spec commits to Omer count and molad; nothing in the file shows them. *Reviewer suggestion:* Add frames for Shabbat Mevarchim (molad line), Omer day (count card + nusach), Chanukah (candle count), fast day (start/end).
 - **Z10** (Low) — Zmanim screen. Evening group cut off in every frame; Chatzot HaLaylah presence unverifiable. *Why:* Coverage. *Reviewer suggestion:* Add a full-scroll frame like Settings has.
+## Product decisions (owner, 2026-11-14)
+
+Scope: the day sheet (phone bottom sheet) and the tablet day panel, which share `DayDetailContent`. The separate Zmanim screen keeps its full list; its date/city header and day stepping (N2) are a follow-up once the sheet design settles.
+
+Goals of the sheet, in priority order: (1) state which day and which place; (2) show the limited set of zmanim the user selected; (3) make anything interesting about the day obvious (Shabbat, Yom Tov, Rosh Chodesh, Omer, Chanukah, fasts), each with its details; (4) show the day's events, Levana's and the phone calendar's, clearly told apart; (5) never show the same number twice; (6) an ordinary weekday may be short, header and times only; no filler.
+
+1. **Header.** Every state starts with weekday, civil date and Hebrew date (the calendar-mode setting decides which leads), the city, and the "Jerusalem time" label when the city's clock differs from the device's. Day stepping with ‹ › arrows in the header; no horizontal swipe in the sheet.
+2. **Chips.** The day's states as chips under the header: Shabbat, holiday names, Rosh Chodesh, Chanukah, fast. Multiple chips stack.
+3. **Times card.** The three quick tiles are removed. One card lists the user's selected zmanim as rows in time order, uncapped (the Settings selection stays as it is; the row text becomes "Shown in the day panel"). Rows carry the primary name, the Hebrew secondary line in the English UI, and the time; a secondary line is reserved for TASK-20 (next-day marker) and TASK-57.7 (method). On today the next upcoming row is marked "Next" (same rule as the widgets, `nextSelectedZman`) and past rows are dimmed; other days show the plain list. "More times" at the bottom opens the Zmanim screen.
+4. **Candle lighting and Havdalah** are not zmanim rows and are removed from the selectable set in Settings. They live in the Shabbat / Yom Tov card, which is ordered first, above the times card, on the days it applies, so the collapsed peek shows it.
+5. **Day cards**, each with a fixed set of details: Shabbat (parsha with Hebrew, special Shabbat, Candle lighting on Friday, Havdalah on Saturday, Shabbat Mevarchim with molad); Yom Tov / Chol Hamoed (name, day n of m, candle lighting, havdalah); Rosh Chodesh (month, day 1 or 2 of 2); Omer (count, week and day); Chanukah (which night; candle count later); fast day (name; start and end times later). Fast times and Chanukah candle counts are designed now with placeholders and implemented in follow-up tasks, since neither is computed yet.
+6. **Events.** Two separate cards, "My events" (Levana: birthdays, yahrzeits, custom events) and "Phone calendar" (device calendars, with the calendar colour), after the day cards. Only the day's own events; no upcoming events on empty days.
+7. **Evening state (today only, after sunset).** The sheet keeps the civil day. The header gains a "Tonight" line with the incoming Hebrew date and its chips (Shabbat begins, Omer day n, Chanukah night n), and a "Tonight" preview card after the times card previews the next day's first times and its day cards. The Next marker moves to the remaining evening rows.
+8. **Collapsed peek** is the top of the same content (header, chips, first card); nothing is rendered twice for the peek.
+9. **Ordinary days** show header and times card, plus events if any. Nothing else.
+10. **Interaction.** Tapping a zman row opens its explanation (TASK-57.7 method, TASK-57.31 unavailable times) once those exist; tapping an event opens it. Designed as tappable rows now.
+
+Order of work: Figma frames (light, dark, Hebrew; ordinary day, Friday, Shabbat Mevarchim, Yom Tov, Rosh Chodesh + Omer, evening state, collapsed peek, tablet panel), then implementation in a worktree. Store listing: the day sheet appears in store screenshots; the coordinator refreshes them at release.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Product decisions recorded in this task
+- [x] #1 Product decisions recorded in this task
 - [ ] #2 Figma designs updated (light, dark, Hebrew)
 - [ ] #3 Implemented and verified on the emulator
 <!-- AC:END -->
