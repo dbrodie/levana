@@ -1,11 +1,11 @@
 ---
 id: TASK-65
 title: Walkthrough Next scrolls the page to unseen content before advancing
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T17:59:00Z'
-updated_date: '2026-11-14T21:21:00Z'
+updated_date: '2026-11-14T22:02:00Z'
 labels:
   - walkthrough
 dependencies: []
