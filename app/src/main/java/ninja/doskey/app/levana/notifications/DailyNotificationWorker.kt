@@ -14,6 +14,7 @@ import ninja.doskey.app.levana.data.PersonalEventRepository
 import ninja.doskey.app.levana.data.PreferencesRepository
 import ninja.doskey.app.levana.data.ZmanimRepository
 import ninja.doskey.app.levana.device.DeviceContext
+import ninja.doskey.app.levana.domain.model.Holiday
 import ninja.doskey.app.levana.domain.model.HolidayCategory
 import ninja.doskey.app.levana.domain.model.Location
 import ninja.doskey.app.levana.domain.model.UserPreferences
@@ -71,26 +72,17 @@ class DailyNotificationWorker(
     }
 
     private fun handleHolidays(localized: Context, today: LocalDate, prefs: UserPreferences) {
-        val daysBefore = prefs.holidayNotifyDaysBefore
-        for (offset in 0..daysBefore) {
-            val checkDate = today.plusDays(offset.toLong())
-            val dayInfo = calendarRepository.getDayInfo(
-                checkDate,
-                prefs.isInIsrael,
-                showModernIsraeli = false
+        val reminders = holidayReminders(today, prefs.holidayNotifyDaysBefore) { date ->
+            calendarRepository.getDayInfo(date, prefs.isInIsrael, showModernIsraeli = false)
+                .holidays
+        }
+        for (reminder in reminders) {
+            NotificationPoster.postHoliday(
+                localized,
+                reminder.date,
+                reminder.holiday,
+                reminder.daysUntil
             )
-            for (holiday in dayInfo.holidays) {
-                if (holiday.category == HolidayCategory.TORAH ||
-                    holiday.category == HolidayCategory.RABBINIC
-                ) {
-                    NotificationPoster.postHoliday(
-                        localized,
-                        checkDate,
-                        holiday,
-                        offset
-                    )
-                }
-            }
         }
     }
 
@@ -248,3 +240,34 @@ internal fun planOmerReminders(
     }
     return OmerReminderPlan(evening, morningOmerDay)
 }
+
+/** A holiday reminder to post: [holiday] falls on [date], [daysUntil] days from today. */
+internal data class HolidayReminder(val date: LocalDate, val holiday: Holiday, val daysUntil: Int)
+
+/**
+ * The Torah and rabbinic holidays from [today] through [daysBefore] days ahead. Today's are
+ * all included ("Today is …"); a later day is announced only when it starts an occurrence,
+ * so Chanukah day 2 or Chol HaMoed is never said to begin.
+ */
+internal fun holidayReminders(
+    today: LocalDate,
+    daysBefore: Int,
+    holidaysOn: (LocalDate) -> List<Holiday>
+): List<HolidayReminder> = (0..daysBefore).flatMap { offset ->
+    val date = today.plusDays(offset.toLong())
+    val holidays = holidaysOn(date).filter { it.isNotified() }
+    val continued = if (offset == 0) {
+        emptySet()
+    } else {
+        holidaysOn(date.minusDays(1)).filter { it.isNotified() }.map { it.occurrenceName() }
+            .toSet()
+    }
+    holidays.filter { it.occurrenceName() !in continued }
+        .map { HolidayReminder(date, it, offset) }
+}
+
+private fun Holiday.isNotified() =
+    category == HolidayCategory.TORAH || category == HolidayCategory.RABBINIC
+
+/** Chol HaMoed belongs to the festival around it, so it continues the same occurrence. */
+private fun Holiday.occurrenceName() = name.removePrefix("Chol HaMoed ")
