@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:45:00Z'
-updated_date: '2026-11-14T21:00:00Z'
+updated_date: '2026-11-14T21:13:00Z'
 labels: []
 dependencies: []
 priority: low
@@ -21,8 +21,8 @@ Found during TASK-52.5 (emulator, 2026-10-30). DailyNotificationWorker.handleHol
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A reminder for a later day of a holiday that is already in progress is not described as beginning; only the first day gets 'begins tomorrow / in N days'
-- [ ] #2 Unit test covers a multi-day holiday on its second day
+- [x] #1 A reminder for a later day of a holiday that is already in progress is not described as beginning; only the first day gets 'begins tomorrow / in N days'
+- [x] #2 Unit test covers a multi-day holiday on its second day
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -34,3 +34,17 @@ Decision: a look-ahead reminder (offset > 0) is posted only for the first day of
 3. Unit tests with the real CalendarRepository: Chanukah day 2 (2026-12-06) posts only 'Today is Chanukah'; day before Chanukah posts 'begins tomorrow' and not day 2 with daysBefore 3; Pesach chol hamoed / 7th day suppressed; Shemini Atzeret after Hoshana Rabba still announced.
 4. Build/test/lint, emulator check with date override 2026-12-06, holidays 1 day before.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented in DailyNotificationWorker: handleHolidays now uses the pure internal holidayReminders(today, daysBefore, holidaysOn). Offset 0 posts every Torah/Rabbinic holiday as before ('Today is …'). For offset > 0 a holiday is skipped when the day before it has a Torah/Rabbinic holiday of the same occurrence (name with any 'Chol HaMoed ' prefix removed). So Chanukah day 2+, Rosh Hashanah/Pesach/Sukkot day 2, Chol HaMoed after Yom Tov, and Pesach 7th day after Chol HaMoed get no look-ahead. Hoshana Rabba, Shemini Atzeret, Simchat Torah, Shushan Purim and Pesach day 1 after Erev Pesach are still announced. The check uses Holiday.name, so English and Hebrew text both follow. Strings unchanged.
+This also fixes the look-ahead from before a holiday: with 3 days before, 3 Dec no longer posts 'Chanukah begins in 3 days' for day 2.
+
+Tested commit: c434120 (fix + tests).
+- ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug: passed.
+- New HolidayRemindersTest uses the real CalendarRepository (Diaspora). Cases: Chanukah day 2 (6 Dec 2026, 1 and 3 days before) is only today; 4 Dec gets 'Chanukah +1' and 3 Dec gets 'Chanukah +2'; Pesach 5787 (Erev, day 2, Chol HaMoed with day 7 ahead); Sukkot (Hoshana Rabba / Shemini Atzeret / Simchat Torah still announced); Rosh Hashanah 5788 day 2.
+- Emulator (Levana_Agent_Template_API_36_1, read-only session, Jerusalem/auto-Israel defaults): Developer settings date override 2026-12-06, Holidays on, 1 day before. The shade shows only 'Today is Chanukah' (tag holiday/2026-12-06/Chanukah), with no holiday/2026-12-07 entry. Override 2026-12-04, then Holidays toggled off/on: 'Chanukah begins tomorrow' (tag holiday/2026-12-05/Chanukah) posted. The 12-06 entry in that dump is left over from the first run.
+Evidence: /Users/daniel/.paseo/evidence/task-54/ (02-shade-2026-12-06.png, 02-dumpsys-2026-12-06.txt, 03-shade-2026-12-04.png, 03-dumpsys-2026-12-04.txt).
+Limitations: the emulator check was done in English only; Hebrew follows the same name-based selection, and its strings are covered by the existing NotificationTextsTest. Occurrence grouping depends on the HolidayMapper English names ('Chol HaMoed X' ↔ 'X').
+<!-- SECTION:NOTES:END -->
