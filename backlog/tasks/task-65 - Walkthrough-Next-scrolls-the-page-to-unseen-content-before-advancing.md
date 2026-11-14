@@ -1,9 +1,11 @@
 ---
 id: TASK-65
 title: Walkthrough Next scrolls the page to unseen content before advancing
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-04T17:59:00Z'
+updated_date: '2026-11-14T21:00:00Z'
 labels:
   - walkthrough
 dependencies: []
@@ -40,3 +42,14 @@ ordinal: 107000
 - [ ] #2 Pages that don't scroll behave exactly as today; swipe and Back are unchanged; reduced motion scrolls without animation
 - [ ] #3 TalkBack can always progress with Next; unit/Roborazzi tests cover a scrollable page (e.g. large font scale) and a non-scrollable one; verified on an emulator with a small screen or large font
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. WalkthroughScreen.kt: each page keeps its own rememberScrollState (saved with the pager item, as today) and registers it in a hoisted snapshot map keyed by screen id (DisposableEffect), so the bottom bar can see the current page's ScrollState.
+2. Next / Get started / Got it go through one UI-layer helper: if the current page's ScrollState.canScrollForward, scroll down by one viewport less a small overlap (min of that and the remaining distance; animateScrollTo, or scrollTo under reduced motion) and do not send an intent; otherwise send Next / Finish as today. ViewModel/MVI unchanged (transient UI state).
+3. TalkBack: each tap either scrolls a finite distance or advances, so Next always progresses. While the button would scroll, its click action label becomes "Show more" (TalkBack: 'double tap to show more'), so the change is announced without a visible design change. New string walkthrough_show_more (en + iw).
+4. No visible design change, so no Figma update.
+5. Tests: a Robolectric Compose test on WalkthroughContent with a recording onIntent: small height/large font page -> Next scrolls (no intent) until bottom, then sends Next; last page Get started scrolls then sends Finish; a non-scrolling page sends Next on the first tap; reduced motion scrolls instantly; Back unaffected. Roborazzi capture of a scrolled page. Keep WalkthroughScreenshotTest.walkThrough robust (tap Next until the next page shows).
+6. Build/test/lint + verifyRoborazziDebug; emulator check at large font, en + iw, TalkBack pass; evidence in /Users/daniel/.paseo/evidence/task-65/.
+<!-- SECTION:PLAN:END -->
