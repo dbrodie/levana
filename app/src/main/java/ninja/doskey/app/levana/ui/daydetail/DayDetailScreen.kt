@@ -178,8 +178,11 @@ fun CityClockLabel(cityName: String, modifier: Modifier = Modifier) {
 private fun DaySheetBadges(dayInfo: DayInfo) {
     val locale = LocalConfiguration.current.locales[0]
     val isHebrew = locale.language in setOf("he", "iw")
+    // On Shabbat Mevarchim the badge names it, so it shows at the sheet's peek height
+    val shabbat = dayInfo.molad?.let { stringResource(R.string.sheet_shabbat_mevarchim, moladMonthName(LocalContext.current, it)) }
+        ?: stringResource(R.string.sheet_shabbat)
     val labels = dayInfo.holidays.map { if (isHebrew) it.hebrewName else it.name } +
-        if (dayInfo.shabbatInfo?.isShabbat == true) listOf(stringResource(R.string.sheet_shabbat)) else emptyList()
+        if (dayInfo.shabbatInfo?.isShabbat == true) listOf(shabbat) else emptyList()
     if (labels.isNotEmpty()) {
         FlowRow(
             modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
