@@ -1,11 +1,11 @@
 ---
 id: TASK-57.24
 title: Month widget shows Hebrew weekday names in the English UI
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T15:05:00Z'
-updated_date: '2026-11-14T21:52:00Z'
+updated_date: '2026-11-14T21:57:00Z'
 labels:
   - design-review
 dependencies: []
