@@ -4,7 +4,7 @@ title: Redesign the day sheet and Zmanim screen from a product perspective
 status: To Do
 assignee: []
 created_date: '2026-11-01T11:34:00Z'
-updated_date: '2026-11-14T21:30:00Z'
+updated_date: '2026-11-14T21:50:00Z'
 labels:
   - design-review
   - store-listing
@@ -47,11 +47,27 @@ Goals of the sheet, in priority order: (1) state which day and which place; (2) 
 10. **Interaction.** Tapping a zman row opens its explanation (TASK-57.7 method, TASK-57.31 unavailable times) once those exist; tapping an event opens it. Designed as tappable rows now.
 
 Order of work: Figma frames (light, dark, Hebrew; ordinary day, Friday, Shabbat Mevarchim, Yom Tov, Rosh Chodesh + Omer, evening state, collapsed peek, tablet panel), then implementation in a worktree. Store listing: the day sheet appears in store screenshots; the coordinator refreshes them at release.
+## Figma (done 2026-11-14)
+
+File https://www.figma.com/design/E1IFrxKcldXbXnvXy5Nzhd. All colours, radii and spacing are bound to the existing variables; Dark frames resolve through the section's Dark mode.
+
+Components (page "Components"):
+- `Day sheet / Header` (set 119:905, Direction LTR/RTL): ‹ › day arrows, title, Hebrew date · city, optional clock note, optional Tonight line.
+- `Day sheet / Day card` (set 115:404, Style Surface/Tonal × Direction): icon, title, subtitle, up to two `Day sheet / Key time` rows, highlight (tertiary), detail.
+- `Day sheet / Key time` (set 119:911): label, Hebrew label, time, for candle lighting, havdalah and later fast times.
+- `Day sheet / Calendar event row` (set 119:959): calendar-colour dot, title, time range.
+- `Sheet zman row` (set 40:435) gained `State = Default | Next | Past` (NEXT badge, dimmed past rows). The `Quick zman card` component is no longer used by the redesign frames.
+
+Frames, section "01b Calendar — Day sheet redesign (TASK-57.2)" on Screens — Light (116:6979): Shabbat Mevarchim 116:6980, ordinary weekday today 117:7269, Friday erev Shabbat with phone-calendar card 117:7642, Chanukah + Rosh Chodesh Friday 117:7996, Chol Hamoed Pesach + Omer 117:8397, today after sunset with Tonight card 117:8775, month with collapsed Shabbat peek 118:8607, foldable two-pane panel 118:8949. Dark (section 120:15718): 120:15719, 120:15798, 120:16120, 120:16451. Hebrew (RTL) in section 44:74: Shabbat Mevarchim 120:20026, ordinary weekday 120:20408, after sunset 122:3444.
+
+Open for the owner: on a plain Shabbat the "Shabbat" chip and the Shabbat card sit next to each other; the card title now carries the parasha so they don't repeat, but the chip row could be dropped on days with a single card. The collapsed peek grew from ~175dp to 230dp (header + chips + top of the first card); the month grid loses about half a week-row of height.
+
+Implementation notes for the task agent: `DayDetailContent` keeps one column with 16dp spacing; remove `QuickZmanimCards`, `ShabbatTimeCard`, `ParshaSection`, `MoladSection` and fold them into a `DayCard` composable with `KeyTimeRow`; `HalachicTimesSection` rows get `next`/`past` flags from `nextSelectedZman` on today; remove Candle lighting and Havdalah from the selectable zmanim in Settings (migrate saved selections); add `DaySheetHeader` with the date stepping intent in `DayDetailViewModel`/`CalendarViewModel`; the Tonight state needs sunset-crossing detection on today plus the next day's `DayInfo`.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Product decisions recorded in this task
-- [ ] #2 Figma designs updated (light, dark, Hebrew)
+- [x] #2 Figma designs updated (light, dark, Hebrew)
 - [ ] #3 Implemented and verified on the emulator
 <!-- AC:END -->
