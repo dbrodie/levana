@@ -3,11 +3,11 @@ id: TASK-57.29
 title: >-
   Permanently denied permissions leave dead Grant/Allow buttons with no way to
   system settings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T14:27:00Z'
-updated_date: '2026-11-14T21:38:00Z'
+updated_date: '2026-11-14T21:42:00Z'
 labels:
   - design-review
 dependencies: []
