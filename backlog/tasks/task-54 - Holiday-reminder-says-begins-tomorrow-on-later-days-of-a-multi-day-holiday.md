@@ -1,11 +1,11 @@
 ---
 id: TASK-54
 title: Holiday reminder says 'begins tomorrow' on later days of a multi-day holiday
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T12:45:00Z'
-updated_date: '2026-11-14T21:13:00Z'
+updated_date: '2026-11-14T21:18:00Z'
 labels: []
 dependencies: []
 priority: low
