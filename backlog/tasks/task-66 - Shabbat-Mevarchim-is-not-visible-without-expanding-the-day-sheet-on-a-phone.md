@@ -1,11 +1,11 @@
 ---
 id: TASK-66
 title: Shabbat Mevarchim is not visible without expanding the day sheet on a phone
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-14T21:14:00Z'
-updated_date: '2026-11-14T21:19:00Z'
+updated_date: '2026-11-14T21:23:00Z'
 labels:
   - calendar
   - day-sheet
