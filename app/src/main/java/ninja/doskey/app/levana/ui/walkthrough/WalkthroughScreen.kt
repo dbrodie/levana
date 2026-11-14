@@ -58,6 +58,8 @@ import ninja.doskey.app.levana.R
 import ninja.doskey.app.levana.ui.location.CityPickerScreen
 import ninja.doskey.app.levana.ui.contentWidth
 import ninja.doskey.app.levana.ui.CappedFontScale
+import ninja.doskey.app.levana.ui.isPermanentlyDenied
+import ninja.doskey.app.levana.ui.openAppSettings
 
 /**
  * The walkthrough with its side effects: the permission dialogs, the permission recheck on
@@ -65,11 +67,17 @@ import ninja.doskey.app.levana.ui.CappedFontScale
  */
 @Composable
 fun WalkthroughScreen(state: WalkthroughState, onIntent: (WalkthroughIntent) -> Unit) {
+    val context = LocalContext.current
     var pendingPermission by rememberSaveable { mutableStateOf<WalkthroughPermission?>(null) }
+    // Permissions the system no longer asks for; their Allow button opens system settings
+    var blockedPermissions by rememberSaveable { mutableStateOf(emptySet<WalkthroughPermission>()) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        pendingPermission?.let { onIntent(WalkthroughIntent.PermissionResult(it, it.isGranted(results))) }
+        pendingPermission?.let {
+            if (context.isPermanentlyDenied(results)) blockedPermissions = blockedPermissions + it
+            onIntent(WalkthroughIntent.PermissionResult(it, it.isGranted(results)))
+        }
         pendingPermission = null
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { onIntent(WalkthroughIntent.RefreshPermissions) }
@@ -89,9 +97,14 @@ fun WalkthroughScreen(state: WalkthroughState, onIntent: (WalkthroughIntent) -> 
         state = state,
         onIntent = onIntent,
         onRequestPermission = { permission ->
-            pendingPermission = permission
-            permissionLauncher.launch(permission.permissions)
+            if (permission in blockedPermissions) {
+                context.openAppSettings(notifications = permission == WalkthroughPermission.NOTIFICATIONS)
+            } else {
+                pendingPermission = permission
+                permissionLauncher.launch(permission.permissions)
+            }
         },
+        blockedPermissions = blockedPermissions,
         reducedMotion = rememberReducedMotion(),
     )
 }
@@ -107,6 +120,7 @@ fun WalkthroughContent(
     onRequestPermission: (WalkthroughPermission) -> Unit,
     modifier: Modifier = Modifier,
     reducedMotion: Boolean = false,
+    blockedPermissions: Set<WalkthroughPermission> = emptySet(),
 ) {
     val count = state.screens.size
     val pagerState = rememberPagerState(initialPage = state.page) { count }
@@ -137,6 +151,7 @@ fun WalkthroughContent(
                     screen = screen,
                     pageLabel = stringResource(R.string.walkthrough_page_of, index + 1, count),
                     permissionStatus = screen.permission?.let(state::status),
+                    permissionBlocked = screen.permission in blockedPermissions,
                     actions = actions,
                     onAllow = onRequestPermission,
                     onNotNow = { onIntent(WalkthroughIntent.NotNow) },
@@ -178,6 +193,7 @@ private fun WalkthroughPage(
     screen: FeatureScreen,
     pageLabel: String,
     permissionStatus: PermissionStatus?,
+    permissionBlocked: Boolean,
     actions: WalkthroughActions,
     onAllow: (WalkthroughPermission) -> Unit,
     onNotNow: () -> Unit,
@@ -215,6 +231,7 @@ private fun WalkthroughPage(
             PermissionPanel(
                 permission = screen.permission,
                 status = permissionStatus,
+                blocked = permissionBlocked,
                 onAllow = { onAllow(screen.permission) },
                 onNotNow = onNotNow,
             )

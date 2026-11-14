@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -79,6 +78,9 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.ContentWidthBox
 import ninja.doskey.app.levana.ui.contentWidth
+import ninja.doskey.app.levana.ui.PermissionBlockedNote
+import ninja.doskey.app.levana.ui.PermissionButton
+import ninja.doskey.app.levana.ui.rememberPermissionRequester
 
 @Composable
 fun EventsScreen(
@@ -102,12 +104,12 @@ fun EventsScreen(
         onPauseOrDispose { }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions.values.any { it }) {
-            viewModel.onIntent(EventsIntent.ContactsPermissionGranted)
-        }
+    // Birthdays reload on resume, so a grant made in system settings shows on return
+    val contactsPermission = rememberPermissionRequester(
+        Manifest.permission.READ_CONTACTS,
+        Manifest.permission.WRITE_CONTACTS
+    ) { granted ->
+        if (granted) viewModel.onIntent(EventsIntent.ContactsPermissionGranted)
     }
 
     // File IO runs in the view model, off the main thread
@@ -239,12 +241,7 @@ fun EventsScreen(
                         if (state.hasContactsPermission) {
                             onAddBirthday()
                         } else {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.READ_CONTACTS,
-                                    Manifest.permission.WRITE_CONTACTS
-                                )
-                            )
+                            contactsPermission.request()
                         }
                     } else {
                         onAddEvent()
@@ -285,20 +282,14 @@ fun EventsScreen(
                     0 -> BirthdaysTab(
                         birthdays = state.birthdays,
                         hasPermission = state.hasContactsPermission,
+                        permissionBlocked = contactsPermission.blocked,
                         onEditBirthday = onEditBirthday,
                         onDeleteBirthday = { lookupKey ->
                             viewModel.onIntent(
                                 EventsIntent.DeleteBirthday(lookupKey)
                             )
                         },
-                        onRequestPermission = {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.READ_CONTACTS,
-                                    Manifest.permission.WRITE_CONTACTS
-                                )
-                            )
-                        }
+                        onRequestPermission = contactsPermission::request
                     )
                     1 -> CustomEventsTab(
                         events = state.customEvents,
@@ -323,7 +314,8 @@ internal fun BirthdaysTab(
     hasPermission: Boolean,
     onEditBirthday: (String) -> Unit,
     onDeleteBirthday: (String) -> Unit,
-    onRequestPermission: () -> Unit
+    onRequestPermission: () -> Unit,
+    permissionBlocked: Boolean = false
 ) {
     if (!hasPermission) {
         Box(
@@ -352,10 +344,9 @@ internal fun BirthdaysTab(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                PermissionBlockedNote(permissionBlocked)
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onRequestPermission) {
-                    Text(stringResource(R.string.common_grant_permission))
-                }
+                PermissionButton(blocked = permissionBlocked, onClick = onRequestPermission)
             }
         }
         return

@@ -3,8 +3,6 @@ package ninja.doskey.app.levana.ui.calendarselection
 import ninja.doskey.app.levana.R
 import androidx.compose.ui.res.stringResource
 import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,11 +30,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.domain.model.DeviceCalendar
 import ninja.doskey.app.levana.ui.settings.SettingsCheckboxRow
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.ContentWidthBox
+import ninja.doskey.app.levana.ui.PermissionBlockedNote
+import ninja.doskey.app.levana.ui.PermissionButton
+import ninja.doskey.app.levana.ui.rememberPermissionRequester
 
 @Composable
 fun CalendarSelectionScreen(
@@ -45,6 +47,10 @@ fun CalendarSelectionScreen(
     viewModel: CalendarSelectionViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // A grant made in system settings shows on return
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (!viewModel.state.value.hasPermission) viewModel.onIntent(CalendarSelectionIntent.Load)
+    }
 
     CalendarSelectionContent(
         state = state,
@@ -69,10 +75,12 @@ fun CalendarSelectionContent(
             }
         }
         !state.hasPermission -> {
+            val permission = rememberPermissionRequester(Manifest.permission.READ_CALENDAR) { granted ->
+                if (granted) onIntent(CalendarSelectionIntent.PermissionGranted)
+            }
             PermissionRequest(
-                onPermissionGranted = {
-                    onIntent(CalendarSelectionIntent.PermissionGranted)
-                },
+                blocked = permission.blocked,
+                onRequest = permission::request,
                 modifier = modifier
             )
         }
@@ -101,16 +109,9 @@ fun CalendarSelectionContent(
     }
 }
 
+/** Asks for calendar access; once the system stops asking ([blocked]), points to system settings. */
 @Composable
-private fun PermissionRequest(onPermissionGranted: () -> Unit, modifier: Modifier = Modifier) {
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            onPermissionGranted()
-        }
-    }
-
+internal fun PermissionRequest(blocked: Boolean, onRequest: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -125,14 +126,9 @@ private fun PermissionRequest(onPermissionGranted: () -> Unit, modifier: Modifie
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        PermissionBlockedNote(blocked)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                permissionLauncher.launch(Manifest.permission.READ_CALENDAR)
-            }
-        ) {
-            Text(stringResource(R.string.common_grant_permission))
-        }
+        PermissionButton(blocked = blocked, onClick = onRequest)
     }
 }
 

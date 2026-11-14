@@ -63,7 +63,8 @@ internal fun Decorative(modifier: Modifier = Modifier, content: @Composable Colu
 
 /**
  * A screen's permission ask: why, then Allow and Not now; once granted, the granted state;
- * after a refusal, a note that it can be allowed later, with Allow still offered.
+ * after a refusal, a note that it can be allowed later, with Allow still offered. Once the
+ * system stops asking ([blocked]), Allow reads "Open settings" and goes to system settings.
  */
 @Composable
 internal fun PermissionPanel(
@@ -71,6 +72,7 @@ internal fun PermissionPanel(
     status: PermissionStatus,
     onAllow: () -> Unit,
     onNotNow: () -> Unit,
+    blocked: Boolean = false,
 ) {
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -126,7 +128,9 @@ internal fun PermissionPanel(
                 ) {
                     TextButton(onClick = onNotNow) { Text(stringResource(R.string.walkthrough_not_now)) }
                     Spacer(Modifier.width(8.dp))
-                    FilledTonalButton(onClick = onAllow) { Text(stringResource(permission.allow)) }
+                    FilledTonalButton(onClick = onAllow) {
+                        Text(stringResource(if (blocked) R.string.common_open_settings else permission.allow))
+                    }
                 }
             }
         }

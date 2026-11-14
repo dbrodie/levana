@@ -1,8 +1,6 @@
 package ninja.doskey.app.levana.ui.settings
 
 import ninja.doskey.app.levana.ui.placeName
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ninja.doskey.app.levana.data.LocationService
 import ninja.doskey.app.levana.data.PreferencesRepository
@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 import ninja.doskey.app.levana.ui.contentWidth
+import ninja.doskey.app.levana.ui.rememberPermissionRequester
 
 @Composable
 fun LocationsSettingsScreen(
@@ -53,29 +54,34 @@ fun LocationsSettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var hasLocationPermission by remember { mutableStateOf(locationService.hasPermission()) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        hasLocationPermission = results.values.any { it }
-        if (hasLocationPermission) {
+    fun onPermissionChecked(granted: Boolean) {
+        val newlyGranted = granted && !hasLocationPermission
+        hasLocationPermission = granted
+        if (newlyGranted) {
             scope.launch {
                 locationService.getCurrentLocationOrNull()
                     ?.let { preferencesRepository.updateCurrentLocation(it) }
             }
         }
     }
+    val locationPermission = rememberPermissionRequester(*LocationService.PERMISSIONS) { granted ->
+        onPermissionChecked(granted)
+    }
+    // A grant (or revoke) made in system settings shows on return
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { onPermissionChecked(locationService.hasPermission()) }
 
     // The selected city, as UserPreferences.displayCity: the active saved city, else the current location
     val selected = state.savedLocations.find { it.id == state.activeLocationId }
     LocationsSettingsContent(
         currentLocationName = state.currentLocationName,
         hasLocationPermission = hasLocationPermission,
+        permissionBlocked = locationPermission.blocked,
         savedLocations = state.savedLocations,
         incalculableTimesCityId = when {
             selected == null -> CURRENT_LOCATION_ID.takeIf { ZmanimRepository.hasIncalculableTimes(state.currentLocationLatitude) }
             else -> selected.id.takeIf { ZmanimRepository.hasIncalculableTimes(selected.location.latitude) }
         },
-        onRequestPermission = { permissionLauncher.launch(LocationService.PERMISSIONS) },
+        onRequestPermission = locationPermission::request,
         onDelete = { id -> scope.launch { preferencesRepository.removeSavedLocation(id) } },
         onAddLocation = onAddLocation,
         modifier = modifier
@@ -88,7 +94,8 @@ internal const val CURRENT_LOCATION_ID = "current"
 /**
  * The Cities settings. [incalculableTimesCityId] is the selected city's id, or
  * [CURRENT_LOCATION_ID], when some of its times can't be calculated on some days; that row
- * carries the note.
+ * carries the note. Without location permission, tapping the current location asks for it, or
+ * opens system settings once the system stops asking ([permissionBlocked]).
  */
 @Composable
 internal fun LocationsSettingsContent(
@@ -99,7 +106,8 @@ internal fun LocationsSettingsContent(
     onDelete: (String) -> Unit,
     onAddLocation: () -> Unit,
     modifier: Modifier = Modifier,
-    incalculableTimesCityId: String? = null
+    incalculableTimesCityId: String? = null,
+    permissionBlocked: Boolean = false
 ) {
     val incalculableNote = stringResource(R.string.city_incalculable_times)
     Column(
@@ -115,7 +123,9 @@ internal fun LocationsSettingsContent(
         ListItem(
             headlineContent = { Text(placeName(currentLocationName)) },
             supportingContent = listOfNotNull(
-                stringResource(R.string.location_permission_needed).takeUnless { hasLocationPermission },
+                stringResource(
+                    if (permissionBlocked) R.string.location_permission_blocked else R.string.location_permission_needed
+                ).takeUnless { hasLocationPermission },
                 incalculableNote.takeIf { incalculableTimesCityId == CURRENT_LOCATION_ID }
             ).takeIf { it.isNotEmpty() }?.let { lines ->
                 { Column { lines.forEach { Text(it) } } }
