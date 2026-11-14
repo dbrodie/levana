@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T14:27:00Z'
-updated_date: '2026-11-14T21:00:00Z'
+updated_date: '2026-11-14T21:38:00Z'
 labels:
   - design-review
 dependencies: []
@@ -34,9 +34,9 @@ Fix direction: when the launcher returns denied and shouldShowRequestPermissionR
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each listed control, when the permission is permanently denied, leads the user to the app's system settings page (or explains how) instead of doing nothing
-- [ ] #2 Returning from system settings with the permission granted updates the screen without a restart
-- [ ] #3 Verified on an emulator in English and Hebrew
+- [x] #1 Each listed control, when the permission is permanently denied, leads the user to the app's system settings page (or explains how) instead of doing nothing
+- [x] #2 Returning from system settings with the permission granted updates the screen without a restart
+- [x] #3 Verified on an emulator in English and Hebrew
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,3 +50,28 @@ Fix direction: when the launcher returns denied and shouldShowRequestPermissionR
 6. Walkthrough: when a permission is permanently denied, its Allow button reads 'Open settings' and opens app settings (existing resume refresh updates status).
 7. Strings EN + iw (plural-you Hebrew per current strings). Unit tests for isPermanentlyDenied and settings intents; Roborazzi for the blocked variants (calendar selection, birthdays, cities). Build/test/lint; emulator check EN+HE with pm revoke + USER_FIXED, grant from settings, confirm refresh.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (c489276):
+- ui/PermissionSettings.kt: isPermanentlyDenied(results, rationale) (nothing granted, no rationale for any), app/notification settings intents, rememberPermissionRequester (request() asks, or opens system settings once blocked; blocked saved across config changes), PermissionButton / PermissionBlockedNote shared UI. findActivity moved here from AppStartupEffects.
+- Calendar selection (Settings > System calendars, Agenda > Choose calendars), Birthdays tab + FAB: once blocked, explanation line + the same button reads 'Open settings' (FAB opens settings directly). Calendar selection now reloads on resume while permission is missing; Events already did.
+- Cities current-location row: blocked text 'Tap to allow location access in system settings', tap opens app settings; permission rechecked on resume and the current location fetched when newly granted.
+- Notification switches: once blocked, a dialog (Notifications are off / Open settings / Cancel) opens the app's notification settings; on return, if granted, the switch the user tried to turn on is turned on.
+- Walkthrough: a blocked permission's Allow button reads 'Open settings' and opens system settings (existing resume refresh shows the granted state).
+- Strings EN + iw: common_open_settings, permission_blocked_explanation, location_permission_blocked, notifications_blocked_title/text.
+
+Verification (tested commit c489276):
+- set -a && . ./.env && set +a && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug: success; 1295 tests, 0 failures; lint clean; existing Roborazzi baselines unchanged. Log: /Users/daniel/.paseo/evidence/task-57.29/gate.log
+- New tests: PermissionSettingsTest (denial logic, intents); PermissionBlockedScreenshotTest (Robolectric full app, EN/HE light/dark): Cities, System calendars, Birthdays, notifications dialog reach the blocked state after a denied/no-rationale result and open the right settings action. New baselines: app/src/test/screenshots/*permission_blocked*, settings_notifications_blocked_*.
+- Emulator Levana_Agent_Template_API_36_1 (API 36.1), debug build of the working tree committed as c489276. All permissions pm revoke + USER_SET|USER_FIXED. English: walkthrough location/contacts/notifications/calendar (01-10), Settings > System calendars (11-13), My events Birthdays button + FAB (14-16), Cities (17-19), Fasts switch dialog (20-21). Hebrew (app locale iw): Agenda > Choose calendars (22-24), Birthdays (25-26), Cities (27-28), Fasts dialog (29-30), walkthrough contacts via About > replay (31-32). In each case the first tap turns the control into Open settings (or the dialog), the next opens com.android.settings app details (notification page for notifications); after granting there (pm grant while in Settings) and Back, the screen updated without restart (calendars list, birthdays list, location row, Fasts switch on, walkthrough 'allowed'). No crashes in logcat. Evidence: /Users/daniel/.paseo/evidence/task-57.29/*.png + matching UI dumps *.xml.
+
+Limitations:
+- Detection needs one tap: the system gives no 'permanently denied' state before a request, so the first tap after a fresh screen gets the instant denial and then shows Open settings.
+- Dismissing the very first system dialog without choosing (tap outside) also returns denied with no rationale, so it shows Open settings early; that route still works.
+- Grants were made with pm grant while the Settings page was open (same permission state as toggling there), not by tapping through the Settings UI.
+- Visual design of the variant is TASK-57.18; this uses existing Button/AlertDialog components.
+
+Store listing: no change (only permission-denied states, not in store screenshots or text).
+<!-- SECTION:NOTES:END -->
