@@ -207,7 +207,7 @@ private fun DateBlock(
             val date = @Composable { Text(text = gregorian, maxLines = 1, style = secondaryStyle) }
             val location = @Composable {
                 Text(
-                    text = " · ${PlaceNames.display(LocalContext.current, snapshot.locationName)}",
+                    text = widgetLocationSuffix(PlaceNames.display(LocalContext.current, snapshot.locationName), hebrewUi),
                     maxLines = 1,
                     style = secondaryStyle.copy(textAlign = textAlign(mirror)),
                     modifier = GlanceModifier.defaultWeight(),
